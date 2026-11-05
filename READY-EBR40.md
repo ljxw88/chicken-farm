@@ -1,7 +1,7 @@
 # EBR-40 — Nest READY
 
 - Branch: `feat/ebr40-cloudy` (local; no upstream configured).
-- Implementation SHA: `git log -1 --format=%H --grep='^Implement EBR-40 Cloudy weather state$'`.
+- Implementation SHA: `ab17e9b21fefea673c2ec606ea2b8a3b6af6618d` (the following commit only records this SHA in the handoff).
 - Branch tip SHA: `git rev-parse feat/ebr40-cloudy` (a committed file cannot contain its own commit SHA).
 
 Run `npm ci`, then `npm run dev -- --host 127.0.0.1 --port 5173 --strictPort`. No console is needed: open these URLs, or append the same queries to the Nest scene origin.
