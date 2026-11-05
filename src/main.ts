@@ -4,6 +4,7 @@ import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer } from './postprocess';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
@@ -11,7 +12,7 @@ declare global {
     setDayNightCycleSeconds: (seconds: number) => void;
     setDayNightPhase: (phase: DayNightPhaseName) => void;
     setWeather: (mode: WeatherMode) => void;
-    getWeather: () => { mode: WeatherMode; rainAmount: number };
+    getWeather: () => { mode: WeatherMode; rainAmount: number; cloudyAmount: number };
   }
 }
 
@@ -31,9 +32,13 @@ const dayNight = createDayNightCycle({ scene, character, windows });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
+  setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
 });
-export const setDayNightCycleSeconds = dayNight.setDayNightCycleSeconds;
-export const setDayNightPhase = dayNight.setDayNightPhase;
+const startup = parseStartupOptions(window.location.search);
+const phaseController = createStartupPhaseController(dayNight, startup.phase);
+if (startup.weather) weather.setWeather(startup.weather);
+export const setDayNightCycleSeconds = phaseController.setDayNightCycleSeconds;
+export const setDayNightPhase = phaseController.setDayNightPhase;
 export const setWeather = weather.setWeather;
 export const getWeather = weather.getWeather;
 window.setDayNightCycleSeconds = setDayNightCycleSeconds;
@@ -67,7 +72,7 @@ renderer.setAnimationLoop((time) => {
   previousTime = time;
   // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
   controls.update(Math.min(deltaSeconds, 0.1));
-  dayNight.update(deltaSeconds);
+  phaseController.update(deltaSeconds);
   follow(character.position);
   weather.update(deltaSeconds);
   composer.render();
