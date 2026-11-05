@@ -1,0 +1,2 @@
+Implementation SHA: e008c3024773cdd1d6575217e138d3d219646c69 (current branch tip: git rev-parse origin/main).
+Walk: Hold WASD or click/tap the grassy ground; the camera follows.

@@ -1,12 +1,10 @@
-# Ready
+# Ready — EBR-32
 
-- Repository: https://github.com/ljxw88/chicken-farm
-- Tip SHA (pushed to origin/main): `0d68cc612e2317f4b1532d58b86dec708ab7a251`
-- This is the scaffold-code tip; later commits update `READY.md`.
-- Local URL: http://localhost:5173
-- Expected view: a sunlit green ground plane with a subtle grid, viewed at an angle against a blue sky.
-- Herdr pane: `wH:p1 / ebr31-scaffold`
-
-Run `npm install` and `npm run dev` before opening the URL. If port 5173 is occupied, use the alternative URL printed by Vite or free the port first.
-
-Verification: `npm run build` succeeded; the scene and resizing were checked in Chromium.
+- Branch tip SHA: run `git rev-parse origin/main` (the handoff commit cannot contain its own SHA).
+- Implementation commit: `e008c3024773cdd1d6575217e138d3d219646c69`.
+- Start: `npm install && npm run dev`, then open the URL printed by Vite (normally http://localhost:5173/).
+- Current preview: http://127.0.0.1:5176/ (ports 5173–5175 were already occupied).
+- Walk: hold WASD relative to the screen, or click/tap the grass; keyboard movement cancels the clicked destination.
+- Expected view: a small yellow character on gridded grass, followed by an orthographic isometric camera. The character stays on the ground.
+- Herdr pane: `wH:p2 / ebr32-walk`.
+- Verified: `npm run build`, `npm test`, and Chromium desktop/touch interaction checks.
