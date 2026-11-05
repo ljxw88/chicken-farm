@@ -1,4 +1,5 @@
 import './style.css';
+import { createComposer } from './postprocess';
 import { createScene } from './scene/createScene';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scene');
@@ -8,10 +9,17 @@ if (!canvas) {
 }
 
 const { scene, camera, renderer, resize } = createScene(canvas);
+const composer = createComposer(renderer, scene, camera);
 
-resize();
-window.addEventListener('resize', resize);
+function handleResize() {
+  resize();
+  composer.setPixelRatio(renderer.getPixelRatio());
+  composer.setSize(window.innerWidth, window.innerHeight);
+}
+
+handleResize();
+window.addEventListener('resize', handleResize);
 
 renderer.setAnimationLoop(() => {
-  renderer.render(scene, camera);
+  composer.render();
 });
