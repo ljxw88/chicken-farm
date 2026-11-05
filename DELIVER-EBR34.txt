@@ -1,0 +1,26 @@
+EBR-34 — Farm layout, path and solid props
+
+Implementation SHA: 638f62fe1de51ce981ba10be352affb887705fc2
+Pushed tip SHA: run `git rev-parse origin/main` (a handoff commit cannot contain its own SHA).
+
+Run and walk
+- `npm install && npm run dev`; open the URL Vite prints. The current production preview is http://127.0.0.1:5195/ while its process is running.
+- From spawn, walk up the tan path with screen-relative WASD or click/tap successive points on the path. At the fork, follow the left branch past the trees to the X-braced barn door. Return to the fork and take the right branch to the pond. The camera follows throughout.
+- For a longer look, use `setDayNightCycleSeconds(3600); setDayNightPhase('daytime')` in the browser console; use `setDayNightPhase('night')` to see both barn window lights and the carried lantern. The existing 72-second cycle remains the default.
+
+Collision and look
+- The barn's rectangular footprint, four tree trunks and the pond water are solid for both WASD and click/tap movement. The circular character footprint is included, movement is substepped to prevent tunnelling, and diagonal movement can slide along obstacles. A blocked click stops when it cannot advance; it does not pathfind. The pond uses a conservative circular blocker around its water.
+- All farm colors are provisional pending Look Dev lock and are centralized in `src/scene/farmPalette.ts`: grass #7CB070; path #C4A06A; walls #C89070, roof #A05048, door #6B4A3A; trunk #6B4A30, foliage #4A8A50; water #5A9AB8, wet edge #8A7060.
+- The existing camera, locked day/night presets and postFX were not changed. The former shed stubs were replaced by the barn and its two original-style warm PointLights.
+
+Verification
+- `npm run build`: passed (the existing Vite >500 kB bundle advisory remains).
+- `npm test`: 20 passed, including visible path continuity, both input types against barn and trees, pond blocking, wall sliding, camera and day/night regressions.
+- Actual Vite app and unmodified production preview checked in Chromium/WebGL2. Real ground clicks reached the barn along the path and the pond fork; holding W+D against the barn stopped at z ≈ -1.59 (front limit -1.60); a click through a tree stopped at x ≈ -1.39 without crossing its trunk. The pond was visible and blocked entry. A portrait touch followed the path. Both barn lights reached intensity ≈0.85 at night; the lantern also lit. No application JavaScript errors; Chromium's pre-existing `/favicon.ico` 404 was ignored.
+- Captures and browser proof on this machine: `/tmp/ebr34.WSyhA9/production-day.png`, `production-barn.png`, `production-night.png`, `pond-approach.png`, `tree-blocked.png`, `portrait-touch.png`, `proof.json` and `production-proof.json` in the same directory.
+
+Files
+- `src/scene/createFarmLayout.ts`, `src/scene/farmPalette.ts`, `src/scene/farmCollisions.ts`, `src/scene/createScene.ts`; removed `src/scene/createShedStubs.ts`.
+- `src/character/createCharacterControls.ts`, `src/main.ts`, `src/lighting/createPracticalLights.ts` (comment only).
+- `tests/farm.test.mjs`, `tests/walk.test.mjs`, `tests/dayNight.test.mjs`, `README.md`, `DELIVER-EBR34.txt`.
+- Existing local changes to `READY.md`, `DELIVER-EBR32.txt` and `DELIVER-EBR33.txt` were not included or modified.
