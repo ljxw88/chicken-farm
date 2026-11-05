@@ -40,6 +40,8 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
   const practicalLights = createPracticalLights(character, windows);
   let cycleSeconds = DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
   let progress = 0;
+  let directionalMultiplier = 1;
+  let directionalBaseIntensity: number = morning.directionalIntensity;
 
   function applyLighting() {
     const phasePosition = progress * DAY_NIGHT_PHASES.length;
@@ -61,7 +63,8 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     hemisphere.groundColor.copy(fromColors.hemisphereGround).lerp(toColors.hemisphereGround, blend);
     hemisphere.intensity = lerp(from.hemisphereIntensity, to.hemisphereIntensity, blend);
     directional.color.copy(fromColors.directional).lerp(toColors.directional, blend);
-    directional.intensity = lerp(from.directionalIntensity, to.directionalIntensity, blend);
+    directionalBaseIntensity = lerp(from.directionalIntensity, to.directionalIntensity, blend);
+    directional.intensity = directionalBaseIntensity * directionalMultiplier;
     practicalLights.setNightAmount(lerp(from.nightLights, to.nightLights, blend));
 
     // The sun rises and sets low; the moon follows the other half of the arc
@@ -95,6 +98,15 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     applyLighting();
   }
 
+  function setDirectionalIntensityMultiplier(multiplier: number) {
+    if (!Number.isFinite(multiplier) || multiplier < 0 || multiplier > 1) {
+      throw new RangeError('Directional intensity multiplier must be between zero and one');
+    }
+    directionalMultiplier = multiplier;
+    // Always scale the current phase value, never an already-scaled light.
+    directional.intensity = directionalBaseIntensity * directionalMultiplier;
+  }
+
   applyLighting();
-  return { update, setDayNightCycleSeconds, setDayNightPhase };
+  return { update, setDayNightCycleSeconds, setDayNightPhase, setDirectionalIntensityMultiplier };
 }

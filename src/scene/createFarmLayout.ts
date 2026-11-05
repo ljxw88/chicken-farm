@@ -6,7 +6,7 @@ import { FARM_PALETTE } from './farmPalette';
 
 // Positions are shared by the visible props and their collision footprints.
 export const FARM_LAYOUT = {
-  barn: { x: -3.4, z: -3.4, width: 4, depth: 2.6, wallHeight: 2, roofRise: 0.9 },
+  barn: { x: -3.4, z: -3.4, width: 4, depth: 2.6, wallHeight: 2, roofRise: 0.9, roofOverhang: 0.2 },
   trees: [
     { x: -2.15, z: 1.55, scale: 0.95 },
     { x: 4.8, z: 1.6, scale: 1 },
@@ -87,7 +87,7 @@ function createPath(group: THREE.Group) {
 }
 
 function createBarn(group: THREE.Group): WindowPane[] {
-  const { x, z, width, depth, wallHeight, roofRise } = FARM_LAYOUT.barn;
+  const { x, z, width, depth, wallHeight, roofRise, roofOverhang } = FARM_LAYOUT.barn;
   const barn = new THREE.Group();
   barn.name = 'farm-barn';
   barn.position.set(x, GROUND_HEIGHT, z);
@@ -115,9 +115,9 @@ function createBarn(group: THREE.Group): WindowPane[] {
   barn.add(gable);
 
   const roofAngle = Math.atan2(roofRise, width / 2);
-  const roofHalfWidth = width / 2 + 0.2;
+  const roofHalfWidth = width / 2 + roofOverhang;
   const roofLength = roofHalfWidth / Math.cos(roofAngle);
-  const roofGeometry = new THREE.BoxGeometry(roofLength, 0.12, depth + 0.4);
+  const roofGeometry = new THREE.BoxGeometry(roofLength, 0.12, depth + roofOverhang * 2);
   for (const side of [-1, 1]) {
     const roof = new THREE.Mesh(roofGeometry, roofMaterial);
     roof.name = 'barn-roof';
@@ -312,6 +312,11 @@ export function createFarmLayout(scene: THREE.Scene) {
   createGrassTufts(group);
 
   const { barn, trees, pond } = FARM_LAYOUT;
+  const pondObstacle: FarmObstacle = {
+    // The 5% margin covers the irregular water outline without blocking its whole oval rim.
+    kind: 'box', name: 'pond', minX: pond.x - pond.waterWidth * 0.525, maxX: pond.x + pond.waterWidth * 0.525,
+    minZ: pond.z - pond.waterDepth * 0.525, maxZ: pond.z + pond.waterDepth * 0.525,
+  };
   const obstacles: FarmObstacle[] = [
     {
       kind: 'box', name: 'barn', minX: barn.x - barn.width / 2, maxX: barn.x + barn.width / 2,
@@ -320,11 +325,19 @@ export function createFarmLayout(scene: THREE.Scene) {
     ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
       kind: 'circle', name: `tree-${index + 1}`, x, z, radius: 0.32 * scale,
     })),
-    {
-      // The 5% margin covers the irregular water outline without blocking its whole oval rim.
-      kind: 'box', name: 'pond', minX: pond.x - pond.waterWidth * 0.525, maxX: pond.x + pond.waterWidth * 0.525,
-      minZ: pond.z - pond.waterDepth * 0.525, maxZ: pond.z + pond.waterDepth * 0.525,
-    },
+    pondObstacle,
   ];
-  return { windows, obstacles };
+  const splashExclusions: FarmObstacle[] = [
+    {
+      kind: 'box', name: 'barn-roof',
+      minX: barn.x - barn.width / 2 - barn.roofOverhang, maxX: barn.x + barn.width / 2 + barn.roofOverhang,
+      minZ: barn.z - barn.depth / 2 - barn.roofOverhang, maxZ: barn.z + barn.depth / 2 + barn.roofOverhang,
+    },
+    // Shelter beneath the tree crowns and keep the pond's existing ripples uncluttered.
+    ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
+      kind: 'circle', name: `tree-canopy-${index + 1}`, x, z, radius: 1.02 * scale,
+    })),
+    pondObstacle,
+  ];
+  return { windows, obstacles, splashExclusions };
 }

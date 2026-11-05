@@ -4,11 +4,14 @@ import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer } from './postprocess';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
   interface Window {
     setDayNightCycleSeconds: (seconds: number) => void;
     setDayNightPhase: (phase: DayNightPhaseName) => void;
+    setWeather: (mode: WeatherMode) => void;
+    getWeather: () => { mode: WeatherMode; rainAmount: number };
   }
 }
 
@@ -23,12 +26,20 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const { windows, obstacles } = createFarmLayout(scene);
+const { windows, obstacles, splashExclusions } = createFarmLayout(scene);
 const dayNight = createDayNightCycle({ scene, character, windows });
+const weather = createWeatherSystem({
+  scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
+  splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
+});
 export const setDayNightCycleSeconds = dayNight.setDayNightCycleSeconds;
 export const setDayNightPhase = dayNight.setDayNightPhase;
+export const setWeather = weather.setWeather;
+export const getWeather = weather.getWeather;
 window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
+window.setWeather = setWeather;
+window.getWeather = getWeather;
 const controls = createCharacterControls({
   character,
   camera,
@@ -58,5 +69,6 @@ renderer.setAnimationLoop((time) => {
   controls.update(Math.min(deltaSeconds, 0.1));
   dayNight.update(deltaSeconds);
   follow(character.position);
+  weather.update(deltaSeconds);
   composer.render();
 });
