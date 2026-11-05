@@ -1,10 +1,11 @@
 # Ready
 
 - Repository: https://github.com/ljxw88/chicken-farm
-- Tip SHA when this file was written: `d8bff63a76d5b623b7d8535025a9633ab5610f3a` (the scaffold commit, before the commit adding this file).
+- Scaffold code commit: `0d68cc612e2317f4b1532d58b86dec708ab7a251` (before the READY.md update).
 - Local URL: http://localhost:5173
 - Expected view: a sunlit green ground plane with a subtle grid, viewed at an angle against a blue sky.
+- Herdr pane: `wH:p1 / ebr31-scaffold`
 
-Run `npm install` and `npm run dev` before opening the URL. Port 5173 was occupied by an unrelated service during verification; if it is still occupied, use the alternative URL printed by Vite or free the port first.
+Run `npm install` and `npm run dev` before opening the URL. If port 5173 is occupied, use the alternative URL printed by Vite or free the port first.
 
-Verification: `npm install` and `npm run build` succeeded; the scene and resizing were checked in Chromium.
+Verification: `npm run build` succeeded; the scene and resizing were checked in Chromium.
