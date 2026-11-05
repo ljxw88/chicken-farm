@@ -1,27 +1,32 @@
-EBR-55 — Interact controls
+EBR-55 — Nest READY: interact controls
 
-Base: 9c95f35438ac5ac4fb4ed786ed8516997d89ff6e (EBR-35 rain tip).
-Branch: feat/ebr55-interact. Changes are in the local working tree; no merge or push.
+Branch: feat/ebr55-interact
+Implementation tip: e5060adc92ecbe6bd2a390570698192811740383
+Base: 9c95f35438ac5ac4fb4ed786ed8516997d89ff6e
+The READY handoff is a documentation-only commit above the implementation tip. A commit cannot contain its own SHA; `git rev-parse HEAD` gives the documentation-inclusive branch tip, also reported with the delivery. No merge or push; this branch has no upstream.
 
-Run and QA
-- Use Node 20.19+ or 22.12+: `npm ci && npm run dev`, then open the printed local URL. The production version can be checked with `npm run build && npm run preview`.
-- At spawn, the small white chicken is screen-down from the character; its egg is to the chicken's right. Hold S until the "Feed chicken (stub)" prompt appears. Release S and press E, click the chicken, or click/tap the prompt: "Fed chicken (QA stub). Feed: 0." appears.
-- Move right toward the egg (hold S+D from the chicken until "Collect egg (stub)" appears). Press E or click/tap the egg or prompt. The egg disappears and the feedback says "Collected egg (QA stub). Eggs: 1." The egg is present from the start; feeding does not instantly create it.
-- The QA seed is one free feed and one visible egg per page load. A second feed attempt reports no feed. Refresh to reset; neither count persists. Feeding is not a purchase and collection is not a sale.
-- The bin by the barn opens and closes with its prompt; it does not provide storage or trade. Talk to the sign beside the path for stub feedback, including the supplied EBR-54 examples: egg sale +3 coins and feed purchase -1 coin. These are informational only; no coin balance, purchase, sale or other unprovided rate is implemented.
-- Entering or crossing an interaction radius only shows a prompt. E is edge-triggered (release before the next press); holding E while entering does not activate. An out-of-range object click/tap is ordinary click-to-move, not a queued interaction: explicitly interact again after approaching. A successful interaction cancels any remaining click-to-move destination, but does not cancel held WASD. Ground clicks, screen-relative WASD, camera following and farm collision geometry are otherwise unchanged.
+Open
+- Worktree: /home/michael/Developer/chicken-farm-ebr55-interact
+- Nest/Tailscale preview: http://100.88.150.21:5276/ ; local fallback: http://127.0.0.1:5275/ . Both are available while their preview processes run. The Tailscale-bound URL was verified from this host; remote peer connectivity depends on the tailnet.
+- If a preview has stopped, the operator can run `npm ci` and `npm run build` in the worktree with Node 20.19+ or 22.12+, then start either `npm run preview -- --host 100.88.150.21 --port 5276 --strictPort` for Tailscale or `npm run preview -- --host 127.0.0.1 --port 5275 --strictPort` locally.
+- Nest's gameplay gate needs only the visible scene, WASD, E and mouse/touch clicks. No browser console, developer tools, query parameters, or weather/time setup is required.
 
-Integration and dependencies
-- `src/interactions/Interactable.ts` defines an id, world object, prompt label, ground-plane range, optional prompt height, optional explicit click targets, availability predicate and primary action with optional plain-text feedback. Register with `createInteractionController(...).register(interactable)`; its returned function unregisters it. Moving objects are located in world coordinates every frame. Nearest available object gets the E/prompt action; a direct click chooses the hit object and rechecks range and availability. Decorative shadows can be excluded via `clickTargets`.
-- Static flock/inventory stand-ins are isolated in `src/interactions/qa/createQaFlockStubs.ts`; bin/sign stand-ins are separate in `createQaWorldStubs.ts`. Each has cleanup and availability guards. Remove/unregister the stubs when real systems are wired in; no flock behavior is implied.
-- EBR-58 flock/AI must supply real chickens, feeding eligibility/effects, egg spawning/lifecycle and appropriate registration/unregistration. The later inventory ticket must replace the ephemeral QA feed and egg counts with actual inventory and persistence. Later economy/spend and storage/dialogue tickets must provide the real UI, balance checks and transactions using the complete authoritative signed EBR-54 rate table; no additional rates were inferred here.
-- No diorama rebuild, glass HUD panel or pixel post-processing was added.
+Nest READY steps and expected results
+1. Open the preview. The white chicken is screen-down from spawn, and its egg is to the right. Hold S toward the chicken, then release when "Feed chicken (stub)" appears. Just entering range must not feed it or show action feedback.
+2. Press E once or click/tap the prompt. Expect the brief message "Fed chicken (QA stub). Feed: 0." Release E between presses. Another attempt reports "No feed left (QA stub). Refresh to reset."
+3. Move toward the egg (S+D from the chicken works), stop when "Collect egg (stub)" appears, and press E or click/tap the prompt. The egg disappears and the brief message reads "Collected egg (QA stub). Eggs: 1."
+4. Walk/click toward the small bin in front of the barn until "Open feed bin (stub)" appears. Press E or click/tap it: the lid opens and the message says storage and trade are not connected. Use the "Close feed bin (stub)" prompt to close it. From a refreshed spawn, W approaches the bin.
+5. Walk/click toward the wooden sign on the path to the right of the barn. Use "Talk to sign (stub)". The message states "egg sale +3 coins; feed purchase -1 coin" and that trading is not connected.
+6. Walking through an interaction area without E or an explicit object/prompt click must not trigger an action. Clicking an object from too far away only walks toward the clicked ground; it does not queue interaction. WASD and camera following remain unchanged.
 
-Verification
-- Fresh `npm ci` and `npm run build`: passed; Vite retains its existing >500 kB bundle advisory. The tested production JS `dist/assets/index-_xRKfyyc.js` has SHA-256 `0b634e7faab39c30dff21574c1c307b1984036ed4d090062ab0f808be20a3fe1`.
-- `npm test`: 38 tests passed, including eleven new interaction/QA-stub tests and all existing walking, collisions, camera, lighting and weather regressions.
-- `npm run test:browser`: five checks passed in Chromium 153.0.8010.12 / WebGL2 against the unmodified production preview and the Vite app. Install the browser once with `npx playwright install chromium`. Set `EBR55_EVIDENCE_DIR` to save screenshots and proof on a future run.
-- At 1280x720 in production: approached with S, observed the prompt without auto-feeding, fed once with E (including held/repeated-key check), moved with S+D and collected by prompt click. In the Vite app, a ground destination passed through the chicken radius without an action; clicking an out-of-range chicken only walked, then clicking it in range fed and stopped the click destination. The sign rates and bin open/close were checked. At 390x844, touch-to-walk and prompt-tap fed the chicken without a ground-click leak. No application JavaScript errors were observed.
-- Local evidence: `/home/michael/Developer/chicken-farm-evidence/ebr55/proof.json` and screenshots `01-chicken-prompt.png` through `10-touch-fed.png` in the same directory. The browser checks expose scene position only through test-time Vite response instrumentation; production has no test/teleport globals.
+The chicken, egg, bin and sign are QA stubs. A page refresh resets the one free feed and one egg. Feeding is not a purchase; collecting is not a sale. The rates are informational only; no balance or trade transaction is implemented.
 
-Independent gameplay QA remains pending. No merge or push was performed.
+Evidence and verification
+- Production preview was rechecked at 1280x720 using only WASD, E and mouse clicks, without console/debug setup: `/home/michael/Developer/chicken-farm-evidence/ebr55/nest-ready.json` and `nest-prompt.png`, `nest-fed.png`, `nest-egg.png`, `nest-bin.png`, `nest-sign.png` in that directory.
+- The Tailscale-bound URL was also checked from this host with the same on-screen feed/collect path: `nest-tailscale.json`, `nest-tailscale-fed.png` and `nest-tailscale-egg.png` in that directory.
+- Fresh `npm ci`, `npm run build`, 38 `npm test` checks and five Chromium 153 / WebGL2 browser checks passed. Vite retains its >500 kB bundle advisory. Tested JS `dist/assets/index-_xRKfyyc.js` SHA-256: `0b634e7faab39c30dff21574c1c307b1984036ed4d090062ab0f808be20a3fe1`.
+- Additional automated evidence: `/home/michael/Developer/chicken-farm-evidence/ebr55/proof.json` and `01-chicken-prompt.png` through `10-touch-fed.png`. Independent Nest/gameplay QA remains pending.
+
+Follow-on dependencies
+- EBR-58 must replace the static chicken/egg stubs with real flock behavior and egg lifecycle. The later inventory ticket must replace the in-memory feed/egg seed with persistent inventory. Economy/spend and storage/dialogue tickets must implement real transactions and UI using the full signed EBR-54 rate table; other rates are not inferred here.
+- Reusable `Interactable` registration, range checks and input handling are in `src/interactions/`; the replaceable QA models are in `src/interactions/qa/`. No diorama rebuild, glass HUD panel or pixel post-processing was added.
