@@ -6,6 +6,7 @@ import { createServer } from 'vite';
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
+const { GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 test('the locked palette contains only the specified farm colors', () => {
@@ -23,7 +24,7 @@ test('the locked palette contains only the specified farm colors', () => {
   });
 });
 
-test('the raised dirt route connects the barn, spawn, pond and ground edge', () => {
+test('the raised dirt route connects the barn, spawn, pond and island edge', () => {
   const scene = new THREE.Scene();
   createFarmLayout(scene);
   scene.updateMatrixWorld(true);
@@ -34,16 +35,20 @@ test('the raised dirt route connects the barn, spawn, pond and ground edge', () 
   assert.equal(edge.material.color.getHex(), 0x7a5a3a);
   assert.equal(highlight.material.color.getHex(), 0xc4a06a);
   const positions = surface.geometry.attributes.position;
-  for (let i = 0; i < positions.count - 10; i += 2) {
+  for (let i = 0; i < positions.count; i += 2) {
     const width = Math.hypot(positions.getX(i) - positions.getX(i + 1), positions.getZ(i) - positions.getZ(i + 1));
-    assert.ok(width >= 1.1 && width <= 1.3, `path width ${width}`);
-    assert.ok(positions.getY(i) >= 0.02 && positions.getY(i) <= 0.04);
+    if (Math.max(positions.getX(i), positions.getX(i + 1)) < GROUND_SIZE / 2 - 0.001) {
+      assert.ok(width >= 1.1 && width <= 1.3, `path width ${width}`);
+    }
+    assert.ok(Math.abs(positions.getX(i)) <= GROUND_SIZE / 2 && Math.abs(positions.getX(i + 1)) <= GROUND_SIZE / 2);
+    assert.ok(Math.abs(positions.getZ(i)) <= GROUND_SIZE / 2 && Math.abs(positions.getZ(i + 1)) <= GROUND_SIZE / 2);
+    assert.ok(positions.getY(i) >= GROUND_HEIGHT + 0.02 && positions.getY(i) <= GROUND_HEIGHT + 0.04);
   }
   const ray = new THREE.Raycaster();
   for (const [x, z] of [
     [-3.3, -1.28], [-1.6, -1.1], [-0.75, -0.65], [0, 0], [0.85, -0.2], [1.6, -0.9],
     [2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [6, -0.9],
-    [7.6, 0.4], [9.5, 2], [12, 4.4], [14, 7.7], [15.5, 7.7],
+    [7.6, 0.4], [7.95, 0.7],
   ]) {
     ray.set(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0));
     assert.ok(ray.intersectObject(surface).length, `no path visible at ${x}, ${z}`);
@@ -85,7 +90,7 @@ test('the oval pond uses the locked water materials and blocks its water', () =>
   const pond = obstacles.find((obstacle) => obstacle.name === 'pond');
   const size = new THREE.Box3().setFromObject(rim).getSize(new THREE.Vector3());
   assert.ok(Math.abs(size.x - 3.5) < 0.3 && Math.abs(size.z - 2.2) < 0.25);
-  assert.ok(Math.abs(rim.getWorldPosition(new THREE.Vector3()).y - 0.02) < 0.01);
+  assert.ok(Math.abs(rim.getWorldPosition(new THREE.Vector3()).y - (GROUND_HEIGHT + 0.027)) < 0.001);
   assert.equal(rim.material.color.getHex(), 0x7aadb8);
   assert.equal(water.material.color.getHex(), 0x5b8fa8);
   assert.equal(depth.material.color.getHex(), 0x3a6a7a);

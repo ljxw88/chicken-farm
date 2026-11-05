@@ -1,6 +1,6 @@
 import './style.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
-import { createDayNightCycle, type DayNightPhaseName } from './lighting';
+import { configureDayNightFromUrl, createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer } from './postprocess';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
@@ -28,6 +28,7 @@ scene.add(character);
 follow(character.position);
 const { windows, obstacles, splashExclusions } = createFarmLayout(scene);
 const dayNight = createDayNightCycle({ scene, character, windows });
+const updateDayNight = configureDayNightFromUrl(window.location.search, dayNight);
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
@@ -67,7 +68,7 @@ renderer.setAnimationLoop((time) => {
   previousTime = time;
   // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
   controls.update(Math.min(deltaSeconds, 0.1));
-  dayNight.update(deltaSeconds);
+  updateDayNight(deltaSeconds);
   follow(character.position);
   weather.update(deltaSeconds);
   composer.render();
