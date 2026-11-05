@@ -15,7 +15,7 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173). If that port is already in use, Vite will print another local URL.
 
-Use **WASD** to walk relative to the screen, or click/tap the ground to walk there. Follow the tan path from the spawn: the left fork leads to the barn door, and the other fork curves toward the pond. The barn, tree trunks, and pond water block movement; the character slides along them and stops when fully blocked. Click-to-move does not plan a route around obstacles. Keyboard input cancels a click-to-move destination, and the character stays within the grassy ground.
+Use **WASD** to walk relative to the screen, or click/tap the ground to walk there. From spawn, follow the curved dirt path left toward the barn, or follow it right past the pond and toward the ground edge. The barn, tree trunks, and pond water block movement; the character slides along them and stops when fully blocked. Click-to-move does not plan a route around obstacles. Keyboard input cancels a click-to-move destination, and the character stays within the grassy ground.
 
 The full day/night cycle takes 72 seconds by default. To inspect a phase immediately, use the browser console:
 
@@ -34,4 +34,4 @@ npm run build
 
 The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the farm, collisions, camera and lighting.
 
-The entry point is `src/main.ts`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Farm colors are provisional and collected in `src/scene/farmPalette.ts`.
+The entry point is `src/main.ts`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`.

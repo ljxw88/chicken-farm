@@ -1,32 +1,40 @@
 import * as THREE from 'three';
 import type { WindowPane } from '../lighting/createPracticalLights';
-import { GROUND_HEIGHT } from './createScene';
+import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
 import type { FarmObstacle } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
 
 // Positions are shared by the visible props and their collision footprints.
 export const FARM_LAYOUT = {
-  barn: { x: -3.4, z: -3.4, width: 3.6, depth: 2.8, wallHeight: 2.05, roofRise: 1.2 },
+  barn: { x: -3.4, z: -3.4, width: 4, depth: 2.6, wallHeight: 2, roofRise: 0.9 },
   trees: [
     { x: -2.15, z: 1.55, scale: 0.95 },
-    { x: 2.7, z: -0.2, scale: 1 },
+    { x: 4.8, z: 1.6, scale: 1 },
     { x: -5.8, z: -0.1, scale: 1.05 },
     { x: 0.05, z: -5.6, scale: 0.95 },
   ],
-  pond: { x: 4, z: -3.5, radius: 1.5 },
+  pond: { x: 4, z: -3.5, width: 3.5, depth: 2.2, waterWidth: 3.1, waterDepth: 1.9 },
 } as const;
 
 function createPath(group: THREE.Group) {
-  const material = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.dirt, roughness: 1 });
   const path = new THREE.Group();
   path.name = 'farm-path';
   group.add(path);
+  const points = [
+    [-3.4, -1.3], [-2.5, -1.22], [-1.6, -1.1], [-0.75, -0.65], [0, 0],
+    [0.85, -0.2], [1.6, -0.9], [2.5, -1.7], [3.4, -1.93], [4.3, -1.95],
+    [5.15, -1.65], [6, -0.9], [7.6, 0.4], [9.5, 2], [12, 4.4], [14, 7.7], [16, 7.7],
+  ];
+  // One continuous S-shaped route runs from the barn, past spawn and the pond,
+  // to the ground edge. The outer ribbon is the darker soil border.
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
 
-  function ribbon(points: readonly (readonly [number, number])[], width: number, height: number) {
-    const curve = new THREE.CatmullRomCurve3(points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+  function ribbon(width: number, height: number, color: number, name: string) {
+    const material = new THREE.MeshStandardMaterial({ color, roughness: 1 });
     const vertices: number[] = [];
     const indices: number[] = [];
-    const segments = 100;
+    const segments = 200;
+    const edge = GROUND_SIZE / 2;
 
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
@@ -35,7 +43,10 @@ function createPath(group: THREE.Group) {
       const halfWidth = (width + 0.08 * Math.sin(t * Math.PI * 5)) / 2;
       const nx = -tangent.z * halfWidth;
       const nz = tangent.x * halfWidth;
-      vertices.push(point.x + nx, height, point.z + nz, point.x - nx, height, point.z - nz);
+      vertices.push(
+        THREE.MathUtils.clamp(point.x + nx, -edge, edge), height, THREE.MathUtils.clamp(point.z + nz, -edge, edge),
+        THREE.MathUtils.clamp(point.x - nx, -edge, edge), height, THREE.MathUtils.clamp(point.z - nz, -edge, edge),
+      );
       if (i < segments) {
         const a = i * 2;
         indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
@@ -46,23 +57,33 @@ function createPath(group: THREE.Group) {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
-    path.add(new THREE.Mesh(geometry, material));
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = name;
+    path.add(mesh);
 
-    // Round the end where a path meets the barn or the pond.
-    const [endX, endZ] = points[points.length - 1];
+    // Round the barn end; the other end meets the edge of the ground.
+    const [endX, endZ] = points[0];
     const end = new THREE.Mesh(new THREE.CircleGeometry(width / 2, 20), material);
     end.rotation.x = -Math.PI / 2;
     end.position.set(endX, height + 0.001, endZ);
     path.add(end);
   }
 
-  ribbon([
-    [8, 8.2], [4.5, 4.6], [2.4, 2.3], [1.1, 1.1], [0, 0],
-    [-0.8, -0.55], [-0.85, -1.45], [-0.3, -2.2], [0.9, -2.55], [2.1, -2.4],
-  ], 1.55, GROUND_HEIGHT + 0.004);
-  ribbon([
-    [-0.75, -1.05], [-1.5, -1.1], [-2.4, -1.15], [-3.4, -1.28],
-  ], 1.3, GROUND_HEIGHT + 0.006);
+  ribbon(1.34, GROUND_HEIGHT + 0.02, FARM_PALETTE.dirtEdge, 'farm-path-edge');
+  ribbon(1.2, GROUND_HEIGHT + 0.024, FARM_PALETTE.dirt, 'farm-path-surface');
+
+  const highlight = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.dirtHighlight, roughness: 1 });
+  for (const [index, t] of [0.055, 0.1, 0.145, 0.19, 0.235, 0.28, 0.33, 0.39, 0.46, 0.53, 0.61, 0.7, 0.8, 0.9].entries()) {
+    const point = curve.getPointAt(t);
+    const tangent = curve.getTangentAt(t);
+    const offset = [0.38, -0.32, 0.18][index % 3];
+    const dash = new THREE.Mesh(new THREE.PlaneGeometry(index % 3 === 0 ? 0.19 : 0.13, 0.065), highlight);
+    dash.name = 'farm-path-highlight';
+    dash.rotation.x = -Math.PI / 2;
+    dash.rotateZ(Math.atan2(-tangent.z, tangent.x) + (index % 2 === 0 ? 0.2 : -0.2));
+    dash.position.set(point.x - tangent.z * offset, GROUND_HEIGHT + 0.027, point.z + tangent.x * offset);
+    path.add(dash);
+  }
 }
 
 function createBarn(group: THREE.Group): WindowPane[] {
@@ -73,12 +94,13 @@ function createBarn(group: THREE.Group): WindowPane[] {
   group.add(barn);
 
   const wood = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnWood, roughness: 1 });
-  const plank = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnPlank, roughness: 1 });
+  const plank = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1, transparent: true, opacity: 0.25 });
   const roofMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnRoof, roughness: 1 });
   const doorMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnDoor, roughness: 1 });
   const trim = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1 });
 
   const walls = new THREE.Mesh(new THREE.BoxGeometry(width, wallHeight, depth), wood);
+  walls.name = 'barn-walls';
   walls.position.y = wallHeight / 2;
   barn.add(walls);
 
@@ -88,6 +110,7 @@ function createBarn(group: THREE.Group): WindowPane[] {
   gableShape.lineTo(width / 2, wallHeight);
   gableShape.closePath();
   const gable = new THREE.Mesh(new THREE.ExtrudeGeometry(gableShape, { depth, bevelEnabled: false }), wood);
+  gable.name = 'barn-gable';
   gable.position.z = -depth / 2;
   barn.add(gable);
 
@@ -97,6 +120,7 @@ function createBarn(group: THREE.Group): WindowPane[] {
   const roofGeometry = new THREE.BoxGeometry(roofLength, 0.12, depth + 0.4);
   for (const side of [-1, 1]) {
     const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.name = 'barn-roof';
     roof.position.set(side * roofHalfWidth / 2, wallHeight + roofRise - roofHalfWidth * Math.tan(roofAngle) / 2, 0);
     roof.rotation.z = -side * roofAngle;
     barn.add(roof);
@@ -120,6 +144,7 @@ function createBarn(group: THREE.Group): WindowPane[] {
   }
 
   const door = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.44, 0.06), doorMaterial);
+  door.name = 'barn-door';
   door.position.set(0, 0.72, depth / 2 + 0.04);
   barn.add(door);
   for (const side of [-1, 1]) {
@@ -166,13 +191,13 @@ function createBarn(group: THREE.Group): WindowPane[] {
 }
 
 function createTrees(group: THREE.Group) {
-  const trunkGeometry = new THREE.CylinderGeometry(0.14, 0.24, 1.75, 7);
+  const trunkGeometry = new THREE.CylinderGeometry(0.14, 0.24, 1.5, 7);
   const crownGeometry = new THREE.IcosahedronGeometry(1, 1);
   const trunkMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.treeTrunk, roughness: 1 });
   const crowns = [FARM_PALETTE.treeFoliage, FARM_PALETTE.treeFoliageLight, FARM_PALETTE.treeFoliageDark]
     .map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
   const shadowMaterial = new THREE.MeshBasicMaterial({
-    color: FARM_PALETTE.shadow, transparent: true, opacity: 0.16, depthWrite: false,
+    color: FARM_PALETTE.treeFoliageDark, transparent: true, opacity: 0.16, depthWrite: false,
   });
 
   FARM_LAYOUT.trees.forEach(({ x, z, scale }, index) => {
@@ -190,26 +215,26 @@ function createTrees(group: THREE.Group) {
 
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
     trunk.name = `farm-tree-trunk-${index + 1}`;
-    trunk.position.y = 0.875;
+    trunk.position.y = 0.75;
     tree.add(trunk);
 
     const clusters = [
-      [0, 2.28, 0, 0.86, 0],
-      [-0.48, 2.18, 0.1, 0.65, 1],
-      [0.46, 2.2, -0.13, 0.68, 2],
-      [0.02, 2.75, 0, 0.64, 1],
+      [0, 2.05, 0, 0.85, 0],
+      [-0.4, 1.95, 0.1, 0.62, 1],
+      [0.4, 1.98, -0.1, 0.62, 2],
+      [0.02, 2.4, 0, 0.5, 1],
     ];
     for (const [cx, cy, cz, size, color] of clusters) {
       const crown = new THREE.Mesh(crownGeometry, crowns[color]);
       crown.position.set(cx, cy, cz);
-      crown.scale.set(size, size * 0.9, size);
+      crown.scale.set(size, size * 0.8, size);
       tree.add(crown);
     }
   });
 }
 
 function createPond(group: THREE.Group) {
-  const { x, z } = FARM_LAYOUT.pond;
+  const { x, z, width, depth, waterWidth, waterDepth } = FARM_LAYOUT.pond;
   const pond = new THREE.Group();
   pond.name = 'farm-pond';
   pond.position.set(x, GROUND_HEIGHT, z);
@@ -227,32 +252,28 @@ function createPond(group: THREE.Group) {
     });
     shape.closePath();
     const mesh = new THREE.Mesh(
-      new THREE.ShapeGeometry(shape), new THREE.MeshStandardMaterial({ color, roughness: 0.9 }),
+      new THREE.ShapeGeometry(shape), new THREE.MeshStandardMaterial({ color, roughness: 0.25 }),
     );
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.y = height;
     pond.add(mesh);
     return mesh;
   }
-  blob(1.65, 1.3, 0.005, FARM_PALETTE.pondEdge);
-  const water = blob(1.4, 1.05, 0.008, FARM_PALETTE.pondWater);
+  const rim = blob(width / 2, depth / 2, 0.027, FARM_PALETTE.pondRim);
+  rim.name = 'farm-pond-rim';
+  const water = blob(waterWidth / 2, waterDepth / 2, 0.029, FARM_PALETTE.pondWater);
   water.name = 'farm-pond-water';
+  const deepWater = blob(0.85, 0.5, 0.03, FARM_PALETTE.pondDepth);
+  deepWater.name = 'farm-pond-depth';
+  deepWater.position.x = 0.2;
+  deepWater.position.z = -0.08;
 
-  const rippleMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.pondRipple, roughness: 1 });
+  const rippleMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.pondRim, roughness: 0.25 });
   for (const [rx, rz, length] of [[-0.55, 0.15, 0.43], [0.25, -0.25, 0.55], [0.65, 0.3, 0.3]]) {
     const ripple = new THREE.Mesh(new THREE.PlaneGeometry(length, 0.035), rippleMaterial);
     ripple.rotation.x = -Math.PI / 2;
-    ripple.position.set(rx, 0.01, rz);
+    ripple.position.set(rx, 0.032, rz);
     pond.add(ripple);
-  }
-
-  const stoneGeometry = new THREE.DodecahedronGeometry(0.14, 0);
-  const stoneMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.stone, roughness: 1, flatShading: true });
-  for (const [sx, sz, size] of [[-1.3, -0.72, 1], [0.1, -1.23, 0.75], [1.35, 0.62, 0.9], [-0.35, 1.23, 0.8]]) {
-    const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
-    stone.position.set(sx, 0.08 * size, sz);
-    stone.scale.set(size, 0.6 * size, size);
-    pond.add(stone);
   }
 }
 
@@ -264,7 +285,7 @@ function createGrassTufts(group: THREE.Group) {
     [-0.75, -3.8], [4.8, 3.7], [-4.9, 4.4], [7.5, -3.4], [-7.5, 3.8], [0.4, 5],
   ];
   const geometry = new THREE.ConeGeometry(0.055, 0.28, 3);
-  const material = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.grassTuft, roughness: 1, flatShading: true });
+  const material = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.treeFoliageDark, roughness: 1, flatShading: true });
   const tufts = new THREE.InstancedMesh(geometry, material, positions.length * 3);
   tufts.name = 'farm-grass-tufts';
   const blade = new THREE.Object3D();
@@ -299,7 +320,11 @@ export function createFarmLayout(scene: THREE.Scene) {
     ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
       kind: 'circle', name: `tree-${index + 1}`, x, z, radius: 0.32 * scale,
     })),
-    { kind: 'circle', name: 'pond', x: pond.x, z: pond.z, radius: pond.radius },
+    {
+      // The 5% margin covers the irregular water outline without blocking its whole oval rim.
+      kind: 'box', name: 'pond', minX: pond.x - pond.waterWidth * 0.525, maxX: pond.x + pond.waterWidth * 0.525,
+      minZ: pond.z - pond.waterDepth * 0.525, maxZ: pond.z + pond.waterDepth * 0.525,
+    },
   ];
   return { windows, obstacles };
 }

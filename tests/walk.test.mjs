@@ -149,11 +149,12 @@ test('walking stays on the floor and within both ground edges', (t) => {
   near(character.position.z, -15.6);
 });
 
-test('the path can be followed from spawn to the barn and on to the pond', (t) => {
+test('the path can be followed from the barn past the pond to the ground edge', (t) => {
   const { character, controls, click, follow } = fixture(t, true);
   const waypoints = [
-    [-0.7, -0.55], [-0.85, -1.05], [-1.6, -1.1], [-3.3, -1.28],
-    [-1.6, -1.1], [-0.85, -1.05], [-0.85, -1.45], [-0.3, -2.2], [0.9, -2.55], [2.1, -2.4],
+    [-0.75, -0.65], [-1.6, -1.1], [-3.3, -1.28], [-1.6, -1.1], [-0.75, -0.65], [0, 0],
+    [0.85, -0.2], [1.6, -0.9], [2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65],
+    [6, -0.9], [7.6, 0.4], [9.5, 2], [12, 4.4], [14, 7.7], [15.5, 7.7],
   ];
   for (const [x, z] of waypoints) {
     const destination = new THREE.Vector3(x, 0, z);
@@ -172,7 +173,7 @@ test('WASD cannot tunnel through the front or side of the barn', (t) => {
   controls.update(10);
   key('keyup', 'KeyW');
   key('keyup', 'KeyD');
-  assert.ok(character.position.z >= -1.6 - 1e-8 && character.position.z < -1.45);
+  assert.ok(character.position.z >= -1.7 - 1e-8 && character.position.z < -1.55);
 
   character.position.set(-0.5, 0, -3.4);
   key('keydown', 'KeyW');
@@ -180,7 +181,7 @@ test('WASD cannot tunnel through the front or side of the barn', (t) => {
   controls.update(10);
   key('keyup', 'KeyW');
   key('keyup', 'KeyA');
-  assert.ok(character.position.x >= -1.2 - 1e-8 && character.position.x < -1.05);
+  assert.ok(character.position.x >= -1 - 1e-8 && character.position.x < -0.85);
 });
 
 test('click-to-move stops at a tree trunk, even with a long update', (t) => {
@@ -204,7 +205,7 @@ test('clicks also stop at the barn and WASD also stops at trees', (t) => {
   character.position.set(-3.4, 0, -0.8);
   click(new THREE.Vector3(-3.4, 0, -5.8));
   controls.update(10);
-  assert.ok(character.position.z >= -1.6 - 1e-8 && character.position.z < -1.45);
+  assert.ok(character.position.z >= -1.7 - 1e-8 && character.position.z < -1.55);
 
   character.position.set(-0.75, 0, 1.55);
   key('keydown', 'KeyW');
@@ -218,11 +219,11 @@ test('clicks also stop at the barn and WASD also stops at trees', (t) => {
 
 test('the pond water also blocks movement', (t) => {
   const { character, controls, click } = fixture(t, true);
-  character.position.set(2, 0, -3.5);
+  character.position.set(1.3, 0, -3.5);
   click(new THREE.Vector3(6, 0, -3.5));
   controls.update(10);
-  assert.ok(character.position.x <= 2.1 + 1e-8);
-  assert.ok(character.position.x >= 2);
+  assert.ok(character.position.x <= 1.9725 + 1e-8);
+  assert.ok(character.position.x > 1.85);
 });
 
 test('a glancing movement slides along a solid wall', () => {

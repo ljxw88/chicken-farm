@@ -38,7 +38,8 @@ export function createCharacter() {
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.scale.y = 0.7;
-  shadow.position.y = 0.012;
+  // Stay above the slightly raised dirt path without changing the walking height.
+  shadow.position.y = 0.04;
   character.add(shadow);
 
   return character;

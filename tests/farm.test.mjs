@@ -8,41 +8,92 @@ const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayo
 const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
 after(() => vite.close());
 
-test('the visible dirt route connects spawn, barn and pond', () => {
+test('the locked palette contains only the specified farm colors', () => {
+  assert.deepEqual(FARM_PALETTE, {
+    grass: 0x5fa846, dirt: 0xa67c52, dirtEdge: 0x7a5a3a, dirtHighlight: 0xc4a06a,
+    barnWood: 0xd4a574, barnTrim: 0x8b6914, barnRoof: 0xc45a3a, barnDoor: 0x6b4423, barnWindow: 0x8aa0a8,
+    treeTrunk: 0x6b4a2e, treeFoliageDark: 0x3d7a3a, treeFoliage: 0x5fa846, treeFoliageLight: 0x7cbc5a,
+    pondWater: 0x5b8fa8, pondRim: 0x7aadb8, pondDepth: 0x3a6a7a,
+  });
+  const scene = new THREE.Scene();
+  createFarmLayout(scene);
+  const allowed = new Set(Object.values(FARM_PALETTE));
+  scene.traverse((object) => {
+    if (object.isMesh) assert.ok(allowed.has(object.material.color.getHex()), `unexpected color on ${object.name}`);
+  });
+});
+
+test('the raised dirt route connects the barn, spawn, pond and ground edge', () => {
   const scene = new THREE.Scene();
   createFarmLayout(scene);
   scene.updateMatrixWorld(true);
-  const path = scene.getObjectByName('farm-path');
+  const surface = scene.getObjectByName('farm-path-surface');
+  const edge = scene.getObjectByName('farm-path-edge');
+  const highlight = scene.getObjectByName('farm-path-highlight');
+  assert.equal(surface.material.color.getHex(), 0xa67c52);
+  assert.equal(edge.material.color.getHex(), 0x7a5a3a);
+  assert.equal(highlight.material.color.getHex(), 0xc4a06a);
+  const positions = surface.geometry.attributes.position;
+  for (let i = 0; i < positions.count - 10; i += 2) {
+    const width = Math.hypot(positions.getX(i) - positions.getX(i + 1), positions.getZ(i) - positions.getZ(i + 1));
+    assert.ok(width >= 1.1 && width <= 1.3, `path width ${width}`);
+    assert.ok(positions.getY(i) >= 0.02 && positions.getY(i) <= 0.04);
+  }
   const ray = new THREE.Raycaster();
   for (const [x, z] of [
-    [0, 0], [-0.7, -0.55], [-0.85, -1.05], [-1.6, -1.1], [-3.3, -1.28],
-    [-0.85, -1.45], [-0.3, -2.2], [0.9, -2.55], [2.1, -2.4],
+    [-3.3, -1.28], [-1.6, -1.1], [-0.75, -0.65], [0, 0], [0.85, -0.2], [1.6, -0.9],
+    [2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [6, -0.9],
+    [7.6, 0.4], [9.5, 2], [12, 4.4], [14, 7.7], [15.5, 7.7],
   ]) {
     ray.set(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0));
-    const [hit] = ray.intersectObject(path, true);
-    assert.ok(hit, `no path visible at ${x}, ${z}`);
-    assert.equal(hit.object.material.color.getHex(), 0xc4a06a);
+    assert.ok(ray.intersectObject(surface).length, `no path visible at ${x}, ${z}`);
   }
 });
 
-test('the farm has a barn, four solid trees and a pond with its water inside the blocker', () => {
+test('the barn and four stacked trees use the locked dimensions', () => {
   const scene = new THREE.Scene();
   const { windows, obstacles } = createFarmLayout(scene);
   scene.updateMatrixWorld(true);
-  assert.ok(scene.getObjectByName('farm-barn'));
+  const walls = scene.getObjectByName('barn-walls');
+  assert.deepEqual([walls.geometry.parameters.width, walls.geometry.parameters.depth, walls.geometry.parameters.height], [4, 2.6, 2]);
+  assert.equal(walls.material.color.getHex(), 0xd4a574);
+  const gable = scene.getObjectByName('barn-gable');
+  gable.geometry.computeBoundingBox();
+  assert.ok(Math.abs(gable.geometry.boundingBox.max.y - 2.9) < 0.00001);
+  assert.equal(scene.getObjectByName('barn-roof').material.color.getHex(), 0xc45a3a);
+  assert.equal(scene.getObjectByName('barn-door').material.color.getHex(), 0x6b4423);
   assert.equal(windows.length, 2);
+  assert.ok(windows.every((window) => window.material.color.getHex() === 0x8aa0a8));
   for (let i = 1; i <= 4; i++) {
-    assert.ok(scene.getObjectByName(`farm-tree-${i}`));
+    const tree = scene.getObjectByName(`farm-tree-${i}`);
+    assert.ok(tree);
     assert.ok(obstacles.find((obstacle) => obstacle.name === `tree-${i}`));
+    const size = new THREE.Box3().setFromObject(tree).getSize(new THREE.Vector3());
+    assert.ok(size.y >= 2.4 && size.y <= 3, `tree ${i} height ${size.y}`);
+    assert.ok(size.x >= 1.6 && size.x <= 2.2, `tree ${i} width ${size.x}`);
+    assert.ok(size.z >= 1.6 && size.z <= 2.2, `tree ${i} depth ${size.z}`);
   }
+});
 
+test('the oval pond uses the locked water materials and blocks its water', () => {
+  const scene = new THREE.Scene();
+  const { obstacles } = createFarmLayout(scene);
+  scene.updateMatrixWorld(true);
+  const rim = scene.getObjectByName('farm-pond-rim');
   const water = scene.getObjectByName('farm-pond-water');
+  const depth = scene.getObjectByName('farm-pond-depth');
   const pond = obstacles.find((obstacle) => obstacle.name === 'pond');
-  assert.equal(water.material.color.getHex(), 0x5a9ab8);
+  const size = new THREE.Box3().setFromObject(rim).getSize(new THREE.Vector3());
+  assert.ok(Math.abs(size.x - 3.5) < 0.3 && Math.abs(size.z - 2.2) < 0.25);
+  assert.ok(Math.abs(rim.getWorldPosition(new THREE.Vector3()).y - 0.02) < 0.01);
+  assert.equal(rim.material.color.getHex(), 0x7aadb8);
+  assert.equal(water.material.color.getHex(), 0x5b8fa8);
+  assert.equal(depth.material.color.getHex(), 0x3a6a7a);
+  assert.equal(water.material.roughness, 0.25);
+  assert.equal(pond.kind, 'box');
   for (let i = 0; i < water.geometry.attributes.position.count; i++) {
     const vertex = new THREE.Vector3().fromBufferAttribute(water.geometry.attributes.position, i);
     water.localToWorld(vertex);
-    assert.ok(Math.hypot(vertex.x - pond.x, vertex.z - pond.z) <= pond.radius);
+    assert.ok(vertex.x >= pond.minX && vertex.x <= pond.maxX && vertex.z >= pond.minZ && vertex.z <= pond.maxZ);
   }
-  assert.equal(FARM_PALETTE.grass, 0x7cb070);
 });
