@@ -2,7 +2,8 @@ EBR-41 — Floating diorama island: NEST READY
 
 Base: 9c95f35438ac5ac4fb4ed786ed8516997d89ff6e
 Branch: feat/ebr41-diorama
-Tip SHA: run `git rev-parse HEAD` in this worktree. A committed handoff cannot contain its own SHA.
+Implementation tip SHA: 134f1ccd893307f19f49e5f45b2aa07716510521 (includes the island, phase URLs and Nest-ready steps).
+Current branch/handoff tip: run `git rev-parse HEAD` in this worktree. A committed handoff cannot contain its own SHA.
 Look Dev: GREENLIT by the user. No merge.
 
 Locked look and scope
