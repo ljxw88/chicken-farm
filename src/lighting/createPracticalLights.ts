@@ -9,7 +9,7 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
     window.material.emissiveIntensity = 0;
     const light = new THREE.PointLight(WINDOW_LIGHT.color, 0, WINDOW_LIGHT.distance, WINDOW_LIGHT.decay);
     light.name = `window-light-${index + 1}`;
-    // The pane's local +Z points out of the shed.
+    // The pane's local +Z points out of the barn.
     light.position.z = 0.7;
     window.add(light);
     return light;

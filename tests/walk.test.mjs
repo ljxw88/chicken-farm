@@ -7,6 +7,8 @@ import { createServer } from 'vite';
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
+const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
 after(() => vite.close());
 
 class FakeElement extends EventTarget {
@@ -21,7 +23,7 @@ class FakeElement extends EventTarget {
 globalThis.HTMLElement = FakeElement;
 globalThis.window = new EventTarget();
 
-function fixture(t) {
+function fixture(t, farm = false) {
   const { camera, follow, resize } = createIsometricCamera();
   resize(800, 600);
   const scene = new THREE.Scene();
@@ -30,8 +32,9 @@ function fixture(t) {
   scene.add(ground);
   const character = new THREE.Group();
   const canvas = new FakeElement();
+  const obstacles = farm ? createFarmLayout(scene).obstacles : [];
   const controls = createCharacterControls({
-    character, camera, canvas, ground, groundSize: 32, groundHeight: 0, characterRadius: 0.4,
+    character, camera, canvas, ground, groundSize: 32, groundHeight: 0, characterRadius: 0.4, obstacles,
   });
   t.after(controls.dispose);
 
@@ -144,4 +147,88 @@ test('walking stays on the floor and within both ground edges', (t) => {
   near(character.position.x, -15.6);
   near(character.position.y, 0);
   near(character.position.z, -15.6);
+});
+
+test('the path can be followed from spawn to the barn and on to the pond', (t) => {
+  const { character, controls, click, follow } = fixture(t, true);
+  const waypoints = [
+    [-0.7, -0.55], [-0.85, -1.05], [-1.6, -1.1], [-3.3, -1.28],
+    [-1.6, -1.1], [-0.85, -1.05], [-0.85, -1.45], [-0.3, -2.2], [0.9, -2.55], [2.1, -2.4],
+  ];
+  for (const [x, z] of waypoints) {
+    const destination = new THREE.Vector3(x, 0, z);
+    click(destination);
+    controls.update(10);
+    assert.ok(character.position.distanceTo(destination) < 0.001, `could not reach path point ${x}, ${z}`);
+    follow(character.position);
+  }
+});
+
+test('WASD cannot tunnel through the front or side of the barn', (t) => {
+  const { character, controls, key } = fixture(t, true);
+  character.position.set(-3.4, 0, -0.8);
+  key('keydown', 'KeyW');
+  key('keydown', 'KeyD'); // Screen up + right is world -Z.
+  controls.update(10);
+  key('keyup', 'KeyW');
+  key('keyup', 'KeyD');
+  assert.ok(character.position.z >= -1.6 - 1e-8 && character.position.z < -1.45);
+
+  character.position.set(-0.5, 0, -3.4);
+  key('keydown', 'KeyW');
+  key('keydown', 'KeyA'); // Screen up + left is world -X.
+  controls.update(10);
+  key('keyup', 'KeyW');
+  key('keyup', 'KeyA');
+  assert.ok(character.position.x >= -1.2 - 1e-8 && character.position.x < -1.05);
+});
+
+test('click-to-move stops at a tree trunk, even with a long update', (t) => {
+  const { character, controls, click } = fixture(t, true);
+  character.position.set(-0.75, 0, 1.55);
+  click(new THREE.Vector3(-3.65, 0, 1.55));
+  controls.update(10);
+  // The first trunk has radius 0.304; the character has radius 0.4.
+  assert.ok(character.position.x >= -2.15 + 0.704 - 1e-8);
+  assert.ok(character.position.x < -2.15 + 0.804);
+  const stopped = character.position.clone();
+  controls.update(10);
+  near(character.position.distanceTo(stopped), 0);
+  click(new THREE.Vector3(-0.75, 0, 1.55));
+  controls.update(10);
+  near(character.position.x, -0.75);
+});
+
+test('clicks also stop at the barn and WASD also stops at trees', (t) => {
+  const { character, controls, click, key } = fixture(t, true);
+  character.position.set(-3.4, 0, -0.8);
+  click(new THREE.Vector3(-3.4, 0, -5.8));
+  controls.update(10);
+  assert.ok(character.position.z >= -1.6 - 1e-8 && character.position.z < -1.45);
+
+  character.position.set(-0.75, 0, 1.55);
+  key('keydown', 'KeyW');
+  key('keydown', 'KeyA');
+  controls.update(10);
+  key('keyup', 'KeyW');
+  key('keyup', 'KeyA');
+  assert.ok(character.position.x >= -2.15 + 0.704 - 1e-8);
+  assert.ok(character.position.x < -2.15 + 0.804);
+});
+
+test('the pond water also blocks movement', (t) => {
+  const { character, controls, click } = fixture(t, true);
+  character.position.set(2, 0, -3.5);
+  click(new THREE.Vector3(6, 0, -3.5));
+  controls.update(10);
+  assert.ok(character.position.x <= 2.1 + 1e-8);
+  assert.ok(character.position.x >= 2);
+});
+
+test('a glancing movement slides along a solid wall', () => {
+  const wall = { kind: 'box', name: 'wall', minX: 0, maxX: 2, minZ: 0, maxZ: 2 };
+  const result = moveWithFarmCollisions(-1, 0.5, 1, 0.8, 0.4, [wall]);
+  assert.ok(result.x <= -0.4 + 1e-8);
+  assert.ok(result.x > -0.55);
+  assert.ok(result.z > 1.25);
 });

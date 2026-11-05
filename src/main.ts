@@ -2,8 +2,8 @@ import './style.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer } from './postprocess';
+import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
-import { createShedStubs } from './scene/createShedStubs';
 
 declare global {
   interface Window {
@@ -23,7 +23,7 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const windows = createShedStubs(scene);
+const { windows, obstacles } = createFarmLayout(scene);
 const dayNight = createDayNightCycle({ scene, character, windows });
 export const setDayNightCycleSeconds = dayNight.setDayNightCycleSeconds;
 export const setDayNightPhase = dayNight.setDayNightPhase;
@@ -37,6 +37,7 @@ const controls = createCharacterControls({
   groundSize: GROUND_SIZE,
   groundHeight: GROUND_HEIGHT,
   characterRadius: CHARACTER_RADIUS,
+  obstacles,
 });
 const composer = createComposer(renderer, scene, camera);
 

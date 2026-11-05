@@ -1,0 +1,21 @@
+// Provisional Look Dev palette; farm colors can be locked or tuned here.
+export const FARM_PALETTE = {
+  grass: 0x7cb070,
+  grassTuft: 0x659458,
+  dirt: 0xc4a06a,
+  barnWood: 0xc89070,
+  barnPlank: 0xb67e60,
+  barnRoof: 0xa05048,
+  barnDoor: 0x6b4a3a,
+  barnTrim: 0xe6cfaa,
+  barnWindow: 0x63868a,
+  treeTrunk: 0x6b4a30,
+  treeFoliage: 0x4a8a50,
+  treeFoliageLight: 0x5c9b5a,
+  treeFoliageDark: 0x3c7744,
+  pondWater: 0x5a9ab8,
+  pondEdge: 0x8a7060,
+  pondRipple: 0xa8d4d9,
+  stone: 0xb1a88d,
+  shadow: 0x365b35,
+} as const;

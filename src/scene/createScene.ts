@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createIsometricCamera } from './createIsometricCamera';
+import { FARM_PALETTE } from './farmPalette';
 
 export const GROUND_SIZE = 32;
 export const GROUND_HEIGHT = 0;
@@ -13,21 +14,11 @@ export function createScene(canvas: HTMLCanvasElement) {
 
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE),
-    new THREE.MeshStandardMaterial({ color: 0x5fa846, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: FARM_PALETTE.grass, roughness: 1 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = GROUND_HEIGHT;
   scene.add(ground);
-
-  // A subtle grid makes the angle and scale of the flat ground easier to see.
-  const grid = new THREE.GridHelper(GROUND_SIZE, GROUND_SIZE, 0x3a7129, 0x3a7129);
-  grid.position.y = GROUND_HEIGHT + 0.01;
-  const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
-  for (const material of gridMaterials) {
-    material.transparent = true;
-    material.opacity = 0.2;
-  }
-  scene.add(grid);
 
   function resize() {
     const width = window.innerWidth;

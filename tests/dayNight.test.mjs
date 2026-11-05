@@ -5,7 +5,7 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
-const { createShedStubs } = await vite.ssrLoadModule('/src/scene/createShedStubs.ts');
+const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 after(() => vite.close());
 
@@ -13,7 +13,7 @@ function fixture() {
   const scene = new THREE.Scene();
   const character = createCharacter();
   scene.add(character);
-  const windows = createShedStubs(scene);
+  const { windows } = createFarmLayout(scene);
   const cycle = createDayNightCycle({ scene, character, windows });
   return {
     scene, character, windows, cycle,
@@ -48,6 +48,7 @@ test('all four phases use the locked environment and light presets', () => {
 
   assert.equal(scene.fog.isFogExp2, true);
   assert.equal(windows.length, 2);
+  assert.ok(windows.every((window) => window.parent.name === 'farm-barn'));
   for (const [phase, values] of Object.entries(expected)) {
     cycle.setDayNightPhase(phase);
     assert.equal(scene.background.getHex(), values[0], phase);
