@@ -1,7 +1,16 @@
 import './style.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
+import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer } from './postprocess';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { createShedStubs } from './scene/createShedStubs';
+
+declare global {
+  interface Window {
+    setDayNightCycleSeconds: (seconds: number) => void;
+    setDayNightPhase: (phase: DayNightPhaseName) => void;
+  }
+}
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scene');
 
@@ -14,6 +23,12 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
+const windows = createShedStubs(scene);
+const dayNight = createDayNightCycle({ scene, character, windows });
+export const setDayNightCycleSeconds = dayNight.setDayNightCycleSeconds;
+export const setDayNightPhase = dayNight.setDayNightPhase;
+window.setDayNightCycleSeconds = setDayNightCycleSeconds;
+window.setDayNightPhase = setDayNightPhase;
 const controls = createCharacterControls({
   character,
   camera,
@@ -36,10 +51,11 @@ window.addEventListener('resize', handleResize);
 
 let previousTime: number | undefined;
 renderer.setAnimationLoop((time) => {
-  // Avoid a large jump after a background tab resumes.
-  const deltaSeconds = previousTime === undefined ? 0 : Math.min((time - previousTime) / 1000, 0.1);
+  const deltaSeconds = previousTime === undefined ? 0 : Math.max((time - previousTime) / 1000, 0);
   previousTime = time;
-  controls.update(deltaSeconds);
+  // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
+  controls.update(Math.min(deltaSeconds, 0.1));
+  dayNight.update(deltaSeconds);
   follow(character.position);
   composer.render();
 });

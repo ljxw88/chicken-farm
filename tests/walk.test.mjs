@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { createServer } from 'vite';
 
 // Vite loads the same TypeScript modules as the app without a test-only compiler.
-const vite = await createServer({ configFile: false, server: { middlewareMode: true }, appType: 'custom' });
+const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
 after(() => vite.close());

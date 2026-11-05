@@ -1,6 +1,6 @@
 # Chicken Farm
 
-A minimal 3D scene built with Vite, vanilla TypeScript, and Three.js. A small character walks on a sunlit, grassy plane while an isometric camera follows.
+A minimal 3D scene built with Vite, vanilla TypeScript, and Three.js. A small character walks around a grassy farm while an isometric camera follows and the lighting cycles from morning through night.
 
 Meadow look reference: https://x.com/daniildesigns/status/2117571497665663044
 
@@ -15,7 +15,16 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173). If that port is already in use, Vite will print another local URL.
 
-Use **WASD** to walk relative to the screen, or click/tap the ground to walk there. The character stays within the grassy ground; keyboard input cancels a click-to-move destination.
+Use **WASD** to walk relative to the screen, or click/tap the ground to walk there. The character stays within the grassy ground; keyboard input cancels a click-to-move destination. The two sheds are visual stubs and do not block movement.
+
+The full day/night cycle takes 72 seconds by default. To inspect a phase immediately, use the browser console:
+
+```js
+setDayNightPhase('morning') // also: 'daytime', 'sunset', 'night'
+setDayNightCycleSeconds(12) // complete cycle in 12 seconds
+```
+
+The cycle keeps running after selecting a phase. Walk toward a ground edge to see the changing sky; the ground fills the initial isometric view. Its `setDayNightCycleSeconds(seconds)` method is also available on the object returned by `createDayNightCycle` in `src/lighting/` for a future HUD. It accepts finite positive seconds and preserves the current phase when changed. All lighting presets are Look Dev LOCKED; only the transitions are interpolated.
 
 ## Production build
 
@@ -23,6 +32,6 @@ Use **WASD** to walk relative to the screen, or click/tap the ground to walk the
 npm run build
 ```
 
-The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the camera and walking controls.
+The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the camera, walking controls and lighting.
 
-The entry point is `src/main.ts`, the scene and camera are in `src/scene/`, and the character and controls are in `src/character/`.
+The entry point is `src/main.ts`, the scene and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked presets and cycle driver are in `src/lighting/`.

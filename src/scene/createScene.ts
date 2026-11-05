@@ -6,7 +6,6 @@ export const GROUND_HEIGHT = 0;
 
 export function createScene(canvas: HTMLCanvasElement) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xa8d8ef);
 
   const { camera, follow, resize: resizeCamera } = createIsometricCamera();
 
@@ -29,13 +28,6 @@ export function createScene(canvas: HTMLCanvasElement) {
     material.opacity = 0.2;
   }
   scene.add(grid);
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-  scene.add(ambientLight);
-
-  const sunlight = new THREE.DirectionalLight(0xfff4dd, 2);
-  sunlight.position.set(6, 10, 8);
-  scene.add(sunlight);
 
   function resize() {
     const width = window.innerWidth;
