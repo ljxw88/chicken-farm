@@ -89,6 +89,19 @@ test('the default 72-second cycle advances through all four phases and wraps', (
   assert.equal(scene.background.getHex(), 0xa8d4f0);
 });
 
+test('the current phase can be read as the existing lighting cycle advances or is set', () => {
+  const { cycle } = fixture();
+  assert.equal(cycle.getPhase(), 'morning');
+  cycle.update(18);
+  assert.equal(cycle.getPhase(), 'daytime');
+  cycle.update(18);
+  assert.equal(cycle.getPhase(), 'sunset');
+  cycle.setDayNightPhase('night');
+  assert.equal(cycle.getPhase(), 'night');
+  cycle.update(18);
+  assert.equal(cycle.getPhase(), 'morning');
+});
+
 test('colors, intensities, fog and practical lights blend smoothly between presets', () => {
   const { scene, cycle, ambient, hemisphere, directional, windowLights, lanternLight } = fixture();
   cycle.update(4.5); // A quarter of the morning-to-day interval, smoothstep = 0.15625.

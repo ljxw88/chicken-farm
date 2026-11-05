@@ -18,7 +18,7 @@ canvas {
 
 .interaction-prompt {
   position: fixed;
-  z-index: 1;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -60,7 +60,7 @@ canvas {
 
 .interaction-feedback {
   position: fixed;
-  z-index: 1;
+  z-index: 3;
   bottom: 1.2rem;
   left: 50%;
   box-sizing: border-box;
@@ -79,4 +79,10 @@ canvas {
 .interaction-feedback:empty {
   padding: 0;
   background: transparent;
+}
+
+@media (max-width: 560px) {
+  .interaction-feedback {
+    bottom: max(5.2rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  }
 }
