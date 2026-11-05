@@ -1,9 +1,13 @@
 import './style.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
+import { createInteractionController } from './interactions';
+import { createQaFlockStubs } from './interactions/qa/createQaFlockStubs';
+import { createQaWorldStubs } from './interactions/qa/createQaWorldStubs';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer } from './postprocess';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { createInteractionPrompt } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
@@ -40,6 +44,16 @@ window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
+const interactionView = createInteractionPrompt();
+let cancelClickTarget = () => {};
+const interactions = createInteractionController({
+  character, camera, canvas, view: interactionView, onInteract: () => cancelClickTarget(),
+});
+const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT);
+const qaWorld = createQaWorldStubs(scene, GROUND_HEIGHT);
+for (const interactable of [...qaFlock.interactables, ...qaWorld.interactables]) {
+  interactions.register(interactable);
+}
 const controls = createCharacterControls({
   character,
   camera,
@@ -49,7 +63,9 @@ const controls = createCharacterControls({
   groundHeight: GROUND_HEIGHT,
   characterRadius: CHARACTER_RADIUS,
   obstacles,
+  onPointerDown: interactions.handlePointerDown,
 });
+cancelClickTarget = controls.cancelTarget;
 const composer = createComposer(renderer, scene, camera);
 
 function handleResize() {
@@ -69,6 +85,7 @@ renderer.setAnimationLoop((time) => {
   controls.update(Math.min(deltaSeconds, 0.1));
   dayNight.update(deltaSeconds);
   follow(character.position);
+  interactions.update();
   weather.update(deltaSeconds);
   composer.render();
 });

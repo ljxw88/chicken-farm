@@ -1,1 +1,1 @@
-export {};
+export { createInteractionPrompt } from './createInteractionPrompt';

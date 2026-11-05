@@ -15,3 +15,68 @@ canvas {
   width: 100%;
   height: 100%;
 }
+
+.interaction-prompt {
+  position: fixed;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  box-sizing: border-box;
+  max-width: calc(100vw - 1rem);
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #f2dfba;
+  border-radius: 0.4rem;
+  color: #fff9e9;
+  background: #493621;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  text-align: left;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.interaction-prompt[hidden] {
+  display: none;
+}
+
+.interaction-prompt:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.interaction-key {
+  flex: none;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+  color: #493621;
+  background: #f8e9c8;
+}
+
+.interaction-prompt > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.interaction-feedback {
+  position: fixed;
+  z-index: 1;
+  bottom: 1.2rem;
+  left: 50%;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.35rem;
+  color: #fff9e9;
+  background: #493621;
+  font: 500 14px/1.35 system-ui, sans-serif;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.interaction-feedback:empty {
+  padding: 0;
+  background: transparent;
+}
