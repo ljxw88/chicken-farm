@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "node --test tests/*.test.mjs",
+    "test:browser": "npm run build && node --test tests/browser/*.browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@types/three": "^0.187.0",
+    "playwright": "^1.63.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   }

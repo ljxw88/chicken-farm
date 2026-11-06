@@ -10,6 +10,7 @@ interface CharacterControlsOptions {
   groundHeight: number;
   characterRadius: number;
   obstacles?: readonly FarmObstacle[];
+  onPointerDown?: (event: PointerEvent) => boolean;
 }
 
 const WALK_SPEED = 3.5;
@@ -25,6 +26,7 @@ export function createCharacterControls({
   groundHeight,
   characterRadius,
   obstacles = [],
+  onPointerDown,
 }: CharacterControlsOptions) {
   const keys = new Set<string>();
   const forward = new THREE.Vector3();
@@ -54,7 +56,9 @@ export function createCharacterControls({
   }
 
   function handlePointerDown(event: PointerEvent) {
-    if (!event.isPrimary || event.button !== 0 || keys.size > 0) return;
+    if (!event.isPrimary || event.button !== 0) return;
+    if (onPointerDown?.(event)) return;
+    if (keys.size > 0) return;
 
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -79,6 +83,10 @@ export function createCharacterControls({
 
   function stop() {
     keys.clear();
+    hasTarget = false;
+  }
+
+  function cancelTarget() {
     hasTarget = false;
   }
 
@@ -137,5 +145,5 @@ export function createCharacterControls({
     stop();
   }
 
-  return { update, dispose };
+  return { update, cancelTarget, dispose };
 }

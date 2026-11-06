@@ -19,6 +19,10 @@ For a console-free weather and lighting check, open a URL such as `http://localh
 
 Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the barn, or right past the pond to the island rim. The barn, tree trunks, pond water and the rim block movement; the character can slide along them. Clicking the void does not start a walk. Click-to-move does not plan a route around obstacles, and keyboard input cancels a clicked destination.
 
+When near an object, press **E**, click/tap its prompt, or click/tap the object itself to use its primary action. The prompt selects the nearest available object; clicking an object selects that specific object. Walking into range does not interact, and clicking an out-of-range object only sets a normal ground destination. Release E before pressing it again.
+
+For interaction QA, a static **chicken and egg are stubs** below spawn. Walk toward the chicken (screen-down / S), then feed it; move right toward the egg (S+D from there) and collect it. The stub starts with one free feed, tracks one collected egg in memory, and resets on reload. Feeding does not buy feed and collecting does not sell an egg. The nearby feed bin and sign are also stubs: the lid opens/closes, and the sign shows the supplied egg sale +3 / feed purchase -1 coin rates without making transactions. Flock AI, persistent inventory, storage, dialogue and trading are not implemented here.
+
 The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
 
 ```text
@@ -63,6 +67,6 @@ Only `#scene` is scaled. Future HTML UI should be a separate, positioned sibling
 npm run build
 ```
 
-The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check pixel sizing, the farm, collisions, camera, weather and lighting.
+The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check interaction, pixel sizing, the farm, collisions, camera, weather and lighting. For the Chromium interaction checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
 
-The entry point is `src/main.ts`, the pixel presentation is in `src/postprocess/`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`.
+The entry point is `src/main.ts`, the pixel presentation is in `src/postprocess/`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller are in `src/interactions/`; replaceable QA props are isolated in `src/interactions/qa/`.
