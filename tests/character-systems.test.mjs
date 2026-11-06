@@ -50,6 +50,17 @@ test('movement system applies screen-relative keys, diagonal normalization and c
   assert.deepEqual(JSON.parse(JSON.stringify(f.player)).transform.position, f.player.transform.position);
 });
 
+test('a frame between chord keydowns keeps the original single-key motion', () => {
+  const f = fixture();
+  f.move(f.world, { type: 'move', right: 0, forward: -1, active: true }, 1 / 60);
+  const single = 3.5 / 60 / Math.sqrt(2);
+  near(f.player.transform.position[0], single);
+  near(f.player.transform.position[2], single);
+  f.move(f.world, { type: 'move', right: -1, forward: -1, active: true }, 1 / 60);
+  near(f.player.transform.position[0], single);
+  near(f.player.transform.position[2], single + 3.5 / 60);
+});
+
 test('obstacle entities slide a circular footprint along a wall rather than tunnelling', () => {
   const f = fixture([-1, 2.4, 0.5]);
   f.world.create({ obstacle: { kind: 'box', name: 'wall', minX: 0, maxX: 2, minZ: 0, maxZ: 2 } });
