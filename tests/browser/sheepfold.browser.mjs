@@ -59,7 +59,7 @@ async function open(context, seed = 123, phase = 'daytime') {
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
     await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr70RainRandom,')}
-window.__ebr70 = { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather };\n` });
+window.__ebr70 = { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather, engine, environment, sheepfold };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=clear&seed=${seed}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr70)));
@@ -178,6 +178,80 @@ test('visual seed reproduces both independent nod phases in the running app', { 
   assert.deepEqual(first, await angles(123));
   assert.notDeepEqual(first, await angles(124));
   assert.notEqual(first[0], first[1]);
+});
+
+test('the engine owns every fold obstacle and advances sheep and shared environment shadows', { timeout: 45000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  t.after(() => context.close());
+  const { page, errors } = await open(context);
+  const sample = () => page.evaluate(() => {
+    const { scene, engine, environment, sheepfold } = window.__ebr70;
+    const entities = [...engine.world.with('obstacle')];
+    const fold = entities.filter(({ obstacle }) => obstacle.name.startsWith('sheepfold-') || /^sheep-\d+$/.test(obstacle.name));
+    const shadow = (name) => {
+      const object = scene.getObjectByName(name);
+      return { position: object.position.toArray(), opacity: object.material.opacity };
+    };
+    return {
+      obstacles: fold.map(({ obstacle }) => obstacle),
+      eachMirroredOnce: sheepfold.obstacles.every((obstacle) => entities.filter((entity) => entity.obstacle === obstacle).length === 1),
+      sharedDayNight: [...engine.world.with('dayNight')].some((entity) => entity.dayNight === environment.dayNight),
+      sharedWeather: [...engine.world.with('weather')].some((entity) => entity.weather === environment.weather),
+      clock: { ...environment.dayNight }, weather: window.getWeather(),
+      phase: document.querySelector('[data-phase]').textContent,
+      angles: [1, 2].map((index) => scene.getObjectByName(`sheep-${index}-head-pivot`).rotation.x),
+      farmShadow: shadow('cottage-shadow'), fenceShadow: shadow('sheepfold-fence-1-shadow'),
+      shelterShadow: shadow('sheepfold-lean-to-shadow'), sheepShadow: shadow('sheep-1-shadow'),
+    };
+  });
+  const day = await sample();
+  assert.equal(day.obstacles.length, 13);
+  assert.equal(day.eachMirroredOnce, true);
+  assert.equal(day.sharedDayNight, true);
+  assert.equal(day.sharedWeather, true);
+  assert.deepEqual(day.obstacles.filter((item) => item.name.startsWith('sheepfold-fence-')).map((item) => item.name).sort(),
+    Array.from({ length: 9 }, (_, index) => `sheepfold-fence-${index + 1}`));
+  const shelter = day.obstacles.find((item) => item.name === 'sheepfold-lean-to');
+  assert.equal(shelter.kind, 'box');
+  assert.ok(Math.abs(shelter.maxX - shelter.minX - 1.4) < 1e-9);
+  assert.ok(Math.abs(shelter.maxZ - shelter.minZ - 1.2) < 1e-9);
+  for (const [index, x] of [[1, -6.1], [2, -3.3]]) {
+    const sheep = day.obstacles.find((item) => item.name === `sheep-${index}`);
+    assert.equal(sheep.kind, 'circle');
+    assert.ok(Math.abs(sheep.x - x) < 1e-9 && Math.abs(sheep.z - 4.35) < 1e-9);
+    assert.equal(sheep.radius, 0.4);
+  }
+  const reserve = day.obstacles.find((item) => item.name === 'sheepfold-placement');
+  assert.equal(reserve.kind, 'box');
+  assert.equal(reserve.blocksWalking, false);
+  assert.ok(Math.abs(reserve.minX + 6.95) < 1e-9 && Math.abs(reserve.maxX + 2.45) < 1e-9);
+  assert.ok(Math.abs(reserve.minZ - 3.1) < 1e-9 && Math.abs(reserve.maxZ - 6.1) < 1e-9);
+  assert.equal(day.clock.held, true);
+
+  await page.evaluate(() => window.__ebr70Step(1000));
+  const held = await sample();
+  assert.equal(held.clock.progress, day.clock.progress, 'URL-pinned engine phase must remain held');
+  assert.ok(held.angles.every((angle, index) => Math.abs(angle - day.angles[index]) > 1e-3),
+    'both seeded heads must animate while the phase is held');
+  await page.evaluate(() => {
+    window.setDayNightPhase('night');
+    window.setWeather('rain');
+    window.__ebr70Step(2750);
+  });
+  const nightRain = await sample();
+  assert.equal(nightRain.clock.held, false);
+  assert.ok(Math.abs(nightRain.clock.progress - (0.75 + 1.75 / 72)) < 1e-9);
+  assert.deepEqual(nightRain.weather, { mode: 'rain', rainAmount: 1, cloudyAmount: 0 });
+  assert.match(nightRain.phase.toLowerCase(), /night/);
+  for (const name of ['farmShadow', 'fenceShadow', 'shelterShadow', 'sheepShadow']) {
+    assert.ok(nightRain[name].opacity < day[name].opacity, `${name} did not respond to night and rain`);
+    assert.notDeepEqual(nightRain[name].position, day[name].position, `${name} did not follow the new shadow offset`);
+  }
+  assert.ok(Math.abs(nightRain.fenceShadow.opacity - nightRain.farmShadow.opacity) < 1e-9);
+  assert.ok(Math.abs(nightRain.shelterShadow.opacity - nightRain.farmShadow.opacity) < 1e-9);
+  assert.ok(Math.abs(nightRain.sheepShadow.opacity / nightRain.farmShadow.opacity - 1.5) < 1e-9);
+  assert.deepEqual(errors, []);
+  if (evidence) await writeFile(join(evidence, 'engine-integration.json'), `${JSON.stringify({ day, held, nightRain, errors }, null, 2)}\n`);
 });
 
 test('each sheep has separately readable wool, face and legs at the actual game pixel scale', { timeout: 120000 }, async (t) => {

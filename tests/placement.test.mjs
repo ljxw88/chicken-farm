@@ -3,13 +3,15 @@ import { after, test } from 'node:test';
 import { JSDOM } from 'jsdom';
 import * as THREE from 'three';
 import { createServer } from 'vite';
-import { loadCharacterFixture } from './characterFixture.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createGrid, TILE_SIZE, footprintCells, intersectsFootprint, fenceCollision } =
   await vite.ssrLoadModule('/src/placement/grid.ts');
-const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlacement.ts');
-const createCharacterControls = await loadCharacterFixture(vite);
+const { createPlacementAdapter } = await vite.ssrLoadModule('/src/placement/createPlacementAdapter.ts');
+const { createCharacterController } = await vite.ssrLoadModule('/src/character/createCharacterController.ts');
+const { createEntityWorld } = await vite.ssrLoadModule('/src/core/ecs/createEntityWorld.ts');
+const { createInputActions } = await vite.ssrLoadModule('/src/core/input/actions.ts');
+const { bindInputActions } = await vite.ssrLoadModule('/src/core/input/bindInputActions.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
@@ -36,15 +38,22 @@ function fixture(t, { debugGrid = false, getBlockers, farm = false } = {}) {
   follow(character.position);
   const obstacles = farm ? createFarmLayout(scene).obstacles :
     [{ kind: 'box', name: 'existing', minX: -5, maxX: -4, minZ: 3, maxZ: 4 }];
-  const placement = createPlacement({
-    scene, camera, canvas, ground, groundSize: 16, groundHeight: 2.4, character, characterRadius: 0.4,
-    obstacles, getBlockers, debugGrid,
-  });
-  const controls = createCharacterControls({
+  const world = createEntityWorld();
+  let placement;
+  const input = createInputActions(() => ({ active: placement?.isActive() ?? false, removing: placement?.isRemoving() ?? false }));
+  const characterControls = createCharacterController({
+    world, input,
     character, camera, canvas, ground, groundSize: 16, groundHeight: 2.4, characterRadius: 0.4,
-    obstacles, onPointerDown: placement.handlePointerDown,
+    obstacles,
   });
-  t.after(() => { controls.dispose(); placement.dispose(); dom.window.close(); });
+  const controls = { ...characterControls, world, input };
+  placement = createPlacementAdapter({
+    world, input, scene, camera, canvas, ground, groundSize: 16, groundHeight: 2.4,
+    obstacles, syncObstacles: controls.syncObstacles, syncCharacter: controls.syncExternalPose, getBlockers, debugGrid,
+    onActiveChange: (active) => { if (active) controls.cancelTarget(); },
+  });
+  const unbind = bindInputActions(input, window, canvas, { ownMovement: true, ownPlacement: true });
+  t.after(() => { unbind(); placement.dispose(); controls.dispose(); dom.window.close(); });
 
   function pointer(type, x, z, pointerType = 'mouse') {
     camera.updateMatrixWorld();
@@ -62,6 +71,9 @@ function fixture(t, { debugGrid = false, getBlockers, farm = false } = {}) {
   function key(code, options = {}) {
     const event = new dom.window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, code, ...options });
     window.dispatchEvent(event);
+    if (!['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(code)) {
+      window.dispatchEvent(new dom.window.KeyboardEvent('keyup', { bubbles: true, code }));
+    }
     return event;
   }
   const status = () => document.querySelector('.placement-status').textContent;
@@ -281,6 +293,21 @@ test('a placed fence blocks the character system immediately and undo removes it
   f.controls.update(1);
   assert.ok(f.character.position.z > 5.49);
   assert.equal([...f.controls.world.with('obstacle')].some((entry) => entry.obstacle.name.startsWith('placed-fence-')), false);
+});
+
+test('selecting a placement tool cancels an existing click target before the next movement frame', (t) => {
+  const f = fixture(t);
+  f.pointer('pointerdown', 3.75, 3.75);
+  assert.ok(f.controls.entity.character.target);
+  f.key('KeyF');
+  assert.equal(f.controls.entity.character.target, null);
+  f.pointer('pointerdown', 3.75, 3.75, 'touch');
+  assert.equal(f.count('placed-fence'), 0);
+  f.controls.update(0.5);
+  assert.deepEqual(f.character.position.toArray(), [0, 2.4, 0]);
+  document.querySelector('[data-confirm]').click();
+  assert.equal(f.count('placed-fence'), 1);
+  assert.equal([...f.controls.world.with('obstacle')].filter((entry) => entry.obstacle.name.startsWith('placed-fence-')).length, 1);
 });
 
 test('extra world objects and a moving player are rechecked before confirming; touch previews before Place', (t) => {

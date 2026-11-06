@@ -1,0 +1,27 @@
+[heavy] slot /tmp/farm-heavy.1.lock acquired (waits for QA gate lock if held): node /home/michael/Developer/chicken-farm/worktrees/ebr75/tools/run-ebr75-qa.mjs /tmp/ebr75-qa-main-I0A8dQ/qa-control-wrapped
+done 0 errors
+144/147 strict QA checks pass
+[
+  {
+    "name": "run1.walkSA.z",
+    "expected": -0.106,
+    "actual": -0.105,
+    "tolerance": 0,
+    "ok": false
+  },
+  {
+    "name": "run1.stairsDescend.z",
+    "expected": 0.76,
+    "actual": 0.801,
+    "tolerance": 0,
+    "ok": false
+  },
+  {
+    "name": "run2.stairsDescend.z",
+    "expected": 0.76,
+    "actual": 0.842,
+    "tolerance": 0,
+    "ok": false
+  }
+]
+[heavy] released /tmp/farm-heavy.1.lock rc=1

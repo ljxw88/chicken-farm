@@ -9,7 +9,11 @@ const { createSheep, SHEEP_WOOL, SHEEP_NOD_ANGLE } = await vite.ssrLoadModule('/
 const { createSheepfold, SHEEPFOLD } = await vite.ssrLoadModule('/src/scene/sheepfold/createSheepfold.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
-const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlacement.ts');
+const { createPlacementAdapter } = await vite.ssrLoadModule('/src/placement/createPlacementAdapter.ts');
+const { createCharacterController } = await vite.ssrLoadModule('/src/character/createCharacterController.ts');
+const { createEntityWorld } = await vite.ssrLoadModule('/src/core/ecs/createEntityWorld.ts');
+const { createInputActions } = await vite.ssrLoadModule('/src/core/input/actions.ts');
+const { bindInputActions } = await vite.ssrLoadModule('/src/core/input/bindInputActions.ts');
 const { createGrid, intersectsFootprint } = await vite.ssrLoadModule('/src/placement/grid.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 after(() => vite.close());
@@ -284,10 +288,21 @@ test('every overlapping fence or plot tile is reserved, including the opening an
   const { camera, resize, follow } = createIsometricCamera();
   resize(1280, 720);
   follow(character.position);
-  const placement = createPlacement({ scene, camera, canvas, ground, groundSize: 16, groundHeight: 2.4,
-    character, characterRadius: 0.4, obstacles: [reserve] });
-  t.after(() => { placement.dispose(); dom.window.close(); });
-  const key = (code) => window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { bubbles: true, code }));
+  const world = createEntityWorld();
+  let placement;
+  const input = createInputActions(() => ({ active: placement?.isActive() ?? false, removing: placement?.isRemoving() ?? false }));
+  const reservedObstacles = [reserve];
+  const controls = createCharacterController({ world, input, character, camera, canvas, ground, groundSize: 16,
+    groundHeight: 2.4, characterRadius: 0.4, obstacles: reservedObstacles });
+  placement = createPlacementAdapter({ world, input, scene, camera, canvas, ground, groundSize: 16, groundHeight: 2.4,
+    obstacles: reservedObstacles, syncObstacles: controls.syncObstacles, syncCharacter: controls.syncExternalPose });
+  const unbind = bindInputActions(input, window, canvas, { ownMovement: true, ownPlacement: true });
+  t.after(() => { unbind(); placement.dispose(); controls.dispose(); dom.window.close(); });
+  assert.deepEqual([...world.with('obstacle')].map((entity) => entity.obstacle), [reserve]);
+  const key = (code) => {
+    window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { bubbles: true, code }));
+    window.dispatchEvent(new dom.window.KeyboardEvent('keyup', { bubbles: true, code }));
+  };
   const pointer = (x, z) => {
     camera.updateMatrixWorld();
     const projected = new THREE.Vector3(x, 2.4, z).project(camera);

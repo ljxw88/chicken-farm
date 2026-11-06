@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isDeepStrictEqual } from 'node:util';
 import { join, resolve } from 'node:path';
@@ -8,15 +9,18 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
 
-// Compare archived main, or the accepted pen at 8ce0cbe, without creating a
-// worktree. Sheep-only comparisons hide the animals in both renders, preserving
-// their existing shadows and every accepted pen/shelter pixel.
-const mainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+// Compare archived clean EBR-75 main or the exact pre-merge EBR-70 head,
+// without checking out or modifying either branch. The older sheep-only mode
+// remains available for reproducing the Look Dev revision evidence.
+const mainSha = '6daf042ad85882f020268baf53fc92fb09e921ad';
 const acceptedPenSha = '8ce0cbe19d7c63e5c2608b28725ccb8e9b4700aa';
+const previousHeadSha = '76a2181a2bc90b793b7dc58e21cc062d17d13dd6';
 const sheepDelta = process.env.EBR70_SHEEP_DELTA === '1';
-const baseSha = sheepDelta ? acceptedPenSha : mainSha;
+const previousHead = process.env.EBR70_PREVIOUS_HEAD === '1';
+assert.ok(!(sheepDelta && previousHead), 'Select only one comparison mode');
+const baseSha = previousHead ? previousHeadSha : sheepDelta ? acceptedPenSha : mainSha;
 const candidateUrl = (process.env.EBR70_URL || 'http://100.88.150.21:5213').replace(/\/$/, '');
-const output = resolve(process.env.EBR70_GATE_DIR || 'evidence/EBR-70');
+const output = resolve(process.env.EBR70_GATE_DIR || `evidence/EBR-70/${previousHead ? 'merge-previous' : 'merge-main'}`);
 const maskDirectory = resolve(process.env.EBR70_MASK_DIR || join(output, 'mask'));
 const viewport = { width: 1280, height: 720 };
 const visualSeed = 123;
@@ -36,6 +40,9 @@ const scenarios = [
   { name: 'pen-day', phase: 'daytime', weather: 'clear', setup: 'pen' },
   { name: 'pen-sunset', phase: 'sunset', weather: 'clear', setup: 'pen' },
   { name: 'pen-night', phase: 'night', weather: 'clear', setup: 'pen' },
+  { name: 'cycle-sunset-to-night', phase: 'sunset', weather: 'clear', setup: 'cycle' },
+  { name: 'night-rain-half', phase: 'night', weather: 'clear', setup: 'rain-half' },
+  { name: 'night-rain-to-cloud', phase: 'night', weather: 'clear', setup: 'rain-to-cloud' },
 ];
 const only = process.env.EBR70_GATE_ONLY?.split(',');
 const selected = only ? scenarios.filter(({ name }) => only.includes(name)) : scenarios;
@@ -55,8 +62,17 @@ try {
   const root = join(temp, 'archive');
   await mkdir(root);
   const archive = join(temp, 'main.tar');
-  execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, baseSha, 'index.html', 'package.json', 'src']);
+  execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, baseSha, 'index.html', 'package.json', 'package-lock.json', 'src']);
   execFileSync('tar', ['-xf', archive, '-C', root]);
+  const tree = execFileSync('git', ['ls-tree', '-r', baseSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json'],
+    { encoding: 'utf8' }).trim();
+  for (const entry of tree.split('\n')) {
+    const match = /^100644 blob ([0-9a-f]{40})\t(.+)$/.exec(entry);
+    assert.ok(match, `Unexpected baseline tree entry: ${entry}`);
+    const bytes = await readFile(join(root, match[2]));
+    const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+    assert.equal(blob, match[1], `Archived baseline differs: ${match[2]}`);
+  }
   await symlink(resolve('node_modules'), join(root, 'node_modules'), 'dir');
   server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false } });
   await server.listen();
@@ -66,7 +82,9 @@ try {
   browser = await chromium.launch({
     headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'],
   });
-  for (const directory of ['baseline', 'candidate', 'diff', 'crops']) await mkdir(join(output, directory), { recursive: true });
+  for (const directory of ['baseline', 'candidate', 'diff', 'crops', 'hidden-fold', 'hidden-feature']) {
+    await mkdir(join(output, directory), { recursive: true });
+  }
   await mkdir(maskDirectory, { recursive: true });
   const comparePage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
   const results = {};
@@ -78,6 +96,10 @@ try {
     const name = scenario.name;
     await writeFile(join(output, 'baseline', `${name}.png`), baseline.png);
     await writeFile(join(output, 'candidate', `${name}.png`), candidate.png);
+    if (candidate.hiddenFold) await writeFile(join(output, 'hidden-fold', `${name}.png`), candidate.hiddenFold);
+    if (candidate.hidden && !candidate.hidden.equals(candidate.hiddenFold)) {
+      await writeFile(join(output, 'hidden-feature', `${name}.png`), candidate.hidden);
+    }
     const diff = await comparePage.evaluate(async ({ baseline, baselineHidden, candidate, hiddenFold, hidden, hudRects, sheepDelta }) => {
       async function pixels(data) {
         const image = new Image();
@@ -159,8 +181,8 @@ try {
         mask: maskCanvas.toDataURL('image/png').split(',')[1], diff: diffCanvas.toDataURL('image/png').split(',')[1],
         feedback: feedbackCanvas.toDataURL('image/png').split(',')[1] };
     }, { baseline: baseline.png.toString('base64'), baselineHidden: (baseline.hiddenFold || baseline.png).toString('base64'),
-      candidate: candidate.png.toString('base64'), hiddenFold: candidate.hiddenFold.toString('base64'),
-      hidden: candidate.hidden.toString('base64'), hudRects: candidate.hudRects, sheepDelta });
+      candidate: candidate.png.toString('base64'), hiddenFold: (candidate.hiddenFold || candidate.png).toString('base64'),
+      hidden: (candidate.hidden || candidate.png).toString('base64'), hudRects: candidate.hudRects, sheepDelta });
     await writeFile(join(maskDirectory, `${name}.png`), Buffer.from(diff.mask, 'base64'));
     await writeFile(join(output, 'diff', `${name}.png`), Buffer.from(diff.diff, 'base64'));
     if (diff.feedbackPixels) await writeFile(join(maskDirectory, `${name}-feedback.png`), Buffer.from(diff.feedback, 'base64'));
@@ -170,21 +192,22 @@ try {
     results[name] = { ...counts, stateMatches, placementStatus: candidate.placementStatus &&
       { baseline: baseline.placementStatus, candidate: candidate.placementStatus }, baseline: baseline.state, candidate: candidate.state,
       cropped: candidate.cropBounds };
-    if (!stateMatches || counts.outside || counts.hiddenMismatch) failures++;
+    if (!stateMatches || counts.outside || counts.hiddenMismatch || (previousHead && counts.changed)) failures++;
     if (candidate.crops) {
       for (const [kind, data] of Object.entries(candidate.crops)) {
         await writeFile(join(output, 'crops', `${name}-${kind}.png`), Buffer.from(data, 'base64'));
       }
     }
     if (candidate.geometry) await writeFile(join(output, 'geometry.json'), `${JSON.stringify(candidate.geometry, null, 2)}\n`);
-    console.log(`${name}: changed=${counts.changed} mask=${counts.masked} outside=${counts.outside} hidden-vs-main=${counts.hiddenMismatch} state=${stateMatches}`);
+    console.log(`${name}: changed=${counts.changed} mask=${counts.masked} outside=${counts.outside} referenceMismatch=${counts.hiddenMismatch} state=${stateMatches}`);
   }
   await comparePage.close();
   const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   const sourceStatus = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all', '--', 'src', 'index.html',
     'package.json', 'package-lock.json', 'tests', 'tools/ebr70-evidence.mjs', 'tools/character-parity.mjs',
-    'tools/lighting-probe.mjs'], { encoding: 'utf8' }).trim();
-  const report = { baseSha, scope: sheepDelta ? 'sheep-only' : 'new-fold-and-placement', maskDirectory,
+    'tools/lighting-probe.mjs', 'tools/placement-environment-replay.mjs'], { encoding: 'utf8' }).trim();
+  const report = { baseSha, baselineVerification: 'Git archive source and lockfile verified against every Git tree blob',
+    scope: previousHead ? 'full-frame-no-changes' : sheepDelta ? 'sheep-only' : 'new-fold-and-placement', maskDirectory,
     sourceSha, sourceStatus, candidateUrl, chromium: browser.version(), viewport,
     deviceScaleFactor: 1, visualSeed, rainSeed, scenarios: selected.map(({ name }) => name),
     complete: selected.length === scenarios.length, results, failures };
@@ -251,7 +274,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
       // this clear tile exercises the same valid-ghost behavior on both builds.
       await page.mouse.move(449, scenario.setup === 'placement' ? 340 : 381);
       assert.match(await page.locator('.placement-status').textContent(),
-        scenario.setup === 'placement-rejected' && (candidate || sheepDelta) ? /Blocked by a farm object/ : /Ready to place/);
+        scenario.setup === 'placement-rejected' && (candidate || sheepDelta || previousHead) ? /Blocked by a farm object/ : /Ready to place/);
       await page.evaluate(() => window.__ebr70Step(100));
     } else if (scenario.setup === 'walk') {
       await page.keyboard.down('s');
@@ -262,6 +285,24 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
       const weather = await page.evaluate(() => window.getWeather());
       assert.equal(weather.mode, scenario.weather);
       assert.equal(scenario.weather === 'rain' ? weather.rainAmount : weather.cloudyAmount, 1);
+    } else if (scenario.setup === 'cycle') {
+      await page.evaluate(() => {
+        window.setDayNightCycleSeconds(72);
+        for (let time = 500; time <= 9000; time += 500) window.__ebr70Step(time);
+      });
+    } else if (scenario.setup === 'rain-half' || scenario.setup === 'rain-to-cloud') {
+      await page.evaluate((setup) => {
+        window.setWeather('rain');
+        if (setup === 'rain-half') window.__ebr70Step(875);
+        else {
+          window.__ebr70Step(1750);
+          window.setWeather('cloudy');
+          window.__ebr70Step(2625);
+        }
+      }, scenario.setup);
+      const weather = await page.evaluate(() => window.getWeather());
+      assert.equal(weather.rainAmount, 0.5);
+      assert.equal(weather.cloudyAmount, scenario.setup === 'rain-half' ? 0 : 0.5);
     } else if (scenario.setup === 'buildings' || scenario.setup === 'pen') {
       await page.evaluate((setup) => {
         const { camera, character, follow, composer } = window.__ebr70Gate;
@@ -277,15 +318,34 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
         composer.render(0);
       }, scenario.setup);
     }
-    const state = await page.evaluate(() => {
-      const { camera, character } = window.__ebr70Gate;
+    const state = await page.evaluate((compareSheep) => {
+      const { scene, camera, character } = window.__ebr70Gate;
       const gl = document.querySelector('#scene').getContext('webgl2');
       const debug = gl.getExtension('WEBGL_debug_renderer_info');
+      const light = (name) => {
+        const item = scene.getObjectByName(name);
+        return { color: item.color.toArray(), groundColor: item.groundColor?.toArray(),
+          intensity: item.intensity, position: item.position.toArray() };
+      };
+      const fold = compareSheep ? [1, 2].map((index) => {
+        const animal = scene.getObjectByName(`sheep-${index}`);
+        const head = scene.getObjectByName(`sheep-${index}-head-pivot`);
+        const shadow = scene.getObjectByName(`sheep-${index}-shadow`);
+        if (!animal || !head || !shadow) throw new Error(`Missing sheep ${index}`);
+        return { position: animal.position.toArray(), yaw: animal.rotation.y, headAngle: head.rotation.x,
+          shadow: { position: shadow.position.toArray(), rotation: shadow.rotation.z,
+            scale: shadow.scale.toArray(), opacity: shadow.material.opacity } };
+      }) : undefined;
       return { position: character.position.toArray(), yaw: character.rotation.y, camera: camera.position.toArray(),
         cameraQuaternion: camera.quaternion.toArray(), cameraZoom: camera.zoom, pixel: window.getPixelRendering(),
         weather: window.getWeather(), phase: document.querySelector('[data-phase]')?.textContent,
-        randomCalls: window.__ebr70RandomCalls, renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) };
-    });
+        light: { ambient: light('day-night-ambient'), hemisphere: light('day-night-hemisphere'),
+          directional: light('day-night-directional'), fog: { color: scene.fog.color.toArray(), density: scene.fog.density },
+          practical: ['window-light-1', 'window-light-2', 'lantern-light'].map((name) => scene.getObjectByName(name).intensity),
+          accents: ['cottage-window-1', 'cottage-window-2', 'cottage-east-window', 'ramp-coop-1-pop-hole-glow', 'ramp-coop-2-pop-hole-glow']
+            .map((name) => scene.getObjectByName(name).material.emissiveIntensity) },
+        fold, randomCalls: window.__ebr70RandomCalls, renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) };
+    }, previousHead);
     assert.match(state.renderer, /SwiftShader/i);
     assert.equal(state.pixel.enabled, true);
     assert.deepEqual([state.pixel.canvasWidth, state.pixel.canvasHeight], [320, 180]);
@@ -403,7 +463,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
               roofSize: size(roof), top: roof.max.y - 2.4 }, sheep };
         });
       }
-      await page.evaluate((sheepDelta) => {
+      if (!previousHead) await page.evaluate((sheepDelta) => {
         const { scene, composer } = window.__ebr70Gate;
         const fold = scene.getObjectByName('farm-sheepfold');
         if (!fold) throw new Error('Candidate is missing the sheepfold');
@@ -416,9 +476,9 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
         } else fold.visible = false;
         composer.render(0);
       }, sheepDelta);
-      hiddenFold = await screenshot();
+      if (!previousHead) hiddenFold = await screenshot();
       hidden = hiddenFold;
-      if (!sheepDelta && scenario.setup === 'placement-rejected') {
+      if (!previousHead && !sheepDelta && scenario.setup === 'placement-rejected') {
         await page.evaluate(() => {
           const { obstacles, placement, composer } = window.__ebr70Gate;
           // Isolate the required feedback: only the new placement keep-out and
