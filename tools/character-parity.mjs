@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
 const baselineSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb740001;
+const search = '?phase=daytime&weather=clear';
 
 async function serverAt(root) {
   const server = await createServer({ root, configFile: false, logLevel: 'error',
@@ -53,9 +55,19 @@ async function open(browser, url) {
 window.__ebr74 = { scene, camera, character, controls, follow, stairs, obstacles, renderer, composer };
 ` });
   });
-  await page.goto(`${url}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => window.__ebr74 && window.__ebr74RandomCalls > 0));
   await page.evaluate(() => document.fonts.ready);
+  const graphics = await page.evaluate(() => {
+    const gl = document.querySelector('#scene').getContext('webgl2');
+    const debug = gl?.getExtension('WEBGL_debug_renderer_info');
+    return { webgl: gl?.getParameter(gl.VERSION), renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL),
+      pixel: window.getPixelRendering() };
+  });
+  assert.match(graphics.webgl, /WebGL 2\.0/);
+  assert.match(graphics.renderer, /SwiftShader/i);
+  assert.equal(graphics.pixel.enabled, true);
+  assert.deepEqual([graphics.pixel.canvasWidth, graphics.pixel.canvasHeight, graphics.pixel.devicePixelRatio], [320, 180, 1]);
   return { context, page, errors };
 }
 
@@ -267,10 +279,11 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
   assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
   assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
     'The reference worktree must contain the unmodified baseline source');
-  const baseline = await serverAt(baselineRoot);
-  const candidate = await serverAt(candidateRoot);
+  let baseline;
+  let candidate;
   let browser;
   try {
+    baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
     const names = ['walking', 'bridge', 'stairs', 'stream'];
@@ -283,14 +296,28 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
         script: reference[name].script, trace: reference[name].trace, marks: reference[name].marks,
       }])) }, null, 2)}\n`);
     const saved = JSON.parse(await readFile(tracePath, 'utf8'));
+    await baseline.server.close();
+    baseline = undefined;
+    candidate = await serverAt(candidateRoot);
     const results = {};
     const frameResults = {};
+    const traceMismatches = [];
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
       const current = await recordScenario(browser, candidate.url, name, saved.scenarios[name].script);
-      assert.deepEqual(current.trace, saved.scenarios[name].trace, `${name}: movement, yaw, camera or shadow trace differs`);
-      assert.deepEqual(current.marks, saved.scenarios[name].marks, `${name}: scenario state differs`);
-      results[name] = { frames: current.trace.length, identical: true };
+      // Canonicalize -0 as JSON does in the recorded reference, but otherwise
+      // compare every position, rotation, camera and shadow value exactly.
+      const actualTrace = JSON.parse(JSON.stringify(current.trace));
+      const expectedTrace = saved.scenarios[name].trace;
+      const mismatch = actualTrace.findIndex((frame, index) => !isDeepStrictEqual(frame, expectedTrace[index]));
+      const identical = mismatch === -1 && actualTrace.length === expectedTrace.length;
+      if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
+        baseline: expectedTrace[mismatch], candidate: actualTrace[mismatch],
+        baselineFrames: expectedTrace.length, candidateFrames: actualTrace.length });
+      if (!isDeepStrictEqual(current.marks, saved.scenarios[name].marks)) {
+        traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
+      }
+      results[name] = { frames: current.trace.length, identical };
       for (const [frameName, bytes] of Object.entries(current.frames)) {
         const original = reference[name].frames[frameName];
         assert.ok(original, `Missing baseline frame ${frameName}`);
@@ -302,7 +329,6 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
           await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), bytes);
           await writeFile(join(evidenceDir, 'diff', `${frameName}.png`), Buffer.from(diff.png, 'base64'));
         }
-        assert.equal(diff.changedPixels, 0, `${frameName}: changed pixels`);
       }
     }
     await diffPage.close();
@@ -318,13 +344,18 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       marks.stairs.stairs.position[1] > 0.16 && marks.stairs.stairs.position[1] < 2.4, 'character must be mid-climb');
     assert.ok(marks.stream.stream.position[0] > 1.2 && marks.stream.stream.position[0] < 2,
       'stream must block the off-bridge route');
-    const report = { baselineSha, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'), browser: browser.version(),
-      viewport, deviceScaleFactor: 1, seed, tracePath, results, frameResults, marks };
+    const report = { baselineSha, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
+      sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
+        'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
+      browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
+      tracePath, results, traceMismatches, frameResults, marks };
     if (evidenceDir) await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
+    assert.deepEqual(traceMismatches, [], 'Character position / pose replay differs from main');
+    assert.ok(Object.values(frameResults).every((count) => count === 0), 'Route frames contain changed pixels');
     return report;
   } finally {
     await browser?.close();
-    await baseline.server.close();
-    await candidate.server.close();
+    await baseline?.server.close();
+    await candidate?.server.close();
   }
 }
