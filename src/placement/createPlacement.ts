@@ -320,5 +320,5 @@ export function createPlacement({
     view.dispose();
   }
 
-  return { update, handlePointerDown, isActive: () => Boolean(kind), dispose };
+  return { update, handlePointerDown, isActive: () => Boolean(kind), isRemoving: () => removing, dispose };
 }
