@@ -197,7 +197,7 @@ test('locked buildings render at day, sunset, night and rain with the practical 
   near(lights.accents[1], 0.85 * 0.7);
   near(lights.accents[2], 0.85 * 0.7);
   assert.deepEqual(lights.points, ['lantern-light', 'window-light-1', 'window-light-2']);
-  near(lights.lantern, 0.08);
+  near(lights.lantern, 0.12);
   assert.equal(lights.lanternParent, lights.characterName);
   await capture(night.page, '03-night-glow.png');
   assert.deepEqual(night.errors, []);

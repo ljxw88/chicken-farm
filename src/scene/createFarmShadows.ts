@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
 import { FARM_BUILDINGS } from './farmBuildingSpecs';
 import { WATER_FEATURE } from './waterFeatureSpec';
+import { CONTACT_SHADOW_COLOR } from './contactShadowStyle';
 
 // The farm uses intentionally soft, pixel-stable ground blobs rather than
 // shadow maps. The tree/chicken contacts are existing meshes; buildings get
@@ -18,7 +19,7 @@ export function createFarmShadows(scene: THREE.Scene) {
   const buildingShadows = new THREE.Group();
   buildingShadows.name = 'farm-building-shadows';
   const geometry = new THREE.CircleGeometry(1, 24);
-  const material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12, depthWrite: false });
+  const material = new THREE.MeshBasicMaterial({ color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.12, depthWrite: false });
   const buildings = FARM_BUILDINGS.map((spec) => {
     const shadow = new THREE.Mesh(geometry, material);
     shadow.name = `${spec.name}-shadow`;
@@ -80,8 +81,13 @@ export function createFarmShadows(scene: THREE.Scene) {
     waterfall.position.z = GROUND_SIZE / 2 - 0.25 + awayZ * waterfallDistance;
     // Expand back toward the lip as the offset grows so the shadow remains
     // attached, while its +Z edge never projects beyond the island rim.
-    waterfall.scale.x = WATER_FEATURE.waterfall.width / 2 + 0.05 + Math.max(0, awayX * waterfallDistance);
     waterfall.scale.y = 0.25 + Math.max(0, -awayZ * waterfallDistance);
+    const lipX = WATER_FEATURE.waterfall.x;
+    const lipZ = GROUND_SIZE / 2 - WATER_FEATURE.waterfall.lipDepth / 2;
+    const zFraction = Math.min(Math.abs(lipZ - waterfall.position.z) / waterfall.scale.y, 1 - 1e-9);
+    const widthToTouchLip = Math.abs(lipX - waterfall.position.x) / Math.sqrt(1 - zFraction * zFraction);
+    waterfall.scale.x = Math.max(WATER_FEATURE.waterfall.width / 2 + 0.05 + Math.max(0, awayX * waterfallDistance),
+      widthToTouchLip + 0.005);
     material.opacity = 0.12 * strength;
   }
 

@@ -7,12 +7,12 @@ export const DAY_NIGHT_PHASES = [
     fog: 0xe8d4c8,
     fogDensity: 0.012,
     ambient: 0xf0e0d0,
-    ambientIntensity: 0.08,
+    ambientIntensity: 0.2,
     hemisphereSky: 0xe8d4c8,
     hemisphereGround: 0xa8c090,
     hemisphereIntensity: 0.25,
     directional: 0xffe8c8,
-    directionalIntensity: 1.4,
+    directionalIntensity: 2.35,
     shadowOffset: 0.48,
     shadowOpacity: 0.22,
     nightLights: 0,
@@ -29,7 +29,7 @@ export const DAY_NIGHT_PHASES = [
     hemisphereIntensity: 0.35,
     directional: 0xfff2d6,
     directionalIntensity: 1.8,
-    // Approximately (+0.25, -0.09) in world X/Z as specified by Look Dev.
+    // The 0.266-unit length stays fixed as the approved azimuth rotates.
     shadowOffset: 0.266,
     shadowOpacity: 0.22,
     nightLights: 0,
@@ -58,12 +58,12 @@ export const DAY_NIGHT_PHASES = [
     fog: 0x1e2430,
     fogDensity: 0.02,
     ambient: 0xaeb8c9,
-    ambientIntensity: 0.4,
+    ambientIntensity: 0.26,
     hemisphereSky: 0x2a2848,
     hemisphereGround: 0x1e2430,
-    hemisphereIntensity: 0.2,
+    hemisphereIntensity: 0.11,
     directional: 0xc8d4f0,
-    directionalIntensity: 0.7,
+    directionalIntensity: 0.52,
     shadowOffset: 0.16,
     shadowOpacity: 0.09,
     nightLights: 1,
@@ -74,6 +74,5 @@ export type DayNightPhaseName = (typeof DAY_NIGHT_PHASES)[number]['name'];
 
 export const DEFAULT_DAY_NIGHT_CYCLE_SECONDS = 72;
 export const WINDOW_LIGHT = { color: 0xffcc88, intensity: 0.85, distance: 7, decay: 2 } as const;
-// The visible glass keeps its original glow, but the nearby point light must
-// not overwhelm the moon or light the whole body like a camera flash.
-export const LANTERN_LIGHT = { color: 0xffb060, intensity: 0.08, distance: 2, decay: 2, glassIntensity: 0.55 } as const;
+// Engineer: restore the signed 3.5 range while keeping the face below the moon-lit crown.
+export const LANTERN_LIGHT = { color: 0xffb060, intensity: 0.12, distance: 3.5, decay: 2, glassIntensity: 0.55 } as const;

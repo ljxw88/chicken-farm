@@ -85,7 +85,7 @@ try {
       });
       await capture(`review-${label}-${key}-water.png`);
     }
-    if (mode === 'clear' && ['daytime', 'sunset', 'night'].includes(phase)) {
+    if (mode === 'clear' && ['morning', 'daytime', 'sunset', 'night'].includes(phase)) {
       for (const [facing, angle] of [['toward', Math.PI / 4], ['away', -3 * Math.PI / 4]]) {
         await page.evaluate((angle) => {
           const { character, camera, follow, composer, dayNight } = window.__lightingReview;

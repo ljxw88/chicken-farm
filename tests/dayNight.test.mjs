@@ -43,10 +43,10 @@ function colorNear(actual, expected, tolerance = 1e-9) {
 test('all four phases keep the void and use the upper-left key with fill below it', () => {
   const { scene, cycle, ambient, hemisphere, directional, windows, windowLights, lanternGlass, lanternLight } = fixture();
   const expected = {
-    morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.08, 0xe8d4c8, 0xa8c090, 0.25, 0xffe8c8, 1.4],
+    morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.2, 0xe8d4c8, 0xa8c090, 0.25, 0xffe8c8, 2.35],
     daytime: [0xa8d4f0, 0xc8e0f0, 0.006, 0xe8f0e8, 0.07, 0xa8d4f0, 0x9cb88a, 0.35, 0xfff2d6, 1.8],
     sunset: [0xf0a878, 0xe89870, 0.015, 0xeadbc8, 0.08, 0xe8dec6, 0xb5b99a, 0.2, 0xffeddb, 1.2],
-    night: [0x2a2848, 0x1e2430, 0.02, 0xaeb8c9, 0.4, 0x2a2848, 0x1e2430, 0.2, 0xc8d4f0, 0.7],
+    night: [0x2a2848, 0x1e2430, 0.02, 0xaeb8c9, 0.26, 0x2a2848, 0x1e2430, 0.11, 0xc8d4f0, 0.52],
   };
 
   assert.equal(scene.fog.isFogExp2, true);
@@ -74,8 +74,8 @@ test('all four phases keep the void and use the upper-left key with fill below i
       near(windows[index].material.emissiveIntensity, phase === 'night' ? 0.85 : 0);
     }
     assert.equal(lanternLight.color.getHex(), 0xffb060);
-    near(lanternLight.intensity, phase === 'night' ? 0.08 : 0);
-    near(lanternLight.distance, 2);
+    near(lanternLight.intensity, phase === 'night' ? 0.12 : 0);
+    near(lanternLight.distance, 3.5);
     near(lanternLight.decay, 2);
     assert.equal(lanternGlass.material.emissive.getHex(), 0xffb060);
     near(lanternGlass.material.emissiveIntensity, phase === 'night' ? 0.55 : 0);
@@ -110,7 +110,7 @@ test('east window and coop glows follow the night ramp without adding point ligh
   near(accents[0].material.emissiveIntensity, 0.85);
   near(accents[1].material.emissiveIntensity, 0.85 * 0.7);
   near(accents[2].material.emissiveIntensity, 0.85 * 0.7);
-  near(lanternLight.intensity, 0.08);
+  near(lanternLight.intensity, 0.12);
 });
 
 test('the default 72-second cycle advances through all four phases and wraps', () => {
@@ -149,19 +149,19 @@ test('colors, intensities, fog and practical lights blend smoothly between prese
   colorNear(hemisphere.groundColor, new THREE.Color(0xa8c090).lerp(new THREE.Color(0x9cb88a), blend));
   colorNear(directional.color, new THREE.Color(0xffe8c8).lerp(new THREE.Color(0xfff2d6), blend));
   near(scene.fog.density, 0.012 + (0.006 - 0.012) * blend);
-  near(ambient.intensity, 0.08 + (0.07 - 0.08) * blend);
+  near(ambient.intensity, 0.2 + (0.07 - 0.2) * blend);
   near(hemisphere.intensity, 0.25 + (0.35 - 0.25) * blend);
-  near(directional.intensity, 1.4 + (1.8 - 1.4) * blend);
+  near(directional.intensity, 2.35 + (1.8 - 2.35) * blend);
 
   cycle.setDayNightPhase('sunset');
   cycle.update(9);
   near(windowLights[0].intensity, 0.85 / 2);
   near(windowLights[1].intensity, 0.85 / 2);
-  near(lanternLight.intensity, 0.08 / 2);
+  near(lanternLight.intensity, 0.12 / 2);
   cycle.update(9);
-  near(lanternLight.intensity, 0.08);
+  near(lanternLight.intensity, 0.12);
   cycle.update(9);
-  near(lanternLight.intensity, 0.08 / 2);
+  near(lanternLight.intensity, 0.12 / 2);
   cycle.update(9);
   near(lanternLight.intensity, 0);
 });
@@ -186,9 +186,9 @@ test('sun and moon keep one upper-left azimuth with a low sunset', () => {
   const { cycle, directional } = fixture();
   for (const [phase, height] of [['morning', 4], ['daytime', 12], ['sunset', 4], ['night', 9]]) {
     cycle.setDayNightPhase(phase);
-    near(directional.position.x, -11);
+    near(directional.position.x, -0.8 * Math.hypot(11, 4));
     near(directional.position.y, height);
-    near(directional.position.z, 4);
+    near(directional.position.z, 0.6 * Math.hypot(11, 4));
     assert.deepEqual(directional.target.position.toArray(), [0, 0, 0]);
   }
   cycle.setDayNightPhase('daytime');
@@ -202,8 +202,8 @@ test('sun and moon keep one upper-left azimuth with a low sunset', () => {
   for (let i = 0; i < 64; i++) {
     cycle.update(72 / 64);
     assert.ok(directional.position.y > 0);
-    near(directional.position.x, -11);
-    near(directional.position.z, 4);
+    near(directional.position.x, -0.8 * Math.hypot(11, 4));
+    near(directional.position.z, 0.6 * Math.hypot(11, 4));
   }
 });
 
@@ -211,6 +211,8 @@ test('the character has a non-emissive, outward-normal body and a lighter crown'
   const { character } = fixture();
   const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
   assert.equal(body.material.isMeshStandardMaterial, true);
+  assert.equal(body.material.color.getHex(), 0xffd477, 'runtime body color must remain the signed hex');
+  colorNear(body.material.color, new THREE.Color(0xffd477));
   assert.equal(body.material.emissive.getHex(), 0);
   assert.equal(body.material.vertexColors, true);
   assert.equal(body.material.side, THREE.FrontSide);
@@ -223,9 +225,40 @@ test('the character has a non-emissive, outward-normal body and a lighter crown'
     const outward = p.sub(capCenter).normalize();
     const n = new THREE.Vector3().fromBufferAttribute(normal, i).normalize();
     assert.ok(outward.dot(n) > 0.99, `inverted capsule normal at vertex ${i}`);
-    if (position.getY(i) > 0.5) assert.ok(color.getX(i) > 1.2);
+    assert.ok(color.getX(i) >= 1 && color.getX(i) <= 1.15 + 1e-6);
+    if (position.getY(i) > 0.5) assert.ok(color.getX(i) > 1 && color.getX(i) <= 1.15 + 1e-6);
     if (position.getY(i) < -0.2) near(color.getX(i), 1, 1e-6);
   }
+});
+
+test('sunset blue affects water only, fades between anchors, and keeps the locked material colors', () => {
+  const { scene, cycle } = fixture();
+  const waterNames = ['farm-pond-rim', 'farm-pond-water', 'farm-pond-depth', 'farm-stream-rim', 'farm-stream-water',
+    'farm-stream-deep', 'farm-stream-foam-1', 'farm-waterfall-lip', 'farm-waterfall-face', 'farm-waterfall-streaks'];
+  const shaders = waterNames.map((name) => {
+    const mesh = scene.getObjectByName(name);
+    assert.ok(mesh, `missing ${name}`);
+    const shader = { uniforms: {}, fragmentShader: '#include <common>\n#include <opaque_fragment>' };
+    mesh.material.onBeforeCompile(shader, {});
+    assert.ok(shader.uniforms.sunsetWaterAmount, `${name} is missing its sunset weight`);
+    return shader;
+  });
+  assert.match(shaders[8].fragmentShader, /outgoingLight \*= 2\.0/, 'waterfall reflected-light shader was lost');
+  for (const [name, hex] of [['farm-pond-rim', 0x7aadb8], ['farm-pond-water', 0x5b8fa8],
+    ['farm-pond-depth', 0x3a6a7a], ['farm-stream-water', 0x5b8fa8], ['farm-waterfall-lip', 0xbfe0e6],
+    ['farm-waterfall-streaks', 0xddeff2]]) {
+    assert.equal(scene.getObjectByName(name).material.color.getHex(), hex, name);
+  }
+  const bridgeShader = { uniforms: {}, fragmentShader: '#include <common>\n#include <opaque_fragment>' };
+  scene.getObjectByName('bridge-plank-1').material.onBeforeCompile(bridgeShader, {});
+  assert.equal(bridgeShader.uniforms.sunsetWaterAmount, undefined, 'wood is not water');
+  const check = (expected) => { for (const shader of shaders) near(shader.uniforms.sunsetWaterAmount.value, expected); };
+  for (const phase of ['morning', 'daytime', 'night']) { cycle.setDayNightPhase(phase); check(0); }
+  cycle.setDayNightPhase('daytime');
+  cycle.update(9); check(0.5);
+  cycle.setDayNightPhase('sunset'); check(1);
+  cycle.update(9); check(0.5);
+  cycle.setDayNightPhase('night'); check(0);
 });
 
 test('the lantern stays attached to the moving and turning character', () => {
@@ -252,7 +285,7 @@ test('the lantern stays attached to the moving and turning character', () => {
 test('the character shadow follows the key, not the character rotation, throughout the cycle', () => {
   const { scene, character, cycle, directional } = fixture();
   const shadow = character.getObjectByName('character-shadow');
-  assert.equal(shadow.material.color.getHex(), 0);
+  assert.equal(shadow.material.color.getHex(), 0x0a1409);
   for (let i = 0; i < 64; i++) {
     cycle.update(72 / 64);
     for (const rotation of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
@@ -321,7 +354,7 @@ test('a valid phase URL selects and holds each phase without changing the void',
     morning: [0xe8d4c8, 0xffe8c8, 0],
     daytime: [0xa8d4f0, 0xfff2d6, 0],
     sunset: [0xe8dec6, 0xffeddb, 0],
-    night: [0x2a2848, 0xc8d4f0, 0.08],
+    night: [0x2a2848, 0xc8d4f0, 0.12],
   };
   for (const [phase, [sky, sun, lanternIntensity]] of Object.entries(expected)) {
     const { scene, cycle, hemisphere, directional, lanternLight } = fixture();

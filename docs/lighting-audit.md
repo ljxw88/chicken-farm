@@ -1,8 +1,8 @@
 # Lighting and graphics audit
 
-Baseline: `origin/main` at `c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa`, including EBR-73 and EBR-48. Its lighting code is unchanged from `a61bac9`; the stream, bridge and waterfall are new. The background is the signed `#101416` void; phase `sky` values are hemisphere/fog inputs, not the background.
+Baselines: `origin/main` at `c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa` (EBR-73 + EBR-48), and PR #17's preceding tip `bf8ac5f5702277f1d55aefbffe130e56e7ef8540` for the latest Look Dev comparison. The background is the signed `#101416` void; phase `sky` values are hemisphere/fog inputs, not the background. The current tip is `git rev-parse HEAD`; a commit cannot contain its own SHA.
 
-Sources read: `lookdev-lighting/LIGHTING-BRIEF.md`, its `proto-v2.png` and `scratch-values.diff`, `ebr48-look-lock.md`, and QA's `GRAPHICS-GATE.md`, `gfx-audit.mjs`, `analyze-lighting.py`, `compare-frames.py` and supplied main frames. Linear EBR-80 comment `dc2b4a90` was **not accessible**: this session exposes no Linear connector and the web page returned only “Loading…”. The detailed EBR-80 rulings supplied in the task were applied; the complete Linear comment remains unverified.
+Sources: `lookdev-lighting/LIGHTING-BRIEF.md`, its `proto-v2.png` and `scratch-values.diff`, `ebr48-look-lock.md`, QA's `GRAPHICS-GATE.md`, `gfx-matrix.mjs`, `analyze-gate.py`, `gfx-audit.mjs`, `analyze-lighting.py`, supplied main frames, and the written rulings supplied for EBR-80. QA's v2.3 changelog also records Look Dev rulings `9e8c543c` / `15a7cd92`. Linear comments, including `e5927b34`, were not independently accessible because this session has no Linear connector; the supplied rulings and QA record were used.
 
 ## Baseline light inventory
 
@@ -36,72 +36,105 @@ The baseline daytime shadow's pixel centroid is **0.044 low-resolution pixels to
 
 ## Correction and measured result
 
-The key now has a fixed world azimuth `(-11, h, 4)` → `(0,0,0)` (screen upper-left). Only height, color and intensity vary. Signed farm, water, bridge, cottage, coop, stair and ghost material hexes, fog, HUD and pixel pass are unchanged. The light colors were adjusted at sunset to keep grass green and water blue; night fill is cool and below the moon key.
+**Look Dev ruling:** rotate the fixed upper-left key toward the camera within the permitted `(-0.94,+0.34)` to `(-0.80,+0.60)` horizontal range. **Engineer:** select the `(-0.80,+0.60)` endpoint, keeping the previous horizontal radius and elevation. The shadow directions follow the key while their specified lengths stay fixed. Morning uses key 2.35 and ambient 0.20 instead of `bf8ac5f`'s 1.40 and 0.08; the warm light colors are unchanged.
 
 | Phase | Position / directional color / intensity | Ambient color / intensity | Hemisphere sky / ground / intensity | Character shadow X/Z |
 | --- | --- | --- | --- | --- |
-| Morning | `(-11,4,4)` / `#ffe8c8` / 1.4 | `#f0e0d0` / 0.08 | `#e8d4c8` / `#a8c090` / 0.25 | `(+0.451,-0.164)` |
-| Daytime | `(-11,12,4)` / `#fff2d6` / 1.8 | `#e8f0e8` / 0.07 | `#a8d4f0` / `#9cb88a` / 0.35 | `(+0.250,-0.091)` |
-| Sunset | `(-11,4,4)` / `#ffeddb` / 1.2 | `#eadbc8` / 0.08 | `#e8dec6` / `#b5b99a` / 0.20 | `(+0.451,-0.164)` |
-| Night | `(-11,9,4)` / `#c8d4f0` / 0.7 | `#aeb8c9` / 0.4 | `#2a2848` / `#1e2430` / 0.20 | `(+0.150,-0.055)` |
+| Morning | `(-9.364,4,7.023)` / `#ffe8c8` / 2.35 | `#f0e0d0` / 0.20 | `#e8d4c8` / `#a8c090` / 0.25 | `(+0.384,-0.288)` |
+| Daytime | `(-9.364,12,7.023)` / `#fff2d6` / 1.8 | `#e8f0e8` / 0.07 | `#a8d4f0` / `#9cb88a` / 0.35 | `(+0.213,-0.160)` |
+| Sunset | `(-9.364,4,7.023)` / `#ffeddb` / 1.2 | `#eadbc8` / 0.08 | `#e8dec6` / `#b5b99a` / 0.20 | `(+0.384,-0.288)` |
+| Night | `(-9.364,9,7.023)` / `#c8d4f0` / 0.52 | `#aeb8c9` / 0.26 | `#2a2848` / `#1e2430` / 0.11 | `(+0.128,-0.096)` |
 
-Cloudy still applies the locked directional multiplier 0.72 and linear-RGB fill gains `(0.86,0.96,1.08)`; full rain uses a 0.70 key multiplier to retain the specified softer shade/lit ratio. At night only, cloudy multiplies fill intensities by 0.82 and rain by 0.80 so fill remains below the weather-dimmed moon. Thus clear/cloudy/rain key intensities are day 1.8/1.296/1.26 and night 0.7/0.504/0.49; night ambient+hemisphere intensities are 0.60/0.492/0.48. Transitions remain 1.75 s and continuous.
+Cloudy applies directional ×0.72 and linear-RGB fill gains `(0.86,0.96,1.08)`; full rain applies directional ×0.70. At night only, cloudy/rain also multiply fill intensities by 0.82/0.80. Weather transitions remain continuous. **Look Dev ruling:** restore the carried lantern's signed 3.5 range. **Engineer:** peak intensity 0.12, `#ffb060`, off by day/sunset; glass emissive remains 0.55. No camera light, new light, shadow map or emissive body was added.
 
-The carried lantern remains `#ffb060`, zero in day/sunset, now 0.08 peak, distance 2, decay 2; its glass keeps the original 0.55 emissive peak. `lantern-reach.json` compares the real point light on/off near the existing sign: one nearby ground sample gains 1.57/255 luminance and one sign sample 1.21, so the weak practical still reaches both. Window lights and window/coop emissive colors and intensities are unchanged. The body remains non-emissive `MeshStandardMaterial`, roughness 0.9, `FrontSide`: its Engineer-selected base is `#fff087` multiplied by 1.45 in linear space, with vertex multipliers from 1 to 1.4 for the lighter crown. No camera light or glow was added. Capsule normals/winding remain outward.
+### Complete color and material change ledger
 
-Black-alpha ground blobs follow the same key and shorten safely at island/stair/bridge edges. Trees use 1.8× the character offset; the cottage, both coops, chicken, bridge and waterfall lip get corresponding offsets. Cloudy halves offset/opacity; rain uses 0.49× offset and 0.20× opacity; night is faint. The waterfall shadow's base is inset on the island side so it cannot paint the void. No shadow maps were enabled. The EBR-48 waterfall retains its existing tilted water normals, `DoubleSide`, vertex alpha and 2× reflected-light shader; it is not emissive.
+All values are sRGB hex unless a linear shader multiplier is stated. The main baseline and the intermediate PR tip are both shown; **no change is silent**.
 
-| Controlled measurement (0–255 sRGB luminance) | Before | After |
+| File / material | Old → current | Reason / attribution |
 | --- | --- | --- |
-| Day sunward / away, azimuth `(-12,12,12)` | 127.49 / 94.49 | 165.80 / 87.16 |
-| Day sunward / away, azimuth `(12,12,-12)` | 136.07 / 97.82 | 188.99 / 89.69 |
-| Sunset sunward / away, azimuth `(-12,3,12)` | 91.42 / 76.42 | 147.69 / 81.80 |
-| Sunset sunward / away, azimuth `(12,3,-12)` | 94.48 / 78.86 | 166.94 / 83.78 |
-| Sunset same camera-facing pixels, backlit / frontlit | 78.21 / 96.09 (0.814) | 83.75 / 169.52 (0.494) |
-| Night controlled backlight, lantern on / off | 65.88 / 15.41 | 79.56 / 71.95 |
-| Day shadow centroid toward sun, render pixels | +0.044 | −2.189 |
-| Sunset / night dark shadow pixels | 0 / 0 (brightened instead) | 49 / 25 |
-| Sunset / night centroid toward sun, render pixels | not measurable | −4.066 / −1.419 |
+| `src/character/createCharacter.ts` body | Main `#ffd477` ×1 → `bf8ac5f` `#fff087` ×1.45 (runtime `#ffffa0`) → **`#ffd477` ×1** | **Look Dev ruling:** restore the signed body. QA runtime dump and unit test both confirm `#ffd477`, with no base gain. Roughness 0.9 and non-emissive material are unchanged. |
+| Same body crown | Main ×1 (no vertex lift) → `bf8ac5f` maximum ×1.40 → maximum **×1.15** | **Look Dev ruling:** crown ≤1.15. **Engineer:** retained the small lift for night readability; see the subtract-before-add evaluation below. |
+| Same body shade shader | Main/`bf8ac5f`: no bounce shader → key-away indirect irradiance mixed up to 0.30 toward daytime `(4.50,2.80,0.80)` or night `(3,0,0)` in linear RGB; at night shaded outgoing green/blue are also reduced up to 3%/30% | **Engineer:** warm darker gold and ≥25 ΔE separation from grass after the azimuth/night retune; the signed material hex and lit crown remain unchanged. Restoring the signed body removes the clipped pale crown. |
+| `src/character/createCharacter.ts` contact blob | Main `#263b20` → `bf8ac5f` `#000000` → **`#0a1409`**, clear-day opacity 0.22 | **Look Dev ruling:** dark green-black, not pure black. |
+| `src/scene/createFarmLayout.ts` tree contacts | Main `#3d7a3a` → `bf8ac5f` `#000000` → **`#0a1409`**, clear-day opacity 0.16 | **Engineer:** preserve main's tree-shadow green hue at about one-sixth sRGB brightness so it still darkens night ground. Shared constant: `src/scene/contactShadowStyle.ts`. |
+| `src/scene/createFarmDecorations.ts` chicken contact | Main `#263b20` → `bf8ac5f` `#000000` → **`#0a1409`**, clear-day opacity 0.18 | **Look Dev ruling:** same dark green-black family as the tree contacts. |
+| `src/scene/createFarmShadows.ts` cottage, coop 1, coop 2, bridge and waterfall-lip contacts | Main: absent → `bf8ac5f` `#000000` → **`#0a1409`**, clear-day opacity 0.12 each | **Look Dev ruling:** no pure-black blobs. **Engineer:** new visible low-opacity offset shadows; listed individually in the READY note below. |
+| `src/lighting/createSunsetWaterTint.ts` pond, stream and waterfall reflected light | No output tint → **blue ×1.20 at sunset**, smoothly fading to ×1 at morning/day/night anchors | **Look Dev ruling:** sunset water B ≥ G and B−R ≥10. The signed pond/stream `#5b8fa8`, rim `#7aadb8`, depth `#3a6a7a`, foam `#bfe0e6`, fall `#8fc1cf` and streak `#ddeff2` material/vertex hexes remain unchanged. The existing waterfall ×2 reflected-light shader and animation are retained. Morning water brightens only because the whole morning scene is brighter. |
+| `src/lighting/dayNightPhases.ts` sunset lights | Main directional `#ff8a50` → `#ffeddb`; ambient `#e89870` → `#eadbc8`; hemisphere sky `#f0a878` → `#e8dec6`, ground `#c89070` → `#b5b99a` | **Engineer:** earlier EBR-80 light-color choices for green grass and blue water; not new material palette hexes. No further light-color changes in this revision. |
+| `src/lighting/dayNightPhases.ts` night ambient light | Main `#3a4560` → `#aeb8c9` | **Engineer:** earlier EBR-80 cool night fill; unchanged in this revision. Moon, lantern and window light hexes are unchanged. |
+| `src/lighting/dayNightPhases.ts` morning light intensities | Main key/ambient `0.55/0.25` → `bf8ac5f` `1.40/0.08` → **`2.35/0.20`** | **Engineer:** brighter warm-cream morning; morning light hexes stay unchanged. |
+| `src/lighting/dayNightPhases.ts` night light intensities | Main key/ambient/hemisphere `0.22/0.18/0.22` → `bf8ac5f` `0.70/0.40/0.20` → **`0.52/0.26/0.11`** | **Engineer:** darken night grass toward 1.5× main while preserving readable body and practical-light pools; light hexes remain unchanged. |
+| `src/lighting/dayNightPhases.ts` lantern point light | Main `#ffb060`, peak/range `0.55/3.5` → `bf8ac5f` `0.08/2` → **`0.12/3.5`** | **Look Dev ruling:** restore signed range. **Engineer:** intensity restores a warm local ground pool without a face brighter than the key-lit top; color/decay/glass stay unchanged. |
+| `src/lighting/createPracticalLights.ts` lantern wing | Main separate wing `#ffd477`, radius 0.055 → same `#ffd477`, radius 0.08 | **Engineer:** visible wing/grip split and thicker connector; endpoints and color unchanged. |
 
-The detector uses the real body/material, a fixed isometric camera pose and two opposing, known azimuths; it zooms for body sampling but keeps the 320×180 render buffer and 4-CSS-pixel presentation. Raycasts exclude the face and lantern, classify the cylindrical body by its outward radial normal, and sample the rendered pixels. It separately compares identical front-facing pixels with the key behind/in front. The shadow test compares rendered pixels with and without the shadow mesh at the actual phase positions; negative centroid projection means away from the sun in screen space. It also checks that the foot-pad shadow does not darken `#101416` void. Minimum side contrast is 18/255 with away/sunward ≤0.78; the backlit/frontlit ratio must be ≤0.72. Unit tests cover all 64 cycle steps and four character rotations.
+The earlier sunset light intensities from main were directional/ambient/hemisphere `0.65/0.28/0.45` → `1.2/0.08/0.20`; day `1.1/0.15/0.85` → `1.8/0.07/0.35`. The rain key multiplier remains 0.8 → 0.7. Farm/building/ghost palette tokens, void, HUD and pixel-pass settings are unchanged. The sunset-only water tint and green-black contact-shadow style are included: both are explicitly within the preceding Look Dev rulings and are tested by unit, browser and QA checks.
 
-Reproduce with `node tools/lighting-baseline.mjs` (archives the recorded main SHA, runs the *same current detector*, and **must fail** the old shading/shadow assertions) and `node --test tests/browser/lighting.browser.mjs` (must pass on this branch). `LIGHTING_URL=http://100.88.150.21:5184 LIGHTING_EVIDENCE_DIR=evidence/lighting LIGHTING_CAPTURE_LABEL=after` records the after screenshots and JSON. Controlled backlit captures are diagnostic only: the actual shipped key is upper-left, not camera-backlit.
+### READY note — VISIBLE CHANGES for Look Dev
 
-`review-{before,after}-{phase}-{weather}-full.png` are seeded, fixed-URL 1280×720 whole-island views. The matching `-water.png` frames show stream, bridge and waterfall at 1.5× camera zoom. For day/sunset/night, `-toward-crop.png` and `-away-crop.png` are true 4× nearest-neighbor crops from the normal pixel pass; `-toward.png`/`-away.png` are separate 3× camera views. `review-before.json`, `review-after.json`, `before-detector.log`, `before-baseline.json`, and `detector-final/suite-{measurements,phase-gate}.json` record settings and numbers.
+- The lantern wing/grip is a separate visible `#ffd477` mesh, radius **0.055 → 0.08**; the body is again the same signed base color. Review the wing split/seam.
+- New `cottage-shadow`, `ramp-coop-1-shadow`, `ramp-coop-2-shadow`, `wooden-bridge-shadow` and `waterfall-lip-shadow`: **each `#0a1409`, opacity 0.12 at clear day**. The character, tree and chicken contacts are also now `#0a1409`, at clear-day opacities 0.22/0.16/0.18 respectively. All offset lower-right, away from the key; cloudy/rain and night scale opacity down. These are visible additions/changes, not unchanged main artwork.
+- The stale `READY.md` is removed; `DELIVER.txt` is updated for this local handoff. Visual Look Dev review remains by eye. The work is committed locally and is not pushed by this session.
 
-### Phase/facing measurements
+### Probe and QA definitions
 
-The QA-compatible probe uses 0–255 luminance. Facing order is toward camera / away / left / right. Shade/lit is away-facing half divided by sun-facing half; bounds are minima, not target retunes.
+`tools/lighting-probe.mjs` loads the real scene at 1280×720 with the pixel pass **off**, a seeded random stream and settled weather. It simulates S/W/A/D for 0.25 s each, follows the character and samples the **away-W** frame. The projected capsule center is `(cx,cy)`, its horizontal radius is `r`, and its projected half-height is `hh` (±1 world unit projected, then ×0.7). It averages sRGB luminance `0.2126R + 0.7152G + 0.0722B` in the left/right rectangles `cx−0.85r..cx−0.2r` and `cx+0.2r..cx+0.85r`, both `cy±0.3hh`. The sign of the key's screen-right projection classifies the keyward rectangle as **lit** and the other as **shade**; the contract is shade/lit of this same body, not side/top. It does not raycast normals for these two rectangles. The older probe `contrast` uses an adjacent rectangular ground sample and `(max(L)+12.75)/(min(L)+12.75)`; it is **not** QA C4. The shade hue is HSV hue of the shade rectangle's mean RGB; for shade/grass ΔE the grass reference is the per-channel median of a 13×13 neighborhood around world `(-5.3,2.405,3.4)`, reducing rain-streak sensitivity.
 
-| Case | Shade/lit before → after (minimum) | Asymmetry before → after | Facing luminances before → after | Ground contrast before → after |
-| --- | --- | --- | --- | --- |
-| Morning | 0.831 → 0.740 (0.50) | 0.185 → 0.298 | 110.7/118.0/120.0/118.0 → 105.9/110.8/101.1/110.8 | 1.44 → 1.40 |
-| Day | 0.852 → 0.708 (0.55) | 0.160 → 0.342 | 114.9/121.4/121.3/121.4 → 109.7/114.6/106.9/114.6 | 1.13 → 1.10 |
-| Sunset | 0.985 → 0.741 (0.45) | 0.015 → 0.297 | 76.4/80.4/80.3/80.4 → 99.5/103.9/95.0/103.9 | 1.26 → 1.36 |
-| Day cloudy | 0.874 → 0.749 (0.70) | 0.134 → 0.287 | 107.4/113.6/113.6/113.6 → 102.8/108.0/101.3/108.0 | 1.15 → 1.17 |
-| Day rain | 0.871 → 0.763 (0.75) | 0.137 → 0.269 | 111.4/117.4/117.4/117.4 → 104.3/109.8/103.1/109.8 | 1.15 → 1.18 |
-| Night clear | 0.973 → 0.849 (no bound) | — | 62.1/36.8/70.7/36.7 → 84.1/82.7/84.7/82.7 | 1.21 → 1.35 |
-| Night rain | 0.973 → 0.862 (no bound) | — | 60.8/33.6/68.7/33.6 → 76.5/74.1/77.5/74.1 | 1.26 → 1.36 |
+QA `analyze-gate.py` v2.3 now uses the same shade/lit strips. Its **advisory side/top** is the mean of both side strips divided by the crown rectangle `cx±0.4r`, `cy−0.95hh..cy−0.70hh`; this is a different ratio. QA's capture holds W from spawn rather than the probe's S-then-W sequence, so nearby ground samples can differ. QA C4 takes per-channel medians of 12 body pixels and six surrounding pixels, converts RGB with `(channel/255)^2.2`, computes `(lighter+0.05)/(darker+0.05)` and CIE76 ΔE. This run's rain-day result is **1.546 / ΔE 18.5**, body `(119,101,48)` and ground `(77,78,44)`; the ground sample can differ with the timed input pose. `qa-lookdev-rulings/metrics.json` and `RESULT.txt` preserve the actual QA capture and definitions; `tools/summarize-qa-matrix.py` reproduces them.
 
-Sunset visible body/top is 0.944 → 0.778 (maximum 0.80). Night clear/rain minima are 82.7/74.1 and spreads are 2.4%/4.5% (minimum 45/255, maximum spread 35%). `qa-main-c59-analysis.txt` and `qa-c59-post-analysis.txt` are the separate real-input checks; slight rain/ground differences reflect their unseeded particles and timed key holds.
+### Phase measurements
 
-The real 4-CSS-px sunset samples in `region-proof.json` are: grass `(67,65,20)` → `(64,81,35)`, G/R **1.266**; pond `(45,42,31)` → `(41,52,51)`; stream `(45,43,32)` → `(41,54,54)`; waterfall `(86,77,60)` → `(93,114,114)`. All water samples retain blue without changing any water hex. At night the sampled roof/wall/coop A/coop B luminances are respectively 21.1/44.4/19.2/19.2 above the void (night rain 16.5/61.8/15.0/15.0; a seeded streak can affect the wall sample). The two HUD rectangles have zero changed pixels in all seven seeded frames; an empty void sample remains `(16,20,22)` / `#101416`, and both runs use the 320×180 / 4-CSS-px pass.
+Each cell is QA **shade/lit / advisory side/top**, using the actual 12-case crisp-away matrix (`0–255` sRGB luminance). Night shade/lit has no specified G2 floor.
 
-### Engineer: unresolved gate conflicts
+| Phase | Clear | Cloudy | Rain |
+| --- | --- | --- | --- |
+| Morning | 0.690 / 0.941 | 0.743 / 0.958 | 0.762 / 0.964 |
+| Day | 0.697 / 0.674 | 0.750 / 0.706 | 0.771 / 0.718 |
+| Sunset | 0.721 / 0.942 | 0.765 / 0.953 | 0.772 / 0.950 |
+| Night | 0.667 / 0.729 | 0.672 / 0.732 | 0.684 / 0.739 |
 
-The supplied unmodified QA analyzer is **not green**: `qa-main-c59-analysis.txt` has 23 failures and `qa-c59-post-analysis.txt` has 10. On the post-rebase candidate its C1 and C3 checks pass, as do the sunset/night contrast checks, but:
+The full side/top numerator and denominator are saved in `qa-lookdev-rulings/metrics.json`. **Engineer evaluation before the final azimuth/night retune:** with the signed body and bounce, removing the crown entirely gave night clear/rain minimum facing luminance 58.4/52.2, versus 60.4/54.0 with the permitted ×1.15 crown; day-rain shade/lit was 0.759 versus 0.762. The earlier `#fff087` ×1.45 body lift was removed entirely. The sampled day crown's pale `(R≥250,G≥245)` fraction fell from **5.5% at bf8ac5f to 0%**.
 
-1. **C2 versus the specified offset.** Look Dev's day offset `(+0.25,-0.09)` is 0.266 units; exactly half in cloudy is 0.133 and nearly centered rain is 0.130. QA requires ≥0.15 whenever key intensity ≥0.5. The direction cosine is 1.00 in both cases. Engineer retained the specified offsets rather than silently enlarging them; QA/Look Dev must reconcile the threshold. Night cloudy similarly has a 0.08 offset with a 0.504 key.
-2. **C4 daytime luminance versus hue allowance.** The raw analyzer reports day/cloudy/rain contrast about 1.10/1.16/1.18, below 1.30. The fixed-view body/adjacent-grass hue separations are about 37°/33°/37°; the character hue lift is limited to the character and no farm palette hex was changed. Engineer retained that hue separation instead of overexposing/recoloring the signed palette. A Look Dev/QA ruling is still required; the analyzer's failures remain failures.
-3. **C5 versus EBR-48 waterfall animation.** EBR-48 requires stepped scrolling at 0.25 units/s; the QA tool demands four identical full frames with no input. Both main and candidate fail that raw check. `waterfall-motion-check.log` and `waterfall-motion-proof.json` show zero exact changed pixels outside the visible waterfall mask in all five non-rain cases. This is not a replacement or a pass for the raw C5 gate; QA must decide how to exclude the intentional animation.
+Shade-side HSV hue, preceding PR tip → current, versus fixed grass hue: day **73.1° → 46.4° vs 101.7°**; sunset **44.7° → 33.8° vs 82.2°**; day rain **73.1° → 46.4° vs 103.3°**. The shade/grass CIE76 ΔE is approximately 32.0 day, 29.4 sunset, 28.9 day rain and at least 26.1 across the three night weathers. These are rendered sample colors, not material hexes.
 
-The task authorizes pushing/opening a PR **only after green gates**. Since the supplied QA analyzer exits 1, Engineer has not pushed or opened a PR. Do not re-baseline Gate G until Look Dev signs.
+Fixed 1280×720 frame mean luminance (0–255 sRGB): grass rectangle `(300,375,450,415)`, and a common 267,548-pixel foreground mask from the `bf8ac5f` day frame excluding HUD and `#101416` void. Morning / day / sunset: grass **91.65 / 103.68 / 72.75**; visible whole island **80.22 / 82.30 / 63.70**. Before this revision, morning was 75.86 grass / 64.13 island. `tools/lighting-frame-metrics.py` and `lookdev-frame-luminance.json` reproduce the means, zero changed HUD pixels in all seven seeded views, the preserved shadow lengths and their alignment to the rotated key. Water in other phases receives no sunset tint, though the approved global relighting changes its rendered pixels.
+
+Sunset fixed grass sample and QA's 13×13 median are `(63,81,35)`, **G/R 1.286**. QA 7×7 median water samples: pond `(41,52,55)`, B−G **+3**, B−R **+14**; stream `(45,58,61)`, **+3 / +16**; downstream stream `(42,57,63)`, **+6 / +21**; waterfall `(111,131,142)`, **+11 / +31**.
+
+Night clear fixed grass is main `(18,36,20)` → `bf8ac5f` `(34,63,34)` → **`(29,54,29)`**, approximately 1.61×/1.50×/1.45× main. The probe's darkest facing is 52.0 clear, 45.5 cloudy and 46.0 rain, with spreads 11.8%/15.0%/14.6%. QA's toward-camera lantern-lit face/top is **62.20/71.41**, **58.49/62.26** and **58.67/62.23** respectively; no face is brighter than the top. `lantern-retune/pool.json` records a nearby ground sample `(52,41,33)` → `(59,44,33)`, a **3.63/255** warm luminance lift when the restored 3.5-range lantern is on.
+
+Door-side plaster at fixed pixel `(571,269)` changed `bf8ac5f` → current from `(128,113,88)` → `(183,160,125)` in morning and `(115,112,92)` → `(139,132,107)` in daytime; the signed plaster material itself is unchanged. The new shadow world direction is opposite the new key; the daytime clear center projects `(+9.48,−0.39)` screen pixels relative to the foot (the vertical difference is subpixel and includes the 0.04-world-unit shadow lift).
+
+### Controlled directional detector
+
+| Measurement (0–255 luminance) | Main | Current |
+| --- | --- | --- |
+| Day sunward / away, two opposite azimuths | 127.49/94.49; 136.07/97.82 | 127.48/80.53; 143.86/83.50 |
+| Sunset sunward / away, two opposite azimuths | 91.42/76.42; 94.48/78.86 | 115.70/77.00; 129.84/79.33 |
+| Sunset same camera-facing pixels, backlit / frontlit | 78.21/96.09 (0.814) | 79.13/131.62 (0.601) |
+| Night backlit face, lantern on / off | 65.88/15.41 | 52.14/41.42 |
+| Day shadow centroid toward sun, render pixels | +0.044 | −2.453 |
+| Sunset / night dark shadow pixels | 0 / 0 | 50 / 22 |
+
+This separate detector raycasts body normals at controlled azimuths, compares the same front-facing pixels backlit/frontlit, and compares shadows on/off. `detector-retune/retune-measurements.json` has the current samples; the foot-pad void check changes zero void pixels. Negative centroid projection is away from the key. Controlled azimuths are diagnostic only; the shipped key remains upper-left.
+
+**QA stair-check discrepancy:** the unmodified matrix route clicks the pad at `x=12.8`, where the lower capsule still touches the last raised tread. The actual pad top is `y=0.16`, the visible shadow is correctly on it at `y=0.20`, and the capsule origin is raised to `y=0.3446` to avoid intersecting the tread. QA's origin-gap formula consequently reads `−0.1446` and fails its `−0.10` limit even though the shadow is on the pad. `detector-retune/retune-pad-transition.png` and `retune-measurements.json` record this pose; the independent rendered/geometry test checks the receiving surface rather than moving the shadow into the air or changing walking behavior. This is a raw QA failure, not a claimed pass.
+
+### Look Dev rulings and QA status
+
+1. **Look Dev C2:** specified cloudy 0.133 and rain 0.130 daytime offsets are accepted; they point opposite the key. QA v2.3 uses a 0.10 cloudy floor and no rain/night floor.
+2. **Look Dev G2:** use shade/lit of the same body with minima 0.50 morning, 0.55 day, 0.45 sunset, 0.70 cloudy and 0.75 rain. Side/top is advisory except day-clear's ≥0.54 sanity check.
+3. **Look Dev C4:** keep the signed palette; rain-day under 1.15 was accepted for EBR-80 and tracked in EBR-82 item 3. The latest request independently requires night character/ground contrast ≥1.15 or ΔE ≥25. **Not met:** at the QA-style W pose, night clear/rain/cloudy measure 1.082/1.113/1.133 and ΔE 13.9/15.0/15.2 against the local path/ground. The shade-to-grass ΔE is ≥25, but that is a different comparison and is not a substitute for C4. QA v2.3 labels these C4 failures INFO; the detector retains the new night requirement as a failing assertion.
+4. **Look Dev C5:** the stepped waterfall is the EBR-48 lock. QA masks `500,540,550,668` in still-frame checks; no animation was changed.
+5. **Look Dev:** signed `#ffd477`, crown ≤1.15, green-black blobs, blue sunset water, brighter morning, restored 3.5 lantern range, darker night and the camera-side key azimuth as recorded above; final appearance remains subject to visual review.
+
+QA's earlier v2.1 report on `bf8ac5f` was **5/88 failures**; main `c59b043` was **28/88**. The final v2.3 run reports **92 PASS, 4 INFO, 1 FAIL / 97**: the raw G5 pad-origin check above. `C4_STRICT=1` reports **4 FAIL / 97**: that G5 check and the three night C4 checks. These are different analyzer versions and must not be compared as identical raw gates. `qa-lookdev-rulings/RESULT.txt`, `RESULT-C4-strict.txt`, `matrix.json` and frames preserve the final run. The captured analyzer SHA-256 was `4b02fad560b85c48dce083a51d6ba81d132169878f2389ea5bbb9d875d2d0103`.
+
+Checks: `npm run build` passed (existing Vite chunk-size advisory); `npm test` **118/118**; `npm run test:browser` **31/32** and `node --test tests/browser/lighting.browser.mjs` **7/8**, both failing the requested night C4 assertion. The seeded review PNGs are 1280×720: seven full frames and water views, plus morning/day/sunset/night toward/away 4× crops. Reproduce with `LIGHTING_REVIEW_LABEL=after node tools/lighting-review.mjs`. `lookdev-before/` preserves the `bf8ac5f` frames and probe; the original `review-before-*` frames still represent main.
 
 ### Parity and comparison
 
-The original EBR-73 baseline at `a61bac9` is byte-for-byte unchanged. `PARITY_EVIDENCE_DIR=evidence/lighting/gate-g npm run parity` uses a copy of that baseline and exits 1, as expected for lit frames. Changed pixels: spawn 265,136; stairs-pad 230,160; placement ghost 264,743; day 267,648; night 265,136; rain 265,136; cottage/coops day 558,016; cottage/coops night 557,968. `npm run lighting:parity` adds sunset and cloudy (265,136 each). These frames change from the new lighting/shadows **and** the EBR-48 water feature relative to the older baseline. The old direct stairs click now crosses water, so the harness uses real clicks via the bridge; stairs-pad and day position/yaw/camera differ from the pre-water baseline and are recorded, not hidden.
-
-QA's `compare-frames.py` reports all 70 full lit frames changed (`qa-compare-raw.log`); `qa-compare-allowed.log` explicitly allows those lit-frame changes and is not a claim of world pixel parity. The independent seeded region check verifies HUD, void sample and 4-pixel presentation separately. No Gate G reference was re-recorded.
+The original EBR-73 Gate G baseline at `a61bac9` was not re-recorded. Earlier `npm run parity` and QA `compare-frames.py` runs reported changed lit frames, as expected from EBR-80 lighting and EBR-48 water; their logs are historical, not a claim of pixel parity for this revision. The bridge-route stairs/day poses differ from that older pre-water baseline. Do not re-baseline Gate G until Look Dev signs.
 
 ## Other graphics audit
 

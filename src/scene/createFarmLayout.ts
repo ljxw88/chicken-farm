@@ -4,6 +4,7 @@ import { createWaterFeature } from './createWaterFeature';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
 import type { FarmObstacle } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
+import { CONTACT_SHADOW_COLOR } from './contactShadowStyle';
 
 // Positions are shared by the visible props and their collision footprints.
 export const FARM_LAYOUT = {
@@ -107,8 +108,7 @@ function createTrees(group: THREE.Group) {
   const crowns = [FARM_PALETTE.treeFoliage, FARM_PALETTE.treeFoliageLight, FARM_PALETTE.treeFoliageDark]
     .map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
   const shadowMaterial = new THREE.MeshBasicMaterial({
-    // A shadow must darken even when the surrounding night ground is dark.
-    color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false,
+    color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.16, depthWrite: false,
   });
 
   FARM_LAYOUT.trees.forEach(({ x, z, scale }, index) => {

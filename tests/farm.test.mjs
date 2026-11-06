@@ -23,9 +23,9 @@ test('the original farm palette stays locked alongside the building palette', ()
   scene.traverse((object) => {
     if (!object.isMesh) return;
     if (object.name.startsWith('farm-tree-shadow-')) {
-      // Unlit black alpha darkens rather than changing any signed tree color.
+      // The unlit contact is a darkened version of main's green tree blob.
       assert.equal(object.material.isMeshBasicMaterial, true);
-      assert.equal(object.material.color.getHex(), 0);
+      assert.equal(object.material.color.getHex(), 0x0a1409);
       assert.equal(object.material.transparent, true);
       return;
     }

@@ -299,7 +299,7 @@ test('night lights, weather controls, phase and pixel rendering remain usable', 
       glass: character.getObjectByName('lantern-glass').material.emissiveIntensity,
     };
   });
-  assert.deepEqual(lights, { windows: [0.85, 0.85], panes: [0.85, 0.85], lantern: 0.08, glass: 0.55 });
+  assert.deepEqual(lights, { windows: [0.85, 0.85], panes: [0.85, 0.85], lantern: 0.12, glass: 0.55 });
   await capture(page, 'night-cloudy.png');
 
   await page.evaluate(() => window.setWeather('rain'));
@@ -308,7 +308,7 @@ test('night lights, weather controls, phase and pixel rendering remain usable', 
   assert.deepEqual(await page.evaluate(() => [
     window.__ebr71Test.scene.getObjectByName('window-light-1').intensity,
     window.__ebr71Test.character.getObjectByName('lantern-light').intensity,
-  ]), [0.85, 0.08]);
+  ]), [0.85, 0.12]);
   await capture(page, 'night-rain.png');
   await page.evaluate(() => window.setWeather('clear'));
   await page.waitForFunction(() => window.getWeather().rainAmount < 0.01, null, { timeout: 15000 });

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CHARACTER_RADIUS } from '../character/createCharacter';
 import { createPracticalLights, type EmissiveAccent, type WindowPane } from './createPracticalLights';
+import { createSunsetWaterTint } from './createSunsetWaterTint';
 import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, type DayNightPhaseName } from './dayNightPhases';
 
 // THREE.Color converts the locked sRGB hex values to its linear working space.
@@ -11,6 +12,11 @@ const phaseColors = DAY_NIGHT_PHASES.map((phase) => ({
   hemisphereGround: new THREE.Color(phase.hemisphereGround),
   directional: new THREE.Color(phase.directional),
 }));
+// Engineer: use Look Dev's camera-side endpoint while retaining the original
+// horizontal radius, so rotating the azimuth does not change the elevation.
+const KEY_RADIUS = Math.hypot(11, 4);
+const KEY_X = -0.8 * KEY_RADIUS;
+const KEY_Z = 0.6 * KEY_RADIUS;
 
 interface DayNightCycleOptions {
   scene: THREE.Scene;
@@ -40,6 +46,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
   scene.add(ambient, hemisphere, directional);
 
   const practicalLights = createPracticalLights(character, windows, extraEmissives);
+  const setSunsetWaterTint = createSunsetWaterTint(scene);
   const characterShadow = character.getObjectByName('character-shadow');
   const lightDirection = new THREE.Vector3();
   const targetPosition = new THREE.Vector3();
@@ -153,6 +160,8 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     const toColors = phaseColors[nextIndex];
     const blend = THREE.MathUtils.smoothstep(phasePosition - index, 0, 1);
     const lerp = THREE.MathUtils.lerp;
+    // Fade only into and out of the sunset anchor; other phase anchors are unchanged.
+    setSunsetWaterTint((from.name === 'sunset' ? 1 - blend : 0) + (to.name === 'sunset' ? blend : 0));
 
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);
@@ -176,7 +185,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     const angle = progress * Math.PI * 2;
     const height = Math.sin(angle);
     const moonArc = Math.min(0, height) ** 2;
-    directional.position.set(-11, 4 + 8 * Math.max(0, height) + 5 * moonArc, 4);
+    directional.position.set(KEY_X, 4 + 8 * Math.max(0, height) + 5 * moonArc, KEY_Z);
     updateCharacterShadow();
   }
 

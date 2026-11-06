@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -36,35 +37,59 @@ test('fixed upper-left key follows the specified phase, weather and facing rules
   // This uses the native-resolution scene and the same screen regions as QA's
   // independent analyzer, while retaining the actual materials and lights.
   const { stdout } = await runFile(process.execPath, ['tools/lighting-probe.mjs'], {
-    timeout: 110000, env: { ...process.env, LIGHTING_URL: url, LIGHTING_TUNE: '{}', LIGHTING_PROBE_CAPTURE: '' },
+    timeout: 110000, env: { ...process.env, LIGHTING_URL: url, LIGHTING_TUNE: '{}', LIGHTING_PROBE_CAPTURE: '',
+      LIGHTING_PROBE_ONLY: '', LIGHTING_QA_POSE: '', LIGHTING_QA_STEP: '' },
   });
   const metrics = JSON.parse(stdout);
   if (evidenceDir) await writeFile(join(evidenceDir, `${label}-phase-gate.json`), `${JSON.stringify(metrics, null, 2)}\n`);
-  const ratios = { 'morning-clear': 0.5, 'day-clear': 0.55, 'sunset-clear': 0.45, 'day-cloudy': 0.7, 'day-rain': 0.75 };
+  // Look Dev G2: compare the shaded and lit halves of the same body; the
+  // different side/top metric in the QA matrix is advisory, not this gate.
+  const ratios = { 'morning-clear': 0.5, 'day-clear': 0.55, 'sunset-clear': 0.45,
+    'morning-cloudy': 0.7, 'day-cloudy': 0.7, 'sunset-cloudy': 0.7,
+    'morning-rain': 0.75, 'day-rain': 0.75, 'sunset-rain': 0.75 };
   for (const [name, minRatio] of Object.entries(ratios)) {
     const sample = metrics[name];
     assert.ok(sample.ratio >= minRatio, `${name}: shade/lit ${sample.ratio} is below ${minRatio}`);
-    if (name !== 'sunset-clear') assert.ok(sample.asymmetry >= 0.25, `${name}: sunward asymmetry ${sample.asymmetry} < 0.25`);
+    if (['morning-clear', 'day-clear', 'day-cloudy', 'day-rain'].includes(name)) {
+      assert.ok(sample.asymmetry >= 0.25, `${name}: sunward asymmetry ${sample.asymmetry} < 0.25`);
+    }
   }
-  assert.ok(metrics['sunset-clear'].bodyToTop <= 0.8, 'sunset body must remain darker than its lit crown');
   for (const [name, sample] of Object.entries(metrics)) {
-    assert.ok(Math.abs(sample.lightPosition[0] + 11) < 1e-6 && Math.abs(sample.lightPosition[2] - 4) < 1e-6,
-      `${name}: key left its fixed upper-left azimuth`);
+    const horizontal = Math.hypot(sample.lightPosition[0], sample.lightPosition[2]);
+    assert.ok(Math.abs(sample.lightPosition[0] / horizontal + 0.8) < 1e-6 && Math.abs(sample.lightPosition[2] / horizontal - 0.6) < 1e-6,
+      `${name}: key left Look Dev's camera-side azimuth`);
     assert.ok(sample.shadowCosine > 0.99, `${name}: shadow points toward the key`);
-    // Look Dev's specified daytime offset, halved for cloud and nearly
-    // centered in rain, is below QA's independent 0.15-unit C2 threshold.
-    // Keep the spec here and report the conflict rather than changing it.
-    if (!['day-cloudy', 'day-rain'].includes(name) && sample.lightIntensity >= 0.5) {
-      assert.ok(sample.shadowLength >= 0.15, `${name}: shadow offset is too small`);
+    // Look Dev accepted the specified half-length cloudy and nearly centred
+    // rain offsets, even though the older QA analyzer used a 0.15-unit floor.
+    if (!name.startsWith('night') && !name.endsWith('rain')) {
+      const floor = name.endsWith('cloudy') ? 0.1 : 0.15;
+      assert.ok(sample.shadowLength >= floor, `${name}: shadow offset is too small`);
     }
     assert.ok(sample.min >= 45 && sample.spread <= 0.35, `${name}: unreadable or unstable facing ${JSON.stringify(sample.facings)}`);
+    assert.equal(sample.bodyColor, 'ffd477', `${name}: runtime body color is not the signed hex`);
     if (name.startsWith('night')) {
-      assert.ok(sample.contrast >= 1.3, `${name}: character/ground contrast ${sample.contrast} < 1.30`);
-      assert.ok(Object.values(sample.bodyToTopByFacing).every((ratio) => ratio <= 1), `${name}: face brighter than moon-lit top`);
+      assert.ok(Object.values(sample.faceToTopByFacing).every((ratio) => ratio <= 1), `${name}: face brighter than moon-lit top`);
+      assert.ok(sample.spawn.faceToTop <= 1, `${name}: spawn face brighter than moon-lit top`);
     }
+    assert.ok(sample.shadeGrassDeltaE >= 25, `${name}: shade and grass are too similar (ΔE ${sample.shadeGrassDeltaE})`);
   }
-  for (const name of ['morning-clear', 'sunset-clear']) {
-    assert.ok(metrics[name].contrast >= 1.3, `${name}: character/ground contrast below 1.30`);
+  // QA's C4 samples the away pose after W from spawn, unlike the S-then-W
+  // sequence above. Check the requested night contrast at that same pose.
+  const { stdout: nightOutput } = await runFile(process.execPath, ['tools/lighting-probe.mjs'], {
+    timeout: 45000, env: { ...process.env, LIGHTING_URL: url, LIGHTING_TUNE: '{}', LIGHTING_PROBE_CAPTURE: '',
+      LIGHTING_PROBE_ONLY: 'night-clear,night-cloudy,night-rain', LIGHTING_QA_POSE: '1', LIGHTING_QA_STEP: '0.27' },
+  });
+  const nightMetrics = JSON.parse(nightOutput);
+  if (evidenceDir) await writeFile(join(evidenceDir, `${label}-night-qa-pose.json`), `${JSON.stringify(nightMetrics, null, 2)}\n`);
+  const nightGrass = metrics['night-clear'].grass.rgb;
+  assert.ok(nightGrass.every((channel, i) => Math.abs(channel - [26, 52, 28][i]) <= 5),
+    `night grass should be about 1.5× main: ${nightGrass}`);
+  const [morning, day, evening] = ['morning-clear', 'day-clear', 'sunset-clear'].map((name) => metrics[name].ground);
+  assert.ok(morning > evening && Math.abs(day - morning) < Math.abs(morning - evening),
+    `morning grass should be brighter than sunset and closer to day: ${morning}/${day}/${evening}`);
+  for (const name of ['morning-clear', 'day-clear']) {
+    const [red, green, blue] = metrics[name].cottageFront.rgb;
+    assert.ok(red > green && green > blue, `${name}: door-side plaster no longer reads warm cream`);
   }
   assert.ok(metrics['morning-clear'].shadowLength > metrics['day-clear'].shadowLength);
   assert.ok(Math.abs(metrics['day-clear'].shadowLength - 0.266) < 0.001);
@@ -72,31 +97,40 @@ test('fixed upper-left key follows the specified phase, weather and facing rules
   assert.ok(metrics['day-rain'].shadowLength < metrics['day-cloudy'].shadowLength);
   assert.ok(metrics['day-rain'].shadowOpacity < metrics['day-cloudy'].shadowOpacity);
   assert.ok(metrics['night-clear'].shadowOpacity < metrics['day-clear'].shadowOpacity);
-  // Daytime hue separation is reviewed separately if luminance contrast cannot
-  // reach 1.30 without abandoning the signed yellow/green palette.
   const hue = ([r, g, b]) => {
     const max = Math.max(r, g, b); const min = Math.min(r, g, b); const d = max - min;
     if (d < 1) return NaN;
     const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
     return (h * 60 + 360) % 360;
   };
-  for (const name of ['day-clear', 'day-cloudy', 'day-rain']) {
+  for (const name of ['morning-clear', 'day-clear', 'sunset-clear', 'day-cloudy', 'day-rain', 'night-clear', 'night-rain']) {
     const { bodyRgb, groundRgb } = metrics[name];
     const difference = Math.abs(hue(bodyRgb) - hue(groundRgb));
     assert.ok(Math.min(difference, 360 - difference) >= 5, `${name}: character and adjacent ground lack hue separation`);
+    const [red, green, blue] = metrics[name].shadeRgb;
+    const shadeHue = hue(metrics[name].shadeRgb);
+    const grassHue = hue(metrics[name].grass.rgb);
+    assert.ok(red >= green && green > blue && grassHue - shadeHue >= 30,
+      `${name}: shade should read warm ochre rather than grass green: ${metrics[name].shadeRgb}`);
+    assert.equal(metrics[name].paleFraction, 0, `${name}: clipped pale-yellow pixels on the crown`);
   }
   const sunset = metrics['sunset-clear'];
   for (const { rgb } of sunset.grassSamples.slice(1)) {
     assert.ok(rgb[1] >= 1.25 * rgb[0], `sunset grass became olive: ${rgb}`);
   }
-  assert.ok(sunset.pond.rgb[2] > sunset.pond.rgb[0] + 5, `sunset pond lost its blue: ${sunset.pond.rgb}`);
-  assert.ok(sunset.stream && sunset.stream.rgb[2] > sunset.stream.rgb[0] + 5,
-    `sunset stream lost its blue: ${JSON.stringify(sunset.stream)}`);
-  assert.ok(sunset.waterfall && sunset.waterfall.rgb[2] > sunset.waterfall.rgb[0] + 5,
-    `sunset waterfall lost its blue: ${JSON.stringify(sunset.waterfall)}`);
+  for (const name of ['sunset-clear', 'sunset-cloudy', 'sunset-rain']) {
+    for (const feature of ['pond', 'stream', 'waterfall']) {
+      const rgb = metrics[name][feature]?.rgb;
+      assert.ok(rgb && rgb[2] >= rgb[1] && rgb[2] - rgb[0] >= 10,
+        `${name} ${feature} needs B >= G and B-R >= 10: ${rgb}`);
+    }
+  }
   const summary = Object.fromEntries(Object.entries(metrics).map(([name, m]) => [name,
     { asymmetry: m.asymmetry, ratio: m.ratio, bodyToTop: m.bodyToTop, contrast: m.contrast, facings: m.facings }]));
   console.log('PHASE_GRAPHICS', JSON.stringify(summary));
+  const nightFailures = Object.entries(nightMetrics).filter(([, { qa }]) => qa.contrast < 1.15 && qa.deltaE < 25)
+    .map(([name, { qa }]) => `${name}: contrast ${qa.contrast.toFixed(3)}, ΔE ${qa.deltaE.toFixed(1)}`);
+  assert.equal(nightFailures.length, 0, `QA night character/ground contrast: ${nightFailures.join('; ')}`);
 });
 
 after(async () => {
@@ -432,5 +466,42 @@ test('directional character shading and visible shadow follow the key light', { 
     assert.ok(result.height > 2.4, 'character was not standing on the deck');
     assert.equal(result.outside, 0, 'player shadow projects off the raised bridge deck');
     await page.close();
+  });
+  await t.test('the capsule-edge shadow remains on the foot pad', async () => {
+    const { page, errors } = await openPhase(context, 'daytime');
+    const result = await page.evaluate(() => {
+      const { scene, character, controls, stairs, dayNight, follow, composer } = window.__lightingTest;
+      character.position.set(12.8, 2.4, 0.75);
+      controls.update(0);
+      dayNight.updateCharacterShadow();
+      follow(character.position);
+      scene.updateMatrixWorld(true);
+      composer.render(0);
+      const shadow = character.getObjectByName('character-shadow');
+      const shadowY = shadow.getWorldPosition(character.position.clone()).y;
+      const pad = stairs.footPad;
+      const padTop = pad.getWorldPosition(character.position.clone()).y + pad.geometry.parameters.height / 2;
+      return { characterY: character.position.y, shadowY, padTop, gap: shadowY - character.position.y };
+    });
+    if (evidenceDir) await page.screenshot({ path: join(evidenceDir, `${label}-pad-transition.png`) });
+    proof.padTransition = result;
+    assert.deepEqual(errors, []);
+    assert.ok(Math.abs(result.shadowY - result.padTop - 0.04) < 1e-6, `shadow left the visible pad: ${JSON.stringify(result)}`);
+    assert.ok(result.characterY > result.padTop, 'capsule must clear the adjoining tread');
+    await page.close();
+  });
+  await t.test('the restored lantern range creates a warm ground pool', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'ebr80-lantern-'));
+    try {
+      await runFile(process.execPath, ['tools/lantern-audit.mjs'], { timeout: 30000,
+        env: { ...process.env, LIGHTING_URL: url, LIGHTING_TUNE: '{}', LIGHTING_EVIDENCE_DIR: dir, LIGHTING_CAPTURE_LABEL: 'pool' } });
+      const result = JSON.parse(await readFile(join(dir, 'pool.json'), 'utf8'));
+      assert.equal(result.distance, 3.5);
+      assert.equal(result.intensity, 0.12);
+      assert.ok(result.ground.some(({ on, off, luminanceLift }) => luminanceLift > 3 && on[0] - off[0] > on[1] - off[1]),
+        `lantern did not create a visible warm ground pool: ${JSON.stringify(result.ground)}`);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

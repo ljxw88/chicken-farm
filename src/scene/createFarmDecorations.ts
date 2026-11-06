@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CONTACT_SHADOW_COLOR } from './contactShadowStyle';
 
 /** Static scenery only; these props do not interact or block movement. */
 export function createFarmDecorations(scene: THREE.Scene, groundHeight: number) {
@@ -43,7 +44,7 @@ export function createFarmDecorations(scene: THREE.Scene, groundHeight: number) 
 
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.43, 20),
-    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.18, depthWrite: false }),
   );
   shadow.name = 'farm-chicken-shadow';
   shadow.rotation.x = -Math.PI / 2;
