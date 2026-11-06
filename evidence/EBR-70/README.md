@@ -1,5 +1,10 @@
 # EBR-70 evidence
 
+**Historical:** the root-level frames and logs document the original
+`8ce0cbe` submission. For the Look Dev sheep revision, use
+[`sheep-revision/`](sheep-revision/README.md) and the new masks under
+`mask/sheep-revision/` and `mask/main-revision/`.
+
 `candidate/` and `baseline/` contain matched 1280×720, DPR-1 Chromium/SwiftShader
 frames. `diff/` is magenta where the complete frames differ. In `mask/`, white
 pixels are the declared allowed changes: the candidate with the new sheepfold
@@ -32,8 +37,9 @@ pad-side routes when the browser suite is run with the commands below.
 failure: its former grass reference lay under the new shelter. The probe now
 samples unobstructed grass instead; its lighting thresholds are unchanged.
 
-Reproduce (run from the worktree; run `grep MemAvailable /proc/meminfo` before
-each heavy command, pause below 4 GB, and run the commands serially):
+Historical capture commands (on a revised head, use the revision README instead
+to avoid overwriting this record). Run `grep MemAvailable /proc/meminfo` before
+each heavy command, pause below 4 GB, and run the commands serially:
 
 ```sh
 /home/michael/OpenBot/Shared/farm-tools/heavy npm ci

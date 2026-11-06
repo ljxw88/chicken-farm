@@ -1,12 +1,14 @@
-EBR-70 — Sheep, pen and lean-to
+EBR-70 — Look Dev sheep silhouette revision
 
 Branch: feat/ebr70-sheep-pen
-Comparison base: 5d9ba48f6bd9bfbc3974351b50d0ce89934380ff
-Tip SHA: run `git rev-parse HEAD`; the final evidence/hand-off commit cannot
-embed its own hash. Tested implementation/harness SHA:
-c60b257b8dde98fd1bf94d2675352f5a8cdd44a0. It is also recorded in
-evidence/EBR-70/gate-g.json; the final commit adds only evidence and this file.
-Any later rebase or head change requires fresh evidence and QA review.
+Accepted pen and revision parent: 8ce0cbe19d7c63e5c2608b28725ccb8e9b4700aa
+Clean-main comparison base: 5d9ba48f6bd9bfbc3974351b50d0ce89934380ff
+Tip SHA: run `git rev-parse HEAD`; a commit cannot embed its own hash. The
+tested implementation/harness SHA is 96d0084493bec20e2dc2171b75c238f5751caded,
+also recorded in the revision Gate reports. The final commit adds only evidence
+and this handoff. Any later head change
+requires fresh evidence and QA review. Local HEAD moved after the 8ce0cbe report;
+PR #22 was not edited or pushed and remains at its previous published head.
 
 Open / try
 - The dev server is bound to http://100.88.150.21:5213/ with --strictPort.
@@ -17,25 +19,28 @@ Open / try
 - Sheep phases are deterministic via ?seed=<integer>; absent/invalid seeds use
   0xeb700001 (decimal 3949985793). The existing weather RNG is not changed by
   this URL parameter; the evidence harness seeds rain separately as parity does.
-- Open evidence/EBR-70/README.md for frames, per-frame masks, crops and replay.
+- Open evidence/EBR-70/sheep-revision/README.md for the revised frames, 4×
+  unzoomed gameplay crops, per-part pixel counts, masks and replay.
 - Source: src/scene/sheep/createSheep.ts and src/scene/sheepfold/; assembly and
   the shared obstacle hookup are in src/main.ts.
 
 Visible-change ledger
-- Two stationary sheep with distinct three-lobe wool silhouettes, brown faces,
-  ears, noses and four legs. Eyes were omitted to avoid subpixel details. Only
-  the heads nod, ±12 degrees over four seconds. Legs/face use #6b4a2e;
-  ears/nose use #7a5a3a.
+- Only the two sheep changed from 8ce0cbe: their fleece is elongated, their
+  dark faces protrude, and their four dark legs extend below the wool. They
+  face -20° and -25° from +Z, retain distinct lobe layouts and nod ±12° over
+  four seconds. Eyes remain omitted. Legs/face use #6b4a2e; ears/nose #7a5a3a.
 - Nine reused signed fence segments enclose a nominal 4.5 × 3.0 pen; the middle
   +Z segment is omitted. Rails are #d4a574 and posts #8b6914. A single-sloped,
   open-front lean-to sits at the back: #c8956c walls, #a94a30 roof, #6b4423 posts.
-- New sheep, fence and lean-to contact shadows use #0a1409 and follow the same
+- The accepted sheep, fence and lean-to contact shadows use #0a1409 and follow the same
   fixed upper-left key, including the existing phase/weather shadow response.
   In daytime the sheep-shadow world offset is (+0.1915, -0.1436) in X/Z,
   projecting about 8.53 px right and 0.70 px down on the same ground plane.
-- Hovering the pen in placement mode intentionally changes the ghost/wash and
-  status to blocked. No HUD styling, existing material, light or scenery changed;
-  no new light, emissive surface or ground patch was added.
+- The pen, lean-to, all shadows, collision circles, placement behavior, HUD,
+  lights and other scenery are unchanged from 8ce0cbe. No new light, emissive
+  surface or ground patch was added.
+- The only changed `src/` file relative to 8ce0cbe is
+  src/scene/sheep/createSheep.ts; other code edits are tests/evidence tooling.
 - EBR-75 rebase note: the scene assembly adds nine signed fence collisions, one
   shelter box, two sheep circles and a placement-only box (blocksWalking=false).
   Preserve the existing fence builder/collision reuse, shadow callback and seed.
@@ -48,87 +53,147 @@ Measured design approximations / deviations
   rendered fence bounds are 4.60 × 2.97. The nearest pre-existing collider is
   tree 1 at 1.236 units; the conservative path-bounding-box gap is 1.213. Corner
   posts are shared rather than duplicated to avoid coplanar fence meshes.
-- Measured wool-body bounds (X,Y,Z) are 0.590 × 0.635 × 0.960 and
-  0.625 × 0.615 × 0.970, versus the approximate 0.6 × 0.55 × 0.9 design. The
-  grounded overall heights are 0.790 and 0.780 versus 0.8; leg stubs are exactly
-  0.12 × 0.20 × 0.12. Individual lobe diameters are about 0.54–0.58 versus
-  the approximate 0.50–0.55 design. The taller overlapping wool keeps the feet joined.
+- In each sheep's local +Z-forward coordinates, measured wool-body bounds
+  (X,Y,Z) are 0.580 × 0.550 × 0.890 and 0.585 × 0.550 × 0.890, inside the
+  revision's 0.55–0.60 × 0.50–0.55 × 0.85–0.90 ranges. Rotation gives larger
+  world-axis AABBs; see the revision geometry.json. Overall height is 0.760.
+- The brown face now measures 0.36 × 0.32 × 0.36, versus the original approx.
+  0.30 × 0.30 × 0.32. It protrudes 0.348 and 0.342 units at the seeded pose;
+  the 1°-sampled nod range has a 0.335 minimum, above the 0.25 requirement.
+  The legs are 0.24 × 0.32 ×
+  0.24 rather than the original 0.12 × 0.20 × 0.12, exposing 0.210 below the
+  wool and making them readable at the actual pixel pass. One rear leg of the
+  second sheep is staggered 0.08 units; ears are 0.12 × 0.12 × 0.14 versus the
+  original 0.10 × 0.10 × 0.12. Both 0.4-radius collision circles stay put.
 - Both face materials use #6b4a2e; the second uses a 0.86 linear vertex-colour
   multiplier for the requested slightly darker head, without a new palette hue.
   Wool materials use only #fff1d7, #f3ead6 and #e4d1ae. A wool-only highlight
-  limiter caps linear outgoing light at 0.9 (~243 sRGB) without changing albedo
-  tokens or scene lighting, preventing clipped-white wool across phases.
+  limiter still caps linear outgoing light at 0.9 (~243 sRGB). A wool-only
+  response to the existing blue-biased moon key blends toward linear RGB gains
+  (1.60,1.00,0.70), warming night shading without changing the albedo tokens,
+  daytime/sunset shader response, or scene lighting.
 - The shelter body is 1.4 × 1.2, top 1.1, rise 0.3 over its 1.2 depth, and
   its 0.12 overhang gives a measured 1.64 × 1.44 roof footprint. It is a solid
   collision box despite its open-looking front, as specified.
 
+Actual 320 × 180 pixel-pass visibility
+- At the normal unzoomed game camera, across day, sunset and night at 0, 1, 2
+  and 3 seconds of the seeded nod, sheep 1's wool covers 35–36 pixels in an
+  8–9 × 6 bounding box, its face 20–21 pixels with a 5-pixel horizontal run,
+  and its legs 21–22 pixels with a 7-pixel run. Its two near legs each run 3 px.
+- Sheep 2's wool covers 33 pixels in an 8 × 6 box, its face 13–19 pixels with
+  a 4–5-pixel run, and its legs 11–12 pixels with a 5-pixel run. Its two near
+  legs run 2 and 4 px. Far-side legs are naturally partly/fully occluded by the
+  wool or the unchanged fence; the report does not claim all four are visible.
+- At night the respective wool median RGB ranges are (58–61,53–54,43) and
+  (65,53,46); no wool-influenced pixel is blue-dominant by more than 2 levels.
+  Counts require a >=3 RGB-level difference when the part is hidden. See
+  sheep-revision/browser/visibility.json, the diagnostic part masks, the three
+  1280 × 720 frames and their 4× nearest-neighbour sheep crops (288 × 240 and
+  272 × 240 pixels), made from the ordinary, unzoomed game camera.
+- Pixel counts per part below are ranges over the four nod samples:
+  phase    sheep   wool    face    legs
+  day      1       35–36   20–21   21–22
+  day      2       33      16–19   11–12
+  sunset   1       35–36   20–21   21–22
+  sunset   2       33      14–19   11–12
+  night    1       35–36   20–21   21–22
+  night    2       33      13–19   11–12
+
 Intended pixel changes
-- Exact white-on-black 1280 × 720 masks are in evidence/EBR-70/mask/, one per
-  named comparison frame. They permit only the projected sheep, fence, lean-to,
-  their contact shadows and the resulting occlusion/compositing of the old scene.
-  The unchanged frosted HUD can reflect those objects when they appear behind it.
-- The separate placement-rejected frame also permits the required blocked ghost,
-  rust wash, and status/control feedback. Its isolated feedback-only pixels are
-  declared by mask/placement-rejected-feedback.png. Other placement-ghost
-  frames use a clear tile and permit no placement UI changes.
-- Fixed-frame mask bounds are inclusive (Xmin,Ymin,Xmax,Ymax), in CSS pixels:
-  spawn-day             13,152  [308,296,499,435]
-  spawn-sunset          13,072  [308,296,503,435]
-  spawn-night           13,008  [308,296,499,435]
-  spawn-cloudy          13,248  [308,296,499,435]
-  spawn-rain            13,024  [308,296,499,435]
-  walk-day              13,296  [312,240,503,379]
+- Against 8ce0cbe, only the old/new sheep silhouettes and their wool shading may
+  change, including normal occlusion and frosted-HUD compositing. Exact white-on-
+  black 1280 × 720 masks are in evidence/EBR-70/mask/sheep-revision/, one per
+  comparison frame. The unchanged fence, lean-to and all shadows stay visible
+  when the two sheep are hidden in both captures.
+- Against clean main 5d9ba48, the declared masks in mask/main-revision/ also
+  allow the original pen, shelter, sheep shadows and placement-rejection feedback.
+  The feedback-only mask is mask/main-revision/placement-rejected-feedback.png;
+  the rejected placement behavior itself is unchanged from 8ce0cbe.
+  The original root-level masks/frames remain the historical 8ce0cbe record.
+- Against 8ce0cbe, changed pixels / allowed-mask pixels and inclusive mask
+  bounds (Xmin,Ymin,Xmax,Ymax) are:
+  spawn-day              2,288 / 2,320  [344,328,463,403]
+  spawn-sunset           2,192 / 2,320  [344,328,463,403]
+  spawn-night            2,288 / 2,320  [344,328,463,403]
+  spawn-cloudy           2,240 / 2,304  [344,328,463,403]
+  spawn-rain             2,256 / 2,304  [344,328,463,403]
+  walk-day               2,208 / 2,272  [348,272,467,347]
+  stairs-pad             2,435 / 3,915  [25,22,155,143]
+  placement-ghost        2,288 / 2,320  [344,328,463,403]
+  placement-rejected     2,288 / 2,320  [344,328,463,403]
+  cottage-coops-day      6,736 / 6,848  [16,432,227,567]
+  cottage-coops-night    6,752 / 6,848  [16,432,227,567]
+  pen-day                6,576 / 6,800  [528,308,739,443]
+  pen-sunset             6,400 / 6,800  [528,308,739,443]
+  pen-night              6,720 / 6,800  [528,308,739,443]
+  The union masks include both old and new sheep silhouettes, so they can be
+  larger than the changed-pixel count. In stairs-pad, 291 changed pixels fall
+  within the unchanged biome HUD's frosted bounds; no placement controls change.
+- Main-comparison changed pixels and inclusive mask bounds (Xmin,Ymin,Xmax,Ymax):
+  spawn-day             13,200  [308,296,499,435]
+  spawn-sunset          13,120  [308,296,503,435]
+  spawn-night           13,088  [308,296,499,435]
+  spawn-cloudy          13,312  [308,296,499,435]
+  spawn-rain            13,104  [308,296,499,435]
+  walk-day              13,328  [312,240,503,379]
   stairs-pad            17,588  [0,18,195,175]
-  placement-ghost       13,152  [308,296,499,435]
-  placement-rejected    16,727  [308,30,735,435]
-  cottage-coops-day     37,312  [0,372,299,619]
-  cottage-coops-night   37,136  [0,372,295,619]
-  pen-day               40,608  [460,248,811,499]
-  pen-sunset            40,416  [460,248,815,499]
-  pen-night             40,464  [460,248,807,499]
-- In stairs-pad, 6,548 changed pixels lie within the biome HUD bounds because
-  the new scenery is behind its unchanged frosted backdrop. In placement-rejected,
-  5,463 pixels belong to the isolated feedback mask (including 3,511 within
-  placement-control bounds); feedback and scenery masks can overlap. The status
-  intentionally changes from 'Ready to place' to 'Blocked by a farm object'.
+  placement-ghost       13,184  [308,296,499,435]
+  placement-rejected    16,759  [308,30,735,435]
+  cottage-coops-day     37,488  [0,372,299,619]
+  cottage-coops-night   37,344  [0,372,295,619]
+  pen-day               40,656  [460,248,811,499]
+  pen-sunset            40,496  [460,248,815,499]
+  pen-night             40,528  [460,248,807,499]
+- In stairs-pad, 6,548 changed pixels are within the unchanged biome HUD bounds
+  because its frosted backdrop reflects the new scene. In placement-rejected,
+  5,463 pixels belong to the feedback mask, including 3,511 within control bounds.
 
 Verification and remaining limitations
-- See evidence/EBR-70/README.md and the recorded logs/JSON for exact commands,
-  image bounds, pixel counts, sampled motion and phase/weather measurements.
+- See evidence/EBR-70/sheep-revision/README.md and its logs/JSON for commands,
+  images, part counts, sampled motion and phase/weather measurements.
 - `heavy` below means /home/michael/OpenBot/Shared/farm-tools/heavy; before each
   heavy run, `grep MemAvailable /proc/meminfo` was above the 4 GB pause limit.
-  Before the final build/unit/browser/Gate runs it was respectively 44,837,308;
-  44,806,952; 42,965,128; and 44,373,612 kB available.
-- In this worktree, `heavy npm ci` passed (73 packages, 0 vulnerabilities), and
-  `heavy npm run build` passed at the tested SHA. The existing >500 kB bundle
-  advisory remains; see evidence/EBR-70/build.log.
-- `heavy npm test`: 142 passed, 0 failed (evidence/EBR-70/unit.log). Coverage
-  includes palette, dimensions/grounded legs, seeded nods, all collision shapes,
-  path/rim/collider clearances, the opening, every overlapping placement tile,
-  0.05-unit sampled reachability and screen-space shadow direction.
-- `heavy npm run test:browser`: 36 passed, 0 failed (browser-suite.log). The
-  S+A→W+A, W+D→W+A and S+D→S+A→W+D→W+A stair sequences all reached the path;
-  respectively 563, 661 and 884 sampled frames had 0 clipping/unsupported frames
-  and 0 console/page errors (stairs/slide-proof.json). The default pixel pass and
-  the original three PointLights also passed the existing browser checks.
-- `heavy node tools/ebr70-evidence.mjs`: all 14 comparisons against clean main
-  5d9ba48 passed: 0 changed pixels outside the declared masks, 0 hidden-feature
-  versus main differences, matching pose/camera/environment, and no console or
-  page errors. The source was clean at c60b257; see gate.log and gate-g.json.
-- The real-WASD route sampled 134 collision-safe frames: it went around both
-  sides, entered the opening, stopped at shelter Z=4.94 and at 0.80 from a sheep,
-  exited to Z=7.04, then stopped at the front fence Z=6.53. A fence ghost over
-  the pen was rejected on click and Enter. See browser/route.json and screenshots.
-- The existing character replay uses a verified archive rather than creating or
-  force-removing a worktree. Its six movement traces matched; all six sampled
-  frames were pixel-identical with only the new sheepfold group hidden during capture.
-  Collision data stayed active. Full-frame Gate G is checked separately.
-- Wool was rendered with/without its six lobes at 16 points through a full
-  72-second clear cycle plus the four phase anchors in cloudy and rain: 0 pixels
-  had all RGB channels >=250 among 388 low-resolution wool-influenced pixels per
-  case; per-channel maxima across the 24 samples were (232,202,164). Four frozen
-  renders were identical. The seed,
-  per-case values and strict console/page-error results are in browser/wool-cycle.json.
+  Before install/build/unit/browser it was 30,522,072 / 30,371,512 /
+  29,990,136 / 30,753,944 kB available respectively.
+- Before the additional night-weather check, clean-main Gate and 8ce0cbe Gate it
+  was 30,559,500 / 30,405,604 / 29,976,572 kB available respectively.
+- At source 96d0084, `heavy npm ci` passed (73 packages; 0 vulnerabilities), and
+  `heavy npm run build` passed. The existing >500 kB bundle advisory remains;
+  see sheep-revision/install.log and build.log.
+- `heavy npm test`: 142 passed, 0 failed (sheep-revision/unit.log), including
+  the new body ranges, nod-extreme head protrusion, leg exposure, palette,
+  unchanged collision circles, placement, clearance and shadow checks.
+- `heavy npm run test:browser`: 37 passed, 0 failed (sheep-revision/browser-suite.log).
+  The S+A→W+A, W+D→W+A and S+D→S+A→W+D→W+A stair sequences reached the path;
+  their 624, 636 and 896 sampled frames respectively had 0 clipping/unsupported
+  frames and 0 console/page errors (sheep-revision/stairs/slide-proof.json).
+  The original three PointLights and default pixel pass also passed.
+- The real-WASD route checked 134 collision-safe frames around and into the pen,
+  stopped at the shelter and a sheep, exited, and was blocked by the front fence;
+  the pen placement ghost was rejected. See sheep-revision/browser/route.json.
+- A targeted preflight passed 11 sheep/collision/browser tests. A five-frame
+  comparison against 8ce0cbe had 0 pixels outside the sheep masks and 0 hidden-
+  sheep-frame differences; the accepted pen, shelter and shadows stayed intact.
+- The 14-frame `heavy node tools/ebr70-evidence.mjs` clean-main comparison passed:
+  0 pixels outside declared masks, 0 hidden-fold/main differences, matched pose,
+  camera and environment, and 0 console/page errors (main-gate.log/gate-g.json).
+- The 14-frame `EBR70_SHEEP_DELTA=1` comparison against 8ce0cbe also passed:
+  0 pixels outside the old/new sheep union masks, 0 differences with only the
+  sheep hidden, matched pose/camera/environment and 0 console/page errors.
+  Fence, shelter and all shadows remain visible in the hidden-sheep comparison.
+  See sheep-revision/delta-gate.log and delta/gate-g.json.
+- With the real sheep materials and lights, the 24 clear/cloudy/rain phase
+  samples had 0 wool-influenced pixels with all RGB channels >=250; per-channel
+  maxima were (232,201,163) across 376 low-resolution wool-influenced pixels per
+  case. Four frozen renders were identical. The normal-view part checks also
+  require two separate >=2-pixel legs and a >=2-pixel face on each sheep, with a
+  darker face and warm, non-blue night wool.
+- `heavy node evidence/EBR-70/sheep-revision/night-weather-proof.mjs` passed:
+  clear/cloudy/rain night wool had 0 blue-dominant or blown pixels. Median RGBs
+  were (61,54,43)/(65,53,46), (51,47,41)/(55,47,43), and
+  (54,47,39)/(57,47,42) for sheep 1/2 respectively. Rain particles were hidden
+  only for hue measurement; the accompanying full frames retain actual rain.
 - The original lighting probe sampled (-5.3,3.4), now under the shelter, and
   initially failed sunset shade/grass ΔE at 20.585; that failure is preserved in
   evidence/EBR-70/lighting-original-probe-failure.log. The probe now samples
@@ -138,6 +203,8 @@ Verification and remaining limitations
 - Weather behavior is unchanged; no shelter-specific rain/splash exclusion was
   added. The standalone full QA graphics matrix, hardware GPUs, physical devices,
   and Look Dev/QA sign-off are not verified.
+- The full Linear thread was not independently retrieved; this revision follows
+  the Look Dev criteria supplied in the request.
 - The legacy `npm run parity` all-zero check was not run: its fixed valid-ghost
-  point is now intentionally reserved by the pen. The EBR-70 Gate G capture
-  compares both an open ghost and that deliberately rejected point against main.
+  point is reserved by the pen. The revision Gate captures compare both an open
+  ghost and the deliberately rejected point against main and against 8ce0cbe.

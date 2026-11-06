@@ -1,0 +1,5 @@
+[heavy] slot /tmp/farm-heavy.1.lock acquired (waits for QA gate lock if held): node evidence/EBR-70/sheep-revision/night-weather-proof.mjs
+clear {"weather":{"mode":"clear","rainAmount":0,"cloudyAmount":0},"rainWasVisible":true,"rainMaskedForMeasurement":true,"sheep":[{"index":1,"pixels":36,"coolPixels":0,"blownPixels":0,"median":[61,54,43]},{"index":2,"pixels":33,"coolPixels":0,"blownPixels":0,"median":[65,53,46]}]}
+cloudy {"weather":{"mode":"cloudy","rainAmount":0,"cloudyAmount":1},"rainWasVisible":true,"rainMaskedForMeasurement":true,"sheep":[{"index":1,"pixels":36,"coolPixels":0,"blownPixels":0,"median":[51,47,41]},{"index":2,"pixels":33,"coolPixels":0,"blownPixels":0,"median":[55,47,43]}]}
+rain {"weather":{"mode":"rain","rainAmount":1,"cloudyAmount":0},"rainWasVisible":true,"rainMaskedForMeasurement":true,"sheep":[{"index":1,"pixels":36,"coolPixels":0,"blownPixels":0,"median":[54,47,39]},{"index":2,"pixels":33,"coolPixels":0,"blownPixels":0,"median":[57,47,42]}]}
+[heavy] released /tmp/farm-heavy.1.lock rc=0

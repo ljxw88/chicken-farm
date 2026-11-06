@@ -1,0 +1,276 @@
+{
+  "visualSeed": 123,
+  "rainSeed": 3950182401,
+  "samples": [
+    {
+      "label": "clear-0s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 158,
+      "maxRgb": [
+        232,
+        201,
+        158
+      ]
+    },
+    {
+      "label": "clear-4.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 160,
+      "maxRgb": [
+        230,
+        201,
+        160
+      ]
+    },
+    {
+      "label": "clear-9s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 158,
+      "maxRgb": [
+        221,
+        197,
+        158
+      ]
+    },
+    {
+      "label": "clear-13.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 156,
+      "maxRgb": [
+        210,
+        192,
+        156
+      ]
+    },
+    {
+      "label": "clear-18s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 154,
+      "maxRgb": [
+        204,
+        189,
+        154
+      ]
+    },
+    {
+      "label": "clear-22.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 151,
+      "maxRgb": [
+        201,
+        184,
+        151
+      ]
+    },
+    {
+      "label": "clear-27s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 143,
+      "maxRgb": [
+        193,
+        174,
+        143
+      ]
+    },
+    {
+      "label": "clear-31.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 132,
+      "maxRgb": [
+        185,
+        161,
+        132
+      ]
+    },
+    {
+      "label": "clear-36s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 123,
+      "maxRgb": [
+        178,
+        153,
+        123
+      ]
+    },
+    {
+      "label": "clear-40.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 121,
+      "maxRgb": [
+        168,
+        145,
+        121
+      ]
+    },
+    {
+      "label": "clear-45s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 112,
+      "maxRgb": [
+        143,
+        127,
+        112
+      ]
+    },
+    {
+      "label": "clear-49.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 86,
+      "maxRgb": [
+        134,
+        104,
+        86
+      ]
+    },
+    {
+      "label": "clear-54s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 79,
+      "maxRgb": [
+        110,
+        91,
+        79
+      ]
+    },
+    {
+      "label": "clear-58.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 98,
+      "maxRgb": [
+        147,
+        117,
+        98
+      ]
+    },
+    {
+      "label": "clear-63s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 140,
+      "maxRgb": [
+        172,
+        157,
+        140
+      ]
+    },
+    {
+      "label": "clear-67.5s",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 154,
+      "maxRgb": [
+        214,
+        188,
+        154
+      ]
+    },
+    {
+      "label": "cloudy-morning",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 142,
+      "maxRgb": [
+        204,
+        178,
+        142
+      ]
+    },
+    {
+      "label": "cloudy-daytime",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 139,
+      "maxRgb": [
+        178,
+        167,
+        139
+      ]
+    },
+    {
+      "label": "cloudy-sunset",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 111,
+      "maxRgb": [
+        159,
+        136,
+        111
+      ]
+    },
+    {
+      "label": "cloudy-night",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 71,
+      "maxRgb": [
+        95,
+        79,
+        71
+      ]
+    },
+    {
+      "label": "rain-morning",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 159,
+      "maxRgb": [
+        204,
+        177,
+        163
+      ]
+    },
+    {
+      "label": "rain-daytime",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 147,
+      "maxRgb": [
+        178,
+        166,
+        161
+      ]
+    },
+    {
+      "label": "rain-sunset",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 153,
+      "maxRgb": [
+        159,
+        156,
+        153
+      ]
+    },
+    {
+      "label": "rain-night",
+      "pixels": 376,
+      "blown": 0,
+      "maxMinChannel": 134,
+      "maxRgb": [
+        134,
+        139,
+        143
+      ]
+    }
+  ],
+  "stillDifferences": [
+    0,
+    0,
+    0
+  ],
+  "errors": []
+}
