@@ -1,8 +1,11 @@
-EBR-46 rework browser evidence — 2026-11-06
+EBR-46 on EBR-71 browser evidence — 2026-11-06
 
 Chromium 153.0.8010.12, headless SwiftShader/WebGL2, 1280x720, DPR 1.
 Default pixel pass: 4 CSS pixels; world canvas: 320x180.
 Dev server: http://100.88.150.21:5179/?phase=daytime
+
+The playable build retains only the phase/location HUD; Supplies, inventory,
+Collect/Build/market controls and interaction prompts are absent.
 
 01-daytime-overview.png: unmodified app, island and stair silhouette.
 02-bottom-tread.png: clicked the pad, then pushed S+D to its outer edge.
@@ -12,12 +15,17 @@ Dev server: http://100.88.150.21:5179/?phase=daytime
 
 The movement page exposed scene/character state for measurement only; input
 was real mouse and keyboard, with no teleport. Both pad sides and the outer
-edge stopped at the visible boundary. Across 385 sampled frames (227 descent,
-120 ascent), the capsule did not intersect the stone and the sampled footprint
+edge stopped at the visible boundary. Across 439 sampled frames (289 descent,
+109 ascent), the capsule did not intersect the stone and the sampled footprint
 stayed on the visible surfaces. The 1.5 x 1.6 x 0.16 pad overlaps the last
 tread by 0.45 units; there is no lower terrace. See browser-proof.json for
 positions and geometry. No application errors were recorded (favicon errors
 were excluded).
+
+qa-slide-proof.json records all three side-push/climb sequences on the rebased
+build: 2,355 sampled frames, no capsule/stone intersections or sampled footprint
+over void, and each reached the dirt path. The signed stair and island source
+files are identical to pre-rebase-ebr46-411fd9c.
 
 Source albedo: barn wall rgb(212,165,116), path rgb(166,124,82). Stone is
 derived from those materials. Previous tread/riser albedo: rgb(195,180,155) /

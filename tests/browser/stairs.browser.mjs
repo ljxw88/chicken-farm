@@ -63,6 +63,16 @@ function collectErrors(page, errors) {
   });
 }
 
+async function assertNoSimUi(page) {
+  const forbidden = [
+    '.farm-supplies', '.farm-growing', '.farm-inventory', '.farm-market', '.farm-build',
+    '.interaction-prompt', '.interaction-feedback', '[data-collect]', '[data-sell-egg]',
+    '[data-buy-feed]', '[data-place-fence]', '[data-build-toggle]',
+  ];
+  assert.equal(await page.locator(forbidden.join(',')).count(), 0);
+  assert.doesNotMatch(await page.locator('body').innerText(), /\b(inventory|collect|egg|feed|supplies|buy|sell|fence|market|build)\b/i);
+}
+
 async function holdUntil(page, keys, predicate, argument, dwell = 0) {
   for (const key of keys) await page.keyboard.down(key);
   try {
@@ -123,6 +133,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   assert.equal(rendering.pixel.cssPixelSize, 4);
   assert.deepEqual([rendering.pixel.canvasWidth, rendering.pixel.canvasHeight], [320, 180]);
   assert.match(rendering.webgl, /WebGL 2\.0/);
+  await assertNoSimUi(overview);
   const overviewScreenshot = await capture(overview, '01-daytime-overview.png');
   await overview.close();
 
@@ -134,7 +145,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   });
   await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr46Test));
-  await page.locator('[data-growing-toggle]').click();
+  await assertNoSimUi(page);
 
   const geometry = await page.evaluate(() => {
     const { scene, camera, stairs } = window.__ebr46Test;
@@ -261,6 +272,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   const top = await page.evaluate(() => window.__ebr46Test.character.position.toArray());
   assert.ok(Math.abs(top[1] - 2.4) < 1e-6);
   await capture(page, '04-returned-to-path.png');
+  await assertNoSimUi(page);
 
   const frames = await page.evaluate(() => window.__ebr46Frames);
   const descent = frames.filter((frame) => frame.stage === 'descent');
@@ -274,6 +286,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   collectErrors(night, errors);
   await night.goto(`${url}/?phase=night`, { waitUntil: 'networkidle' });
   assert.equal(await night.locator('[data-phase]').textContent(), 'Night');
+  await assertNoSimUi(night);
   const nightScreenshot = await capture(night, '05-night-overview.png');
   const nightPixels = await samplePixels(night, nightScreenshot, [geometry.topPoints[3], geometry.edgePoints[3], [1200, 300]]);
   assert.ok(nightPixels[1][0] > nightPixels[2][0] + 8, 'night tread edge should remain distinguishable from the void');
@@ -306,7 +319,7 @@ for (const scenario of padSideScenarios) {
     });
     await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => Boolean(window.__ebr46Test));
-    await page.locator('[data-growing-toggle]').click();
+    await assertNoSimUi(page);
     const boxes = await page.evaluate(() => {
       const { stairs } = window.__ebr46Test;
       return [...stairs.treads, stairs.footPad].map((mesh) => {
@@ -367,6 +380,7 @@ for (const scenario of padSideScenarios) {
     assert.ok(afterClimb[0] < 7.6 && Math.abs(afterClimb[1] - 2.4) < 1e-6,
       `${scenario.name}: stuck at ${afterClimb}`);
     assert.ok(pathCrossing, `${scenario.name}: did not reach the dirt path`);
+    await assertNoSimUi(page);
     assert.deepEqual(errors, []);
     slideResults.push({ scenario: scenario.name, pushesMs: 2200, climbMs: scenario.climbMs,
       afterPush, afterClimb, pathCrossing, frames: frames.length, clippedOrUnsupported: 0, errors });
