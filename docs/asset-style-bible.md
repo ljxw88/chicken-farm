@@ -70,7 +70,8 @@ Run blockout, form, palette/material, detail, in-scene lighting and optimisation
 in that order. Every stage requires H1–H10 before fixed-camera render feedback
 and an independent OpenCode critic. A rendered identity feature that cannot be
 seen is a blocker even if the overall score is high. A pixel-difference test can
-measure the visible contribution of tagged parts, but **cannot prove that a
+measure the visible contribution of each tagged part (not just the combined
+feature), but **cannot prove that a
 tag is truthful**; the vision critic and human must judge semantic identity.
 Fixed renders use eight 45-degree yaws, three game light phases and grass,
 path and void backgrounds. Each frame has a hash. EBR-80 must be integrated

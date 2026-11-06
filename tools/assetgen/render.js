@@ -43,6 +43,8 @@ function setView(yaw, phase, surface, context = false) {
   subject.position.set(context ? 2.5 : 0, GROUND_HEIGHT, context ? 3 : 0);
   ground.material.color.setHex(surface === 'path' ? FARM_PALETTE.dirt : FARM_PALETTE.grass);
   lighting.setDayNightPhase(phase);
+  // Test-only fault injection: reverse the existing key; never add a light.
+  if (window.__assetForgeWrongKey) scene.getObjectByName('day-night-directional').position.multiplyScalar(-1);
   setRecipeNightAmount(subject, phase === 'night' ? 1 : 0);
   const target = new THREE.Vector3(0, GROUND_HEIGHT + 0.7, 0);
   const angle = yaw * Math.PI / 180;
@@ -124,16 +126,23 @@ function capture(yaw, phase, surface, delta, featureIds) {
   subject.visible = true; composer.render();
   const measured = difference(present, absent, delta, phase === 'daytime' && surface === 'grass');
   const identities = {};
+  const identityParts = {};
   if (phase === 'daytime' && surface === 'grass') for (const feature of featureIds) {
     const meshes = subject.children.filter((child) => child.userData.feature === feature);
     meshes.forEach((mesh) => { mesh.visible = false; });
     composer.render();
     identities[feature] = difference(present, pixels(), delta).pixels;
     meshes.forEach((mesh) => { mesh.visible = true; });
+    for (const mesh of meshes) {
+      mesh.visible = false;
+      composer.render();
+      identityParts[mesh.name] = { feature, pixels: difference(present, pixels(), delta).pixels };
+      mesh.visible = true;
+    }
   }
   subject.visible = true;
   composer.render();
-  return { image, measured, identities };
+  return { image, measured, identities, identityParts };
 }
 
 window.__assetForge = {
@@ -150,7 +159,9 @@ window.__assetForge = {
   state() {
     const directional = scene.getObjectByName('day-night-directional');
     const height = (object) => new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3()).y;
-    return { pixel: composer.getState(), keyDirection: directional.position.clone().normalize().toArray(), subjectHeight: height(subject),
+    const key = directional.position.clone().normalize();
+    if (window.__assetForgeWrongKey) key.negate(); // Compare to the intended key, not the injected fault.
+    return { pixel: composer.getState(), keyDirection: key.toArray(), subjectHeight: height(subject),
       references: { cottage: height(scene.getObjectByName('farm-cottage')), coop: height(scene.getObjectByName('farm-ramp-coop-1')),
         tree: height(scene.getObjectByName('farm-tree-2')), fence: height(fence), character: height(character) } };
   },

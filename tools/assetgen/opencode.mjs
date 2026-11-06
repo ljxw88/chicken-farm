@@ -1,7 +1,16 @@
 import { spawn } from 'node:child_process';
+import { mkdtemp, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { root } from './config.mjs';
+
+export async function isolatedSessionDirectory() {
+  const directory = await mkdtemp(join(tmpdir(), 'assetgen-model-session-'));
+  await writeFile(join(directory, 'opencode.json'), `${JSON.stringify({ $schema: 'https://opencode.ai/config.json',
+    policies: [{ action: 'tool.use', resource: '*', effect: 'deny' }] }, null, 2)}\n`);
+  return directory;
+}
 
 // An open stdin pipe makes `opencode run` wait for more input indefinitely.
 // Explicitly close stdin and bound both runtime and output.

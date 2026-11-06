@@ -66,5 +66,5 @@ export async function critiqueRecipe(spec, bible, stage, report, sheet, cwd) {
       !Array.isArray(review.blockers) || !Array.isArray(review.fixes) || !['continue', 'refine-spec', 'refine-code', 'request-input', 'stop'].includes(review.action)) {
     throw new Error(`Invalid critic response: ${result.text.slice(0, 1200)}`);
   }
-  return { ...result, review };
+  return { ...result, review, prompt };
 }

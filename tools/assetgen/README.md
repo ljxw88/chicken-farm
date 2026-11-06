@@ -30,8 +30,15 @@ recipe cheat sheet, 2–3 signed source references and prior feedback. Stages:
 blockout → form → material → detail → lighting → optimise. Each stage first
 runs deterministic H1–H10 checks, then 8 fixed yaws × 3 phases × 3 backgrounds
 using the real game renderer and a separate OpenCode visual-critic session.
-Identity tags must both exist and have a measured visible pixel contribution;
-the critic must also judge whether the part genuinely depicts the feature.
+Identity tags must exist and each tagged part must have a measured visible
+pixel contribution in at least one fixed view; the critic must also judge
+whether the part genuinely depicts the feature.
+
+The first three bake-off runs were started before a subprocess `PWD` bug was
+fixed: their sessions ran in the worktree rather than the intended scratch
+location. Their JSONL transcripts contain **no tool calls**; the generator was
+instructed to return data only. The subsequent re-critiques used the corrected
+scratch policy. A regression test now checks that both `cwd` and `PWD` match.
 
 Up to five rounds are allowed, with at most two corrections per stage and five
 globally. Every decision and best-so-far candidate is recorded. Even a candidate
@@ -64,7 +71,8 @@ session API when available; unknown cost is not estimated from text length.
   budgeted geometry using the same overlap/contact routines. They are not all
   strict H1–H10 goldens: the old fence and coop contain sub-0.3 readable pieces,
   the tree has a transparent contact shadow, the tree/coop have coplanar
-  shadow/post joins, and the stair tread derives interpolated colours. QA/Look
-  Dev must resolve these legacy exceptions; new
+  shadow/post joins (not necessarily visible z-fighting), and the stair tread
+  derives interpolated colours. QA/Look Dev must resolve these legacy
+  exceptions; new
   recipes do not inherit them. This is an open checker-acceptance gate.
 * Neural Meshy/Tripo/Hunyuan3D/TRELLIS workflows are parked and not used.

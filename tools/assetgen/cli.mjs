@@ -1,27 +1,21 @@
-import { mkdtemp, mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join, relative } from 'node:path';
 import { evidenceDirectory, listSpecs, readBible, readSpec, recipePath, root, runDirectory } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
 import { createVisualRunner } from './visual.mjs';
+import { isBetterCandidate } from './scoring.mjs';
+import { isolatedSessionDirectory } from './opencode.mjs';
 
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
+const hash = (value) => createHash('sha256').update(value).digest('hex');
 const digestParts = (before, after) => {
   const old = new Map((before?.parts || []).map((part) => [part.name, JSON.stringify(part)]));
   const next = new Map((after?.parts || []).map((part) => [part.name, JSON.stringify(part)]));
   return { added: [...next.keys()].filter((key) => !old.has(key)), removed: [...old.keys()].filter((key) => !next.has(key)),
     changed: [...next.keys()].filter((key) => old.has(key) && old.get(key) !== next.get(key)) };
 };
-
-async function isolatedSessionDirectory() {
-  // Only model output and an attached image are needed. A hard tool policy
-  // prevents generated prompts from editing the worktree or using the network.
-  const directory = await mkdtemp(join(tmpdir(), 'assetgen-model-session-'));
-  await writeFile(join(directory, 'opencode.json'), json({ $schema: 'https://opencode.ai/config.json',
-    policies: [{ action: 'tool.use', resource: '*', effect: 'deny' }] }));
-  return directory;
-}
 
 async function setup() {
   const bible = await readBible();
@@ -106,6 +100,7 @@ async function newAsset(input, args) {
             criticDurationMs = result.durationMs;
             criticUsage = result.usage;
             await writeFile(join(stageDir, 'critic.jsonl'), result.transcript);
+            await writeFile(join(stageDir, 'critic-prompt.txt'), result.prompt);
             review = result.review;
             if (!criticSession || criticSession === generated.sessionId) throw new Error('Critic did not use a distinct OpenCode session');
             if (!review.imageReviewed) criticError = 'visual critique not run: critic reported that the image was unavailable';
@@ -128,16 +123,19 @@ async function newAsset(input, args) {
       let action = blockers.length ? 'refine-code' : 'continue';
       if (review && ['request-input', 'stop', 'refine-spec', 'refine-code'].includes(review.action)) action = review.action;
       if (blockers.some((blocker) => blocker.code === 'LIGHTING_UNMEASURED')) action = 'request-input';
-      const result = { id: spec.id, round, stage, action, score: stageScore, hard, visual, critique: review,
+      const result = { id: spec.id, round, stage, action, score: stageScore,
+        specHash: hash(JSON.stringify(spec)), bibleHash: hash(bible.text), recipeHash: hash(JSON.stringify(current)), hard, visual, critique: review,
         critiqueStatus: criticError || (review?.imageReviewed ? 'independent visual critique recorded' : 'visual critique not run'),
         generatorSession: generated.sessionId, criticSession, generatorDurationMs: generated.durationMs, criticDurationMs,
         generatorUsage: generated.usage, criticUsage, diff: digestParts(old, current), blockers };
       await writeFile(join(stageDir, 'report.json'), json(result));
       history.push({ round, stage, action, score: stageScore, blockers: blockers.map((item) => item.code),
         generatorSession: generated.sessionId, criticSession, generatorUsage: generated.usage, criticUsage });
-      if (!best || stageScore > best.score || (stageScore === best.score && !hard.failures.length && best.hardFailureCount)) {
-        best = { score: stageScore, recipe: current, stage, round, hardFailureCount: hard.failures.length, blockers,
-          report: relative(root, join(stageDir, 'report.json')), sheet: visual ? relative(root, join(stageDir, 'render/sheet.png')) : null };
+      const candidate = { score: stageScore, recipe: current, stage, round, hardFailureCount: hard.failures.length,
+        lowerTrust: !!hard.metrics.lowerTrust, blockers, report: relative(root, join(stageDir, 'report.json')),
+        sheet: visual && !visual.failures.some((failure) => failure.code === 'BROWSER') ? relative(root, join(stageDir, 'render/sheet.png')) : null };
+      if (isBetterCandidate(candidate, best, stages)) {
+        best = candidate;
         await writeFile(join(run, 'best.json'), json({ status: 'needs-human', ...best }));
       }
       console.log(`${spec.id} round ${round} ${stage}: ${action}; score ${stageScore}; ${blockers.map((item) => item.code).join(', ') || 'stage checks clear'}; ${result.critiqueStatus}`);
@@ -199,15 +197,16 @@ async function verifyCommand(input) {
       await mkdir(join(runDirectory, spec.id), { recursive: true });
       await writeFile(recipePath(spec), json(recipe));
       const result = inspectRecipe(recipe, spec, bible.rules, environment);
+      const provenance = { specHash: hash(JSON.stringify(spec)), bibleHash: hash(bible.text), recipeHash: hash(JSON.stringify(recipe)) };
       console.log(json({ id: spec.id, hard: { failures: result.failures, metrics: result.metrics } }));
       const verificationDir = join(runDirectory, spec.id, 'verify');
       await mkdir(verificationDir, { recursive: true });
       if (result.failures.length) {
-        await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
+        await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
         process.exitCode = 1; continue;
       }
       const visual = await runner.capture(spec, bible.rules, verificationDir);
-      await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', hard: { failures: result.failures, metrics: result.metrics }, visual,
+      await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual,
         critiqueStatus: 'not rerun by asset:verify; see the original independent critic session' }));
       console.log(json({ id: spec.id, visual }));
       if (visual.failures.length) process.exitCode = 1;

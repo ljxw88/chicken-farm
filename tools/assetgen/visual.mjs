@@ -26,7 +26,7 @@ export async function createVisualRunner() {
       await page.setContent(`<!doctype html><style>
         *{box-sizing:border-box}body{margin:0;background:#1c211c;color:#f5e7c9;font:600 14px system-ui,sans-serif}
         header{height:44px;padding:10px 16px;font-size:19px}.grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(3,120px);height:360px}
-        .frame{position:relative;overflow:hidden;background:#34452f;border:1px solid #4b4536}.frame img{position:absolute;width:600%;height:450%;left:-250%;top:-175%;image-rendering:pixelated}
+        .frame{position:relative;overflow:hidden;background:#34452f;border:1px solid #4b4536}.frame img{position:absolute;width:600%;height:450%;left:-250%;top:${-210 + (spec.size.height / 2 - 0.7) * Math.sqrt(2 / 3) * 9 * 3}px;image-rendering:pixelated}
         .tag{position:absolute;top:4px;left:4px;background:#211d18dd;padding:3px 5px;font-size:11px}.footer{display:flex;height:264px;gap:10px;padding:10px}
         .context{position:relative;width:390px;height:220px;overflow:hidden}.context img{width:100%;height:100%;image-rendering:pixelated}
         .note{flex:1;line-height:1.5;padding:8px;color:#eadcbb}.small{color:#d1ba91;font-size:12px}
@@ -35,16 +35,29 @@ export async function createVisualRunner() {
     } finally { await page.close(); }
   }
 
-  async function capture(spec, rules, directory, fixture) {
+  async function capture(spec, rules, directory, fixture, options = {}) {
     await mkdir(directory, { recursive: true });
     const page = await browser.newPage({ viewport: { width: rules.render.width, height: rules.render.height }, deviceScaleFactor: 1 });
     if (fixture) await page.addInitScript((recipe) => { window.__assetForgeFixture = recipe; }, fixture);
+    if (options.wrongKeyFixture) await page.addInitScript(() => { window.__assetForgeWrongKey = true; });
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => { if (message.type() === 'error' && !message.location().url.endsWith('/favicon.ico')) errors.push(message.text()); });
     try {
-      await page.goto(`${url}/tools/assetgen/render.html?id=${encodeURIComponent(spec.id)}`, { waitUntil: 'networkidle' });
-      await page.waitForFunction(() => !!window.__assetForge, null, { timeout: 15000 });
-      const frameIndex = [], contactFrames = [], samples = [], featureVisibility = {}, lightSamples = [];
+      let attempts = 0;
+      while (true) {
+        attempts++;
+        errors.length = 0;
+        try {
+          await page.goto(`${url}/tools/assetgen/render.html?id=${encodeURIComponent(spec.id)}`, { waitUntil: 'networkidle' });
+          if (errors.some((error) => error.includes('ERR_NETWORK_CHANGED'))) throw new Error('ERR_NETWORK_CHANGED during module loading');
+          await page.waitForFunction(() => !!window.__assetForge, null, { timeout: 45000 });
+          break;
+        } catch (error) {
+          if (attempts >= 3 || ![String(error), ...errors].some((message) => message.includes('ERR_NETWORK_CHANGED'))) throw error;
+        }
+      }
+      const frameIndex = [], contactFrames = [], samples = [], featureVisibility = {}, partVisibility = {}, lightSamples = [];
       for (const feature of spec.identityFeatures) featureVisibility[feature.id] = [];
       for (const phase of rules.render.phases) for (const yaw of rules.render.yaws) for (const surface of rules.render.surfaces) {
         const capture = await page.evaluate(({ yaw, phase, surface, delta, ids }) => window.__assetForge.capture(yaw, phase, surface, delta, ids),
@@ -58,6 +71,10 @@ export async function createVisualRunner() {
         if (phase === 'daytime' && surface === 'grass') {
           lightSamples.push(...lightingSamples);
           for (const [feature, pixels] of Object.entries(capture.identities)) featureVisibility[feature].push({ yaw, pixels });
+          for (const [name, part] of Object.entries(capture.identityParts)) {
+            partVisibility[name] ??= { feature: part.feature, views: [] };
+            partVisibility[name].views.push({ yaw, pixels: part.pixels });
+          }
         }
         samples.push({ yaw, phase, surface, ...measured });
       }
@@ -94,13 +111,18 @@ export async function createVisualRunner() {
           failures.push({ code: 'IDENTITY_VISIBLE', message: `${feature} contributes fewer than ${rules.render.identityMinimumPixels} pixels in every fixed daytime view` });
         }
       }
+      for (const [name, part] of Object.entries(partVisibility)) {
+        if (!part.views.some((view) => view.pixels >= rules.render.identityMinimumPixels)) {
+          failures.push({ code: 'IDENTITY_VISIBLE', message: `${part.feature}/${name} contributes fewer than ${rules.render.identityMinimumPixels} pixels in every fixed daytime view` });
+        }
+      }
       const light = checkKeyLightAgreement(lightSamples, state.keyDirection);
       if (light.status === 'fail') failures.push({ code: 'S4', message: light.message });
       if (errors.length) failures.push({ code: 'BROWSER', message: errors.join('; ') });
-      const result = { failures, metrics: { browser: browser.version(), renderer: 'game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1',
+      const result = { failures, metrics: { browser: browser.version(), loadAttempts: attempts, renderer: 'game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1',
         lightingStatus: 'pre-EBR-80; preliminary', pixel: state.pixel, references: state.references, keyDirection: state.keyDirection,
         referenceScale: { actual: state.subjectHeight / state.references.character, target: spec.size.height / state.references.character },
-        samples, identityVisibility: featureVisibility, keyLight: { ...light, sampleCount: lightSamples.length },
+        samples, identityVisibility: featureVisibility, identityPartVisibility: partVisibility, keyLight: { ...light, sampleCount: lightSamples.length },
         unmeasured: ['S1 rendered palette-cluster distance after lighting', 'S3 three-step value structure', 'S5 night glow/highlight analysis', 'S7 style-reference distance'],
         frameIndex } };
       await writeFile(join(directory, 'frames.json'), `${JSON.stringify(frameIndex, null, 2)}\n`);

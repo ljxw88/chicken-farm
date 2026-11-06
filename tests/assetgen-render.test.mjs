@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { readBible } from '../tools/assetgen/config.mjs';
 import { createVisualRunner } from '../tools/assetgen/visual.mjs';
 
-test('real pixel renderer blocks a tagged identity feature hidden inside the body', { timeout: 120000 }, async () => {
+test('real pixel renderer catches a hidden identity feature and a reversed key light', { timeout: 120000 }, async () => {
   const { rules } = await readBible();
   const directory = await mkdtemp(join(tmpdir(), 'assetgen-render-test-'));
   const runner = await createVisualRunner();
@@ -27,8 +27,11 @@ test('real pixel renderer blocks a tagged identity feature hidden inside the bod
     assert.equal(result.metrics.frameIndex.length, 76); // 72 views, two composites, native debug, sheet.
     assert.ok(result.failures.some((failure) => failure.code === 'IDENTITY_VISIBLE' && failure.message.includes('hidden')));
     assert.ok(result.metrics.identityVisibility.hidden.every((view) => view.pixels === 0));
+    assert.ok(result.metrics.identityPartVisibility.hidden.views.every((view) => view.pixels === 0));
     assert.ok(result.metrics.identityVisibility.body.some((view) => view.pixels > 0));
     const png = await readFile(join(directory, 'sheet.png'));
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    const wrong = await runner.capture(spec, rules, join(directory, 'wrong-key'), recipe, { wrongKeyFixture: true });
+    assert.ok(wrong.failures.some((failure) => failure.code === 'S4'), JSON.stringify(wrong.metrics.keyLight));
   } finally { await runner.close(); }
 });

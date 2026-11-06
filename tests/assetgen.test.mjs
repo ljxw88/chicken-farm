@@ -76,6 +76,15 @@ test('near-coplanar overlapping faces fail H7, not mere edge contact', () => {
   const recipe = clone(); recipe.parts.push({ ...structuredClone(recipe.parts[0]), name: 'duplicate' }); expectCode(recipe, 'H7');
 });
 
+test('two differently triangulated quads 0.004 units apart fail H7', () => {
+  const recipe = clone();
+  const positions = [-0.3, 0.15, 0, 0.3, 0.15, 0, 0.3, 0.45, 0, -0.3, 0.45, 0];
+  recipe.parts.push({ name: 'quad-a', prim: 'custom', positions, indices: [0, 1, 2, 0, 2, 3], at: [0, 0, 0.41], mat: 'timber' });
+  recipe.parts.push({ name: 'quad-b', prim: 'custom', positions, indices: [0, 1, 3, 1, 2, 3], at: [0, 0, 0.414], mat: 'timber' });
+  const result = expectCode(recipe, 'H7');
+  assert.ok(result.failures.some((failure) => failure.code === 'H7' && failure.message.includes('quad-a') && failure.message.includes('quad-b')));
+});
+
 test('non-finite geometry is rejected before execution', () => {
   const recipe = clone(); recipe.parts[0].at[0] = NaN; expectCode(recipe, 'H1');
 });
