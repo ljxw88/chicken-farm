@@ -10,7 +10,7 @@ body {
   background: #e8d4c8;
 }
 
-canvas {
+#scene {
   display: block;
   width: 100%;
   height: 100%;

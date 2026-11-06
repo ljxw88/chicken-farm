@@ -177,3 +177,49 @@ test('changing cycle speed preserves progress and rejects invalid inputs', () =>
   cycle.update(36);
   assert.equal(scene.background.getHex(), 0xf0a878);
 });
+
+test('following can pause the actual interpolated lighting and resume from the same progress', () => {
+  const { scene, cycle, lanternLight } = fixture();
+  cycle.setDayNightCycleSeconds(24 * 60);
+  cycle.update(123);
+  const pausedAt = cycle.getState();
+  const pausedSky = scene.background.clone();
+  assert.equal(pausedAt.following, true);
+  assert.equal(pausedAt.cycleSeconds, 1440);
+  near(pausedAt.progress, 123 / 1440);
+
+  cycle.setFollowing(false);
+  cycle.update(900);
+  near(cycle.getState().progress, pausedAt.progress);
+  colorNear(scene.background, pausedSky);
+  assert.equal(cycle.getState().following, false);
+  assert.throws(() => cycle.update(-1), RangeError); // Validation still applies while paused.
+  assert.throws(() => cycle.setFollowing('yes'), TypeError);
+
+  cycle.setDayNightPhase('night');
+  assert.equal(cycle.getState().phase, 'night');
+  assert.equal(cycle.getState().following, false);
+  assert.equal(scene.background.getHex(), 0x2a2848);
+  near(lanternLight.intensity, 0.55);
+  cycle.update(180);
+  near(cycle.getState().progress, 0.75);
+
+  cycle.setFollowing(true);
+  cycle.update(180);
+  near(cycle.getState().progress, 0.875);
+  near(lanternLight.intensity, 0.55 / 2);
+  assert.equal(cycle.getState().phase, 'morning'); // Nearest preset across the wrap.
+});
+
+test('the exposed phase tracks the nearest preset during smooth transitions', () => {
+  const { cycle } = fixture();
+  assert.deepEqual(cycle.getState(), { phase: 'morning', progress: 0, following: true, cycleSeconds: 72 });
+  cycle.setDayNightPhase('sunset');
+  cycle.update(8.9);
+  assert.equal(cycle.getState().phase, 'sunset');
+  cycle.update(0.2);
+  assert.equal(cycle.getState().phase, 'night');
+  cycle.setDayNightPhase('night');
+  cycle.update(9.1);
+  assert.equal(cycle.getState().phase, 'morning');
+});

@@ -18,6 +18,13 @@ interface DayNightCycleOptions {
   windows: readonly WindowPane[];
 }
 
+export interface DayNightCycleState {
+  phase: DayNightPhaseName;
+  progress: number;
+  following: boolean;
+  cycleSeconds: number;
+}
+
 export function createDayNightCycle({ scene, character, windows }: DayNightCycleOptions) {
   const morning = DAY_NIGHT_PHASES[0];
   const background = new THREE.Color(morning.sky);
@@ -40,6 +47,7 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
   const practicalLights = createPracticalLights(character, windows);
   let cycleSeconds = DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
   let progress = 0;
+  let following = true;
 
   function applyLighting() {
     const phasePosition = progress * DAY_NIGHT_PHASES.length;
@@ -76,6 +84,7 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0) {
       throw new RangeError('Day/night elapsed time must be a finite, non-negative number');
     }
+    if (!following) return;
     progress = (progress + (deltaSeconds % cycleSeconds) / cycleSeconds) % 1;
     applyLighting();
   }
@@ -95,6 +104,17 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     applyLighting();
   }
 
+  function setFollowing(value: boolean) {
+    if (typeof value !== 'boolean') throw new TypeError('Following must be a boolean');
+    following = value;
+  }
+
+  function getState(): DayNightCycleState {
+    // The nearest preset describes the interpolated light on either side of a phase point.
+    const index = Math.round(progress * DAY_NIGHT_PHASES.length) % DAY_NIGHT_PHASES.length;
+    return { phase: DAY_NIGHT_PHASES[index].name, progress, following, cycleSeconds };
+  }
+
   applyLighting();
-  return { update, setDayNightCycleSeconds, setDayNightPhase };
+  return { update, setDayNightCycleSeconds, setDayNightPhase, setFollowing, getState };
 }
