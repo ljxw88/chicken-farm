@@ -26,12 +26,14 @@ setDayNightCycleSeconds(12) // complete cycle in 12 seconds
 
 The cycle keeps running after selecting a phase. Walk toward a ground edge to see the changing sky; the ground fills the initial isometric view. Its `setDayNightCycleSeconds(seconds)` method is also available on the object returned by `createDayNightCycle` in `src/lighting/` for a future HUD. It accepts finite positive seconds and preserves the current phase when changed. All lighting presets are Look Dev LOCKED; only the transitions are interpolated.
 
+Weather starts clear. In the browser console, call `setWeather('rain')` for gentle rain or `setWeather('clear')` to return to clear weather; `getWeather()` reports the requested mode and current `rainAmount` (0–1). A full transition takes about 1.75 seconds and follows the current day/night phase. Rain settings in `src/weather/rainSettings.ts` use Look Dev's visually approved starting targets; they are not explicitly LOCKED.
+
 ## Production build
 
 ```sh
 npm run build
 ```
 
-The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the farm, collisions, camera and lighting.
+The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the farm, collisions, camera, weather and lighting.
 
 The entry point is `src/main.ts`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`.
