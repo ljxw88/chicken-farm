@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
@@ -21,6 +23,7 @@ const suppliedUrl = option('--url');
 const evidence = resolve('evidence/EBR-73');
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const scenarios = [
   { name: 'spawn', search: '?phase=daytime&weather=clear', setup: 'spawn' },
   { name: 'stairs-pad', search: '?phase=daytime&weather=clear', setup: 'stairs' },
@@ -100,9 +103,14 @@ try {
     await mkdir(diffDir, { recursive: true });
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     const results = {};
+    const stateMismatches = [];
     for (const { name } of scenarios) {
       const reference = await readFile(join(evidence, 'baseline', `${name}.png`));
       const candidate = await readFile(join(output, `${name}.png`));
+      assert.equal(sha256(reference), baseline.frames[name].sha256, `Baseline image changed: ${name}`);
+      for (const key of ['position', 'yaw', 'camera', 'pixel', 'weather', 'phase']) {
+        if (!isDeepStrictEqual(frames[name][key], baseline.frames[name][key])) stateMismatches.push(`${name}: ${key}`);
+      }
       const diff = await diffPage.evaluate(async ({ reference, candidate }) => {
         async function decode(data) {
           const image = new Image();
@@ -136,17 +144,22 @@ try {
         context.putImageData(result, 0, 0);
         return { changedPixels, width: a.width, height: a.height, png: canvas.toDataURL('image/png').split(',')[1] };
       }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
+      assert.deepEqual([diff.width, diff.height], [viewport.width, viewport.height]);
       await writeFile(join(diffDir, `${name}.png`), Buffer.from(diff.png, 'base64'));
       results[name] = { changedPixels: diff.changedPixels, width: diff.width, height: diff.height };
       console.log(`${name}: ${diff.changedPixels} changed pixels`);
     }
     await diffPage.close();
-    const candidateSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    const candidateSha = suppliedUrl ? null : execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    const sourceStatus = suppliedUrl ? null : execFileSync('git', [
+      'status', '--porcelain=v1', '--untracked-files=all', '--', 'src', 'index.html', 'package.json', 'package-lock.json', 'tools/parity.mjs',
+    ], { encoding: 'utf8' }).trim();
     await writeFile(join(evidence, 'parity.json'), `${JSON.stringify({
       baselineSha: baseline.sourceSha, candidateSha, candidateUrl: suppliedUrl ?? 'local Vite (working tree)',
-      browser: browserVersion, viewport, deviceScaleFactor: 1, seed, results, frames,
+      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, results, stateMismatches, frames,
     }, null, 2)}\n`);
     assert.ok(Object.values(results).every((result) => result.changedPixels === 0), 'Gate G: pixel differences found');
+    assert.deepEqual(stateMismatches, [], 'Gate G: pose, camera or environment differs from the baseline');
   }
 } finally {
   await browser?.close();
@@ -167,7 +180,9 @@ async function captureScenario(browser, baseUrl, scenario, path) {
     // app's own renderer.setAnimationLoop is stepped at known timestamps.
     await page.addInitScript(({ seed }) => {
       let state = seed >>> 0;
+      window.__ebr73RandomCalls = 0;
       window.__ebr73Random = () => {
+        window.__ebr73RandomCalls++;
         state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
         return state / 0x100000000;
       };
@@ -196,6 +211,8 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
     });
     await page.goto(`${baseUrl}/${scenario.search}`, { waitUntil: 'networkidle' });
     assert.ok(await page.evaluate(() => Boolean(window.__ebr73Parity)), 'URL must serve the Vite development source module');
+    const initialRandomCalls = await page.evaluate(() => window.__ebr73RandomCalls);
+    assert.ok(initialRandomCalls > 0, 'The seeded RNG must be used during rain initialization, before the first frame');
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => window.__ebr73Step(0));
 
@@ -236,23 +253,31 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
     const state = await page.evaluate(() => {
       const { camera, character } = window.__ebr73Parity;
       const gl = document.querySelector('#scene').getContext('webgl2');
+      const debug = gl?.getExtension('WEBGL_debug_renderer_info');
       return {
         position: character.position.toArray(), yaw: character.rotation.y, camera: camera.position.toArray(),
         pixel: window.getPixelRendering(), weather: window.getWeather(), webgl: gl?.getParameter(gl.VERSION),
+        renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL), randomCalls: window.__ebr73RandomCalls,
         phase: document.querySelector('[data-phase]')?.textContent,
       };
     });
     assert.match(state.webgl, /WebGL 2\.0/);
+    assert.match(state.renderer, /SwiftShader/i);
     assert.equal(state.pixel.enabled, true);
+    assert.equal(state.pixel.devicePixelRatio, 1);
     assert.deepEqual([state.pixel.canvasWidth, state.pixel.canvasHeight], [320, 180]);
+    assert.equal(state.phase, scenario.search.includes('phase=night') ? 'Night' : 'Daytime');
+    assert.equal(state.weather.mode, scenario.setup === 'rain' ? 'rain' : 'clear');
     assert.deepEqual(errors, []);
     // CDP capture avoids Playwright's rAF-based screenshot stability wait: the
     // test intentionally owns requestAnimationFrame and advances it manually.
     const cdp = await context.newCDPSession(page);
     const screenshot = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
-    await writeFile(path, Buffer.from(screenshot.data, 'base64'));
+    const bytes = Buffer.from(screenshot.data, 'base64');
+    assert.deepEqual([bytes.readUInt32BE(16), bytes.readUInt32BE(20)], [viewport.width, viewport.height]);
+    await writeFile(path, bytes);
     await cdp.detach();
-    return state;
+    return { ...state, initialRandomCalls, sha256: sha256(bytes) };
   } finally {
     await context.close();
   }

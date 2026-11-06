@@ -21,9 +21,12 @@ pass, pinned phase/weather URLs, LCG seed, manual animation-frame timestamps,
 and input route/pose. The weather RNG is supplied at initialization, before
 rain particles are created. The stairs frame is reached by a real click and
 the day frame by WASD; placement uses the real selection and pointer path.
-`baseline.json` records the source SHA and capture state. Each scenario saves
+`baseline.json` records the source SHA, capture state and frame hashes. Each scenario saves
 baseline, candidate, and a black/magenta exact-RGBA diff PNG under
 `evidence/EBR-73/`; `parity.json` records the counts. Any differing pixel,
-missing frame, page error, unexpected pose or browser-version mismatch fails
+missing or altered baseline frame, page error, unexpected pose or browser-version mismatch fails
 the command. Run on the same machine/browser as the baseline; browser, fonts,
 or graphics changes can alter pixels even when application code does not.
+For an external `--url`, the server's source SHA is unknown rather than inferred
+from the local checkout. For a local run, `parity.json` records both HEAD and
+any source changes present during capture.

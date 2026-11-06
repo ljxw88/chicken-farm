@@ -77,7 +77,8 @@
         "cloudyAmount": 0
       },
       "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
-      "phase": "Daytime"
+      "phase": "Daytime",
+      "sha256": "a3b53ba806df1366571d1ec4775b53b94070eb3ff4fd14399d0bf632be4317a0"
     },
     "stairs-pad": {
       "position": [
@@ -116,7 +117,8 @@
         "cloudyAmount": 0
       },
       "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
-      "phase": "Daytime"
+      "phase": "Daytime",
+      "sha256": "d6e9e23d04b263bee9b62f86e85aaa9dc473665b7b4addfab66dc46fd143e1a0"
     },
     "placement-ghost": {
       "position": [
@@ -155,7 +157,8 @@
         "cloudyAmount": 0
       },
       "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
-      "phase": "Daytime"
+      "phase": "Daytime",
+      "sha256": "5d7c57578fd61b09d3c16315ac8f00ffa44050ee1b2a296a11cc184df0591cee"
     },
     "day": {
       "position": [
@@ -194,7 +197,8 @@
         "cloudyAmount": 0
       },
       "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
-      "phase": "Daytime"
+      "phase": "Daytime",
+      "sha256": "4b24edc69cbf8cc598e8a373bbfac3edbb316ba70d6568a1f09d35fc08411477"
     },
     "night": {
       "position": [
@@ -233,7 +237,8 @@
         "cloudyAmount": 0
       },
       "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
-      "phase": "Night"
+      "phase": "Night",
+      "sha256": "c6932d5ae8abc28c5af6874c048fc0f8d65418dbed23e2c3d5672f6d402b7a7d"
     },
     "rain": {
       "position": [
@@ -272,7 +277,8 @@
         "cloudyAmount": 0
       },
       "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
-      "phase": "Daytime"
+      "phase": "Daytime",
+      "sha256": "7c340efff017e74c83294d314bd68a270abf9d85b2c1b1b5bcc3e1b81d09cdf1"
     }
   }
 }
