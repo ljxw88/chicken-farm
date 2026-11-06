@@ -80,8 +80,8 @@ The QA-compatible probe uses 0–255 luminance. Facing order is toward camera / 
 | Sunset | 0.985 → 0.741 (0.45) | 0.015 → 0.297 | 76.4/80.4/80.3/80.4 → 99.5/103.9/95.0/103.9 | 1.26 → 1.36 |
 | Day cloudy | 0.874 → 0.749 (0.70) | 0.134 → 0.287 | 107.4/113.6/113.6/113.6 → 102.8/108.0/101.3/108.0 | 1.15 → 1.17 |
 | Day rain | 0.871 → 0.763 (0.75) | 0.137 → 0.269 | 111.4/117.4/117.4/117.4 → 104.3/109.8/103.1/109.8 | 1.15 → 1.18 |
-| Night clear | — | — | 62.1/36.8/70.7/36.7 → 84.1/82.7/84.7/82.7 | 1.21 → 1.35 |
-| Night rain | — | — | 60.8/33.6/68.7/33.6 → 76.5/74.1/77.5/74.1 | 1.26 → 1.36 |
+| Night clear | 0.973 → 0.849 (no bound) | — | 62.1/36.8/70.7/36.7 → 84.1/82.7/84.7/82.7 | 1.21 → 1.35 |
+| Night rain | 0.973 → 0.862 (no bound) | — | 60.8/33.6/68.7/33.6 → 76.5/74.1/77.5/74.1 | 1.26 → 1.36 |
 
 Sunset visible body/top is 0.944 → 0.778 (maximum 0.80). Night clear/rain minima are 82.7/74.1 and spreads are 2.4%/4.5% (minimum 45/255, maximum spread 35%). `qa-main-c59-analysis.txt` and `qa-c59-post-analysis.txt` are the separate real-input checks; slight rain/ground differences reflect their unseeded particles and timed key holds.
 

@@ -54,7 +54,8 @@ Diagnosis / Engineer decisions
 Measured before -> after (QA-compatible fixed view, 0–255 luminance)
 - Shade/lit: morning 0.831 -> 0.740 (min 0.50); day 0.852 -> 0.708
   (min 0.55); sunset 0.985 -> 0.741 (min 0.45); cloudy 0.874 -> 0.749
-  (min 0.70); rain 0.871 -> 0.763 (min 0.75).
+  (min 0.70); rain 0.871 -> 0.763 (min 0.75); night 0.973 -> 0.849
+  and night rain 0.973 -> 0.862 (no specified night shade/lit bound).
 - Sunset body/top 0.944 -> 0.778 (max 0.80). Night clear facing range
   36.7–70.7 -> 82.7–84.7; night rain 33.6–68.7 -> 74.1–77.5.
 - Sunset pixel-pass grass RGB (67,65,20) -> (64,81,35), G/R 1.266;
@@ -67,17 +68,17 @@ Measured before -> after (QA-compatible fixed view, 0–255 luminance)
 Checks
 - `npm run build`: passed; Vite's >500 kB chunk advisory remains.
 - `npm test`: 117 passed, 0 failed (engine, EBR-47, EBR-48 and graphics units).
-- `npm run test:browser` with the evidence/URL variables in browser.log:
+- `EBR56_DEV_URL=http://100.88.150.21:5184 EBR56_EVIDENCE_DIR=evidence/lighting/placement-final EBR46_URL=http://100.88.150.21:5184 EBR46_EVIDENCE_DIR=evidence/lighting/stairs-final EBR46_SLIDE_PROOF=evidence/lighting/stairs-final/qa-slide-proof.json EBR47_EVIDENCE_DIR=evidence/lighting/buildings-final EBR48_EVIDENCE_DIR=evidence/lighting/water-final EBR71_EVIDENCE_DIR=evidence/lighting/visual-final LIGHTING_URL=http://100.88.150.21:5184 LIGHTING_EVIDENCE_DIR=evidence/lighting/detector-final LIGHTING_CAPTURE_LABEL=suite npm run test:browser`:
   30 passed, 0 failed, including placement, bridge/waterfall, EBR-47 and all
   three stair pad-side sequences; no unsupported/clipped frames in their proof.
 - `node tools/lighting-baseline.mjs`: expected failure on c59b043 (old C1 and
   shadow direction); `tests/browser/lighting.browser.mjs`: 6 passed on branch.
-- QA `gfx-audit.mjs` + `analyze-lighting.py`: main 23 failures, candidate 10;
+- `node /home/michael/OpenBot/Shared/qa-graphics-gate/gfx-audit.mjs http://100.88.150.21:5184 evidence/lighting/qa-c59-post /home/michael/Developer/chicken-farm/worktrees/light/` and `python3 /home/michael/OpenBot/Shared/qa-graphics-gate/analyze-lighting.py evidence/lighting/qa-c59-post`: main 23 failures, candidate 10;
   C1/C3 pass. C2 cloudy/rain conflicts with the specified half/near-centred
   offset; C4 day/cloudy/rain luminance is 1.11/1.16/1.18 despite 33–37° hue
   separation; C5's five failures are the EBR-48 animated waterfall. Exact
   differences outside its screen mask are zero in all five non-rain cases.
-- QA `compare-frames.py`: 70 lit frames differ, as expected; raw/allowed logs
+- `python3 /home/michael/OpenBot/Shared/qa-graphics-gate/compare-frames.py evidence/lighting/qa-main-c59 evidence/lighting/qa-c59-post`: 70 lit frames differ, as expected; raw/allowed logs
   are in evidence/lighting/. The seeded HUD/void/color region check passes.
 - `PARITY_EVIDENCE_DIR=evidence/lighting/gate-g npm run parity`: exit 1 for
   expected lit/water differences; all eight frames differ. The old a61bac9
