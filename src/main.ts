@@ -40,7 +40,7 @@ character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
 const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
-const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives });
+const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives, shadowSupported: stairs.supports });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
@@ -113,6 +113,7 @@ createEngine({
     // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
     controls.update(Math.min(deltaSeconds, 0.1));
     phaseController.update(deltaSeconds);
+    dayNight.updateCharacterShadow();
     farmHud.setPhase(dayNight.getPhase());
     follow(character.position);
     placement.update();

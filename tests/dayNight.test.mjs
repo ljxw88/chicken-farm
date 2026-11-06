@@ -8,7 +8,7 @@ const { createCharacter } = await vite.ssrLoadModule('/src/character/createChara
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { configureDayNightFromUrl } = await vite.ssrLoadModule('/src/lighting/configureDayNightFromUrl.ts');
-const { VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
+const { createIsland, VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 function fixture() {
@@ -40,12 +40,12 @@ function colorNear(actual, expected, tolerance = 1e-9) {
   near(actual.b, expected.b, tolerance);
 }
 
-test('all four phases keep the void and use the locked fog and light presets', () => {
+test('all four phases keep the void, signed colors and directional key with reduced fill', () => {
   const { scene, cycle, ambient, hemisphere, directional, windows, windowLights, lanternGlass, lanternLight } = fixture();
   const expected = {
-    morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.25, 0xe8d4c8, 0xa8c090, 0.55, 0xffe8c8, 0.55],
-    daytime: [0xa8d4f0, 0xc8e0f0, 0.006, 0xe8f0e8, 0.15, 0xa8d4f0, 0x9cb88a, 0.85, 0xfff2d6, 1.1],
-    sunset: [0xf0a878, 0xe89870, 0.015, 0xe89870, 0.28, 0xf0a878, 0xc89070, 0.45, 0xff8a50, 0.65],
+    morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.16, 0xe8d4c8, 0xa8c090, 0.35, 0xffe8c8, 0.55],
+    daytime: [0xa8d4f0, 0xc8e0f0, 0.006, 0xe8f0e8, 0.1, 0xa8d4f0, 0x9cb88a, 0.55, 0xfff2d6, 1.1],
+    sunset: [0xf0a878, 0xe89870, 0.015, 0xe89870, 0.12, 0xf0a878, 0xc89070, 0.2, 0xff8a50, 0.65],
     night: [0x2a2848, 0x1e2430, 0.02, 0x3a4560, 0.18, 0x2a2848, 0x1e2430, 0.22, 0xc8d4f0, 0.22],
   };
 
@@ -73,8 +73,8 @@ test('all four phases keep the void and use the locked fog and light presets', (
       near(windows[index].material.emissiveIntensity, phase === 'night' ? 0.85 : 0);
     }
     assert.equal(lanternLight.color.getHex(), 0xffb060);
-    near(lanternLight.intensity, phase === 'night' ? 0.55 : 0);
-    near(lanternLight.distance, 3.5);
+    near(lanternLight.intensity, phase === 'night' ? 0.08 : 0);
+    near(lanternLight.distance, 2);
     near(lanternLight.decay, 2);
     assert.equal(lanternGlass.material.emissive.getHex(), 0xffb060);
     near(lanternGlass.material.emissiveIntensity, phase === 'night' ? 0.55 : 0);
@@ -109,7 +109,7 @@ test('east window and coop glows follow the night ramp without adding point ligh
   near(accents[0].material.emissiveIntensity, 0.85);
   near(accents[1].material.emissiveIntensity, 0.85 * 0.7);
   near(accents[2].material.emissiveIntensity, 0.85 * 0.7);
-  near(lanternLight.intensity, 0.55);
+  near(lanternLight.intensity, 0.08);
 });
 
 test('the default 72-second cycle advances through all four phases and wraps', () => {
@@ -148,19 +148,19 @@ test('colors, intensities, fog and practical lights blend smoothly between prese
   colorNear(hemisphere.groundColor, new THREE.Color(0xa8c090).lerp(new THREE.Color(0x9cb88a), blend));
   colorNear(directional.color, new THREE.Color(0xffe8c8).lerp(new THREE.Color(0xfff2d6), blend));
   near(scene.fog.density, 0.012 + (0.006 - 0.012) * blend);
-  near(ambient.intensity, 0.25 + (0.15 - 0.25) * blend);
-  near(hemisphere.intensity, 0.55 + (0.85 - 0.55) * blend);
+  near(ambient.intensity, 0.16 + (0.1 - 0.16) * blend);
+  near(hemisphere.intensity, 0.35 + (0.55 - 0.35) * blend);
   near(directional.intensity, 0.55 + (1.1 - 0.55) * blend);
 
   cycle.setDayNightPhase('sunset');
   cycle.update(9);
   near(windowLights[0].intensity, 0.85 / 2);
   near(windowLights[1].intensity, 0.85 / 2);
-  near(lanternLight.intensity, 0.55 / 2);
+  near(lanternLight.intensity, 0.08 / 2);
   cycle.update(9);
-  near(lanternLight.intensity, 0.55);
+  near(lanternLight.intensity, 0.08);
   cycle.update(9);
-  near(lanternLight.intensity, 0.55 / 2);
+  near(lanternLight.intensity, 0.08 / 2);
   cycle.update(9);
   near(lanternLight.intensity, 0);
 });
@@ -212,6 +212,55 @@ test('the lantern stays attached to the moving and turning character', () => {
   near(after.distanceTo(expected), 0);
 });
 
+test('the character shadow follows the key, not the character rotation, throughout the cycle', () => {
+  const { scene, character, cycle, directional } = fixture();
+  const shadow = character.getObjectByName('character-shadow');
+  assert.equal(shadow.material.color.getHex(), 0);
+  for (let i = 0; i < 64; i++) {
+    cycle.update(72 / 64);
+    for (const rotation of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      character.position.set(1.2, 2.4, -0.7);
+      character.rotation.y = rotation;
+      cycle.updateCharacterShadow();
+      scene.updateMatrixWorld(true);
+      const foot = character.getWorldPosition(new THREE.Vector3());
+      const shadowCenter = shadow.getWorldPosition(new THREE.Vector3()).sub(foot).setY(0);
+      const towardLight = directional.getWorldPosition(new THREE.Vector3())
+        .sub(directional.target.getWorldPosition(new THREE.Vector3())).setY(0).normalize();
+      assert.ok(shadowCenter.length() > 0.01);
+      assert.ok(shadowCenter.clone().normalize().dot(towardLight) < -0.999999, `wrong direction at cycle step ${i}`);
+      const longAxis = shadow.localToWorld(new THREE.Vector3(1, 0, 0))
+        .sub(shadow.getWorldPosition(new THREE.Vector3())).setY(0).normalize();
+      assert.ok(longAxis.dot(towardLight) < -0.999999, `wrong axis at cycle step ${i}`);
+    }
+  }
+});
+
+test('the directional shadow stays on the walkable landing rather than darkening the void', () => {
+  const scene = new THREE.Scene();
+  const { stairs } = createIsland(scene);
+  const character = createCharacter();
+  scene.add(character);
+  const cycle = createDayNightCycle({ scene, character, windows: [], shadowSupported: stairs.supports });
+  const shadow = character.getObjectByName('character-shadow');
+  const pad = stairs.footPad;
+  const padEnd = pad.position.x + pad.geometry.parameters.width / 2;
+  character.position.set(padEnd - 0.4, pad.position.y + pad.geometry.parameters.height / 2, pad.position.z);
+  cycle.setDayNightPhase('sunset'); // The shadow points toward the end of the pad.
+  cycle.updateCharacterShadow();
+  scene.updateMatrixWorld(true);
+  for (let i = 0; i < 64; i++) {
+    const angle = i * Math.PI * 2 / 64;
+    const point = shadow.localToWorld(new THREE.Vector3(0.4 * Math.cos(angle), 0.4 * Math.sin(angle), 0));
+    assert.ok(stairs.supports(point.x, point.z, 0), `shadow left the landing at ${point.toArray()}`);
+  }
+  // The same sunset produces a longer shadow when the character is well inside the island.
+  const shortScale = shadow.scale.x;
+  character.position.set(0, 2.4, 0);
+  cycle.updateCharacterShadow();
+  assert.ok(shadow.scale.x > shortScale + 1);
+});
+
 test('changing cycle speed preserves progress and rejects invalid inputs', () => {
   const { cycle, hemisphere } = fixture();
   cycle.update(9);
@@ -235,7 +284,7 @@ test('a valid phase URL selects and holds each phase without changing the void',
     morning: [0xe8d4c8, 0xffe8c8, 0],
     daytime: [0xa8d4f0, 0xfff2d6, 0],
     sunset: [0xf0a878, 0xff8a50, 0],
-    night: [0x2a2848, 0xc8d4f0, 0.55],
+    night: [0x2a2848, 0xc8d4f0, 0.08],
   };
   for (const [phase, [sky, sun, lanternIntensity]] of Object.entries(expected)) {
     const { scene, cycle, hemisphere, directional, lanternLight } = fixture();

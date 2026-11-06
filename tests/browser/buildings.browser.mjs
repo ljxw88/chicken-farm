@@ -115,7 +115,7 @@ async function probeTreeRoofOverlap() {
   return { step, overlappingSamples, example };
 }
 
-test('locked buildings render at day, sunset, night and rain with the original lights', { timeout: 90000 }, async (t) => {
+test('locked buildings render at day, sunset, night and rain with the practical lights', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
@@ -197,7 +197,7 @@ test('locked buildings render at day, sunset, night and rain with the original l
   near(lights.accents[1], 0.85 * 0.7);
   near(lights.accents[2], 0.85 * 0.7);
   assert.deepEqual(lights.points, ['lantern-light', 'window-light-1', 'window-light-2']);
-  near(lights.lantern, 0.55);
+  near(lights.lantern, 0.08);
   assert.equal(lights.lanternParent, lights.characterName);
   await capture(night.page, '03-night-glow.png');
   assert.deepEqual(night.errors, []);

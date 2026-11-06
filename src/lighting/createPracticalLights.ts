@@ -75,7 +75,7 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
     for (const window of windows) window.material.emissiveIntensity = WINDOW_LIGHT.intensity * amount;
     for (const { material, strength } of accents) material.emissiveIntensity = WINDOW_LIGHT.intensity * strength * amount;
     lanternLight.intensity = LANTERN_LIGHT.intensity * amount;
-    glassMaterial.emissiveIntensity = LANTERN_LIGHT.intensity * amount;
+    glassMaterial.emissiveIntensity = LANTERN_LIGHT.glassIntensity * amount;
   }
 
   return { setNightAmount };

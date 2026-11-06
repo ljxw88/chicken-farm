@@ -34,7 +34,9 @@ export function createCharacter() {
 
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(CHARACTER_RADIUS, 24),
-    new THREE.MeshBasicMaterial({ color: 0x263b20, transparent: true, opacity: 0.22, depthWrite: false }),
+    // Black alpha only darkens the receiving surface. The old green blob
+    // actually brightened the darker sunset and night ground.
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false }),
   );
   shadow.name = 'character-shadow';
   shadow.rotation.x = -Math.PI / 2;

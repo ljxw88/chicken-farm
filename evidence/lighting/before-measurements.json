@@ -1,0 +1,239 @@
+{
+  "label": "before",
+  "viewport": [
+    1280,
+    720
+  ],
+  "phases": {
+    "daytime": {
+      "lightPosition": [
+        7.347880794884119e-16,
+        12,
+        6
+      ],
+      "buffer": [
+        320,
+        180
+      ],
+      "shadow": {
+        "foot": {
+          "x": 159.99999999999997,
+          "y": 94.84998969071067
+        },
+        "centroid": {
+          "x": 159.9596873096671,
+          "y": 94.86888006371765
+        },
+        "towardSunPixels": 0.04435700042666289,
+        "shadowPixels": 21,
+        "brightenedPixels": 0
+      },
+      "samples": [
+        {
+          "lightPosition": [
+            -12,
+            12,
+            12
+          ],
+          "sunward": 127.49271186440674,
+          "away": 94.49456923076922,
+          "difference": 32.99814263363753,
+          "ratio": 0.7411762433233652,
+          "sunwardPixels": 59,
+          "awayPixels": 26
+        },
+        {
+          "lightPosition": [
+            12,
+            12,
+            -12
+          ],
+          "sunward": 136.07493846153847,
+          "away": 97.82345423728816,
+          "difference": 38.251484224250305,
+          "ratio": 0.7188939810907056,
+          "sunwardPixels": 26,
+          "awayPixels": 59
+        }
+      ],
+      "backlitFront": {
+        "lightPosition": [
+          -12,
+          12,
+          -12
+        ],
+        "luminance": 97.10355714285727,
+        "pixels": 112
+      },
+      "frontlitFront": {
+        "lightPosition": [
+          12,
+          12,
+          12
+        ],
+        "luminance": 138.5590964285713,
+        "pixels": 112
+      },
+      "backlitRatio": 0.7008096880374447,
+      "errors": []
+    },
+    "sunset": {
+      "lightPosition": [
+        -12,
+        3,
+        7.347880794884119e-16
+      ],
+      "buffer": [
+        320,
+        180
+      ],
+      "shadow": {
+        "foot": {
+          "x": 159.99999999999997,
+          "y": 94.84998969071067
+        },
+        "centroid": {
+          "x": null,
+          "y": null
+        },
+        "towardSunPixels": null,
+        "shadowPixels": 0,
+        "brightenedPixels": 13
+      },
+      "samples": [
+        {
+          "lightPosition": [
+            -12,
+            3,
+            12
+          ],
+          "sunward": 91.41883728813559,
+          "away": 76.42295384615383,
+          "difference": 14.99588344198176,
+          "ratio": 0.8359650605190103,
+          "sunwardPixels": 59,
+          "awayPixels": 26
+        },
+        {
+          "lightPosition": [
+            12,
+            3,
+            -12
+          ],
+          "sunward": 94.48147692307688,
+          "away": 78.85612542372888,
+          "difference": 15.625351499348,
+          "ratio": 0.834619948711539,
+          "sunwardPixels": 26,
+          "awayPixels": 59
+        }
+      ],
+      "backlitFront": {
+        "lightPosition": [
+          -12,
+          3,
+          -12
+        ],
+        "luminance": 78.2139071428572,
+        "pixels": 112
+      },
+      "frontlitFront": {
+        "lightPosition": [
+          12,
+          3,
+          12
+        ],
+        "luminance": 96.09180714285715,
+        "pixels": 112
+      },
+      "backlitRatio": 0.8139497993473954,
+      "errors": []
+    },
+    "night": {
+      "lightPosition": [
+        5.999999999999998,
+        12,
+        6
+      ],
+      "buffer": [
+        320,
+        180
+      ],
+      "shadow": {
+        "foot": {
+          "x": 159.99999999999997,
+          "y": 94.84998969071067
+        },
+        "centroid": {
+          "x": null,
+          "y": null
+        },
+        "towardSunPixels": null,
+        "shadowPixels": 0,
+        "brightenedPixels": 21
+      },
+      "samples": [
+        {
+          "lightPosition": [
+            -12,
+            3,
+            12
+          ],
+          "sunward": 60.25396949152544,
+          "away": 46.96373076923077,
+          "difference": 13.290238722294667,
+          "ratio": 0.7794296569263557,
+          "sunwardPixels": 59,
+          "awayPixels": 26
+        },
+        {
+          "lightPosition": [
+            12,
+            3,
+            -12
+          ],
+          "sunward": 62.09206153846152,
+          "away": 47.094315254237316,
+          "difference": 14.997746284224206,
+          "ratio": 0.7584595210301692,
+          "sunwardPixels": 26,
+          "awayPixels": 59
+        }
+      ],
+      "backlitFront": {
+        "lightPosition": [
+          -12,
+          3,
+          -12
+        ],
+        "luminance": 65.88404464285712,
+        "pixels": 112
+      },
+      "frontlitFront": {
+        "lightPosition": [
+          12,
+          3,
+          12
+        ],
+        "luminance": 77.4818464285715,
+        "pixels": 112
+      },
+      "backlitRatio": 0.8503158827480177,
+      "nightLantern": {
+        "intensity": 0.55,
+        "withLantern": 65.88404464285712,
+        "withoutLantern": 15.414025
+      },
+      "errors": []
+    }
+  },
+  "browser": "Chromium 153.0.8010.12 / SwiftShader",
+  "padEdge": {
+    "changedVoidPixels": 0,
+    "shadowScale": [
+      1,
+      0.7,
+      1
+    ]
+  }
+}

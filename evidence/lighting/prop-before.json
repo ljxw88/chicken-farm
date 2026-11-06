@@ -1,0 +1,41 @@
+{
+  "mode": "shadows",
+  "phase": "night",
+  "browser": "153.0.8010.12",
+  "viewport": [
+    1280,
+    720
+  ],
+  "tree": {
+    "brightenedPixels": 441,
+    "darkenedPixels": 0,
+    "totalLuminanceChange": 3809.624000000003,
+    "shadowColor": 4028986,
+    "focus": [
+      -2.15,
+      2.4,
+      1.55
+    ],
+    "character": [
+      0,
+      2.4,
+      0
+    ]
+  },
+  "chicken": {
+    "brightenedPixels": 85,
+    "darkenedPixels": 0,
+    "totalLuminanceChange": 308.4079999999998,
+    "shadowColor": 2505504,
+    "focus": [
+      1.75,
+      2.4,
+      1.75
+    ],
+    "character": [
+      0,
+      2.4,
+      0
+    ]
+  }
+}

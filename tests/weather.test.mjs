@@ -142,7 +142,7 @@ test('rain tracks all current phases without accumulating or changing practical 
       assert.equal(light.color.getHex(), 0xffcc88);
       near(light.intensity, phase === 'night' ? 0.85 : 0);
     }
-    near(lantern.intensity, phase === 'night' ? 0.55 : 0);
+    near(lantern.intensity, phase === 'night' ? 0.08 : 0);
     weather.setWeather('clear');
     weather.update(1.75);
     near(directional.intensity, intensity);
