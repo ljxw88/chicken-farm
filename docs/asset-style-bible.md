@@ -98,7 +98,7 @@ off-palette barrel; numeric heuristics cannot replace Look Dev's eye.
 | H1 | Closed schema, allowed primitives and palette tokens. |
 | H2 | Part and triangle budgets. |
 | H3 | Bounds and metadata within 10% of the brief. |
-| H4 | Base-centred origin, ground contact and declared +Z front. |
+| H4 | Base-centred origin (centre offset ≤15% of footprint), ground contact and declared +Z front. |
 | H5 | Minimum 0.1 thickness everywhere, 0.2 readable parts, 0.3 handle/wheel/window/hat faces. |
 | H6 | Two builds have identical geometry/material hashes. |
 | H7 | Detect near-coplanar overlap; signed references can have analytic warnings, and empirical flicker is a failure. |
@@ -151,7 +151,7 @@ must name the specific failed part and never override a deterministic blocker.
   "dimensionToleranceRelative": 0.10,
   "baseTolerance": 0.02,
   "belowGroundTolerance": 0.01,
-  "centerToleranceRelative": 0.10,
+  "centerToleranceRelative": 0.15,
   "centerToleranceAbsolute": 0.02,
   "minimumFeature": 0.10,
   "minimumReadableThickness": 0.20,

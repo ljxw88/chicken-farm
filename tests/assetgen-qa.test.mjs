@@ -57,6 +57,12 @@ test('B4 0.05 plank fails minimum feature size', () => { const r = copy(); r.par
 test('B5 0.15 handle fails must-read size', () => { const r = copy(); r.parts[2].name = 'handle'; r.parts[2].size = [0.15, 0.15, 0.6]; mustFail(r, 'H5'); });
 test('B6 centre-origin geometry fails the base-origin rule', () => { const r = copy(); for (const part of r.parts) part.at[1] -= 0.48; mustFail(r, 'H4'); });
 test('B7 -Z facing fails the declared-facing rule', () => { const r = copy(); r.facing = '-Z'; mustFail(r, 'H4'); });
+test('base-centre tolerance accepts under 15% and rejects above 15%', () => {
+  const near = copy(); for (const part of near.parts) part.at[0] += 0.11;
+  assert.ok(!inspect(near).failures.some((failure) => failure.code === 'H4'));
+  const far = copy(); for (const part of far.parts) part.at[0] += 0.13;
+  mustFail(far, 'H4');
+});
 test('B8 floating part fails connectivity', () => { const r = copy(); r.parts[2].at[1] += 0.2; mustFail(r, 'H8'); });
 test('B9 buried part fails below-ground', () => { const r = copy(); r.parts[0].at[1] -= 0.03; mustFail(r, 'H9'); });
 test('B10 overlapping coplanar faces fail the new-recipe z-fight gate', () => { const r = copy(); r.parts.push({ ...structuredClone(r.parts[0]), name: 'duplicate' }); mustFail(r, 'H7'); });

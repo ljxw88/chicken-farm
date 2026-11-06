@@ -30,7 +30,8 @@ scratch session where tool use is denied. The prompt includes this bible, the
 recipe cheat sheet, 2–3 signed source references and prior feedback. Stages:
 blockout → form → material → detail → lighting → optimise. Each stage first
 runs deterministic H1–H10 checks, then 8 fixed yaws × 3 phases × 3 backgrounds
-using the real game renderer and a separate OpenCode visual-critic session.
+plus morning and night-rain, using the real game renderer and a separate
+OpenCode visual-critic session.
 Identity tags must exist and each tagged part must have a measured visible
 pixel contribution in at least one fixed view; the critic must also judge
 whether the part genuinely depicts the feature.
@@ -131,9 +132,10 @@ separate `ASSETGEN_RUN_DIR`; their outputs cannot be used as approvals.
 * H4 checks declared facing and centred bounds, not whether a semantic door
   truly faces +Z. Identity visibility measures a pixel contribution, not the
   truth of a label. The visual critic is not independent artistic approval.
-* S1 rendered palette-cluster distance, S3 three-step value, S5 night glow and
-  S7 style distance are explicitly **unmeasured**, not passing checks. S4 is a
-  preliminary normal/albedo-normalised key-light estimate under old lighting.
+* S1 rendered palette-cluster distance, S3 three-step value, S5 unlit-face glow
+  beyond material/highlight checks, and S7 style distance are explicitly
+  **unmeasured**, not passing checks. S4 is a preliminary normal/albedo-normalised
+  key-light estimate under merged EBR-80 lighting, not the full QA G2 method.
   The loop stops for input at its lighting stage rather than advancing on
   missing S3/S5 evidence.
 * Exact signed tree/coop/fence/tread fixtures have a fingerprinted real-game
