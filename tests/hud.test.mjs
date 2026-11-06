@@ -89,7 +89,7 @@ test('world Collect synchronously updates the mounted list and capsule', (t) => 
 });
 
 test('HTML inventory tracks feeding and pickup without changing Supplies', (t) => {
-  const { root, character, supplies, inventory, flock, registry, find } = fixture(t);
+  const { character, supplies, inventory, flock, registry, find } = fixture(t);
   const chicken = flock.interactables.find((item) => item.id === 'qa-chicken');
   character.position.copy(chicken.object.position);
   assert.match(registry.interact(chicken).message, /Fed chicken/);
@@ -108,7 +108,6 @@ test('HTML inventory tracks feeding and pickup without changing Supplies', (t) =
   assert.match(registry.interact(chicken).message, /Fed chicken/);
   assert.deepEqual(inventory.getCounts(), { feed: 1, egg: 6 });
   assert.equal(find('[data-egg-count]').textContent, '6');
-  assert.equal(root.querySelector('.farm-market'), null);
 });
 
 test('Growing, placeholder buff tips, Build sheet and phase label are usable without the canvas', (t) => {
@@ -141,7 +140,7 @@ test('Growing, placeholder buff tips, Build sheet and phase label are usable wit
   build.click();
   assert.equal(build.getAttribute('aria-expanded'), 'true');
   assert.equal(sheet.hidden, false);
-  assert.match(sheet.textContent, /Building is not available/);
+  assert.match(sheet.textContent, /full Build menu is not available/i);
   find('[data-build-close]').click();
   assert.equal(sheet.hidden, true);
   assert.equal(build.getAttribute('aria-expanded'), 'false');

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
 
-const evidenceDir = process.env.EBR57_EVIDENCE_DIR ?? process.env.EBR65_EVIDENCE_DIR;
+const evidenceDir = process.env.EBR59_EVIDENCE_DIR ?? process.env.EBR57_EVIDENCE_DIR ?? process.env.EBR65_EVIDENCE_DIR;
 const proof = {};
 let devServer;
 let previewServer;
@@ -118,6 +118,8 @@ test('production HTML HUD: list Collect, buff disclosures, Build stub and refres
       blur: getComputedStyle(document.querySelector('.farm-growing')).backdropFilter,
       inventoryBlur: getComputedStyle(document.querySelector('.farm-inventory')).backdropFilter,
       inventoryColor: getComputedStyle(document.querySelector('.farm-inventory')).backgroundColor,
+      marketColor: getComputedStyle(document.querySelector('.farm-market')).backgroundColor,
+      marketBlur: getComputedStyle(document.querySelector('.farm-market')).backdropFilter,
       inventoryInHud: root.contains(document.querySelector('.farm-inventory')),
       canvasAtCenter: document.elementFromPoint(innerWidth / 2, innerHeight / 2) === canvas,
     };
@@ -127,6 +129,8 @@ test('production HTML HUD: list Collect, buff disclosures, Build stub and refres
   assert.match(layout.blur, /blur\(16px\)/);
   assert.match(layout.inventoryBlur, /blur\(16px\)/);
   assert.equal(layout.inventoryColor, 'rgba(40, 55, 36, 0.68)');
+  assert.equal(layout.marketColor, 'rgba(40, 55, 36, 0.68)');
+  assert.match(layout.marketBlur, /blur\(16px\)/);
   assert.equal(layout.inventoryInHud, true);
   assert.equal(layout.canvasAtCenter, true);
   assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
@@ -144,7 +148,7 @@ test('production HTML HUD: list Collect, buff disclosures, Build stub and refres
 
   await page.locator('[data-build-toggle]').click();
   assert.equal(await page.locator('#farm-build-sheet').isVisible(), true);
-  assert.match(await page.locator('#farm-build-sheet').innerText(), /Building is not available/);
+  assert.match(await page.locator('#farm-build-sheet').innerText(), /full Build menu is not available/i);
   await capture(page, '02-build-stub.png');
   await page.locator('[data-build-close]').click();
   assert.equal(await page.locator('#farm-build-sheet').isVisible(), false);
@@ -349,9 +353,123 @@ test('inventory survives phase and weather changes until refresh', { timeout: 90
   proof.session = { persistsAcrossNightRainAndClear: true, refreshResets: true, errors };
 });
 
+test('EBR-59 on-screen gate trades and spends only Supplies with readable failures', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, previewUrl);
+  const supply = page.locator('[data-supplies-count]');
+  const feed = page.locator('[data-feed-count]');
+  const egg = page.locator('[data-egg-count]');
+  const status = page.locator('.interaction-feedback');
+  assert.equal(await supply.textContent(), '0');
+  assert.equal(await feed.textContent(), '5');
+  assert.equal(await egg.textContent(), '0');
+  assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
+  await capture(page, '20-economy-start.png');
+
+  await approachChicken(page);
+  await page.keyboard.press('e');
+  assert.equal(await feed.textContent(), '4');
+  assert.equal(await egg.textContent(), '1');
+  assert.equal(await supply.textContent(), '0');
+  await page.locator('[data-collect]').click();
+  await assertCollected(page);
+  assert.equal(await egg.textContent(), '1');
+  assert.equal(await feed.textContent(), '4');
+  await page.locator('[data-sell-egg]').click();
+  assert.equal(await egg.textContent(), '0');
+  assert.equal(await supply.textContent(), '8');
+  assert.match(await status.textContent(), /Sold 1 Egg.*\+3 Supplies/);
+  await page.locator('[data-buy-feed]').click();
+  assert.equal(await supply.textContent(), '7');
+  assert.equal(await feed.textContent(), '5');
+  await page.locator('[data-place-fence]').click();
+  assert.equal(await supply.textContent(), '2');
+  assert.match(await status.textContent(), /Placed one fence.*5 Supplies/);
+  await capture(page, '21-economy-fence.png');
+
+  await page.locator('[data-sell-egg]').click();
+  assert.match(await status.textContent(), /Can't sell/);
+  assert.equal(await egg.textContent(), '0');
+  assert.equal(await supply.textContent(), '2');
+  await page.locator('[data-place-fence]').click();
+  assert.match(await status.textContent(), /Can't place fence/);
+  assert.equal(await supply.textContent(), '2');
+  await page.locator('[data-buy-feed]').click();
+  await page.locator('[data-buy-feed]').click();
+  assert.equal(await supply.textContent(), '0');
+  assert.equal(await feed.textContent(), '7');
+  await page.locator('[data-buy-feed]').click();
+  assert.match(await status.textContent(), /Can't buy Feed/);
+  assert.equal(await supply.textContent(), '0');
+  assert.equal(await feed.textContent(), '7');
+  await capture(page, '22-economy-broke.png');
+
+  await page.locator('[data-build-toggle]').click();
+  assert.equal(await page.locator('#farm-build-sheet').isVisible(), true);
+  await page.locator('[data-build-close]').click();
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await supply.textContent(), '0');
+  assert.equal(await feed.textContent(), '5');
+  assert.equal(await egg.textContent(), '0');
+  assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
+  assert.deepEqual(errors, []);
+  proof.economy = { supplies: '0 → 5 → 8 → 7 → 2 → 0', feed: '5 → 4 → 5 → 7', egg: '0 → 1 → 0', failures: ['empty sell', 'broke fence', 'broke feed'], refreshResets: true, errors };
+});
+
+test('one paid fence appears, cannot charge twice, and survives weather until refresh', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, devUrl, true);
+  const fenceCount = () => page.evaluate(() => window.__ebr65Test.scene.children.filter((child) => child.name === 'qa-paid-fence').length);
+  assert.equal(await fenceCount(), 0);
+  await page.locator('[data-place-fence]').click();
+  assert.match(await page.locator('.interaction-feedback').textContent(), /Can't place fence/);
+  assert.equal(await fenceCount(), 0);
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  await page.locator('[data-collect]').click();
+  await page.locator('[data-place-fence]').click(); // Exact balance of 5.
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  assert.equal(await fenceCount(), 1);
+  assert.equal(await page.evaluate(() => window.__ebr65Test.scene.getObjectByName('qa-paid-fence')?.visible), true);
+
+  await approachChicken(page);
+  await page.keyboard.press('e');
+  await page.keyboard.press('e');
+  await page.locator('[data-sell-egg]').click();
+  await page.locator('[data-sell-egg]').click();
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '6');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '3');
+  await page.locator('[data-place-fence]').click();
+  assert.match(await page.locator('.interaction-feedback').textContent(), /already placed/);
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '6');
+  assert.equal(await fenceCount(), 1);
+
+  await page.evaluate(() => { window.setDayNightPhase('night'); window.setWeather('rain'); });
+  await page.waitForFunction(() => document.querySelector('[data-phase]')?.textContent === 'Night');
+  await page.waitForFunction(() => window.getWeather().rainAmount > 0.1, null, { timeout: 15000 });
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '6');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '3');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
+  assert.equal(await fenceCount(), 1);
+  await capture(page, '23-economy-night-rain.png');
+  await page.evaluate(() => { window.setDayNightPhase('morning'); window.setWeather('clear'); });
+  await page.waitForFunction(() => window.getWeather().rainAmount < 0.1, null, { timeout: 15000 });
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '6');
+  assert.equal(await fenceCount(), 1);
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await fenceCount(), 0);
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '5');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
+  assert.deepEqual(errors, []);
+  proof.fence = { noFreePlacement: true, paidAtExactBalance: true, duplicateNotCharged: true, survivesNightRain: true, refreshRemovesFence: true, errors };
+});
+
 test('small portrait and landscape keep chrome separated, accessible and on screen', { timeout: 60000 }, async () => {
   const sizes = [];
-  for (const [width, height, mobile] of [[320, 568, true], [390, 844, true], [844, 390, false], [568, 320, false]]) {
+  for (const [width, height, mobile] of [[320, 568, true], [390, 844, true], [844, 390, false], [568, 320, false], [480, 320, false]]) {
     const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile });
     try {
       const { page, errors } = await openPage(context, previewUrl);
@@ -360,22 +478,42 @@ test('small portrait and landscape keep chrome separated, accessible and on scre
       const growing = await page.locator('.farm-growing').boundingBox();
       const build = await page.locator('[data-build-toggle]').boundingBox();
       const inventory = await page.locator('.farm-inventory').boundingBox();
+      const market = await page.locator('.farm-market').boundingBox();
       const overlaps = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
       assert.ok(biome.x + biome.width < supplies.x, `${width}x${height}: top chrome overlaps`);
       assert.ok(growing.x >= 0 && growing.x + growing.width <= width);
       assert.ok(growing.y + growing.height < build.y, `${width}x${height}: panel overlaps Build`);
       assert.ok(build.y + build.height <= height);
       assert.ok(inventory.x >= 0 && inventory.x + inventory.width <= width && inventory.y + inventory.height <= height);
+      assert.ok(market.x >= 0 && market.x + market.width <= width && market.y >= 0 && market.y + market.height <= height);
       assert.equal(overlaps(inventory, build), false, `${width}x${height}: inventory overlaps Build`);
+      assert.equal(overlaps(market, growing), false, `${width}x${height}: market overlaps Growing`);
+      assert.equal(overlaps(market, inventory), false, `${width}x${height}: market overlaps inventory`);
+      assert.equal(overlaps(market, build), false, `${width}x${height}: market overlaps Build`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
       if (width === 320) await capture(page, '07-small-portrait.png');
       if (height === 390) await capture(page, '08-short-landscape.png');
 
       const activate = (selector) => mobile ? page.locator(selector).tap() : page.locator(selector).click();
+      await activate('[data-sell-egg]');
+      assert.match(await page.locator('.interaction-feedback').textContent(), /Can't sell/);
+      await activate('[data-buy-feed]');
+      assert.match(await page.locator('.interaction-feedback').textContent(), /Can't buy Feed/);
+      await activate('[data-place-fence]');
+      assert.match(await page.locator('.interaction-feedback').textContent(), /Can't place fence/);
       await activate('[data-growing-toggle]');
       assert.equal(await page.locator('#farm-growing-content').isVisible(), false);
       await activate('[data-build-toggle]');
       assert.equal(await page.locator('#farm-build-sheet').isVisible(), true);
+      const sheetOnTop = await page.evaluate(() => {
+        const sheet = document.querySelector('#farm-build-sheet');
+        const a = sheet.getBoundingClientRect();
+        const b = document.querySelector('.farm-market').getBoundingClientRect();
+        const left = Math.max(a.left, b.left), right = Math.min(a.right, b.right);
+        const top = Math.max(a.top, b.top), bottom = Math.min(a.bottom, b.bottom);
+        return left >= right || top >= bottom || sheet.contains(document.elementFromPoint((left + right) / 2, (top + bottom) / 2));
+      });
+      assert.equal(sheetOnTop, true, `${width}x${height}: market covers the Build sheet`);
       await activate('[data-build-close]');
       await activate('[data-growing-toggle]');
       await activate('[data-collect]');

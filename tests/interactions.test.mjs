@@ -8,8 +8,10 @@ const { createCharacterControls } = await vite.ssrLoadModule('/src/character/cre
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createInteractionRegistry } = await vite.ssrLoadModule('/src/interactions/createInteractionRegistry.ts');
 const { createInteractionController } = await vite.ssrLoadModule('/src/interactions/createInteractionController.ts');
+const { createEconomy } = await vite.ssrLoadModule('/src/inventory/createEconomy.ts');
 const { createInventory } = await vite.ssrLoadModule('/src/inventory/createInventory.ts');
 const { createSupplies } = await vite.ssrLoadModule('/src/inventory/createSupplies.ts');
+const { createQaFenceStub } = await vite.ssrLoadModule('/src/interactions/qa/createQaFenceStub.ts');
 const { createQaFlockStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaFlockStubs.ts');
 const { createQaWorldStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaWorldStubs.ts');
 after(() => vite.close());
@@ -320,24 +322,37 @@ test('QA chicken spends inventory Feed, grants inventory Eggs, and the world egg
   assert.equal(registry.interact(chicken).performed, false);
 });
 
-test('bin and sign remain informational stubs without inventory or Supplies transactions', (t) => {
+test('market sign and feed bin perform the shared Supplies transactions', (t) => {
   const scene = new THREE.Scene();
   const character = new THREE.Group();
   scene.add(character);
   const registry = createInteractionRegistry(character);
-  const world = createQaWorldStubs(scene, 0);
-  t.after(world.dispose);
+  const inventory = createInventory();
+  const supplies = createSupplies();
+  const fence = createQaFenceStub(scene, 0);
+  const economy = createEconomy({ inventory, supplies, fence });
+  const world = createQaWorldStubs(scene, 0, economy);
+  t.after(() => { world.dispose(); fence.dispose(); });
   world.interactables.forEach(registry.register);
   const bin = world.interactables.find((item) => item.id === 'qa-feed-bin');
   const sign = world.interactables.find((item) => item.id === 'qa-sign');
-  character.position.copy(bin.object.position);
-  assert.match(bin.label(), /Open/);
-  assert.match(registry.interact(bin).message, /Opened feed bin.*not connected/);
-  assert.match(bin.label(), /Close/);
-  assert.match(registry.interact(bin).message, /Closed feed bin/);
   character.position.copy(sign.object.position);
-  const message = registry.interact(sign).message;
-  assert.match(message, /egg sale \+3 coins/);
-  assert.match(message, /feed purchase -1 coin/);
-  assert.match(message, /Trading is not connected/);
+  assert.match(sign.label, /Market.*sell egg.*\+3 Supplies/i);
+  assert.match(registry.interact(sign).message, /Can't sell/);
+  inventory.pickup('egg', 2);
+  assert.match(registry.interact(sign).message, /Sold 1 Egg.*\+3 Supplies/);
+  assert.deepEqual(inventory.getCounts(), { feed: 5, egg: 1 });
+  assert.equal(supplies.getCount(), 3);
+  assert.equal(economy.sellEgg().ok, true);
+  assert.match(registry.interact(sign).message, /Can't sell/);
+  assert.equal(supplies.getCount(), 6);
+
+  character.position.copy(bin.object.position);
+  assert.match(bin.label, /Buy feed.*1 Supplies/i);
+  assert.match(registry.interact(bin).message, /Bought 1 Feed.*1 Supplies/);
+  assert.deepEqual(inventory.getCounts(), { feed: 6, egg: 0 });
+  assert.equal(supplies.getCount(), 5);
+  assert.equal(supplies.spend(5), true);
+  assert.match(registry.interact(bin).message, /Can't buy Feed/);
+  assert.deepEqual(inventory.getCounts(), { feed: 6, egg: 0 });
 });

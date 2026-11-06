@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
 
-const evidenceDir = process.env.EBR57_EVIDENCE_DIR ?? process.env.EBR55_EVIDENCE_DIR;
+const evidenceDir = process.env.EBR59_EVIDENCE_DIR ?? process.env.EBR57_EVIDENCE_DIR ?? process.env.EBR55_EVIDENCE_DIR;
 const proof = {};
 let devServer;
 let previewServer;
@@ -199,7 +199,7 @@ test('clicking an out-of-range chicken only walks; an in-range object click feed
   proof.objectClick = { outOfRangeOnlyWalked: true, inRangeFed: true, stopped, later, errors };
 });
 
-test('sign and bin retain informational stub actions without trading inventory or Supplies', { timeout: 60000 }, async (t) => {
+test('market sign sells an inventory Egg and feed bin buys Feed using Supplies', { timeout: 60000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, devUrl, true);
@@ -224,30 +224,34 @@ test('sign and bin retain informational stub actions without trading inventory o
   await page.mouse.click(signDestination.x, signDestination.y);
   await sign.waitFor({ state: 'visible', timeout: 10000 });
   await page.keyboard.press('e');
-  await waitForMessage(page, 'egg sale +3 coins');
-  assert.match(await status.textContent(), /feed purchase -1 coin/);
-  assert.match(await status.textContent(), /Trading is not connected/);
-  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
-  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
+  await waitForMessage(page, 'Sold 1 Egg');
+  assert.match(await status.textContent(), /\+3 Supplies/);
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '3');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
+  await page.keyboard.press('e');
+  await waitForMessage(page, "Can't sell");
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '3');
   await capture(page, '07-sign.png');
 
   const destination = await worldPoint(page, -2.3, -0.85);
   await page.mouse.click(destination.x, destination.y);
   await bin.waitFor({ state: 'visible', timeout: 10000 });
-  assert.match(await bin.textContent(), /Open feed bin/);
+  assert.match(await bin.textContent(), /Buy feed.*1 Supplies/i);
   await page.keyboard.press('e');
-  await waitForMessage(page, 'Opened feed bin');
-  assert.match(await bin.textContent(), /Close feed bin/);
-  assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
+  await waitForMessage(page, 'Bought 1 Feed');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '5');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '2');
   await capture(page, '08-open-bin.png');
   await page.keyboard.press('e');
-  await waitForMessage(page, 'Closed feed bin');
-  assert.match(await bin.textContent(), /Open feed bin/);
-  assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
-  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
+  await page.keyboard.press('e');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '7');
   assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  await page.keyboard.press('e');
+  await waitForMessage(page, "Can't buy Feed");
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '7');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
   assert.deepEqual(errors, []);
-  proof.contextActions = { sign: 'informational; no trade', bin: 'opened and closed; no trade', inventoryUnchanged: true, errors };
+  proof.contextActions = { sign: 'sold 1 Egg for +3 Supplies', bin: 'bought 3 Feed for −3 Supplies; broke toast', errors };
 });
 
 test('portrait touch can approach and use the prompt without sending a ground click', { timeout: 60000 }, async (t) => {
