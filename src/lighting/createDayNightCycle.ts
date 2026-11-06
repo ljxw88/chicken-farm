@@ -126,7 +126,11 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
 
   applyLighting();
   return {
-    update, setDayNightCycleSeconds, setDayNightPhase,
-    setDirectionalIntensityMultiplier, setAmbientHemisphereColorMultiplier,
+    update,
+    setDayNightCycleSeconds,
+    setDayNightPhase,
+    setDirectionalIntensityMultiplier,
+    setAmbientHemisphereColorMultiplier,
+    getPhase: () => DAY_NIGHT_PHASES[Math.floor(progress * DAY_NIGHT_PHASES.length)].name,
   };
 }

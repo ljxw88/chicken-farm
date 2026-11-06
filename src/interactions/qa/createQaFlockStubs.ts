@@ -4,7 +4,11 @@ import { disposeQaGroup } from './disposeQaGroup';
 
 // Temporary, static QA stand-ins. They deliberately do not implement flock AI,
 // egg production, persistent inventory, or buying and selling.
-export function createQaFlockStubs(scene: THREE.Scene, groundHeight: number) {
+export function createQaFlockStubs(
+  scene: THREE.Scene,
+  groundHeight: number,
+  { onEggCollected }: { onEggCollected?: () => void } = {},
+) {
   const group = new THREE.Group();
   group.name = 'qa-flock-stubs';
   scene.add(group);
@@ -80,6 +84,21 @@ export function createQaFlockStubs(scene: THREE.Scene, groundHeight: number) {
   eggMesh.position.y = 0.24;
   egg.add(eggMesh);
 
+  function isEggReady() {
+    return active && !collected;
+  }
+
+  // The world interaction and the Growing list share this guard and action.
+  // The list may collect remotely, but neither path can collect the egg twice.
+  function collectEgg() {
+    if (!isEggReady()) return;
+    collected = true;
+    egg.visible = false;
+    eggs++;
+    onEggCollected?.();
+    return `Collected egg (QA stub). Eggs: ${eggs}.`;
+  }
+
   const interactables: Interactable[] = [
     {
       id: 'qa-chicken', object: chicken, clickTargets: [visual], label: 'Feed chicken (stub)',
@@ -92,13 +111,7 @@ export function createQaFlockStubs(scene: THREE.Scene, groundHeight: number) {
     },
     {
       id: 'qa-egg', object: egg, label: 'Collect egg (stub)',
-      range: 1.15, promptHeight: 0.6, isAvailable: () => active && !collected,
-      interact() {
-        collected = true;
-        egg.visible = false;
-        eggs++;
-        return `Collected egg (QA stub). Eggs: ${eggs}.`;
-      },
+      range: 1.15, promptHeight: 0.6, isAvailable: isEggReady, interact: collectEgg,
     },
   ];
 
@@ -108,5 +121,5 @@ export function createQaFlockStubs(scene: THREE.Scene, groundHeight: number) {
     disposeQaGroup(group);
   }
 
-  return { interactables, dispose };
+  return { interactables, isEggReady, collectEgg, dispose };
 }

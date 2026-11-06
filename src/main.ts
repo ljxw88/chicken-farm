@@ -1,14 +1,16 @@
 import './style.css';
+import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
 import { createInteractionController } from './interactions';
 import { createQaFlockStubs } from './interactions/qa/createQaFlockStubs';
 import { createQaWorldStubs } from './interactions/qa/createQaWorldStubs';
+import { createSupplies } from './inventory/createSupplies';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
-import { createInteractionPrompt } from './ui';
+import { createFarmHud, createInteractionPrompt } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
@@ -24,9 +26,13 @@ declare global {
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scene');
+const hudRoot = document.querySelector<HTMLElement>('#farm-hud');
 
 if (!canvas) {
   throw new Error('Scene canvas not found');
+}
+if (!hudRoot) {
+  throw new Error('Farm HUD root not found');
 }
 
 const { scene, camera, renderer, ground, follow, resize } = createScene(canvas);
@@ -57,7 +63,8 @@ let cancelClickTarget = () => {};
 const interactions = createInteractionController({
   character, camera, canvas, view: interactionView, onInteract: () => cancelClickTarget(),
 });
-const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT);
+const supplies = createSupplies();
+const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT, { onEggCollected: supplies.addEgg });
 const qaWorld = createQaWorldStubs(scene, GROUND_HEIGHT);
 for (const interactable of [...qaFlock.interactables, ...qaWorld.interactables]) {
   interactions.register(interactable);
@@ -74,6 +81,18 @@ const controls = createCharacterControls({
   onPointerDown: interactions.handlePointerDown,
 });
 cancelClickTarget = controls.cancelTarget;
+const farmHud = createFarmHud({
+  root: hudRoot,
+  supplies,
+  initialPhase: dayNight.getPhase(),
+  isEggReady: qaFlock.isEggReady,
+  collectEgg: qaFlock.collectEgg,
+  onCollected(message) {
+    controls.cancelTarget();
+    interactionView.showMessage(message);
+    interactions.update();
+  },
+});
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
 window.setPixelSize = composer.setPixelSize;
@@ -101,6 +120,7 @@ renderer.setAnimationLoop((time) => {
   // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
   controls.update(Math.min(deltaSeconds, 0.1));
   phaseController.update(deltaSeconds);
+  farmHud.setPhase(dayNight.getPhase());
   follow(character.position);
   interactions.update();
   weather.update(deltaSeconds);
