@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { getEventListeners } from 'node:events';
 import { after, test } from 'node:test';
 import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
@@ -97,6 +98,18 @@ test('owned placement pointer actions use the context before synchronous removal
     { type: 'placement-preview', point: { x: 123, y: 456, pointerType: 'mouse' } },
     { type: 'placement-remove', mode: 'hovered' },
   ]);
+});
+
+test('detaching owned and observing bindings removes every listener', () => {
+  for (const ownMovement of [false, true]) {
+    const target = new EventTarget();
+    const canvas = new EventTarget();
+    const detach = bindInputActions(createInputActions(), target, canvas, { ownMovement });
+    assert.equal(getEventListeners(target, 'keydown').length, ownMovement ? 2 : 1);
+    detach();
+    for (const type of ['keydown', 'keyup', 'click', 'blur']) assert.equal(getEventListeners(target, type).length, 0, type);
+    for (const type of ['pointermove', 'pointerdown']) assert.equal(getEventListeners(canvas, type).length, 0, type);
+  }
 });
 
 test('placement keys are one-shot, ordered, repeat-safe, and consumed exactly once', (t) => {

@@ -11,11 +11,12 @@ export function bindInputActions(actions: InputActions, target: Window, canvas: 
   options: InputBindingOptions = {}) {
   // Capture observes the event before the existing placement/character handlers
   // call preventDefault. It never consumes the event itself.
-  target.addEventListener('keydown', actions.keyDown, true);
-  target.addEventListener('keyup', actions.keyUp, true);
-  target.addEventListener('click', actions.activate, true);
+  const capture = { capture: true };
+  target.addEventListener('keydown', actions.keyDown, capture);
+  target.addEventListener('keyup', actions.keyUp, capture);
+  target.addEventListener('click', actions.activate, capture);
   target.addEventListener('blur', actions.blur);
-  canvas.addEventListener('pointermove', actions.pointerMove, true);
+  canvas.addEventListener('pointermove', actions.pointerMove, capture);
   const handlePointerDown = (event: PointerEvent) => {
     if (!event.isPrimary || event.button !== 0) return;
     // Record the context from before synchronous placement can remove an item
@@ -30,20 +31,20 @@ export function bindInputActions(actions: InputActions, target: Window, canvas: 
     target.addEventListener('keydown', actions.preventMovementDefault);
     canvas.addEventListener('pointerdown', handlePointerDown);
   } else {
-    canvas.addEventListener('pointerdown', actions.pointerDown, true);
+    canvas.addEventListener('pointerdown', actions.pointerDown, capture);
   }
 
   return () => {
-    target.removeEventListener('keydown', actions.keyDown, true);
-    target.removeEventListener('keyup', actions.keyUp, true);
-    target.removeEventListener('click', actions.activate, true);
+    target.removeEventListener('keydown', actions.keyDown, capture);
+    target.removeEventListener('keyup', actions.keyUp, capture);
+    target.removeEventListener('click', actions.activate, capture);
     target.removeEventListener('blur', actions.blur);
-    canvas.removeEventListener('pointermove', actions.pointerMove, true);
+    canvas.removeEventListener('pointermove', actions.pointerMove, capture);
     if (options.ownMovement) {
       target.removeEventListener('keydown', actions.preventMovementDefault);
       canvas.removeEventListener('pointerdown', handlePointerDown);
     } else {
-      canvas.removeEventListener('pointerdown', actions.pointerDown, true);
+      canvas.removeEventListener('pointerdown', actions.pointerDown, capture);
     }
     actions.reset();
   };
