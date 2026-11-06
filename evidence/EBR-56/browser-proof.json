@@ -1,0 +1,118 @@
+{
+  "screenshots": [
+    "01-production-valid-fence.png",
+    "01a-remove-target.png",
+    "02-invalid-rust.png",
+    "03-rotated-fence-preview.png",
+    "04-placed-fence-occupied.png",
+    "05-rotated-plot-preview.png",
+    "06-fence-and-plot.png",
+    "07-walk-blocked.png",
+    "08-walk-after-removal.png",
+    "09-debug-grid.png",
+    "10-touch-preview.png",
+    "11-touch-placed.png",
+    "12-short-landscape-controls.png"
+  ],
+  "checks": [
+    "Production preview: free fence, mouse-targeted Remove, undo and cancel work at 0 Supplies; pixel canvas is 320×180 at 1280×720.",
+    "Dev: olive/rust 50% previews; player, pond, chicken, edge and occupied tiles reject placement.",
+    "Dev: rotate/place a fence and a two-tile plot for free; undo the plot; Delete removes the hovered fence.",
+    "Dev WASD: fence stopped +Z at 3.21; after removal walking reached 4.26. No page/console errors.",
+    "Dev ?grid=1: visible 1-pixel-line material #A67C52; default grid is off.",
+    "390×844 touch emulation: tap previews, Rotate changes only ghost, Place confirms and Remove deletes at 0 Supplies.",
+    "320×568, 390×844, 844×390, 568×320 and 480×320: placement controls and pre-existing disclosures remain clickable."
+  ],
+  "browser": "Chromium 153.0.8010.12 (headless, SwiftShader)",
+  "devUrl": "http://127.0.0.1:5178",
+  "previewUrl": "http://127.0.0.1:38723",
+  "production": {
+    "pixel": {
+      "enabled": true,
+      "cssPixelSize": 4,
+      "devicePixelRatio": 1,
+      "rendererPixelRatio": 1,
+      "canvasWidth": 320,
+      "canvasHeight": 180,
+      "viewport": {
+        "displayWidth": 1280,
+        "displayHeight": 720,
+        "targetWidth": 320,
+        "targetHeight": 180,
+        "pixelSize": 4,
+        "cropLeft": 0,
+        "cropRight": 0,
+        "cropBottom": 0,
+        "cropTop": 0
+      }
+    },
+    "supplies": "0 before and after placement",
+    "mouseRemove": true,
+    "undoRestoredTile": true,
+    "errors": []
+  },
+  "dev": {
+    "initial": {
+      "obstacles": 6,
+      "gridVisible": false,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      }
+    },
+    "valid": {
+      "color": 2635556,
+      "opacity": 0.5,
+      "ghostOpacity": 0.5,
+      "y": 2.48
+    },
+    "invalid": {
+      "color": 12868154,
+      "opacity": 0.5,
+      "ghostOpacity": 0.5
+    },
+    "blocked": [
+      -2.083551944984837e-15,
+      2.4,
+      3.2080999999999986
+    ],
+    "afterRemoval": [
+      -2.481798046667684e-15,
+      2.4,
+      4.2577500000000015
+    ],
+    "fenceRotated": true,
+    "plotRotated": true,
+    "errors": []
+  },
+  "grid": {
+    "visible": true,
+    "color": 10910802,
+    "linewidth": 1,
+    "pixel": true,
+    "errors": []
+  },
+  "touch": {
+    "viewport": "390×844",
+    "previewBeforeConfirm": true,
+    "rotated": true,
+    "removed": true,
+    "supplies": 0,
+    "errors": []
+  }
+}

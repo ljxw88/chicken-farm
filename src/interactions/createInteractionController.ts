@@ -15,10 +15,11 @@ interface InteractionControllerOptions {
   canvas: HTMLCanvasElement;
   view: InteractionView;
   onInteract?: () => void;
+  isEnabled?: () => boolean;
 }
 
 export function createInteractionController({
-  character, camera, canvas, view, onInteract,
+  character, camera, canvas, view, onInteract, isEnabled = () => true,
 }: InteractionControllerOptions) {
   const registry = createInteractionRegistry(character);
   const anchor = new THREE.Vector3();
@@ -28,6 +29,11 @@ export function createInteractionController({
   let interactKeyHeld = false;
 
   function update() {
+    if (!isEnabled()) {
+      current = undefined;
+      view.hide();
+      return;
+    }
     current = registry.nearest();
     const rect = canvas.getBoundingClientRect();
     if (!current || rect.width === 0 || rect.height === 0) {
@@ -47,6 +53,10 @@ export function createInteractionController({
   }
 
   function activate(interactable: Interactable | undefined) {
+    if (!isEnabled()) {
+      update();
+      return false;
+    }
     const result = registry.interact(interactable);
     if (result.performed) {
       onInteract?.();
@@ -58,7 +68,7 @@ export function createInteractionController({
   }
 
   function handleKeyDown(event: KeyboardEvent) {
-    if (event.code !== 'KeyE' || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
+    if (!isEnabled() || event.code !== 'KeyE' || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
       event.isComposing || event.repeat || interactKeyHeld) return;
     const element = event.target;
     if (element instanceof HTMLElement &&
@@ -80,7 +90,7 @@ export function createInteractionController({
   // explicit hit on an in-range object consumes the click; reaching its range
   // after a ground click never queues or automatically performs an action.
   function handlePointerDown(event: PointerEvent) {
-    if (event.defaultPrevented || !event.isPrimary || event.button !== 0) return false;
+    if (!isEnabled() || event.defaultPrevented || !event.isPrimary || event.button !== 0) return false;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return false;
 
