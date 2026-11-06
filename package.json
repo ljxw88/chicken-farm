@@ -11,6 +11,10 @@
     "build": "tsc && vite build",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "npm run build && node --test tests/browser/*.browser.mjs",
+    "asset:new": "node tools/assetgen/cli.mjs new",
+    "asset:verify": "node tools/assetgen/cli.mjs verify",
+    "asset:bundle": "node tools/assetgen/cli.mjs bundle",
+    "asset:showcase": "vite --host 100.88.150.21 --port 5185 --strictPort",
     "parity": "node tools/parity.mjs",
     "preview": "vite preview"
   },
