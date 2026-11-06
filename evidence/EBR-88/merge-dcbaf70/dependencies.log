@@ -1,0 +1,8 @@
+chicken-farm@0.0.0 /home/michael/Developer/chicken-farm/worktrees/ebr88
+├── @types/three@0.187.0
+├── jsdom@26.1.0
+├── miniplex@2.0.0
+├── playwright@1.63.0
+├── three@0.187.0
+├── typescript@7.0.2
+└── vite@8.3.5

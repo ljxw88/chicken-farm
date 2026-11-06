@@ -38,9 +38,13 @@ test('fixed upper-left key follows the specified phase, weather and facing rules
   // independent analyzer, while retaining the actual materials and lights.
   const { stdout } = await runFile(process.execPath, ['tools/lighting-probe.mjs'], {
     timeout: 110000, env: { ...process.env, LIGHTING_URL: url, LIGHTING_TUNE: '{}', LIGHTING_PROBE_CAPTURE: '',
-      LIGHTING_PROBE_ONLY: '', LIGHTING_QA_POSE: '', LIGHTING_QA_STEP: '' },
+      LIGHTING_PROBE_ONLY: '', LIGHTING_QA_POSE: '', LIGHTING_QA_STEP: '', LIGHTING_PROBE_MASK_RAIN: '1' },
   });
   const metrics = JSON.parse(stdout);
+  // Rain stays active; only its random foreground pixels are excluded from lighting measurements.
+  assert.deepEqual(metrics['day-rain'].weather, { mode: 'rain', rainAmount: 1, cloudyAmount: 0 });
+  assert.equal(metrics['day-rain'].rainParticlesVisible, false);
+  assert.ok(Math.abs(metrics['day-rain'].lightIntensity / metrics['day-clear'].lightIntensity - 0.7) < 1e-9);
   if (evidenceDir) await writeFile(join(evidenceDir, `${label}-phase-gate.json`), `${JSON.stringify(metrics, null, 2)}\n`);
   // Look Dev G2: compare the shaded and lit halves of the same body; the
   // different side/top metric in the QA matrix is advisory, not this gate.

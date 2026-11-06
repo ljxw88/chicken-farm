@@ -9,6 +9,7 @@ const url = process.env.LIGHTING_URL || 'http://100.88.150.21:5184';
 const tune = JSON.parse(process.env.LIGHTING_TUNE || '{}');
 const captureDir = process.env.LIGHTING_PROBE_CAPTURE;
 const only = process.env.LIGHTING_PROBE_ONLY ? process.env.LIGHTING_PROBE_ONLY.split(',') : undefined;
+const maskRain = process.env.LIGHTING_PROBE_MASK_RAIN === '1';
 if (captureDir) await mkdir(captureDir, { recursive: true });
 const cases = [
   ['morning-clear', 'morning', 'clear'], ['day-clear', 'daytime', 'clear'],
@@ -36,10 +37,12 @@ try {
       });
       await page.goto(`${url}/?phase=${phase}&weather=${weatherName}&pixel=0`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => Boolean(window.__lightProbe));
-      await page.evaluate(({ weatherName, values }) => {
+      await page.evaluate(({ weatherName, values, maskRain }) => {
         const { scene, character, renderer, weather, composer } = window.__lightProbe;
         renderer.setAnimationLoop(null);
         weather.update(1.75);
+        // For lighting-only checks, exclude random rain pixels without changing weather lighting.
+        if (maskRain) scene.getObjectByName('weather-rain').visible = false;
         const dir = scene.getObjectByName('day-night-directional');
         const amb = scene.getObjectByName('day-night-ambient');
         const hemi = scene.getObjectByName('day-night-hemisphere');
@@ -76,7 +79,7 @@ try {
         if (values.lantern !== undefined) lantern.intensity = values.lantern;
         if (values.lanternDistance !== undefined) lantern.distance = values.lanternDistance;
         composer.render(0);
-      }, { weatherName, values: { ...tune[phase], ...tune[name] } });
+      }, { weatherName, values: { ...tune[phase], ...tune[name] }, maskRain });
       const spawn = await page.evaluate(() => {
         const { scene, camera, character, renderer, composer } = window.__lightProbe;
         scene.updateMatrixWorld(true); camera.updateMatrixWorld(); composer.render(0);
@@ -115,7 +118,7 @@ try {
         await page.evaluate((step) => window.__lightProbe.controls.update(step), Number(process.env.LIGHTING_QA_STEP || 0.25));
         await page.keyboard.up(key);
         const info = await page.evaluate(() => {
-          const { scene, camera, character, follow, renderer, composer, dayNight } = window.__lightProbe;
+          const { scene, camera, character, follow, renderer, composer, dayNight, weather } = window.__lightProbe;
           follow(character.position);
           dayNight.updateCharacterShadow?.();
           camera.updateMatrixWorld();
@@ -230,7 +233,8 @@ try {
               [[3.6, -0.8], [3.1, 0.6], [2.85, 2], [2.9, 3.6], [3.25, 5.3], [3.55, 6.8], [3.6, 7.7]]
                 .map(([x, z]) => worldRgb(x, 2.431, z)) : null,
             waterfall: scene.getObjectByName('farm-waterfall-face') ? worldRgb(3.6, 1.0, 8.06) : null,
-            lightPosition: pos.toArray(), lightIntensity: light.intensity,
+            lightPosition: pos.toArray(), lightIntensity: light.intensity, weather: weather.getWeather(),
+            rainParticlesVisible: scene.getObjectByName('weather-rain').visible,
             shadowOffset: shadowDelta.toArray(), shadowLength: shadowDelta.length(),
             shadowCosine: shadowDelta.length() > 1e-6 ? shadowDelta.normalize().dot(awayFromKey) : 0,
             shadowOpacity: shadow.material.opacity, position: character.position.toArray(), yaw: character.rotation.y };
@@ -251,7 +255,8 @@ try {
         shadeGrassDeltaE: away.shadeGrassDeltaE, grassReferenceRgb: away.grassReferenceRgb,
         cottageFront: away.cottageFront, cottageSide: away.cottageSide,
         pond: away.pond, stream: away.stream, streamSamples: away.streamSamples, waterfall: away.waterfall,
-        lightPosition: away.lightPosition, lightIntensity: away.lightIntensity, shadowOffset: away.shadowOffset,
+        lightPosition: away.lightPosition, lightIntensity: away.lightIntensity, weather: away.weather,
+        rainParticlesVisible: away.rainParticlesVisible, shadowOffset: away.shadowOffset,
         shadowLength: away.shadowLength, shadowCosine: away.shadowCosine, shadowOpacity: away.shadowOpacity,
         facings: Object.fromEntries(Object.entries(facings).map(([key, v]) => [key, v.body])),
         shadeRgbByFacing: Object.fromEntries(Object.entries(facings).map(([key, v]) => [key, initialLight > 0 ? v.leftRgb : v.rightRgb])),
