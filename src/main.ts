@@ -127,7 +127,7 @@ const engine = createEngine<CharacterComponents>({
     placement.update();
     weather.update(deltaSeconds);
     const { rainAmount, cloudyAmount } = weather.getWeather();
-    smoke.update(deltaSeconds, rainAmount);
+    smoke.update(deltaSeconds, rainAmount, dayNight.getNightAmount());
     fireflies.update(deltaSeconds, dayNight.getNightAmount(), rainAmount, cloudyAmount);
     updateWaterfall(deltaSeconds);
   },

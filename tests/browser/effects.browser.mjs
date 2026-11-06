@@ -108,12 +108,70 @@ test('pixel-pass app renders smoke at every phase and the correct weather-depend
       assert.deepEqual([state.pixel.canvasWidth, state.pixel.canvasHeight], [320, 180]);
       assert.equal(state.pixel.enabled, true);
       assert.equal(state.active, expected, `${phase}/${weather}`);
-      assert.ok(state.smokePuffs.length >= 3 && state.smokePuffs.length <= 5);
+      assert.ok(state.smokePuffs.length >= 4 && state.smokePuffs.length <= 6);
       assert.ok(state.smokeDiff.changed > 0, `smoke is not visible: ${phase}/${weather}`);
       if (expected) {
         assert.ok(state.flyDiff.changed > 0, `fireflies are not visible: ${phase}/${weather}`);
         assert.ok(state.flyDiff.maximum.every((channel) => channel < 250), `bright mote ${state.flyDiff.maximum}`);
       } else assert.equal(state.flyDiff.changed, 0);
+      assert.deepEqual(errors, []);
+    } finally { await context.close(); }
+  }
+});
+
+test('three smoke puffs contribute readable lit pixels across phase and weather', { timeout: 120000 }, async () => {
+  const cases = ['daytime', 'sunset', 'night'].flatMap((phase) =>
+    ['clear', 'cloudy', 'rain'].map((weather) => ({ phase, weather, target: phase === 'night' ? 70 : 110 })));
+  for (const { phase, weather, target } of cases) {
+    const { context, page, errors } = await open(phase, weather);
+    try {
+      const result = await page.evaluate((threshold) => {
+        const { scene, camera, renderer, composer } = window.__ebr42;
+        const smoke = scene.getObjectByName('chimney-smoke');
+        const puffs = smoke.children.filter((puff) => puff.visible);
+        const canvas = document.createElement('canvas');
+        canvas.width = renderer.domElement.width; canvas.height = renderer.domElement.height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const pixels = () => {
+          composer.render(0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(renderer.domElement, 0, 0);
+          return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        };
+        const full = pixels();
+        smoke.visible = false;
+        const withoutSmoke = pixels();
+        smoke.visible = true;
+        const withoutEach = puffs.map((puff) => {
+          puff.visible = false;
+          const data = pixels();
+          puff.visible = true;
+          return data;
+        });
+        composer.render(0);
+        const lum = (data, i) => 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        const counts = new Array(puffs.length).fill(0);
+        let peak = 0;
+        for (let i = 0; i < full.length; i += 4) {
+          if (withoutSmoke[i] !== 16 || withoutSmoke[i + 1] !== 20 || withoutSmoke[i + 2] !== 22) continue;
+          const brightness = lum(full, i);
+          if (brightness < threshold) continue;
+          peak = Math.max(peak, brightness);
+          for (let p = 0; p < puffs.length; p++) {
+            if (brightness - lum(withoutEach[p], i) >= 5) counts[p]++;
+          }
+        }
+        camera.updateMatrixWorld();
+        const windows = ['cottage-window-1', 'cottage-window-2'].map((name) => {
+          const point = scene.getObjectByName(name).getWorldPosition(camera.position.clone()).project(camera);
+          const x = Math.max(0, Math.min(canvas.width - 1, Math.floor((point.x + 1) * canvas.width / 2)));
+          const y = Math.max(0, Math.min(canvas.height - 1, Math.floor((1 - point.y) * canvas.height / 2)));
+          return lum(full, (y * canvas.width + x) * 4);
+        });
+        return { qualifying: counts.filter((count) => count > 0).length, counts, peak, windows };
+      }, target);
+      assert.ok(result.qualifying >= 3, `${phase}/${weather}: ${JSON.stringify(result)}`);
+      if (phase === 'night') assert.ok(result.peak < Math.min(...result.windows), `${phase}/${weather}: ${JSON.stringify(result)}`);
       assert.deepEqual(errors, []);
     } finally { await context.close(); }
   }
@@ -132,4 +190,52 @@ test('seeded rain and both visual effects replay exactly at a controlled frame',
     assert.deepEqual(samples[0][field], samples[1][field], field);
     assert.notDeepEqual(samples[0][field], samples[2][field], field);
   }
+});
+
+test('smoke has no self-emission when the scene lights and fog are removed', { timeout: 45000 }, async () => {
+  const { context, page, errors } = await open('night', 'clear');
+  try {
+    const result = await page.evaluate(() => {
+      const { scene, renderer, composer } = window.__ebr42;
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const lights = [];
+      scene.traverse((object) => { if (object.isLight) lights.push({ object, visible: object.visible }); });
+      const fog = scene.fog;
+      const originalSmoke = smoke.visible;
+      const canvas = document.createElement('canvas');
+      canvas.width = renderer.domElement.width; canvas.height = renderer.domElement.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const pixels = () => {
+        composer.render(0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(renderer.domElement, 0, 0);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      };
+      try {
+        scene.fog = null;
+        for (const light of lights) light.object.visible = false;
+        smoke.visible = true;
+        const on = pixels();
+        smoke.visible = false;
+        const off = pixels();
+        let changed = 0; let brightened = 0; let maxLift = 0;
+        for (let i = 0; i < on.length; i += 4) {
+          if (on[i] === off[i] && on[i + 1] === off[i + 1] && on[i + 2] === off[i + 2]) continue;
+          changed++;
+          const lift = 0.2126 * (on[i] - off[i]) + 0.7152 * (on[i + 1] - off[i + 1]) + 0.0722 * (on[i + 2] - off[i + 2]);
+          maxLift = Math.max(maxLift, lift);
+          if (lift > 0.5) brightened++;
+        }
+        return { changed, brightened, maxLift };
+      } finally {
+        smoke.visible = originalSmoke;
+        scene.fog = fog;
+        for (const light of lights) light.object.visible = light.visible;
+        composer.render(0);
+      }
+    });
+    assert.ok(result.changed > 0, 'dark smoke must be sampled rather than omitted');
+    assert.equal(result.brightened, 0, `smoke emitted light without scene illumination: ${JSON.stringify(result)}`);
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
 });
