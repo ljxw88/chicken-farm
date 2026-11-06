@@ -213,6 +213,13 @@ test('sign and bin retain informational stub actions without trading inventory o
   await waitForMessage(page, 'Fed chicken');
   assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
   assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
+  // On the raised island the chicken prompt can cover the sign's ground target.
+  await page.keyboard.down('w');
+  try {
+    await page.locator('.interaction-prompt[data-interactable="qa-chicken"]').waitFor({ state: 'hidden', timeout: 10000 });
+  } finally {
+    await page.keyboard.up('w');
+  }
   const signDestination = await worldPoint(page, 0.4, -1.5);
   await page.mouse.click(signDestination.x, signDestination.y);
   await sign.waitFor({ state: 'visible', timeout: 10000 });
