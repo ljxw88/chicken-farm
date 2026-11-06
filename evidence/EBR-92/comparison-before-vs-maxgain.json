@@ -1,0 +1,331 @@
+{
+  "baseline": "before",
+  "candidate": "after",
+  "stateMismatches": [],
+  "frames": {
+    "gate-g-cottage-coops-day": {
+      "changedPixels": 3424,
+      "changedBounds": [
+        524,
+        444,
+        576,
+        532
+      ],
+      "allowedBounds": [
+        524,
+        444,
+        576,
+        532
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-cottage-coops-night": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        524,
+        444,
+        576,
+        532
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-day": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-night": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-placement-ghost": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-rain": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-spawn": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "gate-g-stairs-pad": {
+      "changedPixels": 1312,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-daytime-clear-away": {
+      "changedPixels": 1344,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-daytime-clear-toward": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-daytime-cloudy-away": {
+      "changedPixels": 1344,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-daytime-cloudy-toward": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-daytime-rain-away": {
+      "changedPixels": 1344,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-daytime-rain-toward": {
+      "changedPixels": 1232,
+      "changedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-morning-clear-away": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-morning-clear-toward": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-night-clear-away": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-night-clear-toward": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-night-rain-away": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-night-rain-toward": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-sunset-clear-away": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-sunset-clear-toward": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-sunset-rain-away": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    },
+    "frames-sunset-rain-toward": {
+      "changedPixels": 0,
+      "changedBounds": null,
+      "allowedBounds": [
+        624,
+        336,
+        656,
+        384
+      ],
+      "outsideBodyMask": 0
+    }
+  }
+}
