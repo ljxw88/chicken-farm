@@ -1,88 +1,77 @@
-EBR-47 — Phase 1 placeholders, not final Look Dev
+EBR-47 — Phase 2 cottage and dual ramp coops
 
 Branch: feat/ebr47-cottage-coops
-Base: origin/main 323120a44f139ae21e070066cfb103f3fe5f598d
-Local tip: git rev-parse HEAD (a committed file cannot contain its own SHA).
-No push or PR.
+Original base: 323120a44f139ae21e070066cfb103f3fe5f598d
+Tested implementation/evidence tip: 13c1f0776a3dd36fff4c968d04b2ff3786460a9e
+Final branch tip SHA: git rev-parse HEAD
+This handoff is one documentation-only commit above the tested implementation;
+a committed file cannot contain the SHA of the commit containing itself. The
+exact PR head SHA is also reported in the PR and final delivery message.
 
-Where the old barn was
-- src/scene/createFarmLayout.ts had FARM_LAYOUT.barn, createBarn(), its
-  walking obstacle and the rain-splash roof exclusion. This base contained one
-  barn, not three; there were no existing coop locations.
-- src/scene/farmPalette.ts supplies the old barn colors; fence visuals in
-  src/placement/createPlacementVisual.ts and stone in
-  src/scene/createStoneStairs.ts also use those colors. They are unchanged.
-- src/lighting/createPracticalLights.ts parents window lights to barn panes;
-  its lantern is carried by the character, not anchored to a barn.
-- src/scene/farmCollisions.ts moves against the layout's obstacles, and
-  src/placement/createPlacement.ts rejects whole ghost footprints against
-  those same obstacles.
+Look Dev source of truth: /home/michael/OpenBot/Shared/ebr47-look-lock.md,
+Linear EBR-47 comment 4013f658. Main advanced to 1f7379d (a docs-only merge)
+during this work; this branch remains based on 323120a. A merge-tree check was
+clean. No merge or rebase was performed.
 
-What changed
-- Removed the barn mesh. Added a cottage box and two named ramp-coop boxes.
-  They abut and partition the original barn's footprint, rather than inventing
-  two new locations. These are deliberately plain boxes, not final buildings:
-  there are no modeled ramps, roof, white finish or approved new colors yet.
-- Meshes, named walking/placement obstacles and rain exclusions are derived
-  from the same table. The cottage's two flush window panes and their light
-  anchors scale and move with the cottage. Night intensities are unchanged;
-  the lantern remains attached to the moving character as before.
-- No terrain, stream, HUD, grid, stair or path implementation changes. The
-  existing staircase and fence palette were not modified.
+What to open
+- From this worktree run `npm run dev -- --host 127.0.0.1 --port 5173` and open:
+  http://127.0.0.1:5173/?phase=daytime&weather=clear
+  http://127.0.0.1:5173/?phase=sunset&weather=clear
+  http://127.0.0.1:5173/?phase=night&weather=clear
+  http://127.0.0.1:5173/?phase=daytime&weather=rain
+- evidence/EBR-47/01-daytime-front.png — cottage, both coops and both ramps.
+  02-sunset.png, 03-night-glow.png and 04-rain.png are 1280x720 frames.
+  05-tree4-coopB-crop.png is an unaltered crop of the daytime frame.
+  06-ramp-plot-rejected.png and 07-ramp-walk-blocked.png show interactions.
+  browser-proof.json records scene measurements and the tree/roof mesh probe.
 
-ONE table for the provisional envelopes
-  src/scene/createFarmBuildings.ts: FARM_BUILDINGS
-  Coordinates are X/Z world centers; width/depth/height are world units;
-  bases sit at GROUND_HEIGHT. Values below are placeholders, NOT Look Dev specs:
+Implementation
+- src/scene/farmBuildingSpecs.ts has the shared FARM_BUILDINGS table; separate
+  cottage, coop, gable-roof and building-material modules construct the meshes.
+  The cottage has the locked stone base, plaster/timber, two front windows,
+  east window, door, shingled gable roof and cottage-chimney-top anchor.
+  Both coops have raised bodies, four dark stub posts, trim, pop-holes,
+  +Z ramps and 0.25-spaced cleats. Exact locked colors are building-only;
+  the existing fence/stair palette remains unchanged.
+- Five solid boxes are used by both walking and placement: cottage walls,
+  coop A body and ramp, coop B body and ramp. Roof overhangs are not walking
+  obstacles; their exact projected footprints are rain-splash exclusions.
+- Two front panes each retain their original window PointLight. The east pane
+  and two pop-hole panes use emissive-only materials on the same night ramp;
+  coop glows are 70% of window intensity. The carried lantern is unchanged.
+- Path, tree and pond functions match 323120a byte-for-byte. Terrain, stairs,
+  HUD, grid, original farm palette and day/night light settings are unchanged.
 
-  name          center X   center Z   width   depth   height
-  cottage          -3.4       -3.4      2.0     2.6      2.0
-  ramp-coop-1      -4.9       -3.4      1.0     2.6      1.0
-  ramp-coop-2      -1.9       -3.4      1.0     2.6      1.0
+Decisions / deviations for Look Dev and PM
+1. User chose the locked positions over the incompatible 1.5-unit path buffer.
+   Shortest X/Z distances to the actual dark path ribbon (world units):
+   A body 0.9893, A roof 0.7772, A ramp 0.3497; B body 1.9477, B roof
+   1.7644, B ramp 1.0654. In particular the real A-ramp gap is 0.3497, not the
+   lock's approximate 0.7. The locked cottage wall overlaps the path's dark
+   border by up to 0.0674 and that overlap extends outside the start circle;
+   the dirt surface itself does not overlap the solid boxes and the original
+   walking route and stairs pass their tests. Neither the path nor the locked
+   building positions were adjusted to create extra clearance.
+2. User chose to preserve all three pre-existing PointLights: two window
+   lights plus the character's lantern. This differs from the lock's literal
+   two-total wording; no additional PointLight was introduced.
+3. User chose the locked 0.2 x 0.25 coop glow panes as an explicit exception
+   to the 0.3 x 0.3 minimum. No optional porch lamp was added.
+4. Tree 4's canopy fuses/intersects coop B's roof. The untouched daytime crop
+   shows the contact; a separate-scene 0.02-unit vertical-ray mesh probe found
+   328 overlapping sample positions (browser-proof.json). Tree 4 remains at
+   X 0.05, Z -5.6; this is reported only, not repaired.
 
-  Together these cover the original barn wall footprint, X [-5.4, -1.4],
-  Z [-4.7, -2.1]. Editing a row moves/resizes its placeholder, collision,
-  placement blocker and splash shelter together; cottage windows follow it.
-  Real roofs, ramps and any nonrectangular/rotated compound footprints will
-  still need Phase 2 modeling and collision work after specifications arrive.
-
-Exact inputs still needed from Look Dev (none are approved here)
-1. For the cottage and each coop: world center X/Z, orientation/yaw, exterior
-   width/depth/overall height and base/floor elevation. Supply each actual
-   collision/placement footprint as X/Z bounds or polygon vertices, including
-   roof overhangs, legs and ramps, and identify any walkable versus solid part.
-2. Cottage: wall/eave height, roof rise or pitch, ridge direction, X/Z eave
-   overhang and roof thickness; dimensions and local X/Y/Z centers of each
-   window and door. Specify which faces they occupy and the window count.
-3. Each coop: body width/depth/height and raised floor or leg height; each
-   ramp's width, horizontal length, rise, X/Z attachment offset and direction.
-4. Exact sRGB hex colors for cottage walls, wood/trim and rust-red roof; coop
-   walls, wood/trim, roofs and ramps; and window panes/frames. Keep the current
-   warm window/character-lantern light settings unless a change is specified.
-
-Evidence
-- npm run build: PASS (tsc and Vite, 48 modules); the existing Vite >500 kB
-  chunk-size advisory remains. See evidence/ebr47/build.log.
-- npm test: 79 passed, 0 failed. See evidence/ebr47/unit.log. Tests cover each
-  visible box face, table edits, all four fence/plot rotations and partial
-  overlaps, the actual path triangles, spawn and every stair/pad footprint.
-- EBR47_EVIDENCE_DIR=evidence/ebr47 npm run test:browser: 20 passed, 0 failed.
-  See evidence/ebr47/browser-suite.log and browser-proof.json. Chromium 153,
-  headless SwiftShader, 1280x720. Real mouse/keyboard checks reject both ghost
-  kinds on all three buildings and stop walking at their visible faces; the
-  existing browser stair, placement, night/weather and responsive checks pass.
-- evidence/ebr47/01-day-placeholder.png and 02-night-placeholder.png show the
-  deliberately unfinished boxes and working window/lantern lights;
-  03-coop-plot-rejected.png and 04-coop-walk-blocked.png show the interactions.
-  No page/console errors were observed. These are not final-look approvals.
-- git diff --check: passed. Diff against 323120a confirms unchanged
-  createStoneStairs.ts, createIsland.ts, farmPalette.ts, placement sources,
-  main.ts, UI and style sources; the path function itself is unchanged.
-
-Dependency note: the pre-existing ignored node_modules -> ../../node_modules
-symlink lacks jsdom and Playwright. Verification used an isolated npm ci from
-this branch's lockfile; the original symlink was restored and was not committed.
-To rerun, copy package.json and package-lock.json to a scratch directory, run
-npm ci there, temporarily back up this symlink and point it at that directory's
-node_modules, then restore the original symlink. Do not run npm ci through the
-original symlink: its target is shared with another worktree.
+Verification
+- `npm run build`: PASS (TypeScript and Vite, 53 modules). Vite retains the
+  existing >500 kB chunk advisory; evidence/EBR-47/build.log.
+- `npm test`: 81 passed, 0 failed; evidence/EBR-47/unit.log.
+- `EBR47_EVIDENCE_DIR=evidence/EBR-47 npm run test:browser`: 20 passed,
+  0 failed; evidence/EBR-47/browser-suite.log. Chromium 153, headless
+  SwiftShader. Tests cover exact meshes/colors, collision and placement for
+  every wall/body/ramp, roof rain shelter, path/stair clearance, both window
+  lights, emissive-only extras, and real mouse/WASD/touch interactions.
+- `npm ls --depth=0`: PASS. This worktree now has a real local npm ci
+  installation including jsdom and Playwright; node_modules is ignored and
+  not committed. The prior shared symlink target was not modified.
+- `git diff --check`: PASS. No new building mesh or collider has X > 4.5.
