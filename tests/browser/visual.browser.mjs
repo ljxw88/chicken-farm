@@ -268,7 +268,7 @@ test('night lights, weather controls, phase and pixel rendering remain usable', 
     const { scene, character } = window.__ebr71Test;
     return {
       windows: [1, 2].map((i) => scene.getObjectByName(`window-light-${i}`).intensity),
-      panes: [1, 2].map((i) => scene.getObjectByName(`barn-window-${i}`).material.emissiveIntensity),
+      panes: [1, 2].map((i) => scene.getObjectByName(`cottage-window-${i}`).material.emissiveIntensity),
       lantern: character.getObjectByName('lantern-light').intensity,
       glass: character.getObjectByName('lantern-glass').material.emissiveIntensity,
     };

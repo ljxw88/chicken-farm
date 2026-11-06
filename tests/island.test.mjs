@@ -63,7 +63,8 @@ test('the existing farm, path and props all remain over the island top', () => {
   createFarmLayout(scene);
   scene.updateMatrixWorld(true);
   const half = GROUND_SIZE / 2;
-  for (const name of ['farm-layout', 'farm-barn', 'farm-pond', 'farm-tree-1', 'farm-tree-2', 'farm-tree-3', 'farm-tree-4']) {
+  for (const name of ['farm-layout', 'farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2',
+    'farm-pond', 'farm-tree-1', 'farm-tree-2', 'farm-tree-3', 'farm-tree-4']) {
     const object = scene.getObjectByName(name);
     assert.ok(object, name);
     const box = new THREE.Box3().setFromObject(object);

@@ -1,0 +1,88 @@
+EBR-47 — Phase 1 placeholders, not final Look Dev
+
+Branch: feat/ebr47-cottage-coops
+Base: origin/main 323120a44f139ae21e070066cfb103f3fe5f598d
+Local tip: git rev-parse HEAD (a committed file cannot contain its own SHA).
+No push or PR.
+
+Where the old barn was
+- src/scene/createFarmLayout.ts had FARM_LAYOUT.barn, createBarn(), its
+  walking obstacle and the rain-splash roof exclusion. This base contained one
+  barn, not three; there were no existing coop locations.
+- src/scene/farmPalette.ts supplies the old barn colors; fence visuals in
+  src/placement/createPlacementVisual.ts and stone in
+  src/scene/createStoneStairs.ts also use those colors. They are unchanged.
+- src/lighting/createPracticalLights.ts parents window lights to barn panes;
+  its lantern is carried by the character, not anchored to a barn.
+- src/scene/farmCollisions.ts moves against the layout's obstacles, and
+  src/placement/createPlacement.ts rejects whole ghost footprints against
+  those same obstacles.
+
+What changed
+- Removed the barn mesh. Added a cottage box and two named ramp-coop boxes.
+  They abut and partition the original barn's footprint, rather than inventing
+  two new locations. These are deliberately plain boxes, not final buildings:
+  there are no modeled ramps, roof, white finish or approved new colors yet.
+- Meshes, named walking/placement obstacles and rain exclusions are derived
+  from the same table. The cottage's two flush window panes and their light
+  anchors scale and move with the cottage. Night intensities are unchanged;
+  the lantern remains attached to the moving character as before.
+- No terrain, stream, HUD, grid, stair or path implementation changes. The
+  existing staircase and fence palette were not modified.
+
+ONE table for the provisional envelopes
+  src/scene/createFarmBuildings.ts: FARM_BUILDINGS
+  Coordinates are X/Z world centers; width/depth/height are world units;
+  bases sit at GROUND_HEIGHT. Values below are placeholders, NOT Look Dev specs:
+
+  name          center X   center Z   width   depth   height
+  cottage          -3.4       -3.4      2.0     2.6      2.0
+  ramp-coop-1      -4.9       -3.4      1.0     2.6      1.0
+  ramp-coop-2      -1.9       -3.4      1.0     2.6      1.0
+
+  Together these cover the original barn wall footprint, X [-5.4, -1.4],
+  Z [-4.7, -2.1]. Editing a row moves/resizes its placeholder, collision,
+  placement blocker and splash shelter together; cottage windows follow it.
+  Real roofs, ramps and any nonrectangular/rotated compound footprints will
+  still need Phase 2 modeling and collision work after specifications arrive.
+
+Exact inputs still needed from Look Dev (none are approved here)
+1. For the cottage and each coop: world center X/Z, orientation/yaw, exterior
+   width/depth/overall height and base/floor elevation. Supply each actual
+   collision/placement footprint as X/Z bounds or polygon vertices, including
+   roof overhangs, legs and ramps, and identify any walkable versus solid part.
+2. Cottage: wall/eave height, roof rise or pitch, ridge direction, X/Z eave
+   overhang and roof thickness; dimensions and local X/Y/Z centers of each
+   window and door. Specify which faces they occupy and the window count.
+3. Each coop: body width/depth/height and raised floor or leg height; each
+   ramp's width, horizontal length, rise, X/Z attachment offset and direction.
+4. Exact sRGB hex colors for cottage walls, wood/trim and rust-red roof; coop
+   walls, wood/trim, roofs and ramps; and window panes/frames. Keep the current
+   warm window/character-lantern light settings unless a change is specified.
+
+Evidence
+- npm run build: PASS (tsc and Vite, 48 modules); the existing Vite >500 kB
+  chunk-size advisory remains. See evidence/ebr47/build.log.
+- npm test: 79 passed, 0 failed. See evidence/ebr47/unit.log. Tests cover each
+  visible box face, table edits, all four fence/plot rotations and partial
+  overlaps, the actual path triangles, spawn and every stair/pad footprint.
+- EBR47_EVIDENCE_DIR=evidence/ebr47 npm run test:browser: 20 passed, 0 failed.
+  See evidence/ebr47/browser-suite.log and browser-proof.json. Chromium 153,
+  headless SwiftShader, 1280x720. Real mouse/keyboard checks reject both ghost
+  kinds on all three buildings and stop walking at their visible faces; the
+  existing browser stair, placement, night/weather and responsive checks pass.
+- evidence/ebr47/01-day-placeholder.png and 02-night-placeholder.png show the
+  deliberately unfinished boxes and working window/lantern lights;
+  03-coop-plot-rejected.png and 04-coop-walk-blocked.png show the interactions.
+  No page/console errors were observed. These are not final-look approvals.
+- git diff --check: passed. Diff against 323120a confirms unchanged
+  createStoneStairs.ts, createIsland.ts, farmPalette.ts, placement sources,
+  main.ts, UI and style sources; the path function itself is unchanged.
+
+Dependency note: the pre-existing ignored node_modules -> ../../node_modules
+symlink lacks jsdom and Playwright. Verification used an isolated npm ci from
+this branch's lockfile; the original symlink was restored and was not committed.
+To rerun, copy package.json and package-lock.json to a scratch directory, run
+npm ci there, temporarily back up this symlink and point it at that directory's
+node_modules, then restore the original symlink. Do not run npm ci through the
+original symlink: its target is shared with another worktree.

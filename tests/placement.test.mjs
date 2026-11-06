@@ -11,9 +11,10 @@ const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlace
 const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 after(() => vite.close());
 
-function fixture(t, { debugGrid = false, getBlockers } = {}) {
+function fixture(t, { debugGrid = false, getBlockers, farm = false } = {}) {
   const dom = new JSDOM('<!doctype html><body><canvas id="scene"></canvas></body>', { url: 'http://localhost/' });
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;
@@ -32,7 +33,8 @@ function fixture(t, { debugGrid = false, getBlockers } = {}) {
   const { camera, follow, resize } = createIsometricCamera();
   resize(800, 600);
   follow(character.position);
-  const obstacles = [{ kind: 'box', name: 'existing', minX: -5, maxX: -4, minZ: 3, maxZ: 4 }];
+  const obstacles = farm ? createFarmLayout(scene).obstacles :
+    [{ kind: 'box', name: 'existing', minX: -5, maxX: -4, minZ: 3, maxZ: 4 }];
   const placement = createPlacement({
     scene, camera, canvas, ground, groundSize: 16, groundHeight: 2.4, character, characterRadius: 0.4,
     obstacles, getBlockers, debugGrid,
@@ -98,6 +100,54 @@ test('whole tiles reserve space around boxes and circles; fences collide only at
   assert.ok(Math.abs((straight.maxZ - straight.minZ) - 0.26) < 1e-10);
   assert.ok(Math.abs((rotated.maxX - rotated.minX) - 0.26) < 1e-10);
   assert.ok(Math.abs((rotated.maxZ - rotated.minZ) - 1.47) < 1e-10);
+});
+
+test('fence and plot ghosts reject even partial overlap with each real building in every rotation', (t) => {
+  const f = fixture(t, { farm: true });
+  const grid = createGrid(16);
+  const original = f.obstacles.slice();
+  f.scene.updateMatrixWorld(true);
+  for (const name of ['cottage', 'ramp-coop-1', 'ramp-coop-2']) {
+    const mesh = f.scene.getObjectByName(`${name}-placeholder`);
+    const box = new THREE.Box3().setFromObject(mesh);
+    const obstacle = original.find((entry) => entry.name === name);
+    assert.ok(obstacle, name);
+    // Exercise each obstacle independently: the adjacent boxes cannot hide an
+    // absent cottage/coop rejection. Use the real rendered bounds as the oracle.
+    f.obstacles.splice(0, f.obstacles.length, obstacle);
+    for (const kind of ['fence', 'plot']) {
+      for (let rotation = 0; rotation < 4; rotation++) {
+        const candidates = [];
+        for (let column = 0; column < grid.count; column++) for (let row = 0; row < grid.count; row++) {
+          const area = grid.footprint({ column, row }, kind, rotation);
+          const overlaps = area.minX < box.max.x && area.maxX > box.min.x && area.minZ < box.max.z && area.maxZ > box.min.z;
+          const centerOutside = area.centerX < box.min.x || area.centerX > box.max.x || area.centerZ < box.min.z || area.centerZ > box.max.z;
+          if (grid.contains(area) && overlaps && centerOutside) candidates.push(area);
+        }
+        assert.ok(candidates.length, `no partial-overlap ${kind} candidate for ${name}`);
+        const area = candidates[0];
+        const x = grid.min + (area.cell.column + 0.5) * TILE_SIZE;
+        const z = grid.min + (area.cell.row + 0.5) * TILE_SIZE;
+        f.key(kind === 'fence' ? 'KeyF' : 'KeyP');
+        for (let turn = 0; turn < rotation; turn++) f.key('KeyR');
+        f.pointer('pointermove', x, z);
+        assert.match(f.status(), /Blocked by a farm object/, `${name} ${kind} rotation ${rotation}`);
+        assert.equal(f.layer.getObjectByName('placement-wash').material.color.getHex(), 0xc45a3a);
+        assert.equal(document.querySelector('[data-confirm]').disabled, true);
+        f.pointer('pointerdown', x, z);
+        f.key('Enter');
+        assert.equal(f.count(`placed-${kind}`), 0);
+      }
+    }
+  }
+  f.obstacles.splice(0, f.obstacles.length, ...original);
+  f.key('KeyF');
+  f.pointer('pointermove', -6.75, -6.75);
+  assert.match(f.status(), /Ready to place/);
+  f.pointer('pointerdown', -6.75, -6.75);
+  assert.equal(f.count('placed-fence'), 1);
+  f.key('KeyZ');
+  assert.deepEqual(f.obstacles, original);
 });
 
 test('placement previews, validates, rotates only the ghost, and updates and removes live walking collisions', (t) => {

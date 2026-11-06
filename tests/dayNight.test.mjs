@@ -51,7 +51,7 @@ test('all four phases keep the void and use the locked fog and light presets', (
 
   assert.equal(scene.fog.isFogExp2, true);
   assert.equal(windows.length, 2);
-  assert.ok(windows.every((window) => window.parent.name === 'farm-barn'));
+  assert.ok(windows.every((window) => window.parent.name === 'farm-cottage'));
   for (const [phase, values] of Object.entries(expected)) {
     cycle.setDayNightPhase(phase);
     assert.equal(scene.background.getHex(), 0x101416, phase);
