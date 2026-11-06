@@ -5,6 +5,8 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
+const { createCharacterController } = await vite.ssrLoadModule('/src/character/createCharacterController.ts');
+const { createEngine } = await vite.ssrLoadModule('/src/core/loop/createEngine.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
@@ -484,6 +486,54 @@ test('rain is readable, one pixel wide and tilts lower-right toward the specifie
   weather.update(0.1);
   const afterRain = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, 0));
   assert.ok(before.distanceTo(afterRain) > 0.1);
+});
+
+test('rain follows engine-controlled movement without dragging world-space streaks', (t) => {
+  function running() {
+    const farm = fixture(t);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE), new THREE.MeshBasicMaterial());
+    const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280, height: 720 }) };
+    let frame;
+    const engine = createEngine({
+      setAnimationLoop: (callback) => { frame = callback; },
+      frameSystems: [(world, move, delta) => controller.system(world, move, Math.min(delta, 0.1))],
+      update(delta) { farm.follow(farm.character.position); farm.weather.update(delta); },
+      render() {},
+    });
+    const controller = createCharacterController({
+      world: engine.world, input: engine.input, character: farm.character, camera: farm.camera, canvas, ground,
+      groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: 0.4,
+    });
+    t.after(() => { engine.stop(); controller.dispose(); ground.geometry.dispose(); ground.material.dispose(); });
+    farm.weather.setWeather('rain');
+    engine.start();
+    return { ...farm, engine, tick: (time) => frame(time) };
+  }
+
+  const moving = running();
+  const stationary = running();
+  for (const farm of [moving, stationary]) { farm.tick(0); farm.tick(1750); }
+  moving.engine.input.keyDown({ code: 'KeyS', target: null });
+  for (let frame = 1; frame <= 8; frame++) {
+    moving.tick(1750 + frame * 100);
+    stationary.tick(1750 + frame * 100);
+    near(moving.streaks.parent.position.x, moving.character.position.x, 1e-8);
+    near(moving.streaks.parent.position.z, moving.character.position.z, 1e-8);
+    const movingPositions = moving.streaks.geometry.attributes.position;
+    const stationaryPositions = stationary.streaks.geometry.attributes.position;
+    for (let i = 0; i < movingPositions.count; i++) {
+      const a = moving.streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(movingPositions, i));
+      const b = stationary.streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(stationaryPositions, i));
+      const dx = a.x - b.x;
+      const dz = a.z - b.z;
+      near(dx, Math.round(dx / 19) * 19, 1e-5);
+      near(dz, Math.round(dz / 19) * 19, 1e-5);
+      near(a.y, b.y, 1e-5);
+    }
+  }
+  assert.ok(Math.hypot(moving.character.position.x, moving.character.position.z) > 1);
+  near(stationary.character.position.x, 0);
+  near(stationary.character.position.z, 0);
 });
 
 test('splash rings are occasional, short-lived and avoid buildings, water and ground edges', (t) => {
