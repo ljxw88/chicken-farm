@@ -117,3 +117,66 @@ Not verified
   physical device. Other browsers and graphics hardware were not verified.
 - EBR-73 integration and rebasing onto a newer main have not been attempted.
   This branch remains on a61bac9; PR #16 is open and has not been merged.
+
+EBR-73 merge update (supersedes the pre-merge status above)
+- Engineer: merged origin/main 4ea8249c73701be49a005265a1fb2f2f9d0d035b into
+  9cc1687d834106c4019062926c53fe7954d337ff without rebasing. The tested merge
+  commit is b7c80489ee6d0a42e3542fd9541bf46e7c14cad2; its parents are the
+  preceding branch tip and 4ea8249. The final tip includes this handoff-only
+  commit; obtain its SHA with `git rev-parse HEAD` or the delivery message.
+- The only conflicting file was src/main.ts. Engineer: kept main's createEngine
+  loop, input actions and update order, retained bridgeHeight in the character
+  options, and ran updateWaterfall after weather inside the engine update.
+  src/character/createCharacterControls.ts and src/scene/createFarmLayout.ts
+  had no conflicts and remain byte-for-byte as at 9cc1687.
+- src/placement/createPlacement.ts merged cleanly from main; its sole change
+  relative to 9cc1687 is main's isRemoving() getter for the input context.
+  src/core and the three new engine test files exactly match 4ea8249. Water,
+  bridge, nest, collision and all other placement source files are unchanged.
+- Look Dev SIGNED and QA PASS at 9cc1687; the earlier pre-sign-off note above
+  is superseded. This merge was tested locally; the PR has not been merged.
+
+Merge verification
+- `npm ci`: PASS, 73 packages, 0 vulnerabilities; miniplex 2.0.0 installed.
+- `npm run build`: PASS, 71 modules; existing Vite chunk advisory remains.
+- `npm test`: 108 passed, 0 failed, including main's ECS, input and loop tests.
+- `npm run test:browser`: 24 passed, 0 failed. Engineer: the first attempt had
+  eight setup failures from a transient Vite port collision; a full rerun
+  passed without editing placement code or tests.
+- Engineer: compared an archive of 9cc1687 with the resolved merge worktree
+  using a temporary copy of main's parity harness, fixed timestamps and seeded
+  RNG, headless Chromium 153/SwiftShader, 1280x720. Day, night, rain, bridge,
+  waterfall and placement ghost each had 0 changed pixels and no state
+  mismatches. Bridge/waterfall viewpoints were reached by real clicks; zoom
+  was test-only. The three refreshed frames below are the candidate captures;
+  the earlier signed screenshots and their proof were not overwritten.
+  evidence/EBR-48/merge-day-front.png
+  evidence/EBR-48/merge-bridge-crossing.png
+  evidence/EBR-48/merge-waterfall.png
+- SHA-256, identical between baseline and candidate:
+  day-front      19c93a8e64471d05d166f0766d0c6c7c1de9643cf9bc3e978721a67590a0f015
+  night          0ae9f8ad55cd8a40466d79f8242503f51859fbbcef62d1579cc7bb54bf883b98
+  rain           eedc15d1f602521081640dbbfceeb5ced7d3ad356ac517d0a870c3b57f252c41
+  bridge         2cb961634cc01f273788f11a2a7c830a9f89b3ef876bf2bf4138ea37922fed3a
+  waterfall      df81d0056e53c5c8121bc85a3658cdfbd8e5261374797ac1a18fa43eb625ccff
+  placement      278cdaa76ff0b484bb409075e20f06abbcd2a82628317d8e33da65918be717a9
+
+Diff from 9cc1687 to merge commit b7c8048, excluding every path also changed
+on origin/main since the merge base (`git diff --name-only 9cc1687...origin/main`):
+ evidence/EBR-48/merge-bridge-crossing.png | Bin 0 -> 68315 bytes
+ evidence/EBR-48/merge-day-front.png       | Bin 0 -> 50459 bytes
+ evidence/EBR-48/merge-waterfall.png       | Bin 0 -> 65165 bytes
+ 3 files changed, 0 insertions(+), 0 deletions(-)
+Final-tip diff with the same upstream-path exclusion:
+ DELIVER-EBR48.txt                         |  63 ++++++++++++++++++++++++++++++
+ evidence/EBR-48/merge-bridge-crossing.png | Bin 0 -> 68315 bytes
+ evidence/EBR-48/merge-day-front.png       | Bin 0 -> 50459 bytes
+ evidence/EBR-48/merge-waterfall.png       | Bin 0 -> 65165 bytes
+ 4 files changed, 63 insertions(+)
+
+Scoped `git diff --stat 9cc1687 b7c8048 --` water/bridge/nest/collision,
+character and placement source paths:
+ src/placement/createPlacement.ts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+That getter is main's clean merge; excluding it, the scoped diff is empty.
+`git diff --check` passes. No push requires force; do not merge the PR.
