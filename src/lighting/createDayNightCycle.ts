@@ -40,6 +40,18 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
   const practicalLights = createPracticalLights(character, windows);
   let cycleSeconds = DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
   let progress = 0;
+  let directionalMultiplier = 1;
+  let directionalBaseIntensity: number = morning.directionalIntensity;
+  const ambientBaseColor = new THREE.Color();
+  const hemisphereSkyBaseColor = new THREE.Color();
+  const hemisphereGroundBaseColor = new THREE.Color();
+  const ambientHemisphereColorMultiplier = new THREE.Color(1, 1, 1);
+
+  function applyAmbientHemisphereColors() {
+    ambient.color.copy(ambientBaseColor).multiply(ambientHemisphereColorMultiplier);
+    hemisphere.color.copy(hemisphereSkyBaseColor).multiply(ambientHemisphereColorMultiplier);
+    hemisphere.groundColor.copy(hemisphereGroundBaseColor).multiply(ambientHemisphereColorMultiplier);
+  }
 
   function applyLighting() {
     const phasePosition = progress * DAY_NIGHT_PHASES.length;
@@ -55,13 +67,15 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     background.copy(fromColors.sky).lerp(toColors.sky, blend);
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);
-    ambient.color.copy(fromColors.ambient).lerp(toColors.ambient, blend);
+    ambientBaseColor.copy(fromColors.ambient).lerp(toColors.ambient, blend);
     ambient.intensity = lerp(from.ambientIntensity, to.ambientIntensity, blend);
-    hemisphere.color.copy(fromColors.hemisphereSky).lerp(toColors.hemisphereSky, blend);
-    hemisphere.groundColor.copy(fromColors.hemisphereGround).lerp(toColors.hemisphereGround, blend);
+    hemisphereSkyBaseColor.copy(fromColors.hemisphereSky).lerp(toColors.hemisphereSky, blend);
+    hemisphereGroundBaseColor.copy(fromColors.hemisphereGround).lerp(toColors.hemisphereGround, blend);
+    applyAmbientHemisphereColors();
     hemisphere.intensity = lerp(from.hemisphereIntensity, to.hemisphereIntensity, blend);
     directional.color.copy(fromColors.directional).lerp(toColors.directional, blend);
-    directional.intensity = lerp(from.directionalIntensity, to.directionalIntensity, blend);
+    directionalBaseIntensity = lerp(from.directionalIntensity, to.directionalIntensity, blend);
+    directional.intensity = directionalBaseIntensity * directionalMultiplier;
     practicalLights.setNightAmount(lerp(from.nightLights, to.nightLights, blend));
 
     // The sun rises and sets low; the moon follows the other half of the arc
@@ -95,6 +109,27 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     applyLighting();
   }
 
+  function setDirectionalIntensityMultiplier(multiplier: number) {
+    if (!Number.isFinite(multiplier) || multiplier < 0 || multiplier > 1) {
+      throw new RangeError('Directional intensity multiplier must be between zero and one');
+    }
+    directionalMultiplier = multiplier;
+    // Always scale the current phase value, never an already-scaled light.
+    directional.intensity = directionalBaseIntensity * directionalMultiplier;
+  }
+
+  function setAmbientHemisphereColorMultiplier(red: number, green: number, blue: number) {
+    if ([red, green, blue].some((value) => !Number.isFinite(value) || value < 0)) {
+      throw new RangeError('Ambient and hemisphere color multipliers must be finite and non-negative');
+    }
+    ambientHemisphereColorMultiplier.setRGB(red, green, blue);
+    // Reapply to the current phase colors, never to already-tinted colors.
+    applyAmbientHemisphereColors();
+  }
+
   applyLighting();
-  return { update, setDayNightCycleSeconds, setDayNightPhase };
+  return {
+    update, setDayNightCycleSeconds, setDayNightPhase,
+    setDirectionalIntensityMultiplier, setAmbientHemisphereColorMultiplier,
+  };
 }

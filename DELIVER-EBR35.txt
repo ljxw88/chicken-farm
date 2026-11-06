@@ -1,0 +1,33 @@
+EBR-35 — Clear / Gentle Rain
+
+Base: 3f83f1a5da74767e6400b2f8336ea499b217270b (QA-passed EBR-34).
+Status: local `feat/ebr35-rain` branch, not merged or pushed. Look Dev visually approved both review clips; the starting targets are not explicitly LOCKED. Independent gameplay QA is still pending.
+
+Run and toggle
+- On carrier, the production preview is http://100.88.150.21:5196/ (Tailscale), or http://127.0.0.1:5195/ locally, while those preview processes are running. In a fresh QA checkout, use `npm ci && npm run build && npm run preview -- --host 127.0.0.1 --port 5200 --strictPort`, then open http://127.0.0.1:5200/.
+- Weather starts clear. In the browser console use `setWeather('rain')` and `setWeather('clear')`; `getWeather()` returns `{ mode, rainAmount }`, where `mode` is the requested state and `rainAmount` smoothly ranges from 0 to 1. Invalid modes throw a RangeError.
+- For inspection, `setDayNightCycleSeconds(36000); setDayNightPhase('daytime')` holds the day nearly still; `setDayNightPhase('night')` shows the warm windows and lantern. The normal day/night cycle continues independently.
+- In a 1280×720 browser open the console, run `setDayNightCycleSeconds(36000); setDayNightPhase('daytime'); setWeather('clear')`, wait 2 seconds, then `setWeather('rain')`. Wait another 2 seconds and inspect the streaks/splashes; `getWeather()` should report rainAmount 1. Run `setWeather('clear')`, wait 2 seconds and confirm rainAmount 0 and the restored lighting. Repeat the same sequence after `setDayNightPhase('night')`; the two warm windows and lantern should remain lit.
+- For gameplay QA, hold WASD and click/tap along the path toward the barn and pond while raining. Push into the barn and tree trunks and confirm the character stops; try the pond and confirm it remains blocked. Run `setDayNightCycleSeconds(12)` and toggle weather repeatedly as phases progress.
+
+Look Dev visually approved starting targets
+- `src/weather/rainSettings.ts` centralizes the visually approved starting settings: sparse 240 unblurred line streaks, about 15° on screen, #B8CFDA at 0.35 opacity. Their world-space length produces roughly 3.8–4.8 px at 1280×720; the future 1×3–5 px pixel-resolution intent is not enforced with postFX.
+- Occasional thin ground rings expand from radius 0.08 to 0.18 and fade over 0.25–0.4 s, with at most six active across the field. Exclusions cover the barn roof and its overhang, tree crowns, pond water and ground edges; no dense pond ripples are added.
+- A full clear↔rain blend takes 1.75 s, including smooth reversal mid-transition. At full rain the directional intensity is 80% of the current interpolated day/night intensity; clear restores that exact current-phase value without cumulative scaling. Phase colors, ambient/hemisphere lighting, fog, ground material and warm practical lights remain unchanged. No lightning, heavy haze, glossy ground, HUD or postFX was added.
+
+Verification
+- `npm run build`: re-run after visual approval and passed (Vite retains its >500 kB bundle-size advisory). Built asset `dist/assets/index-C7L2aUMY.js` SHA-256 `31f42bd33a091e0bb41b5db192927e8f78e9849fd6e77c7ec0adec7e4f1247f9` matches the approved capture.
+- `npm test`: re-run after visual approval; 27 passed, including the existing walking, collision, farm and day/night regressions plus rain fades, mid-transition reversal, all phase intensities, streak geometry, splash lifetime/roof exclusion and cleanup.
+- Actual Vite app and unmodified production preview checked in Chromium/WebGL2 at 1280×720. Measured full fade-in/out was approximately 1.73/1.75 s. Clear→rain→clear directional intensity was 0.55→0.44→0.55 morning, 1.1→0.88→1.1 daytime, 0.65→0.52→0.65 sunset and 0.22→0.176→0.22 night. Night window PointLights remained #FFCC88 at 0.85 and the lantern at 0.55.
+- An 8-second live day/night cycle ran through all four phases in rain. During a separate progressing 12-second cycle, six weather toggles (including a mid-fade reversal) were sampled over 159 frames; current-phase directional scaling matched the independently inferred base within 4e-16 and phase colors remained unchanged.
+- In one 8-second browser sample, 26 splash rings appeared (20 on screen, maximum three active), with none crossing the roof, pond or ground bounds. Configured lifetimes are 0.25–0.4 s; observed visibility is frame-quantized. Real WASD/click walking in rain reached the barn and passed the pond, while barn/tree collisions held; a 390×844 touch tap also moved along the path. No application JavaScript errors; Chromium's pre-existing `/favicon.ico` 404 was ignored.
+- Captures and machine-local proof: `/tmp/ebr35.KUdLwd/clear-day.png`, `morning-rain.png`, `daytime-rain.png`, `sunset-rain.png`, `night-rain.png`, `rain-splash.png`, `rain-path-pond.png`, `rain-barn-blocked.png`, `rain-portrait-touch.png`, `production-day-rain.png`, `production-night-rain.png`, `proof.json`, `splash-capture.json` and `production-proof.json` in the same directory.
+- Fixed-camera 1280×720 Clear→Rain→Clear visual-review MP4s and capture details: `/home/michael/Developer/chicken-farm-evidence/ebr35/daytime-clear-rain-clear.mp4`, `/home/michael/Developer/chicken-farm-evidence/ebr35/night-clear-rain-clear.mp4` and `/home/michael/Developer/chicken-farm-evidence/ebr35/CAPTURE-EBR35.txt`.
+- Post-approval Chromium smoke on the carrier preview rechecked all four rain/clear phase intensities and warm lights, then walked in rain against the barn, tree and pond and past the pond. Results: `/home/michael/Developer/chicken-farm-evidence/ebr35/CARRIER-QA.json`. This is implementation verification, not independent gameplay QA.
+
+Files
+- `src/weather/index.ts`, `src/weather/rainSettings.ts`, `src/weather/createRainEffect.ts`, `src/weather/createWeatherSystem.ts`.
+- `src/lighting/createDayNightCycle.ts` (non-cumulative directional multiplier), `src/scene/createFarmLayout.ts` (splash exclusions), `src/main.ts`, `tests/weather.test.mjs`, `README.md`, `DELIVER-EBR35.txt`.
+- Existing local changes to `READY.md`, `DELIVER-EBR32.txt`, `DELIVER-EBR33.txt` and `DELIVER-EBR34.txt` were preserved.
+
+QA status: Look Dev visual approval is not gameplay QA. Independent gameplay QA remains pending; no merge or push has been performed.
