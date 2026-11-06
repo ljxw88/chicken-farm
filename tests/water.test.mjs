@@ -5,205 +5,399 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
-const { createWaterFeature } = await vite.ssrLoadModule('/src/scene/createWaterFeature.ts');
+const { createFarmDecorations } = await vite.ssrLoadModule('/src/scene/createFarmDecorations.ts');
 const { WATER_FEATURE } = await vite.ssrLoadModule('/src/scene/waterFeatureSpec.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
 const { createGrid, intersectsFootprint, TILE_SIZE } = await vite.ssrLoadModule('/src/placement/grid.ts');
-const { GROUND_HEIGHT } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
+const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
+const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
+const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
+const { createRainEffect } = await vite.ssrLoadModule('/src/weather/createRainEffect.ts');
+const { createIsland, GROUND_HEIGHT } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
-
-const farPond = { kind: 'box', name: 'pond', minX: -7, maxX: -6, minZ: -7, maxZ: -6 };
-
-function spec() {
-  return {
-    stream: { points: [{ x: -6, z: 0 }, { x: 8, z: 0 }], width: 2, surfaceLift: 0.03 },
-    bridge: { x: 0, z: 0, length: 4, width: 2, rotationDegrees: 90, thickness: 0.02, topLift: 0.04, walkRule: 'walkable' },
-    waterfall: { side: 'east', width: null, lipDepth: 0.75, drop: 2.4 },
-    palette: { stream: 0x5b8fa8, waterfall: 0x5b8fa8, bridge: 0xd4a574 },
-  };
-}
-
-function feature(options = spec(), pond = farPond) {
-  const scene = new THREE.Scene();
-  const parent = new THREE.Group();
-  scene.add(parent);
-  const obstacles = createWaterFeature(parent, pond, options);
-  scene.updateMatrixWorld(true);
-  return { scene, obstacles };
-}
 
 function near(actual, expected, tolerance = 1e-6) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} is not close to ${expected}`);
 }
 
-test('water stops a circular character while a walkable deck crosses from either bank', () => {
-  const { obstacles } = feature();
-  const offBridge = moveWithFarmCollisions(-3, -2, 0, 4, 0.4, obstacles);
-  assert.ok(offBridge.z <= -1.4 && offBridge.z > -1.51, `water did not stop walking: ${offBridge.z}`);
-  for (const sign of [-1, 1]) {
-    const crossed = moveWithFarmCollisions(0, sign * 2.5, 0, -sign * 5, 0.4, obstacles);
-    near(crossed.x, 0);
-    near(crossed.z, -sign * 2.5);
+function fixture() {
+  const scene = new THREE.Scene();
+  const layout = createFarmLayout(scene);
+  scene.updateMatrixWorld(true);
+  return { scene, ...layout };
+}
+
+function box(scene, name) {
+  const object = scene.getObjectByName(name);
+  assert.ok(object, name);
+  return new THREE.Box3().setFromObject(object);
+}
+
+test('the locked Catmull-Rom route, widths, layered elevations and water palette are exact', () => {
+  assert.deepEqual(WATER_FEATURE.stream.points, [
+    [3.9, -2.45], [3.9, -1.95], [3.6, -0.8], [3.1, 0.6], [2.85, 2],
+    [2.9, 3.6], [3.25, 5.3], [3.55, 6.8], [3.6, 8],
+  ]);
+  const { scene } = fixture();
+  const lockedCurve = new THREE.CatmullRomCurve3(WATER_FEATURE.stream.points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+  for (const [name, width, lift, color] of [
+    ['farm-stream-rim', 1.5, 0.027, 0x7aadb8],
+    ['farm-stream-water', 1.2, 0.029, 0x5b8fa8],
+    ['farm-stream-deep', 0.35, 0.030, 0x3a6a7a],
+  ]) {
+    const mesh = scene.getObjectByName(name);
+    assert.equal(mesh.material.color.getHex(), color);
+    const vertices = mesh.geometry.attributes.position;
+    for (let i = 0; i < vertices.count - 2; i += 2) { // Last pair is clipped to the island rim.
+      near(Math.hypot(vertices.getX(i) - vertices.getX(i + 1), vertices.getZ(i) - vertices.getZ(i + 1)), width, 2e-6);
+      near(vertices.getY(i), GROUND_HEIGHT + lift, 2e-6);
+      if (name !== 'farm-stream-deep' && i % 40 === 0) {
+        const point = lockedCurve.getPointAt(i / (vertices.count - 2));
+        near((vertices.getX(i) + vertices.getX(i + 1)) / 2, point.x, 2e-6);
+        near((vertices.getZ(i) + vertices.getZ(i + 1)) / 2, point.z, 2e-6);
+      }
+    }
   }
-  // A centre on the deck is insufficient if the player's radius hangs over water.
-  const tooCloseToSide = moveWithFarmCollisions(0.75, -2.5, 0, 5, 0.4, obstacles);
-  assert.ok(tooCloseToSide.z < -1.3 && tooCloseToSide.z > -1.5);
-  const insideSide = moveWithFarmCollisions(0.59, -2.5, 0, 5, 0.4, obstacles);
-  near(insideSide.z, 2.5);
+  const foam = scene.getObjectByName('farm-water-feature').children.filter((item) => item.name.startsWith('farm-stream-foam-'));
+  assert.ok(foam.length >= 10);
+  for (const dash of foam) {
+    near(dash.geometry.parameters.width, 0.3);
+    near(dash.geometry.parameters.height, 0.1);
+    near(dash.position.y, GROUND_HEIGHT + 0.032);
+    assert.equal(dash.material.color.getHex(), 0xbfe0e6);
+  }
 });
 
-test('blocked bridge rule blocks the deck itself, including its dry overhang', () => {
-  const options = spec();
-  options.bridge.walkRule = 'blocked';
-  const { obstacles } = feature(options);
+test('five locked planks, four gap lines and both three-post rails follow the graded deck', () => {
+  const { scene, bridgeHeight } = fixture();
+  const deck = scene.getObjectByName('farm-wooden-bridge');
+  assert.ok(deck);
+  near(deck.position.x, 3.9);
+  near(deck.position.z, -1.95);
+  for (let i = 1; i <= 5; i++) {
+    const plank = scene.getObjectByName(`bridge-plank-${i}`);
+    const bounds = box(scene, `bridge-plank-${i}`);
+    near(bounds.max.x - bounds.min.x, 0.4);
+    near(bounds.min.x, 2.9 + (i - 1) * 0.4);
+    near(bounds.min.z, -2.65);
+    near(bounds.max.z, -1.25);
+    assert.equal(plank.material.color.getHex(), 0xc8956c);
+  }
+  for (let i = 1; i <= 4; i++) {
+    const gap = scene.getObjectByName(`bridge-gap-${i}`);
+    near(box(scene, `bridge-gap-${i}`).max.x - box(scene, `bridge-gap-${i}`).min.x, 0.04);
+    assert.equal(gap.material.color.getHex(), 0x7a5a3a);
+  }
+  assert.equal(scene.getObjectByName('bridge-underside').material.color.getHex(), 0x7a5a3a);
+  for (const side of ['north', 'south']) {
+    const rail = scene.getObjectByName(`bridge-rail-${side}`);
+    assert.equal(rail.material.color.getHex(), 0x8b5e3c);
+    for (let i = 1; i <= 3; i++) {
+      const post = scene.getObjectByName(`bridge-post-${side}-${i}`);
+      near(post.geometry.parameters.width, 0.14);
+      near(post.geometry.parameters.depth, 0.14);
+      near(post.geometry.parameters.height, 0.55);
+      assert.equal(post.material.color.getHex(), 0x8b5e3c);
+    }
+  }
+  const ray = new THREE.Raycaster();
+  for (const [x, lift] of [[2.91, 0.004], [3.05, 0.06], [3.2, 0.12], [3.9, 0.12], [4.6, 0.12], [4.75, 0.06], [4.89, 0.004]]) {
+    near(bridgeHeight(x, -1.95), GROUND_HEIGHT + lift);
+    ray.set(new THREE.Vector3(x, 10, -1.95), new THREE.Vector3(0, -1, 0));
+    const hit = ray.intersectObject(deck, true)[0];
+    assert.ok(hit, `no board at ${x}`);
+    near(hit.point.y, GROUND_HEIGHT + lift, 2e-5);
+  }
+  assert.equal(bridgeHeight(2.8, -1.95), undefined);
+  assert.equal(bridgeHeight(3.9, -1.2), undefined);
+});
+
+test('the character capsule follows both grades continuously without clipping the visible planks', () => {
+  const { scene, bridgeHeight } = fixture();
+  const bridge = scene.getObjectByName('farm-wooden-bridge');
+  const ray = new THREE.Raycaster();
+  const tops = [];
+  for (let q = 2.905; q < 4.9; q += 0.01) {
+    if ([3.3, 3.7, 4.1, 4.5].some((gap) => Math.abs(q - gap) < 0.021)) continue;
+    ray.set(new THREE.Vector3(q, 10, -1.95), new THREE.Vector3(0, -1, 0));
+    const hit = ray.intersectObject(bridge, true)[0];
+    assert.ok(hit);
+    tops.push({ x: q, y: hit.point.y });
+  }
+  let previous;
+  for (let x = 2.5; x <= 5.3; x += 0.01) {
+    const feet = bridgeHeight(x, -1.95, 0.4) ?? GROUND_HEIGHT;
+    assert.ok(feet >= GROUND_HEIGHT && feet <= GROUND_HEIGHT + 0.12 + 1e-8);
+    if (previous !== undefined) assert.ok(Math.abs(feet - previous) <= 0.00401, `vertical step at x=${x}`);
+    previous = feet;
+    for (const point of tops) {
+      if (Math.abs(point.x - x) > 0.4) continue;
+      const distance = Math.hypot(point.x - x, point.y - (feet + 0.4));
+      assert.ok(distance >= 0.4 - 1e-5, `capsule intersects the deck at x=${x}, sample=${point.x}`);
+    }
+  }
+});
+
+test('water boxes block the stream, the deck is crossable, and both sides stop the character', () => {
+  const { scene, obstacles } = fixture();
+  const water = obstacles.filter((entry) => entry.name.startsWith('stream-water-'));
   const bridge = obstacles.find((entry) => entry.name === 'wooden-bridge');
-  assert.equal(bridge.blocksWalking, true);
-  const stopped = moveWithFarmCollisions(0, -3, 0, 6, 0.4, obstacles);
-  assert.ok(stopped.z <= -2.4 && stopped.z > -2.51, `blocked deck was crossed: ${stopped.z}`);
+  const pond = obstacles.find((entry) => entry.name === 'pond');
+  assert.ok(water.length > 10 && water.every((entry) => entry.kind === 'box'));
+  assert.deepEqual(bridge, { kind: 'box', name: 'wooden-bridge', blocksWalking: false,
+    minX: 2.9, maxX: 4.9, minZ: -2.65, maxZ: -1.25 });
+  near(pond.minX, 2.3725);
+  near(pond.maxX, 5.6275);
+  near(pond.minZ, -4.4975);
+  near(pond.maxZ, -2.5025);
+  for (const entry of water) {
+    const overlap = entry.minX < bridge.maxX && entry.maxX > bridge.minX &&
+      entry.minZ < bridge.maxZ && entry.maxZ > bridge.minZ;
+    assert.equal(overlap, false, `${entry.name} enters the deck gap`);
+  }
+  const rendered = scene.getObjectByName('farm-stream-water').geometry.attributes.position;
+  for (let i = 0; i < rendered.count; i++) {
+    const x = rendered.getX(i);
+    const z = rendered.getZ(i);
+    const contains = (entry) => x >= entry.minX - 1e-5 && x <= entry.maxX + 1e-5 &&
+      z >= entry.minZ - 1e-5 && z <= entry.maxZ + 1e-5;
+    assert.ok(contains(bridge) || contains(pond) || water.some(contains), `unblocked water edge at ${x}, ${z}`);
+  }
+  for (const direction of [-1, 1]) {
+    const result = moveWithFarmCollisions(3.9 - direction * 1.8, -1.95, direction * 3.6, 0, 0.4, obstacles);
+    near(result.x, 3.9 + direction * 1.8);
+    near(result.z, -1.95);
+  }
+  const stream = moveWithFarmCollisions(1, 3.6, 5, 0, 0.4, obstacles);
+  assert.ok(stream.x > 1 && stream.x < 2.2, `crossed the stream at ${stream.x}`);
+  const south = moveWithFarmCollisions(3.9, -1.95, 0, 2, 0.4, obstacles);
+  assert.ok(south.z < -1.65 && south.z > -1.85, `stepped off the bridge: ${south.z}`);
+  const north = moveWithFarmCollisions(3.9, -1.95, 0, -2, 0.4, obstacles);
+  assert.ok(north.z > -2.2 && north.z <= -1.95, `stepped into the pond: ${north.z}`);
 });
 
-test('the full 1.5-unit tile rejects water, the waterfall lip and even a walkable dry deck overhang', () => {
-  const options = spec();
+test('the waterfall rim and neighbouring bank never permit walking into the void', () => {
+  const scene = new THREE.Scene();
+  const { stairs } = createIsland(scene);
+  const { obstacles } = createFarmLayout(scene);
+  const bank = moveWithFarmCollisions(4.8, 7, 0, 3, 0.4, obstacles, stairs.bounds, stairs.supports, stairs.slidePadCorner);
+  near(bank.z, 7.6, 1e-6);
+  assert.ok(stairs.supports(bank.x, bank.z, 0.4));
+  const water = moveWithFarmCollisions(5.2, 7.2, -2, 1, 0.4, obstacles, stairs.bounds, stairs.supports, stairs.slidePadCorner);
+  assert.ok(water.z <= 7.6 && stairs.supports(water.x, water.z, 0.4));
+  assert.ok(water.x > 4.2, `crossed the water at the waterfall: ${water.x}`);
+});
+
+test('all 1.5-unit fence and plot footprints overlapping water or the full deck are reserved', () => {
+  const { obstacles } = fixture();
+  const bridge = obstacles.find((entry) => entry.name === 'wooden-bridge');
+  const water = obstacles.filter((entry) => entry.name.startsWith('stream-water-'));
   const grid = createGrid(16);
   assert.equal(TILE_SIZE, 1.5);
-  for (const rule of ['walkable', 'blocked']) {
-    options.bridge.walkRule = rule;
-    const { obstacles } = feature(options);
-    const stream = obstacles.filter((entry) => entry.name.startsWith('stream-'));
-    const lip = obstacles.filter((entry) => entry.name.startsWith('waterfall-edge-'));
-    const bridge = obstacles.find((entry) => entry.name === 'wooden-bridge');
-    const tile = (x, z) => grid.footprint(grid.cellAt(x, z), 'fence', 0);
-    assert.ok(stream.some((zone) => intersectsFootprint(tile(-3.75, 0.75), zone)));
-    assert.ok(lip.some((zone) => intersectsFootprint(tile(6.75, 0.75), zone)));
-    const overhang = tile(0.75, 2.25); // Its centre is off both the water and the deck.
-    assert.ok(stream.every((zone) => !intersectsFootprint(overhang, zone)));
-    assert.equal(intersectsFootprint(overhang, bridge), true);
-    assert.equal(intersectsFootprint(tile(2.25, 2.25), bridge), false);
+  let deckTiles = 0;
+  for (let column = 0; column < grid.count; column++) for (let row = 0; row < grid.count; row++) {
+    for (const kind of ['fence', 'plot']) for (let rotation = 0; rotation < 4; rotation++) {
+      const area = grid.footprint({ column, row }, kind, rotation);
+      if (!grid.contains(area)) continue;
+      const actualOverlap = area.minX < 4.9 && area.maxX > 2.9 && area.minZ < -1.25 && area.maxZ > -2.65;
+      assert.equal(intersectsFootprint(area, bridge), actualOverlap, `${kind} ${column},${row}/${rotation}`);
+      if (actualOverlap) deckTiles++;
+    }
+  }
+  assert.ok(deckTiles > 20, 'the whole deck must reserve every overlapping candidate');
+  assert.ok(water.some((entry) => intersectsFootprint(grid.footprint(grid.cellAt(2.25, 3.75), 'fence', 0), entry)));
+  assert.equal(intersectsFootprint(grid.footprint(grid.cellAt(-6.75, 6.75), 'fence', 0), bridge), false);
+});
+
+test('stream and full deck exclude actual rain splashes, including the water beneath the bridge', () => {
+  const { scene, splashExclusions } = fixture();
+  const stream = splashExclusions.filter((entry) => entry.name.startsWith('stream-water-'));
+  const deck = splashExclusions.find((entry) => entry.name === 'wooden-bridge');
+  assert.ok(stream.length >= 10);
+  for (const entry of stream) near(entry.maxX - entry.minX, 1.26);
+  assert.ok(deck && deck.blocksWalking === false);
+  assert.ok(stream.some((entry) => entry.minX < 3.9 && entry.maxX > 3.9 && entry.minZ < -1.95 && entry.maxZ > -1.95),
+    'uncut stream must also be a rain exclusion');
+  const { camera, resize } = createIsometricCamera();
+  resize(1280, 720);
+
+  function impactsAt(x, z, exclusions) {
+    const rainScene = new THREE.Scene();
+    const anchor = new THREE.Group();
+    anchor.position.set(x, GROUND_HEIGHT, z);
+    rainScene.add(anchor);
+    let call = 0;
+    // Put every initial streak at the anchor with y=0; subsequent random=0
+    // forces impact attempts, so an empty result proves the keep-out is used.
+    const random = () => call++ < 240 * 5 ? [0.5, 0, 0.5, 0.5, 0.5][(call - 1) % 5] : 0;
+    const effect = createRainEffect({ scene: rainScene, camera, anchor, groundHeight: GROUND_HEIGHT,
+      groundSize: 16, splashExclusions: exclusions, random });
+    effect.update(0.01, 1);
+    const count = rainScene.children.filter((child) => child.name === 'weather-rain')[0].children
+      .filter((child) => child.name.startsWith('rain-splash-') && child.visible).length;
+    effect.dispose();
+    return count;
+  }
+  assert.ok(impactsAt(2.9, 3.6, []) > 0, 'control impacts must actually spawn');
+  assert.equal(impactsAt(2.9, 3.6, splashExclusions), 0);
+  assert.ok(impactsAt(3.9, -1.95, []) > 0);
+  assert.equal(impactsAt(3.9, -1.95, splashExclusions), 0);
+  assert.ok(scene.getObjectByName('farm-wooden-bridge'));
+});
+
+test('waterfall face, 0.8-unit alpha fade, foam lip and stepped 0.25-unit/s streaks match the lock', () => {
+  const { scene, updateWaterfall } = fixture();
+  const face = scene.getObjectByName('farm-waterfall-face');
+  const lip = scene.getObjectByName('farm-waterfall-lip');
+  const streaks = scene.getObjectByName('farm-waterfall-streaks');
+  near(face.position.x, 3.6);
+  near(face.position.z, 8.06);
+  const position = face.geometry.attributes.position;
+  const color = face.geometry.attributes.color;
+  assert.equal(color.itemSize, 4);
+  near(position.getX(0), -0.6);
+  near(position.getX(1), 0.6);
+  near(position.getY(0), 2.4, 1e-6);
+  near(position.getY(2), -0.4, 1e-6);
+  near(position.getY(4), -1.2, 1e-6);
+  near(color.getW(0), 1);
+  near(color.getW(2), 1);
+  near(color.getW(4), 0);
+  const topColor = new THREE.Color(0x5b8fa8);
+  const bottomColor = new THREE.Color(0x8fc1cf);
+  for (const [index, expected] of [[0, topColor], [4, bottomColor]]) {
+    near(color.getX(index), expected.r, 1e-6);
+    near(color.getY(index), expected.g, 1e-6);
+    near(color.getZ(index), expected.b, 1e-6);
+  }
+  assert.equal(face.material.transparent, true);
+  assert.equal(face.material.emissive.getHex(), 0);
+  near(lip.geometry.parameters.width, 1.2);
+  near(lip.geometry.parameters.height, 0.2);
+  near(lip.position.z, 7.9);
+  assert.equal(lip.material.color.getHex(), 0xbfe0e6);
+  assert.equal(streaks.material.color.getHex(), 0xddeff2);
+  const initial = Array.from(streaks.geometry.attributes.position.array);
+  updateWaterfall(0.399);
+  assert.deepEqual(Array.from(streaks.geometry.attributes.position.array), initial);
+  updateWaterfall(0.001); // 0.25 units/s advances 0.1 after 0.4 s.
+  const advanced = Array.from(streaks.geometry.attributes.position.array);
+  assert.notDeepEqual(advanced, initial);
+  near(advanced[4], initial[4] - 0.1, 1e-6);
+  updateWaterfall(3.6); // Four seconds = one full 1-unit pattern repeat.
+  const repeated = Array.from(streaks.geometry.attributes.position.array);
+  assert.equal(repeated.length, initial.length);
+  repeated.forEach((value, index) => near(value, initial[index], 1e-6));
+  const xs = initial.filter((_, index) => index % 3 === 0);
+  for (const center of [-0.45, -0.15, 0.15, 0.45]) {
+    assert.ok(xs.some((x) => Math.abs(x - (center - 0.06)) < 1e-6));
+    assert.ok(xs.some((x) => Math.abs(x - (center + 0.06)) < 1e-6));
   }
 });
 
-test('rotated bridge tile tests use its actual polygon, not its larger bounding box', () => {
-  const options = spec();
-  Object.assign(options.bridge, { length: 4, width: 1, rotationDegrees: 45 });
-  const bridge = feature(options).obstacles.find((entry) => entry.name === 'wooden-bridge');
-  const grid = createGrid(16);
-  const corner = grid.footprint(grid.cellAt(2.25, 2.25), 'fence', 0);
-  assert.ok(corner.minX < bridge.maxX && corner.minZ < bridge.maxZ); // AABBs overlap.
-  assert.equal(intersectsFootprint(corner, bridge), false);
-  const partial = grid.footprint(grid.cellAt(2.25, -0.75), 'fence', 0);
-  assert.equal(intersectsFootprint(partial, bridge), true);
-});
-
-test('diagonal stream and rotated deck have matching, radius-aware walking footprints', () => {
-  const options = spec();
-  options.stream.points = [{ x: -4, z: -3 }, { x: 8, z: 3 }];
-  Object.assign(options.bridge, { x: 0, z: -1, rotationDegrees: 63.43494882292201 });
-  const { obstacles } = feature(options);
-  const normal = { x: -1 / Math.sqrt(5), z: 2 / Math.sqrt(5) };
-  const tangent = { x: 2 / Math.sqrt(5), z: 1 / Math.sqrt(5) };
-  const crossing = (offset) => moveWithFarmCollisions(
-    tangent.x * offset - normal.x * 2.5, -1 + tangent.z * offset - normal.z * 2.5,
-    normal.x * 5, normal.z * 5, 0.25, obstacles,
-  );
-  const acrossDeck = crossing(0);
-  near(acrossDeck.x, normal.x * 2.5);
-  near(acrossDeck.z, -1 + normal.z * 2.5);
-  const acrossWater = crossing(3);
-  const signedDistance = (acrossWater.x - tangent.x * 3) * normal.x +
-    (acrossWater.z + 1 - tangent.z * 3) * normal.z;
-  assert.ok(signedDistance < -1.2, `crossed diagonal water: ${signedDistance}`);
-});
-
-test('a walkable deck cuts pond water too, but never cuts a building obstacle', () => {
-  const options = spec();
-  options.bridge.length = 6;
-  const pond = { kind: 'box', name: 'pond', minX: -2, maxX: 2, minZ: -2, maxZ: 2 };
-  const { obstacles } = feature(options, pond);
-  const crossed = moveWithFarmCollisions(0, -3.5, 0, 7, 0.4, obstacles);
-  near(crossed.z, 3.5);
-  const besideDeck = moveWithFarmCollisions(1.6, -3.5, 0, 7, 0.4, obstacles);
-  assert.ok(besideDeck.z <= -2.4 && besideDeck.z > -2.51);
-  const building = { kind: 'box', name: 'cottage', minX: -0.5, maxX: 0.5, minZ: -0.5, maxZ: 0.5 };
-  const blockedByBuilding = moveWithFarmCollisions(0, -3.5, 0, 7, 0.4, [...obstacles, building]);
-  assert.ok(blockedByBuilding.z <= -0.9 && blockedByBuilding.z > -1.01);
-  const tile = createGrid(16).footprint({ column: 5, row: 5 }, 'fence', 0);
-  assert.ok(obstacles.some((obstacle) => intersectsFootprint(tile, obstacle)), 'pond/deck must remain a placement keep-out');
-});
-
-test('bend water has no collision or rendering gap and the waterfall meets the island edge', () => {
-  const options = spec();
-  options.stream.points = [{ x: -6, z: 0 }, { x: -3, z: 0 }, { x: -3, z: 3 }, { x: 8, z: 3 }];
-  const { scene, obstacles } = feature(options);
-  const bend = scene.getObjectByName('farm-stream-bend-1');
-  assert.ok(bend);
-  const ray = new THREE.Raycaster(new THREE.Vector3(-2.5, 10, -0.5), new THREE.Vector3(0, -1, 0));
-  assert.ok(ray.intersectObject(bend).length, 'missing the outside of the bend');
-  const blocked = moveWithFarmCollisions(-2.5, -2, 0, 2, 0.1, obstacles);
-  assert.ok(blocked.z < -0.5);
-  const fall = scene.getObjectByName('farm-waterfall-face');
-  near(fall.position.x, 8);
-  near(fall.position.z, 3);
-  near(fall.geometry.parameters.width, 2);
-  near(fall.geometry.parameters.height, 2.4);
-  const waterfallRay = new THREE.Raycaster(new THREE.Vector3(9, 1, 3), new THREE.Vector3(-1, 0, 0));
-  assert.ok(waterfallRay.intersectObject(fall).length, 'waterfall face must face outwards');
-  assert.ok(obstacles.some((obstacle) => obstacle.name.startsWith('waterfall-edge-')));
-});
-
-test('the waterfall face and lip follow any selected island edge', () => {
-  for (const [side, x, z, nx, nz] of [
-    ['east', 8, 1, 1, 0], ['west', -8, 1, -1, 0],
-    ['north', 1, -8, 0, -1], ['south', 1, 8, 0, 1],
-  ]) {
-    const options = spec();
-    options.stream.points = [{ x: 0, z: 0 }, { x, z }];
-    options.waterfall.side = side;
-    const { scene, obstacles } = feature(options);
-    const face = scene.getObjectByName('farm-waterfall-face');
-    near(face.position.x, x);
-    near(face.position.z, z);
-    const ray = new THREE.Raycaster(new THREE.Vector3(x + nx, 1, z + nz), new THREE.Vector3(-nx, 0, -nz));
-    assert.ok(ray.intersectObject(face).length, `${side} face points the wrong way`);
-    const lip = obstacles.filter((obstacle) => obstacle.name.startsWith('waterfall-edge-'));
-    assert.ok(lip.length, `${side} has no lip collision`);
-    const stopped = moveWithFarmCollisions(x - nx * 2, z - nz * 2, nx * 3, nz * 3, 0.4, lip);
-    const remaining = (x - stopped.x) * nx + (z - stopped.z) * nz;
-    assert.ok(remaining >= 1.15 && remaining < 1.26, `${side} lip stopped ${remaining} from edge`);
+test('only the two locked grass tufts are hidden; all other instance transforms stay in place', () => {
+  const { scene } = fixture();
+  const tufts = scene.getObjectByName('farm-grass-tufts');
+  assert.equal(tufts.count, 72);
+  const centers = [
+    [-6.2, 2.5], [-3.8, 2.65], [-2.6, 3.1], [-0.8, 2.8], [1, 3.4], [3.5, 1.5],
+    [5.4, 1.3], [6.2, -1.4], [6, -5.7], [2.9, -6.3], [1.3, -6.8], [-2.2, -5.7],
+    [-6.5, -4.7], [-7.2, -1.6], [-6.8, 0.9], [-2.9, 0.35], [3, 0.85], [1.9, -4.8],
+    [-0.75, -3.8], [4.8, 3.7], [-4.9, 4.4], [7.5, -3.4], [-7.5, 3.8], [0.4, 5],
+  ];
+  const offsets = [[-0.08, 0, 0.22], [0.07, 0.03, -0.25], [0, -0.08, 0.08]];
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const expected = new THREE.Object3D();
+  const hidden = [];
+  for (let i = 0; i < tufts.count; i++) {
+    tufts.getMatrixAt(i, matrix);
+    position.setFromMatrixPosition(matrix);
+    const hiddenMatrix = [0, 1, 2, 4, 5, 6, 8, 9, 10].every((index) => matrix.elements[index] === 0);
+    if (hiddenMatrix) hidden.push([Number(position.x.toFixed(2)), Number(position.z.toFixed(2))]);
+    else {
+      const [x, z] = centers[Math.floor(i / 3)];
+      const [offsetX, offsetZ, tilt] = offsets[i % 3];
+      expected.position.set(x + offsetX, GROUND_HEIGHT + 0.13, z + offsetZ);
+      expected.rotation.set(0, i * 0.7, tilt);
+      expected.updateMatrix();
+      matrix.elements.forEach((value, index) => near(value, expected.matrix.elements[index], 1e-6));
+    }
   }
+  assert.deepEqual(hidden, [[3.42, 1.5], [3.57, 1.53], [3.5, 1.42], [2.92, 0.85], [3.07, 0.88], [3, 0.77]]);
 });
 
-test('changing the single table updates the real layout meshes, zones and rule together', () => {
-  const original = structuredClone(WATER_FEATURE);
-  try {
-    WATER_FEATURE.stream.points = [{ x: 5.2, z: -4.25 }, { x: 5.6, z: -6.5 }, { x: 8, z: -6.5 }];
-    WATER_FEATURE.stream.width = 0.8;
-    Object.assign(WATER_FEATURE.bridge, { x: 6.7, z: -6.5, length: 2.6, width: 1.6, walkRule: 'blocked' });
-    Object.assign(WATER_FEATURE.waterfall, { width: 1.4, drop: 1.8 });
-    Object.assign(WATER_FEATURE.palette, { stream: 0x123456, bridge: 0x654321, waterfall: 0xabcdef });
-    const scene = new THREE.Scene();
-    const { obstacles } = createFarmLayout(scene);
-    scene.updateMatrixWorld(true);
-    const deck = scene.getObjectByName('farm-wooden-bridge');
-    near(deck.position.x, 6.7);
-    near(deck.position.z, -6.5);
-    near(deck.geometry.parameters.width, 2.6);
-    near(deck.geometry.parameters.depth, 1.6);
-    assert.equal(deck.material.color.getHex(), 0x654321);
-    assert.equal(obstacles.find((entry) => entry.name === 'wooden-bridge').blocksWalking, true);
-    const blocked = moveWithFarmCollisions(6.7, -4.6, 0, -4, 0.4, obstacles);
-    assert.ok(blocked.z >= -4.8 && blocked.z < -4.69);
-    const water = scene.getObjectByName('farm-stream-segment-2');
-    assert.equal(water.material.color.getHex(), 0x123456);
-    const box = new THREE.Box3().setFromObject(water);
-    near(box.min.z, -6.9, 1e-5);
-    near(box.max.z, -6.1, 1e-5);
-    const fall = scene.getObjectByName('farm-waterfall-face');
-    near(fall.position.z, -6.5);
-    near(fall.geometry.parameters.width, 1.4);
-    near(fall.geometry.parameters.height, 1.8);
-    assert.equal(fall.material.color.getHex(), 0xabcdef);
-    near(fall.position.y + 1.8 / 2, GROUND_HEIGHT + WATER_FEATURE.stream.surfaceLift);
-  } finally {
-    Object.assign(WATER_FEATURE, original);
+test('measure keep-out conflicts without moving the locked scene or changing the pond', () => {
+  const { scene, obstacles } = fixture();
+  createFarmDecorations(scene, GROUND_HEIGHT);
+  scene.updateMatrixWorld(true);
+  const feature = scene.getObjectByName('farm-water-feature');
+  const bounds = new THREE.Box3().setFromObject(feature);
+  assert.ok(bounds.max.x <= 5.2 + 1e-6, `new feature reaches x=${bounds.max.x}`);
+  const zones = obstacles.filter((entry) => entry.name.startsWith('stream-water-') || entry.name === 'wooden-bridge');
+  assert.ok(zones.every((entry) => entry.maxX <= 5.2 + 1e-6), 'a new collision exceeds the stair-side keep-out');
+  near(Math.min(...zones.map((entry) => entry.minX)), 2.2054, 0.002);
+  // The locked curve itself violates x>=2.9; keep it and report the measured value.
+  near(bounds.min.x, 2.082, 0.01);
+  assert.ok(bounds.min.x < 2.9);
+  const roof = box(scene, 'ramp-coop-2-roof');
+  const vertices = scene.getObjectByName('farm-stream-water').geometry.attributes.position;
+  let distance = Infinity;
+  for (let i = 0; i < vertices.count; i++) {
+    const x = vertices.getX(i);
+    const z = vertices.getZ(i);
+    distance = Math.min(distance, Math.hypot(x - THREE.MathUtils.clamp(x, roof.min.x, roof.max.x),
+      z - THREE.MathUtils.clamp(z, roof.min.z, roof.max.z)));
+  }
+  assert.ok(distance >= 0.8, `stream is only ${distance} from coop B roof`);
+  near(distance, 2.067, 0.01);
+  const pond = obstacles.find((entry) => entry.name === 'pond');
+  // The unchanged pond intrudes into the nominally empty bridge gap by 0.1475.
+  near(pond.maxZ - (-2.65), 0.1475);
+  const border = scene.getObjectByName('farm-path-edge').geometry.attributes.position;
+  const pathOutside = [];
+  for (let i = 0; i < border.count; i++) {
+    if (border.getX(i) >= 2.9 && border.getX(i) <= 4.9 && border.getZ(i) > -1.25) pathOutside.push(border.getZ(i));
+  }
+  assert.ok(pathOutside.length, 'locked deck does not fully cover the real path border');
+  assert.ok(Math.max(...pathOutside) - (-1.25) > 0.18);
+  near(WATER_FEATURE.bridge.gapWidth, 0.04); // Conflicts with the 0.1 minimum feature size.
+  const nest = scene.getObjectByName('farm-nest-decoration');
+  near(nest.position.x, 3.2);
+  near(nest.position.z, 1.2);
+  const curve = new THREE.CatmullRomCurve3(WATER_FEATURE.stream.points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+  const nearest = Math.min(...curve.getSpacedPoints(1000).map((point) => Math.hypot(point.x - 3.2, point.z - 1.2)));
+  near(nearest, 0.2356, 0.002); // The original nest is inside the 0.6-unit water half-width.
+
+  // The locked start meets the rim, but the pond's unchanged inner water
+  // ends farther back; record the separation without inventing a new route.
+  const ray = new THREE.Raycaster();
+  const pondWater = scene.getObjectByName('farm-pond-water');
+  let inside = -2.8;
+  let outside = -2.45;
+  for (let i = 0; i < 30; i++) {
+    const z = (inside + outside) / 2;
+    ray.set(new THREE.Vector3(3.9, 10, z), new THREE.Vector3(0, -1, 0));
+    if (ray.intersectObject(pondWater).length) inside = z;
+    else outside = z;
+  }
+  near(inside, -2.59206, 0.0001);
+  near(WATER_FEATURE.stream.points[0][1] - inside, 0.14206, 0.0001);
+});
+
+test('water adds no lights or emissive materials in day, sunset, night or rain', () => {
+  const { scene, windows, extraEmissives } = fixture();
+  const character = createCharacter();
+  character.position.y = GROUND_HEIGHT;
+  scene.add(character);
+  const cycle = createDayNightCycle({ scene, character, windows, extraEmissives });
+  const points = [];
+  scene.traverse((object) => { if (object.isPointLight) points.push(object.name); });
+  assert.deepEqual(points.sort(), ['lantern-light', 'window-light-1', 'window-light-2']);
+  for (const phase of ['daytime', 'sunset', 'night']) {
+    cycle.setDayNightPhase(phase);
+    scene.getObjectByName('farm-water-feature').traverse((object) => {
+      if (object.isMesh) assert.equal(object.material.emissive.getHex(), 0, object.name);
+    });
   }
 });

@@ -167,12 +167,13 @@ test('fence and plot ghosts reject partial water and walkable bridge tiles in ev
     for (const kind of ['fence', 'plot']) for (let rotation = 0; rotation < 4; rotation++) {
       f.key(kind === 'fence' ? 'KeyF' : 'KeyP');
       for (let turn = 0; turn < rotation; turn++) f.key('KeyR');
-      const x = name === 'bridge' && (kind === 'fence' || rotation % 2 === 1) ? 6.75 : 5.25;
-      f.pointer('pointermove', x, -6.75);
+      const x = 2.25;
+      const z = name === 'bridge' ? -2.25 : 2.25;
+      f.pointer('pointermove', x, z);
       assert.match(f.status(), /Blocked by a farm object/, `${name} ${kind} rotation ${rotation}`);
       assert.equal(f.layer.getObjectByName('placement-wash').material.color.getHex(), 0xc45a3a);
       assert.equal(document.querySelector('[data-confirm]').disabled, true);
-      f.pointer('pointerdown', x, -6.75);
+      f.pointer('pointerdown', x, z);
       f.key('Enter');
       assert.equal(f.count(`placed-${kind}`), 0);
     }

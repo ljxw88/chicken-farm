@@ -1,0 +1,183 @@
+{
+  "screenshots": [
+    "05-day-front.png",
+    "06-sunset.png",
+    "07-night.png",
+    "08-rain.png",
+    "09-bridge-mid-crossing.png",
+    "13-stream-walk-blocked.png",
+    "10-waterfall-plus-z-rim.png",
+    "11-water-ghost-rejected.png",
+    "12-deck-ghost-rejected.png"
+  ],
+  "browser": "Chromium 153.0.8010.12 (headless, SwiftShader)",
+  "viewport": "1280x720",
+  "appearance": {
+    "daytime-clear": {
+      "pixels": {
+        "mean": 168.61877857142855,
+        "max": 213.4094,
+        "samples": 28
+      },
+      "lights": [
+        "lantern-light",
+        "window-light-1",
+        "window-light-2"
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "errors": []
+    },
+    "sunset-clear": {
+      "pixels": {
+        "mean": 85.65722142857142,
+        "max": 108.8446,
+        "samples": 28
+      },
+      "lights": [
+        "lantern-light",
+        "window-light-1",
+        "window-light-2"
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "errors": []
+    },
+    "night-clear": {
+      "pixels": {
+        "mean": 52.116064285714295,
+        "max": 66.604,
+        "samples": 28
+      },
+      "lights": [
+        "lantern-light",
+        "window-light-1",
+        "window-light-2"
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "errors": []
+    },
+    "daytime-rain": {
+      "pixels": {
+        "mean": 160.69932142857144,
+        "max": 202.3412,
+        "samples": 28
+      },
+      "lights": [
+        "lantern-light",
+        "window-light-1",
+        "window-light-2"
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "errors": []
+    }
+  },
+  "walking": {
+    "middle": [
+      3.757749057574374,
+      2.52,
+      -1.9314457170340036
+    ],
+    "east": [
+      5.14062944893473,
+      2.4,
+      -1.8901153256736503
+    ],
+    "west": [
+      2.5166541131977804,
+      2.4,
+      -1.949622131538161
+    ],
+    "side": [
+      3.883345772899961,
+      2.52,
+      -1.6500000031779773
+    ],
+    "blocked": [
+      1.83206261118467,
+      2.4,
+      3.5999999118803583
+    ],
+    "sampledFrames": 241,
+    "errors": []
+  },
+  "placement": {
+    "checks": [
+      "fence: water",
+      "fence: partial deck tile",
+      "plot: water",
+      "plot: partial deck tile"
+    ],
+    "errors": []
+  }
+}

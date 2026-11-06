@@ -4,6 +4,7 @@ import { after, before, test } from 'node:test';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
+import { approachStairs } from './bridgeRoute.mjs';
 
 const evidenceDir = process.env.EBR56_EVIDENCE_DIR;
 const proof = { screenshots: [], checks: [] };
@@ -346,6 +347,8 @@ test('the foot pad and corner slide remain climbable with a fence and plot place
   assert.equal(await count(page, 'placed-fence'), 1);
   assert.equal(await count(page, 'placed-plot'), 1);
   await page.keyboard.press('Escape');
+
+  await approachStairs(page, '__ebr56Test');
 
   const pad = await page.evaluate(() => {
     const { camera, character, stairs } = window.__ebr56Test;

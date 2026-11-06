@@ -1,30 +1,26 @@
-import { GROUND_HEIGHT, ISLAND_BOTTOM } from './createIsland';
-import { FARM_PALETTE } from './farmPalette';
-import type { FarmPoint } from './farmFootprints';
-
-export interface WaterFeatureSpec {
-  stream: { points: FarmPoint[]; width: number; surfaceLift: number };
-  bridge: {
-    x: number; z: number; length: number; width: number; rotationDegrees: number;
-    thickness: number; topLift: number; walkRule: 'walkable' | 'blocked';
-  };
-  waterfall: { side: 'east' | 'west' | 'north' | 'south'; width: number | null; lipDepth: number; drop: number };
-  palette: { stream: number; waterfall: number; bridge: number };
-}
-
-// PHASE 1 PLACEHOLDERS ONLY. Look Dev has not supplied the route, sizes, walk
-// rule or palette. The last route point must lie on the selected island edge;
-// null waterfall width inherits the stream width. Rotation is in degrees about Y.
-export const WATER_FEATURE: WaterFeatureSpec = {
+// Look Dev LOCK: Linear EBR-48 comment c6ca07d2. All coordinates are world
+// units; surface heights are relative to the existing island top.
+export const WATER_FEATURE = {
   stream: {
-    points: [{ x: 5.2, z: -4.25 }, { x: 5.7, z: -5.55 }, { x: 8, z: -5.55 }],
-    width: 1.1, surfaceLift: 0.031,
+    points: [
+      [3.9, -2.45], [3.9, -1.95], [3.6, -0.8], [3.1, 0.6], [2.85, 2.0],
+      [2.9, 3.6], [3.25, 5.3], [3.55, 6.8], [3.6, 8.0],
+    ],
+    width: 1.2, rimWidth: 1.5, deepWidth: 0.35, foamLength: 0.3, foamWidth: 0.1, foamSpacing: 0.9,
+    rimLift: 0.027, waterLift: 0.029, deepLift: 0.030, foamLift: 0.032,
+    collisionHalfWidth: 0.63, collisionLength: 1.0, collisionOverlap: 0.05,
   },
   bridge: {
-    x: 7, z: -5.55, length: 3, width: 1.5, rotationDegrees: 90,
-    thickness: 0.025, topLift: 0.036, walkRule: 'walkable',
+    x: 3.9, z: -1.95, length: 2.0, width: 1.4, topLift: 0.12, gradeLength: 0.3,
+    plankCount: 5, gapWidth: 0.04, railHeight: 0.55, postSize: 0.14,
+    walkRule: 'walkable',
   },
-  waterfall: { side: 'east', width: null, lipDepth: 0.2, drop: GROUND_HEIGHT - ISLAND_BOTTOM },
-  // Reuse existing colors solely to make the placeholders visible.
-  palette: { stream: FARM_PALETTE.pondWater, waterfall: FARM_PALETTE.pondWater, bridge: FARM_PALETTE.barnWood },
-};
+  waterfall: {
+    x: 3.6, width: 1.2, lipDepth: 0.2, faceOffset: 0.06, bottom: -1.2, fadeHeight: 0.8,
+    streakWidth: 0.12, streakSpacing: 0.3, speed: 0.25, step: 0.1,
+  },
+  palette: {
+    water: 0x5b8fa8, rim: 0x7aadb8, deep: 0x3a6a7a, foam: 0xbfe0e6,
+    fallBottom: 0x8fc1cf, streak: 0xddeff2, plank: 0xc8956c, gap: 0x7a5a3a, rail: 0x8b5e3c,
+  },
+} as const;

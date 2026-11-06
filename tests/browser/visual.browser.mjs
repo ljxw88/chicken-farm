@@ -179,14 +179,22 @@ test('walking and clicking around former interaction targets leaves only static 
   await page.keyboard.down('d');
   try {
     await page.waitForFunction(() => {
-      const { scene, character } = window.__ebr71Test;
-      const nest = scene.getObjectByName('farm-nest-decoration');
-      return Math.hypot(character.position.x - nest.position.x, character.position.z - nest.position.z) <= 1.25;
+      const { character } = window.__ebr71Test;
+      return character.position.x > 1.7;
     }, null, { timeout: 15000 });
+    await page.waitForTimeout(500);
   } finally {
     await page.keyboard.up('s');
     await page.keyboard.up('d');
   }
+  // The locked stream overlaps the existing nest; the water blocks the old
+  // closer approach. It remains static and non-interactive from the bank.
+  const nestDistance = await page.evaluate(() => {
+    const { scene, character } = window.__ebr71Test;
+    const nest = scene.getObjectByName('farm-nest-decoration');
+    return Math.hypot(character.position.x - nest.position.x, character.position.z - nest.position.z);
+  });
+  assert.ok(nestDistance > 1.25 && nestDistance < 2);
   await page.keyboard.press('e');
   const nestPoint = await objectPoint(page, 'farm-nest-decoration', 0.24);
   await page.mouse.click(nestPoint.x, nestPoint.y);
@@ -224,7 +232,7 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
   await page.keyboard.down('s');
   await page.evaluate(() => {
     const s = window.__ebr71Test;
-    s.controls.update(0.75);
+    s.controls.update(0.5);
     s.follow(s.character.position);
     s.composer.render(0);
   });
@@ -234,9 +242,9 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
     camera: window.__ebr71Test.camera.position.toArray(),
     rotation: window.__ebr71Test.character.rotation.y,
   }));
-  // Values captured from unmodified origin/main f50c7bc with the same fixed steps.
-  nearArray(walk.position, [1.8561553006146863, 2.4, 1.8561553006146867]);
-  nearArray(walk.camera, [13.856155300614686, 15.1, 13.856155300614686]);
+  // Compare the same movement on the still-clear side of the new stream.
+  nearArray(walk.position, [1.2374368670764582, 2.4, 1.2374368670764582]);
+  nearArray(walk.camera, [13.237436867076458, 15.1, 13.237436867076458]);
   assert.ok(Math.abs(walk.rotation - Math.PI / 4) < 1e-6);
 
   await page.reload({ waitUntil: 'networkidle' });

@@ -1,117 +1,121 @@
 import * as THREE from 'three';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
 import type { FarmObstacle } from './farmCollisions';
-import { boxPolygon, clipPolygon, polygonsOverlap, rectangle, subtractPolygon, type FarmPoint } from './farmFootprints';
-import { WATER_FEATURE, type WaterFeatureSpec } from './waterFeatureSpec';
+import { createWaterfall } from './createWaterfall';
+import { bridgeHeight, createWoodenBridge } from './createWoodenBridge';
+import { WATER_FEATURE } from './waterFeatureSpec';
 
-function polygonObstacle(name: string, points: FarmPoint[], blocksWalking = true): FarmObstacle {
-  return {
-    kind: 'polygon', name, points, blocksWalking,
-    minX: Math.min(...points.map((point) => point.x)), maxX: Math.max(...points.map((point) => point.x)),
-    minZ: Math.min(...points.map((point) => point.z)), maxZ: Math.max(...points.map((point) => point.z)),
-  };
+type Box = Extract<FarmObstacle, { kind: 'box' }>;
+
+/** Cut only stream boxes, never the unchanged pond/building/tree collisions. */
+function cutBox(box: Box, opening: Box): Box[] {
+  const minX = Math.max(box.minX, opening.minX);
+  const maxX = Math.min(box.maxX, opening.maxX);
+  const minZ = Math.max(box.minZ, opening.minZ);
+  const maxZ = Math.min(box.maxZ, opening.maxZ);
+  if (minX >= maxX || minZ >= maxZ) return [box];
+  return [
+    { ...box, maxX: minX }, { ...box, minX: maxX },
+    { ...box, minX, maxX, maxZ: minZ }, { ...box, minX, maxX, minZ: maxZ },
+  ].filter((piece) => piece.maxX - piece.minX > 1e-8 && piece.maxZ - piece.minZ > 1e-8);
 }
 
-function surface(parent: THREE.Group, name: string, points: readonly FarmPoint[], height: number, material: THREE.Material) {
-  const positions = points.flatMap(({ x, z }) => [x, height, z]);
-  const indices: number[] = [];
-  for (let i = 1; i < points.length - 1; i++) indices.push(0, i + 1, i);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = name;
-  parent.add(mesh);
-}
-
-/** Placeholder meshes and all walking/placement footprints come from one spec. */
-export function createWaterFeature(
-  parent: THREE.Group, pond: Extract<FarmObstacle, { kind: 'box' }>, spec: WaterFeatureSpec = WATER_FEATURE,
-) {
-  const { stream, bridge, waterfall, palette } = spec;
-  const outlet = stream.points.at(-1);
-  const half = GROUND_SIZE / 2;
-  const directions = {
-    east: { x: 1, z: 0 }, west: { x: -1, z: 0 },
-    north: { x: 0, z: -1 }, south: { x: 0, z: 1 },
-  };
-  const direction = directions[waterfall.side];
-  const fallWidth = waterfall.width ?? stream.width;
-  if (!outlet || stream.points.length < 2 || stream.width <= 0 || bridge.length <= 0 || bridge.width <= 0 ||
-      fallWidth <= 0 || waterfall.lipDepth <= 0 || waterfall.drop <= 0 ||
-      Math.abs(outlet.x * direction.x + outlet.z * direction.z - half) > 1e-6 ||
-      Math.abs(outlet.x * direction.z - outlet.z * direction.x) + fallWidth / 2 > half) {
-    throw new Error('Water feature needs positive sizes and a waterfall outlet on the selected island edge');
-  }
-
+export function createWaterFeature(parent: THREE.Group) {
+  const { stream, bridge, palette } = WATER_FEATURE;
+  const curve = new THREE.CatmullRomCurve3(stream.points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
   const group = new THREE.Group();
   group.name = 'farm-water-feature';
   parent.add(group);
-  const waterMaterial = new THREE.MeshStandardMaterial({ color: palette.stream, roughness: 0.25 });
-  const woodMaterial = new THREE.MeshStandardMaterial({ color: palette.bridge, roughness: 1 });
-  const fallMaterial = new THREE.MeshStandardMaterial({
-    color: palette.waterfall, roughness: 0.25, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
-  });
-  const island = rectangle(0, 0, GROUND_SIZE, GROUND_SIZE);
-  const angle = bridge.rotationDegrees * Math.PI / 180;
-  const deck = rectangle(bridge.x, bridge.z, bridge.length, bridge.width, angle);
-  const walkingOpening = bridge.walkRule === 'walkable';
-  const waterObstacles: FarmObstacle[] = [];
+  const segments = 200;
+  const half = GROUND_SIZE / 2;
 
-  function addWater(name: string, footprint: FarmPoint[]) {
-    const clipped = clipPolygon(footprint, island);
-    if (!clipped.length) return;
-    surface(group, `farm-${name}`, clipped, GROUND_HEIGHT + stream.surfaceLift, waterMaterial);
-    const pieces = walkingOpening ? subtractPolygon(clipped, deck) : [clipped];
-    pieces.forEach((piece, index) => waterObstacles.push(polygonObstacle(`${name}-${index + 1}`, piece)));
+  function ribbon(name: string, width: number, lift: number, color: number, wobble = 0) {
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const point = curve.getPointAt(t);
+      const tangent = curve.getTangentAt(t);
+      const centerOffset = Math.sin(t * Math.PI * 6) * wobble;
+      for (const side of [1, -1]) {
+        const offset = centerOffset + side * width / 2;
+        vertices.push(
+          THREE.MathUtils.clamp(point.x - tangent.z * offset, -half, half), GROUND_HEIGHT + lift,
+          THREE.MathUtils.clamp(point.z + tangent.x * offset, -half, half),
+        );
+      }
+      if (i < segments) {
+        const a = i * 2;
+        indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: 0.25 }));
+    mesh.name = name;
+    group.add(mesh);
   }
 
-  for (let i = 0; i < stream.points.length - 1; i++) {
-    const a = stream.points[i];
-    const b = stream.points[i + 1];
-    const dx = b.x - a.x;
-    const dz = b.z - a.z;
-    const length = Math.hypot(dx, dz);
-    if (length <= 1e-9) throw new Error('Water route must not have repeated consecutive points');
-    addWater(`stream-segment-${i + 1}`, rectangle((a.x + b.x) / 2, (a.z + b.z) / 2, length, stream.width, -Math.atan2(dz, dx)));
+  ribbon('farm-stream-rim', stream.rimWidth, stream.rimLift, palette.rim);
+  ribbon('farm-stream-water', stream.width, stream.waterLift, palette.water);
+  ribbon('farm-stream-deep', stream.deepWidth, stream.deepLift, palette.deep, 0.08);
+
+  const foamMaterial = new THREE.MeshStandardMaterial({ color: palette.foam, roughness: 0.25 });
+  const length = curve.getLength();
+  for (let distance = stream.foamSpacing / 2, index = 0; distance < length - stream.foamLength; distance += stream.foamSpacing, index++) {
+    const t = distance / length;
+    const point = curve.getPointAt(t);
+    const tangent = curve.getTangentAt(t);
+    const offset = (index % 2 === 0 ? 1 : -1) * stream.width * 0.3;
+    const foam = new THREE.Mesh(new THREE.PlaneGeometry(stream.foamLength, stream.foamWidth), foamMaterial);
+    foam.name = `farm-stream-foam-${index + 1}`;
+    foam.rotation.x = -Math.PI / 2;
+    foam.rotateZ(-Math.atan2(tangent.z, tangent.x));
+    foam.position.set(point.x - tangent.z * offset, GROUND_HEIGHT + stream.foamLift, point.z + tangent.x * offset);
+    group.add(foam);
   }
-  // Rounded joins fill gaps between adjacent straight segments at bends.
-  for (let i = 1; i < stream.points.length - 1; i++) {
-    const { x, z } = stream.points[i];
-    const points = Array.from({ length: 12 }, (_, index) => ({
-      x: x + Math.cos(index * Math.PI / 6) * stream.width / 2,
-      z: z + Math.sin(index * Math.PI / 6) * stream.width / 2,
-    }));
-    addWater(`stream-bend-${i}`, points);
+
+  const deck = createWoodenBridge(group);
+  const updateWaterfall = createWaterfall(group);
+  const water: Box[] = [];
+  const count = Math.ceil(length / stream.collisionLength);
+  function addCollision(start: number, end: number) {
+    const a = curve.getPointAt(start);
+    const middle = curve.getPointAt((start + end) / 2);
+    const b = curve.getPointAt(end);
+    const minX = Math.min(a.x, middle.x, b.x);
+    const maxX = Math.max(a.x, middle.x, b.x);
+    // Two overlapping boxes cover a curved segment without widening the
+    // locked 0.63 half-width of either source box.
+    for (const x of maxX - minX < 1e-9 ? [minX] : [minX, maxX]) {
+      water.push({
+        kind: 'box', name: `stream-water-${water.length + 1}`,
+        minX: x - stream.collisionHalfWidth, maxX: x + stream.collisionHalfWidth,
+        minZ: Math.max(-half, Math.min(a.z, middle.z, b.z) - stream.collisionOverlap),
+        maxZ: Math.min(half, Math.max(a.z, middle.z, b.z) + stream.collisionOverlap),
+      });
+    }
   }
-
-  addWater('waterfall-edge', rectangle(
-    outlet.x - direction.x * waterfall.lipDepth / 2, outlet.z - direction.z * waterfall.lipDepth / 2,
-    waterfall.lipDepth, fallWidth, -Math.atan2(direction.z, direction.x),
-  ));
-  const fall = new THREE.Mesh(new THREE.PlaneGeometry(fallWidth, waterfall.drop), fallMaterial);
-  fall.name = 'farm-waterfall-face';
-  fall.position.set(outlet.x, GROUND_HEIGHT + stream.surfaceLift - waterfall.drop / 2, outlet.z);
-  fall.rotation.y = Math.atan2(direction.x, direction.z);
-  group.add(fall);
-
-  const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(bridge.length, bridge.thickness, bridge.width), woodMaterial);
-  deckMesh.name = 'farm-wooden-bridge';
-  deckMesh.position.set(bridge.x, GROUND_HEIGHT + bridge.topLift - bridge.thickness / 2, bridge.z);
-  deckMesh.rotation.y = angle;
-  group.add(deckMesh);
-
-  // The pond keeps its original box unless the walkable deck actually overlaps
-  // it. No building, tree or other obstacle is ever cut by the bridge.
-  const pondPolygon = boxPolygon(pond);
-  const pondObstacles = walkingOpening && polygonsOverlap(pondPolygon, deck)
-    ? subtractPolygon(pondPolygon, deck).map((piece, index) => polygonObstacle(`pond-${index + 1}`, piece))
-    : [pond];
-  return [
-    ...pondObstacles,
-    ...waterObstacles,
-    // The same shared array feeds placement, so even a walkable deck reserves tiles.
-    polygonObstacle('wooden-bridge', deck, !walkingOpening),
-  ];
+  for (let i = 0; i < count; i++) {
+    const start = i / count;
+    const end = (i + 1) / count;
+    const a = curve.getPointAt(start);
+    const b = curve.getPointAt(end);
+    // Engineer: refine the curved bridge approaches so an axis-aligned box
+    // cannot project a phantom wall into the path; elsewhere boxes are ~1 long.
+    const divisions = b.z >= deck.minZ - 1 && a.z <= deck.maxZ + 1 ? 4 : 1;
+    for (let part = 0; part < divisions; part++) {
+      addCollision(THREE.MathUtils.lerp(start, end, part / divisions), THREE.MathUtils.lerp(start, end, (part + 1) / divisions));
+    }
+  }
+  const walkingWater = bridge.walkRule === 'walkable' ? water.flatMap((box) => cutBox(box, deck)) : water;
+  return {
+    curve, bridgeHeight,
+    obstacles: [...walkingWater, deck],
+    // Use the uncut water and complete deck so rain never splashes on either.
+    splashExclusions: [...water, deck],
+    updateWaterfall,
+  };
 }

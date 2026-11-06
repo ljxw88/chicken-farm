@@ -43,9 +43,11 @@ function fixture(t, farm = false) {
   character.position.y = groundHeight;
   follow(character.position);
   const canvas = new FakeElement();
-  const obstacles = farm ? createFarmLayout(scene).obstacles : [];
+  const layout = farm ? createFarmLayout(scene) : undefined;
+  const obstacles = layout?.obstacles ?? [];
   const controls = createCharacterControls({
     character, camera, canvas, ground, groundSize, groundHeight, characterRadius: 0.4, obstacles, stairs,
+    bridgeHeight: layout?.bridgeHeight,
   });
   t.after(controls.dispose);
 
@@ -171,7 +173,8 @@ test('the path can be followed from the cottage past the pond to the island rim'
     const destination = new THREE.Vector3(x, groundHeight, z);
     click(destination);
     controls.update(10);
-    assert.ok(character.position.distanceTo(destination) < 0.001, `could not reach path point ${x}, ${z}`);
+    assert.ok(Math.hypot(character.position.x - x, character.position.z - z) < 0.001, `could not reach path point ${x}, ${z}`);
+    if (x >= 3.2 && x <= 4.6 && z >= -2.65 && z <= -1.25) near(character.position.y, groundHeight + 0.12);
     follow(character.position);
   }
 });
@@ -204,12 +207,19 @@ test('all four island edges stop WASD at the character radius and allow sliding'
 });
 
 test('clicking the void does nothing and clicking the rim stays on the top', (t) => {
-  const { character, controls, click, groundHeight } = fixture(t, true);
+  const { character, controls, click, follow, groundHeight } = fixture(t, true);
   click(new THREE.Vector3(9.5, groundHeight, 0));
   controls.update(10);
   near(character.position.x, 0);
   near(character.position.z, 0);
 
+  // Click-to-move has no pathfinding. Reach the other side via the bridge,
+  // rather than asking a straight click to cross the new water at z=0.
+  for (const [x, z] of [[2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [6, -0.9]]) {
+    click(new THREE.Vector3(x, groundHeight, z));
+    controls.update(10);
+    follow(character.position);
+  }
   click(new THREE.Vector3(7.95, groundHeight, 0));
   controls.update(10);
   near(character.position.x, 7.6);
@@ -219,6 +229,12 @@ test('clicking the void does nothing and clicking the rim stays on the top', (t)
 
 test('click-to-walk reaches the foot pad and returns to the original island', (t) => {
   const { character, controls, click, follow, groundHeight, stairs } = fixture(t, true);
+  // The stream blocks the former direct line; follow the existing dirt route.
+  for (const [x, z] of [[2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [6, -0.9]]) {
+    click(new THREE.Vector3(x, groundHeight, z));
+    controls.update(10);
+    follow(character.position);
+  }
   const { footPad } = stairs;
   const destination = new THREE.Vector3(footPad.position.x, footPad.position.y + footPad.geometry.parameters.height / 2, footPad.position.z);
   click(destination, destination.y);

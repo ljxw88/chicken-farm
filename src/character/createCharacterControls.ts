@@ -12,6 +12,7 @@ interface CharacterControlsOptions {
   characterRadius: number;
   obstacles?: readonly FarmObstacle[];
   stairs?: StoneStairs;
+  bridgeHeight?: (x: number, z: number, radius?: number) => number | undefined;
   groundShadow?: THREE.Object3D;
   onPointerDown?: (event: PointerEvent) => boolean;
 }
@@ -30,6 +31,7 @@ export function createCharacterControls({
   characterRadius,
   obstacles = [],
   stairs,
+  bridgeHeight,
   groundShadow,
   onPointerDown,
 }: CharacterControlsOptions) {
@@ -136,8 +138,10 @@ export function createCharacterControls({
       stairs?.supports, stairs?.slidePadCorner,
     );
     character.position.x = next.x;
-    const floor = stairs?.floorHeight(next.x) ?? groundHeight;
-    character.position.y = stairs?.characterHeight(next.x, characterRadius) ?? groundHeight;
+    const bridgeFloor = bridgeHeight?.(next.x, next.z);
+    const bridgeCapsule = bridgeHeight?.(next.x, next.z, characterRadius);
+    const floor = bridgeFloor ?? stairs?.floorHeight(next.x) ?? groundHeight;
+    character.position.y = bridgeCapsule ?? stairs?.characterHeight(next.x, characterRadius) ?? groundHeight;
     character.position.z = next.z;
     if (groundShadow) groundShadow.position.y = shadowOffset + floor - character.position.y;
     const movedX = character.position.x - startX;

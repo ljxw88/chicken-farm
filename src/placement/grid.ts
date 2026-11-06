@@ -1,5 +1,4 @@
 import type { FarmObstacle } from '../scene/farmCollisions';
-import { boxPolygon, polygonsOverlap } from '../scene/farmFootprints';
 
 // The existing fence is 1.47 units wide, including its posts. One tile leaves
 // a tiny gap between neighbouring segments without changing their proportions.
@@ -66,7 +65,6 @@ export function footprintCells(area: Footprint): Cell[] {
 
 /** Test the full reserved tile area, not just the narrow fence collision box. */
 export function intersectsFootprint(area: Footprint, obstacle: FarmObstacle) {
-  if (obstacle.kind === 'polygon') return polygonsOverlap(boxPolygon(area), obstacle.points);
   if (obstacle.kind === 'box') {
     return area.minX < obstacle.maxX && area.maxX > obstacle.minX &&
       area.minZ < obstacle.maxZ && area.maxZ > obstacle.minZ;
