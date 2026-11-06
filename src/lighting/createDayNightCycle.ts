@@ -83,7 +83,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     }
     // Overcast contact shadows are half as long/strong; rain is nearly
     // centered and faint. The envelopes crossfade with the weather system.
-    let offset = shadowOffset * (1 - 0.5 * cloudyAmount - 0.45 * rainAmount);
+    let offset = shadowOffset * (1 - 0.5 * cloudyAmount - 0.51 * rainAmount);
     const awayX = -lightDirection.x / horizontal;
     const awayZ = -lightDirection.z / horizontal;
     const opacity = shadowOpacity * (1 - 0.5 * cloudyAmount - 0.8 * rainAmount);

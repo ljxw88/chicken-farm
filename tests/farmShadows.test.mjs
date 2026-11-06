@@ -33,7 +33,7 @@ function near(actual, expected, tolerance = 1e-6) {
 test('tree, cottage, coop and chicken blobs follow the same key and remain attached to their bases', () => {
   const { scene, character, cycle } = fixture();
   const away = new THREE.Vector3(11, 0, -4).normalize();
-  for (const [phase, offset] of [['morning', 0.48], ['daytime', 0.305], ['sunset', 0.48], ['night', 0.12]]) {
+  for (const [phase, offset] of [['morning', 0.48], ['daytime', 0.31], ['sunset', 0.48], ['night', 0.16]]) {
     cycle.setDayNightPhase(phase);
     scene.updateMatrixWorld(true);
     const playerShadow = character.getObjectByName('character-shadow');
@@ -79,17 +79,17 @@ test('static shadows soften with weather, fade at night, and stay within the isl
   const treeOrigin = scene.getObjectByName('farm-tree-1');
   const distance = () => tree.getWorldPosition(new THREE.Vector3()).sub(treeOrigin.getWorldPosition(new THREE.Vector3())).setY(0).length();
   scene.updateMatrixWorld(true);
-  near(distance(), 0.305 * 1.8);
+  near(distance(), 0.31 * 1.8);
   near(tree.material.opacity, 0.16);
   near(building.material.opacity, 0.12);
   cycle.setShadowWeather(0, 1);
   scene.updateMatrixWorld(true);
-  near(distance(), 0.305 * 1.8 * 0.5);
+  near(distance(), 0.31 * 1.8 * 0.5);
   near(tree.material.opacity, 0.08);
   near(building.material.opacity, 0.06);
   cycle.setShadowWeather(1, 0);
   scene.updateMatrixWorld(true);
-  near(distance(), 0.305 * 1.8 * 0.55);
+  near(distance(), 0.31 * 1.8 * 0.49);
   near(tree.material.opacity, 0.032);
   cycle.setShadowWeather(0, 0);
   cycle.setDayNightPhase('night');
