@@ -53,6 +53,17 @@ function createPath(group: THREE.Group) {
       }
     }
 
+    // Tight bends can fold the inside edge of the ribbon. Keep every
+    // nondegenerate triangle front-facing from above before computing normals.
+    for (let i = 0; i < indices.length; i += 3) {
+      const a = indices[i] * 3;
+      const b = indices[i + 1] * 3;
+      const c = indices[i + 2] * 3;
+      const normalY = (vertices[b + 2] - vertices[a + 2]) * (vertices[c] - vertices[a]) -
+        (vertices[b] - vertices[a]) * (vertices[c + 2] - vertices[a + 2]);
+      if (normalY < 0) [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
+    }
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
