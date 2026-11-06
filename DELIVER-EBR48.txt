@@ -1,80 +1,104 @@
-EBR-48 — Phase 1 stream, bridge and waterfall edge
+EBR-48 — Phase 2 stream, wooden bridge and waterfall edge
 
 Branch: feat/ebr48-stream-bridge
 Base: origin/main a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671
-Tip: `git rev-parse HEAD` (a commit cannot contain its own SHA).
+Look Dev source: /home/michael/OpenBot/Shared/ebr48-look-lock.md, Linear
+EBR-48 comment c6ca07d2. Locked numbers are retained where they conflict.
+Tested implementation/evidence commit: b41f54c27e0289b91a081c7b1ec08f4a9c2d6e7e
+Final local tip: `git rev-parse HEAD`; this handoff is one docs-only commit
+above the tested implementation. A commit cannot contain its own SHA; the
+exact final SHA is reported in the delivery message.
 
-Status
-- The route, proportions, walk rule, colors and meshes are engineering
-  placeholders, NOT Look Dev decisions or a final appearance. The provisional
-  stream runs from the pond to the +X edge; a shallow wooden slab crosses it.
-- Walking is blocked by stream and waterfall-lip water. The deck is temporarily
-  `walkable`; changing the flag to `blocked` also blocks the deck and its
-  overhang. Placement always rejects any overlapping 1.5-unit water or bridge
-  tile, including the dry overhang of a walkable bridge.
-- Convex footprints follow angled segments and a rotated bridge. A walkable
-  deck removes only underlying water collision (including pond water if it
-  overlaps); it does not erase a building, tree or fence collision. The player
-  radius is respected. Water meshes, collision and placement use the same data.
-- The bridge is a ground-level placeholder overlay, not new terrain or a new
-  elevated walking surface. Existing island/stair support still limits walking.
-  A future walkable deck must span the water and be wide enough for the
-  character's 0.8-unit diameter, including clearance at both banks.
+What to open
+- Dev server: http://100.88.150.21:5183/ (HTTP 200). Add `?phase=daytime`,
+  `?phase=sunset`, `?phase=night` or `?phase=daytime&weather=rain`. To restart:
+  `npm run dev -- --host 100.88.150.21 --port 5183 --strictPort`.
+- 1280x720 frames in evidence/EBR-48/: 05-day-front.png, 06-sunset.png,
+  07-night.png, 08-rain.png, 09-bridge-mid-crossing.png,
+  10-waterfall-plus-z-rim.png, 11-water-ghost-rejected.png,
+  12-deck-ghost-rejected.png and 13-stream-walk-blocked.png. The crossing,
+  waterfall, blocked-walk and ghost close-ups use
+  test-only camera zoom; the character is moved by real clicks/WASD, not
+  teleported. The default application camera and pixel pass are unchanged.
+- phase2-browser-proof.json contains interaction positions, sampled waterfall
+  luminance, lights and pixel state; phase2-measurements.json records the
+  actual mesh, pond, roof, path, nest and tuft measurements. The 01-04 images
+  and original logs are retained as Phase 1 evidence, not the final look.
 
-Existing code locations
-- src/scene/createFarmLayout.ts: FARM_LAYOUT.pond, createPond's rim/water/depth
-  meshes, and the original pond box with its 5% water-outline margin. The
-  layout assembles building, tree, pond and new water/bridge obstacles.
-- src/scene/createIsland.ts: 16 x 16 top, height 2.4, four cliff faces and
-  underside. src/scene/createStoneStairs.ts supplies the existing stair opening
-  and walkable support; neither terrain nor stairs was changed.
-- src/placement/createPlacement.ts checks the shared obstacles and decoration
-  bounds. src/placement/grid.ts defines TILE_SIZE = 1.5 and tests whole snapped
-  fence/plot footprints; its only change adds polygon keep-out intersection.
-- The cottage/coop collision definitions, dirt path, stairs, HUD, day/night,
-  weather and pixel pass were not changed. In particular, the old rain-splash
-  exclusion list remains unchanged; it does not yet exclude the new stream.
+Implementation
+- src/scene/waterFeatureSpec.ts is the single locked data table. The sampled
+  Catmull-Rom stream has 1.5 rim, 1.2 water, 0.35 deep stripe and alternating
+  0.3 x 0.1 foam. The +Z waterfall has the 1.2 x 0.2 lip, a 3.6-high lit
+  sheet 0.06 in front of the rim, and a 0.8-high alpha fade to y=-1.2.
+- The 2.0 x 1.4 bridge has five 0.4 planks, four 0.04 gap lines and two
+  three-post rails. Both ends grade over 0.3 to the 0.12-high top; the walking
+  capsule and its shadow follow the visible surface without a step.
+- Stream boxes block walking; their portions beneath the full bridge deck are
+  removed. The original pond box remains untouched. The deck is walkable but
+  reserves its entire footprint for 1.5-unit placement tiles. Rain excludes
+  the uncut stream boxes and full deck, in addition to the original shelters.
+- Engineer: source collision boxes are about one unit long, each with the
+  locked 0.63 half-width and a 0.05 margin at each end; paired boxes cover curved
+  segments. Shorter samples at the bridge approaches prevent a false wall on
+  the existing path. The two listed grass tufts alone are hidden; every other
+  instance retains its transform.
+- Engineer: waterfall streaks advance in 0.1-unit steps every 0.4 seconds,
+  averaging the locked 0.25 units/second. Tilted normals and a 2x reflected-
+  light response keep the sheet readable while it follows existing scene
+  lighting. Its locked colors are retained; it has no emissive and adds no
+  lights. Day/night, weather, path, stairs, buildings, trees, HUD and grid
+  implementation remain unchanged. Click-to-move still does not pathfind: a
+  straight shortcut through the new stream stops, but the dirt path via the
+  bridge and the stairs are traversable.
 
-ONE table to edit
-- src/scene/waterFeatureSpec.ts: WATER_FEATURE. All values in it are provisional.
-  Positions and sizes are world units; Y lifts are relative to the island top.
-  `bridge.length` runs along its local X axis, `bridge.width` across it, and
-  `rotationDegrees` is a Three.js rotation about Y.
-- `stream.points` can contain diagonal segments; the last point must lie on
-  the selected waterfall side (east/west X = +/-8, north/south Z = -/+8).
-  Adjacent points must differ and the waterfall width must fit on that side.
-  `waterfall.width: null` inherits `stream.width`.
-- src/scene/createWaterFeature.ts derives the placeholder meshes and named
-  stream, waterfall-edge and wooden-bridge zones from that table;
-  src/scene/farmFootprints.ts handles the convex footprint operations.
+Conflicts for Look Dev (measurements in world units; no locked coordinates moved)
+1. Pond box versus empty bridge gap: the original pond collision ends at
+   z=-2.5025, so it occupies z=-2.65..-2.5025 inside the requested gap at
+   x=3.3..4.5: 0.1475 deep. Stream boxes themselves do not enter the deck.
+   At bridge center z=-1.95 the 0.4-radius character still has 0.1525 pond
+   clearance, and real click/WASD tests cross. Keeping the pond box and making
+   the entire stated gap water-obstacle-free cannot both be satisfied.
+2. West keep-out: the locked route/width gives water min x=2.2322, rim min
+   x=2.0822 and a collision-box min x=2.2054, all west of x=2.9. The new
+   feature's max x=4.9, so the x>5.2 stair keep-out is clear. Actual closest
+   X/Z distance from water to coop B roof is 2.0671 (passes 0.8); comparing
+   their global X envelopes alone gives only 0.0322. Clarify if the 0.8 rule
+   was intended as an X-only gap rather than real planar distance.
+3. Deck versus unchanged dirt: at x=4.9 the dark path border reaches
+   z=-1.0241, 0.2259 beyond the deck's z=-1.25 edge. At the graded ends the
+   ground-flush deck is also below the existing +0.020 border/+0.024 surface.
+   Thus the locked deck cannot completely cover the real border, although the
+   path and bridge are walkable end to end.
+4. Existing nest at (3.2, 1.2): its center is 0.2356 from the stream
+   centerline, 0.3644 inside the 0.6 water half-width; its X/Z bounds are
+   2.91..3.49 / 0.91..1.49. The nest is unchanged and visibly overlaps water.
+5. Minimum feature size: the locked 0.04 plank gap line is 0.06 below the
+   stated 0.1 minimum. The specified gap is retained rather than widened.
+6. Junction observation: at x=3.9 the unchanged pond's inner water ends at
+   z=-2.5921 while the locked stream starts at z=-2.45, leaving 0.1421 between
+   water surfaces under the bridge. The first point does meet the pond rim;
+   Look Dev can decide whether uninterrupted inner water was also intended.
 
-Exact outstanding Look Dev inputs
-1. Stream route: each X/Z point, including pond junction and edge outlet;
-   stream width and surface lift above the island.
-2. Bridge: centre X/Z, length, width, Y rotation in degrees, deck thickness and
-   top lift; choose `walkable` or `blocked`.
-3. Waterfall: island side, width (or confirmation it equals the stream width),
-   lip depth on the top and vertical drop height.
-4. Hex colors for stream water, waterfall face and bridge wood. The current
-   references to the existing farm palette only make the placeholders visible.
-Check finalized values against the unchanged path, stairs, buildings and
-island bounds; none of the provisional settings are a visual lock.
+Verification
+- `npm run build`: PASS; 57 modules. Existing Vite >500 kB chunk advisory is
+  unchanged. evidence/EBR-48/phase2-build.log.
+- `npm test`: 93 passed, 0 failed; evidence/EBR-48/phase2-unit.log. Includes
+  lock dimensions, gap/pond conflict, capsule clearance, full deck/water
+  placement, actual splash rejection, tufts, path, stairs and light counts.
+- `EBR48_EVIDENCE_DIR=evidence/EBR-48 npm run test:browser`: 24 passed, 0
+  failed; evidence/EBR-48/phase2-browser-suite.log. Chromium 153 headless,
+  SwiftShader; includes real bridge crossing, water/side blocking, placement,
+  stairs, buildings, night/rain and the unchanged 320x180 pixel pass.
+- `npm ci` was run in this worktree during Phase 1. node_modules and dist are
+  ignored and not committed. `git diff --check` passes.
+- The requested dev URL returned HTTP 200 and a Chromium WebGL 2.0 daytime
+  page with a 320x180 pixel canvas and no page/console errors.
 
-Verification and evidence
-- `npm ci`: installed 68 packages locally; audit reported 0 vulnerabilities.
-  `npm ls --depth=0`: PASS; evidence/EBR-48/dependencies.log. node_modules and
-  dist are ignored and are not committed.
-- `npm run build`: PASS, 56 Vite modules; evidence/EBR-48/build.log. Vite still
-  emits the existing >500 kB chunk advisory.
-- `npm test`: 91 passed, 0 failed; evidence/EBR-48/unit.log. Includes both walk
-  rules, water/bridge/pond overlap, radius and diagonal cases, four waterfall
-  sides, 1.5-unit partial-tile ghosts, and existing path/stair/building tests.
-- `EBR48_EVIDENCE_DIR=evidence/EBR-48 npm run test:browser`: 22 passed, 0
-  failed; evidence/EBR-48/browser-suite.log. Chromium 153 headless/SwiftShader;
-  existing day/night, weather, pixel, stairs, buildings and placement checks
-  also passed. No page/console errors in the new water interaction checks.
-- evidence/EBR-48/01-placeholder-daytime.png shows the temporary scene;
-  02-crossed-placeholder-bridge.png and 03-stream-stops-walking.png show
-  real movement; 04-bridge-tile-rejected.png shows the rejected plot preview.
-  browser-proof.json records positions, pixel state and rejected previews.
-- `git diff --check`: PASS. Local commit only; no push or PR.
+Not verified
+- Look Dev has not reviewed these final frames or resolved the measured lock
+  conflicts above. The empty-gap rule cannot literally be met while the pond
+  collision remains unchanged.
+- Chromium was headless with SwiftShader; touch checks were emulated, not on a
+  physical device. Other browsers and graphics hardware were not verified.
+- EBR-73 integration and rebasing onto a newer main have not been attempted.
+  This branch remains on a61bac9; no push, PR or merge was performed.
