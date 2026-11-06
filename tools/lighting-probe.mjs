@@ -22,6 +22,10 @@ try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
     try {
       const page = await context.newPage();
+      await page.addInitScript(() => {
+        let state = 0x1a2b3c4d;
+        Math.random = () => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state / 0x100000000; };
+      });
       await page.route('**/src/main.ts*', async (route) => {
         const response = await route.fetch();
         await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightProbe = { scene, camera, character, controls, follow, renderer, composer, weather, dayNight };\n` });
@@ -105,11 +109,24 @@ try {
             for (let x = Math.trunc(x0); x < Math.trunc(x1); x++) for (let y = Math.trunc(y0); y < Math.trunc(y1); y++) { sum += luma(x, y); count++; }
             return sum / count;
           };
+          const regionRgb = (x0, x1, y0, y1) => {
+            const sums = [0, 0, 0]; let count = 0;
+            for (let x = Math.trunc(x0); x < Math.trunc(x1); x++) for (let y = Math.trunc(y0); y < Math.trunc(y1); y++) {
+              const offset = (y * canvas.width + x) * 4;
+              for (let channel = 0; channel < 3; channel++) sums[channel] += pixels[offset + channel];
+              count++;
+            }
+            return sums.map((sum) => sum / count);
+          };
           const [cx, cy] = center;
           const left = region(cx - 0.85 * r, cx - 0.2 * r, cy - 0.3 * hh, cy + 0.3 * hh);
           const rightL = region(cx + 0.2 * r, cx + 0.85 * r, cy - 0.3 * hh, cy + 0.3 * hh);
           const topL = region(cx - 0.4 * r, cx + 0.4 * r, cy - 0.95 * hh, cy - 0.7 * hh);
           const ground = region(cx - 2.2 * r, cx - 1.6 * r, cy + 0.9 * hh, cy + 1.2 * hh);
+          const leftRgb = regionRgb(cx - 0.85 * r, cx - 0.2 * r, cy - 0.3 * hh, cy + 0.3 * hh);
+          const rightRgb = regionRgb(cx + 0.2 * r, cx + 0.85 * r, cy - 0.3 * hh, cy + 0.3 * hh);
+          const bodyRgb = leftRgb.map((value, i) => (value + rightRgb[i]) / 2);
+          const groundRgb = regionRgb(cx - 2.2 * r, cx - 1.6 * r, cy + 0.9 * hh, cy + 1.2 * hh);
           const worldRgb = (x, y, z) => {
             const [sx, sy] = proj(vector().set(x, y, z));
             const i = (Math.round(sy) * canvas.width + Math.round(sx)) * 4;
@@ -118,11 +135,17 @@ try {
           const pos = light.getWorldPosition(vector());
           const direction = pos.clone().sub(character.getWorldPosition(vector())).normalize();
           const sr = direction.dot(right);
-          return { left, right: rightL, top: topL, ground, body: (left + rightL) / 2, sunScreenRight: sr,
+          const shadow = character.getObjectByName('character-shadow');
+          const shadowDelta = shadow.getWorldPosition(vector()).sub(character.getWorldPosition(vector())).setY(0);
+          const awayFromKey = light.target.getWorldPosition(vector()).sub(pos).setY(0).normalize();
+          return { left, right: rightL, top: topL, ground, body: (left + rightL) / 2, bodyRgb, groundRgb, sunScreenRight: sr,
             grass: worldRgb(-5.3, 2.405, 3.4),
             grassSamples: [[-6, -6], [6, -6], [-6, 6], [6, 6], [-5.3, 3.4], [-1, 5], [3, 5]]
               .map(([x, z]) => worldRgb(x, 2.405, z)), pond: worldRgb(4.2, 2.431, -3.55),
-            position: character.position.toArray(), yaw: character.rotation.y };
+            lightPosition: pos.toArray(), lightIntensity: light.intensity,
+            shadowOffset: shadowDelta.toArray(), shadowLength: shadowDelta.length(),
+            shadowCosine: shadowDelta.length() > 1e-6 ? shadowDelta.normalize().dot(awayFromKey) : 0,
+            shadowOpacity: shadow.material.opacity, position: character.position.toArray(), yaw: character.rotation.y };
         });
         initialLight ??= info.sunScreenRight;
         facings[facing] = info;
@@ -134,7 +157,9 @@ try {
       result[name] = { sun, shade, ratio: shade / sun, asymmetry: (sun - shade) / ((sun + shade) / 2),
         top: away.top, bodyToTop: away.body / away.top, ground: away.ground,
         contrast: (Math.max(away.body, away.ground) + 12.75) / (Math.min(away.body, away.ground) + 12.75),
-        grass: away.grass, grassSamples: away.grassSamples, pond: away.pond,
+        bodyRgb: away.bodyRgb, groundRgb: away.groundRgb, grass: away.grass, grassSamples: away.grassSamples, pond: away.pond,
+        lightPosition: away.lightPosition, lightIntensity: away.lightIntensity, shadowOffset: away.shadowOffset,
+        shadowLength: away.shadowLength, shadowCosine: away.shadowCosine, shadowOpacity: away.shadowOpacity,
         facings: Object.fromEntries(Object.entries(facings).map(([key, v]) => [key, v.body])),
         bodyToTopByFacing: Object.fromEntries(Object.entries(facings).map(([key, v]) => [key, v.body / v.top])),
         min: Math.min(...body), spread: (Math.max(...body) - Math.min(...body)) / Math.max(...body) };

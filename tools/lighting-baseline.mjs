@@ -9,7 +9,7 @@ import { createServer } from 'vite';
 // checking out, resetting, or modifying the user's worktree. The nonzero exit
 // status is expected: it demonstrates that the baseline fails the detector.
 const root = process.cwd();
-const ref = process.env.LIGHTING_BASELINE_REF || 'a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671';
+const ref = process.env.LIGHTING_BASELINE_REF || '4ea8249c73701be49a005265a1fb2f2f9d0d035b';
 const sha = execFileSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], { cwd: root, encoding: 'utf8' }).trim();
 const evidence = resolve(process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting');
 await mkdir(evidence, { recursive: true });

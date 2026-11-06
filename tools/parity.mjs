@@ -20,7 +20,9 @@ const option = (name) => {
 const recordBaseline = args.includes('--record-baseline');
 const baselineSha = option('--baseline-sha');
 const suppliedUrl = option('--url');
-const evidence = resolve('evidence/EBR-73');
+// Allow a ticket to write candidate/diff evidence elsewhere without replacing
+// the checked-in, signed EBR-73 baseline or its historical candidate frames.
+const evidence = resolve(process.env.PARITY_EVIDENCE_DIR || 'evidence/EBR-73');
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');

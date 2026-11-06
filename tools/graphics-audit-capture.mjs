@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 // Controlled, repeatable close views and geometry/pixel measurements for the
 // separate path-winding and static-contact-shadow fixes. Nothing ships in app.
 const mode = process.argv[2];
-if (!['path', 'shadows'].includes(mode)) throw new Error('Choose path or shadows');
+if (!['path', 'shadows', 'windows'].includes(mode)) throw new Error('Choose path, shadows or windows');
 const url = process.env.LIGHTING_URL || 'http://127.0.0.1:5184';
 const label = process.env.LIGHTING_CAPTURE_LABEL || mode;
 const dir = process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting';
@@ -51,7 +51,7 @@ try {
       });
     });
     await page.screenshot({ path: join(dir, `${label}.png`) });
-  } else {
+  } else if (mode === 'shadows') {
     for (const name of ['tree', 'chicken']) {
       proof[name] = await page.evaluate((name) => {
         const { scene, camera, character, follow, renderer, composer } = window.__graphicsAudit;
@@ -91,6 +91,48 @@ try {
       }, name);
       await page.screenshot({ path: join(dir, `${label}-${name}.png`) });
     }
+  } else {
+    proof.windows = await page.evaluate(() => {
+      const { scene, camera, character, follow, renderer, composer } = window.__graphicsAudit;
+      const cottage = scene.getObjectByName('farm-cottage');
+      follow(cottage.position);
+      camera.zoom = 2;
+      camera.updateProjectionMatrix();
+      const canvas = document.createElement('canvas');
+      canvas.width = renderer.domElement.width;
+      canvas.height = renderer.domElement.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const pixels = () => {
+        composer.render(0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(renderer.domElement, 0, 0);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      };
+      const on = pixels();
+      const entries = ['cottage-window-1', 'cottage-window-2', 'cottage-east-window'].map((name) => {
+        const pane = scene.getObjectByName(name);
+        const intensity = pane.material.emissiveIntensity;
+        pane.material.emissiveIntensity = 0;
+        const off = pixels();
+        pane.material.emissiveIntensity = intensity;
+        let changedPixels = 0; let sumOn = 0; let sumLift = 0; let maxOn = 0;
+        for (let i = 0; i < on.length; i += 4) {
+          const lum = (data) => 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+          const lift = lum(on) - lum(off);
+          if (lift <= 1) continue;
+          changedPixels++;
+          sumOn += lum(on);
+          sumLift += lift;
+          maxOn = Math.max(maxOn, lum(on));
+        }
+        return { name, intensity, emissive: pane.material.emissive.getHexString(),
+          geometry: pane.geometry.parameters, changedPixels, meanLuminance: sumOn / changedPixels,
+          meanEmissiveLift: sumLift / changedPixels, maxLuminance: maxOn };
+      });
+      composer.render(0);
+      return entries;
+    });
+    await page.screenshot({ path: join(dir, `${label}.png`) });
   }
   await writeFile(join(dir, `${label}.json`), `${JSON.stringify(proof, null, 2)}\n`);
 } finally {

@@ -1,13 +1,31 @@
-Testing pristine baseline a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671 at http://127.0.0.1:34435; assertion failures are expected.
+Testing pristine baseline 4ea8249c73701be49a005265a1fb2f2f9d0d035b at http://127.0.0.1:35481; assertion failures are expected.
 TAP version 13
+# Subtest: fixed upper-left key meets phase, weather and facing graphics checks
+not ok 1 - fixed upper-left key meets phase, weather and facing graphics checks
+  ---
+  duration_ms: 18511.001942
+  type: 'test'
+  location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:35:1'
+  failureType: 'testCodeFailure'
+  error: 'morning-clear: sunward asymmetry 0.1849064437368585 < 0.25'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:47:41)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
 # LIGHTING_MEASUREMENTS {"daytime":{"lightPosition":[7.347880794884119e-16,12,6],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":159.9596873096671,"y":94.86888006371765},"towardSunPixels":0.04435700042666289,"shadowPixels":21,"brightenedPixels":0},"samples":[{"lightPosition":[-12,12,12],"sunward":127.49271186440674,"away":94.49456923076922,"difference":32.99814263363753,"ratio":0.7411762433233652,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,12,-12],"sunward":136.07493846153847,"away":97.82345423728816,"difference":38.251484224250305,"ratio":0.7188939810907056,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,12,-12],"luminance":97.10355714285727,"pixels":112},"frontlitFront":{"lightPosition":[12,12,12],"luminance":138.5590964285713,"pixels":112},"backlitRatio":0.7008096880374447,"errors":[]},"sunset":{"lightPosition":[-12,3,7.347880794884119e-16],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":null,"y":null},"towardSunPixels":null,"shadowPixels":0,"brightenedPixels":13},"samples":[{"lightPosition":[-12,3,12],"sunward":91.41883728813559,"away":76.42295384615383,"difference":14.99588344198176,"ratio":0.8359650605190103,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":94.48147692307688,"away":78.85612542372888,"difference":15.625351499348,"ratio":0.834619948711539,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":78.2139071428572,"pixels":112},"frontlitFront":{"lightPosition":[12,3,12],"luminance":96.09180714285715,"pixels":112},"backlitRatio":0.8139497993473954,"errors":[]},"night":{"lightPosition":[5.999999999999998,12,6],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":null,"y":null},"towardSunPixels":null,"shadowPixels":0,"brightenedPixels":21},"samples":[{"lightPosition":[-12,3,12],"sunward":60.25396949152544,"away":46.96373076923077,"difference":13.290238722294667,"ratio":0.7794296569263557,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":62.09206153846152,"away":47.094315254237316,"difference":14.997746284224206,"ratio":0.7584595210301692,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":65.88404464285712,"pixels":112},"frontlitFront":{"lightPosition":[12,3,12],"luminance":77.4818464285715,"pixels":112},"backlitRatio":0.8503158827480177,"nightLantern":{"intensity":0.55,"withLantern":65.88404464285712,"withoutLantern":15.414025},"errors":[]}}
 # Subtest: directional character shading and visible shadow follow the key light
     # Subtest: sun-facing body is brighter, including when the sun is behind the camera-facing front
     not ok 1 - sun-facing body is brighter, including when the sun is behind the camera-facing front
       ---
-      duration_ms: 4.335427
+      duration_ms: 1.003812
       type: 'test'
-      location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:272:11'
+      location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:322:11'
       failureType: 'testCodeFailure'
       error: 'sunset: sunward body must be clearly brighter than away-facing body: {"lightPosition":[-12,3,12],"sunward":91.41883728813559,"away":76.42295384615383,"difference":14.99588344198176,"ratio":0.8359650605190103,"sunwardPixels":59,"awayPixels":26}'
       code: 'ERR_ASSERTION'
@@ -16,21 +34,21 @@ TAP version 13
       actual: false
       operator: '=='
       stack: |-
-        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:277:16)
+        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:327:16)
         Test.runInAsyncScope (node:async_hooks:214:14)
         Test.run (node:internal/test_runner/test:1047:25)
         Test.start (node:internal/test_runner/test:944:17)
         TestContext.test (node:internal/test_runner/test:373:20)
-        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:272:11)
+        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:322:11)
         async Test.run (node:internal/test_runner/test:1054:7)
-        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
     # Subtest: the visible shadow is opposite the actual phase sun or moon
     not ok 2 - the visible shadow is opposite the actual phase sun or moon
       ---
-      duration_ms: 2.274567
+      duration_ms: 2.285032
       type: 'test'
-      location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:289:11'
+      location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:339:11'
       failureType: 'testCodeFailure'
       error: 'daytime: shadow centroid must be opposite the sun by >0.5 render pixels: 0.04435700042666289'
       code: 'ERR_ASSERTION'
@@ -39,37 +57,37 @@ TAP version 13
       actual: false
       operator: '=='
       stack: |-
-        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:296:14)
+        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:346:14)
         Test.runInAsyncScope (node:async_hooks:214:14)
         Test.run (node:internal/test_runner/test:1047:25)
         Test.start (node:internal/test_runner/test:944:17)
         TestContext.test (node:internal/test_runner/test:373:20)
-        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:289:11)
+        TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:339:11)
         async Test.run (node:internal/test_runner/test:1054:7)
-        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
       ...
     # Subtest: a sunset shadow does not extend into the void at the foot-pad edge
     ok 3 - a sunset shadow does not extend into the void at the foot-pad edge
       ---
-      duration_ms: 2220.911369
+      duration_ms: 2179.282225
       type: 'test'
       ...
     1..3
-not ok 1 - directional character shading and visible shadow follow the key light
+not ok 2 - directional character shading and visible shadow follow the key light
   ---
-  duration_ms: 14730.859911
+  duration_ms: 14663.1874
   type: 'test'
-  location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:260:1'
+  location: '/home/michael/Developer/chicken-farm/worktrees/light/tests/browser/lighting.browser.mjs:310:1'
   failureType: 'subtestsFailed'
   error: '2 subtests failed'
   code: 'ERR_TEST_FAILURE'
   ...
-1..1
-# tests 4
+1..2
+# tests 5
 # suites 0
 # pass 1
-# fail 3
+# fail 4
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 15655.848731
+# duration_ms 34165.145
