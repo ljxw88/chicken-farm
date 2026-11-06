@@ -6,6 +6,7 @@ import { createServer } from 'vite';
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createStartupPhaseController, parseStartupOptions } = await vite.ssrLoadModule('/src/startupOptions.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
+const { VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 test('URL options accept every weather and day/night phase combination', () => {
@@ -29,28 +30,35 @@ test('missing and invalid URL options are ignored independently', () => {
 test('a URL phase stays fixed until a valid console phase or cycle setter resumes it', () => {
   function fixture(phase) {
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(VOID_COLOR);
     const character = new THREE.Group();
     const cycle = createDayNightCycle({ scene, character, windows: [] });
-    return { scene, controller: createStartupPhaseController(cycle, phase) };
+    return {
+      scene,
+      hemisphere: scene.getObjectByName('day-night-hemisphere'),
+      controller: createStartupPhaseController(cycle, phase),
+    };
   }
 
   const pinned = fixture('night');
   pinned.controller.update(18);
-  assert.equal(pinned.scene.background.getHex(), 0x2a2848);
+  assert.equal(pinned.hemisphere.color.getHex(), 0x2a2848);
+  assert.equal(pinned.scene.background.getHex(), VOID_COLOR);
   assert.throws(() => pinned.controller.setDayNightCycleSeconds(0), RangeError);
   assert.throws(() => pinned.controller.setDayNightPhase('midnight'), RangeError);
   pinned.controller.update(18);
-  assert.equal(pinned.scene.background.getHex(), 0x2a2848);
+  assert.equal(pinned.hemisphere.color.getHex(), 0x2a2848);
   pinned.controller.setDayNightCycleSeconds(72);
   pinned.controller.update(18);
-  assert.equal(pinned.scene.background.getHex(), 0xe8d4c8);
+  assert.equal(pinned.hemisphere.color.getHex(), 0xe8d4c8);
+  assert.equal(pinned.scene.background.getHex(), VOID_COLOR);
 
   const phaseSetter = fixture('night');
   phaseSetter.controller.setDayNightPhase('daytime');
   phaseSetter.controller.update(18);
-  assert.equal(phaseSetter.scene.background.getHex(), 0xf0a878);
+  assert.equal(phaseSetter.hemisphere.color.getHex(), 0xf0a878);
 
   const defaultCycle = fixture(undefined);
   defaultCycle.controller.update(18);
-  assert.equal(defaultCycle.scene.background.getHex(), 0xa8d4f0);
+  assert.equal(defaultCycle.hemisphere.color.getHex(), 0xa8d4f0);
 });

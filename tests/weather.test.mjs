@@ -9,15 +9,19 @@ const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayo
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { createWeatherSystem } = await vite.ssrLoadModule('/src/weather/createWeatherSystem.ts');
+const { GROUND_HEIGHT, GROUND_SIZE, VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 function fixture(t) {
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(VOID_COLOR);
   const character = createCharacter();
+  character.position.y = GROUND_HEIGHT;
   scene.add(character);
   const { windows, splashExclusions } = createFarmLayout(scene);
   const { camera, follow, resize } = createIsometricCamera();
   resize(1280, 720);
+  follow(character.position);
   const cycle = createDayNightCycle({ scene, character, windows });
   let seed = 0x12345678;
   let suppressSpawns = false;
@@ -27,7 +31,7 @@ function fixture(t) {
     return seed / 0x100000000;
   }
   const weather = createWeatherSystem({
-    scene, camera, anchor: character, groundHeight: 0, groundSize: 32, splashExclusions,
+    scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE, splashExclusions,
     setDirectionalIntensityMultiplier: cycle.setDirectionalIntensityMultiplier,
     setAmbientHemisphereColorMultiplier: cycle.setAmbientHemisphereColorMultiplier, random,
   });
@@ -345,7 +349,10 @@ test('rain is sparse, short, unblurred and tilted 15 degrees on screen', (t) => 
     const dx = (bottom.x - top.x) * 1280 / 2;
     const dy = (top.y - bottom.y) * 720 / 2;
     near(Math.atan2(Math.abs(dx), Math.abs(dy)) * 180 / Math.PI, 15, 0.01);
-    assert.ok(Math.hypot(dx, dy) >= 3 && Math.hypot(dx, dy) <= 5.1);
+    // The wider island framing makes the unchanged world-space streaks smaller on screen.
+    assert.ok(Math.hypot(dx, dy) >= 2.2 && Math.hypot(dx, dy) <= 3.0);
+    assert.ok(positions.getY(i) - positions.getY(i + 1) >= 0.075 - 1e-6);
+    assert.ok(positions.getY(i) - positions.getY(i + 1) <= 0.095 + 1e-6);
   }
   const before = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, 0));
   character.position.x += 1;
@@ -370,7 +377,7 @@ test('splash rings are occasional, short-lived and avoid roofs, water and ground
   weather.update(1.75);
   let sawSplash = false;
   for (let frame = 0; frame < 1800; frame++) {
-    if (frame === 900) character.position.set(15.5, 0, 15.5);
+    if (frame === 900) character.position.set(7.5, GROUND_HEIGHT, 7.5);
     weather.update(1 / 60);
     const visible = splashes.filter((splash) => splash.visible);
     assert.ok(visible.length <= 6);
@@ -379,7 +386,8 @@ test('splash rings are occasional, short-lived and avoid roofs, water and ground
       const radius = splash.scale.x;
       assert.ok(radius >= 0.08 && radius <= 0.18);
       assert.ok(splash.material.opacity > 0 && splash.material.opacity <= 0.32);
-      assert.ok(Math.abs(splash.position.x) + radius < 16 && Math.abs(splash.position.z) + radius < 16);
+      assert.ok(Math.abs(splash.position.x) + radius < 8 && Math.abs(splash.position.z) + radius < 8);
+      near(splash.position.y, GROUND_HEIGHT + 0.036);
       const nearestX = THREE.MathUtils.clamp(splash.position.x, roof.min.x, roof.max.x);
       const nearestZ = THREE.MathUtils.clamp(splash.position.z, roof.min.z, roof.max.z);
       assert.ok(Math.hypot(splash.position.x - nearestX, splash.position.z - nearestZ) > radius, 'splash crossed a roof');

@@ -1,6 +1,6 @@
 # Chicken Farm
 
-A minimal 3D scene built with Vite, vanilla TypeScript, and Three.js. A small character walks around a grassy farm while an isometric camera follows and the lighting cycles from morning through night.
+A minimal 3D scene built with Vite, vanilla TypeScript, and Three.js. A small character walks around a raised farm island while an isometric camera follows and the lighting cycles from morning through night.
 
 Meadow look reference: https://x.com/daniildesigns/status/2117571497665663044
 
@@ -17,18 +17,27 @@ Open [http://localhost:5173](http://localhost:5173). If that port is already in 
 
 For a console-free weather and lighting check, open a URL such as `http://localhost:5173/?weather=cloudy&phase=night`. Weather accepts `clear`, `cloudy` or `rain`; phase accepts `morning`, `daytime`, `sunset` or `night`. The requested weather fades in over 1.75 seconds. A valid URL phase stays fixed for repeatable review; without one, the normal day/night cycle runs. Invalid parameters are ignored independently. Calling either day/night console setter resumes the cycle after a URL-pinned phase.
 
-Use **WASD** to walk relative to the screen, or click/tap the ground to walk there. From spawn, follow the curved dirt path left toward the barn, or follow it right past the pond and toward the ground edge. The barn, tree trunks, and pond water block movement; the character slides along them and stops when fully blocked. Click-to-move does not plan a route around obstacles. Keyboard input cancels a click-to-move destination, and the character stays within the grassy ground.
+Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the barn, or right past the pond to the island rim. The barn, tree trunks, pond water and the rim block movement; the character can slide along them. Clicking the void does not start a walk. Click-to-move does not plan a route around obstacles, and keyboard input cancels a clicked destination.
 
-The full day/night cycle takes 72 seconds by default. To inspect a phase immediately, use the browser console:
+The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
+
+```text
+http://localhost:5173/?phase=morning
+http://localhost:5173/?phase=daytime
+http://localhost:5173/?phase=sunset
+http://localhost:5173/?phase=night
+```
+
+A valid phase URL holds that phase until you navigate away or use a day/night console setter; a missing or invalid phase keeps the normal cycle running. You can also use the browser console:
 
 ```js
 setDayNightPhase('morning') // also: 'daytime', 'sunset', 'night'
 setDayNightCycleSeconds(12) // complete cycle in 12 seconds
 ```
 
-The cycle keeps running after selecting a phase in the console. Walk toward a ground edge to see the changing sky; the ground fills the initial isometric view. Its `setDayNightCycleSeconds(seconds)` method is also available on the object returned by `createDayNightCycle` in `src/lighting/` for a future HUD. It accepts finite positive seconds and preserves the current phase when changed. The day/night phase presets are Look Dev LOCKED; intermediate phases are interpolated. Weather adjustments are separate from those presets.
+The cycle keeps running after selecting a phase in the console. The island is surrounded by a fixed #101416 void; the existing phase fog and lighting still change over time. The `setDayNightCycleSeconds(seconds)` method is also available on the object returned by `createDayNightCycle` in `src/lighting/` for a future HUD. It accepts finite positive seconds and preserves the current phase when changed. The day/night phase presets are Look Dev LOCKED; intermediate phases are interpolated. Weather adjustments are separate from those presets.
 
-Weather starts clear unless selected by URL. In the browser console, call `setWeather('cloudy')` for overcast, `setWeather('rain')` for gentle rain, or `setWeather('clear')` to return to clear weather. `getWeather()` reports the requested `mode` and current `rainAmount` and `cloudyAmount` (each 0–1). A full transition takes 1.75 seconds and follows the current day/night phase. Rain fades smoothly when switching to or from Cloudy. Rain settings in `src/weather/rainSettings.ts` use Look Dev's visually approved starting targets; apart from the shared transition, they are not explicitly LOCKED. Look Dev LOCKED the relative Cloudy settings in `src/weather/cloudySettings.ts`: they reduce directional light and cool the phase's ambient and hemisphere colors without adding locked hex colors. Sky, fog and the warm night practical lights are unchanged.
+Weather starts clear unless selected by URL. In the browser console, call `setWeather('cloudy')` for overcast, `setWeather('rain')` for gentle rain, or `setWeather('clear')` to return to clear weather. `getWeather()` reports the requested `mode` and current `rainAmount` and `cloudyAmount` (each 0–1). A full transition takes 1.75 seconds and follows the current day/night phase. Rain fades smoothly when switching to or from Cloudy. Rain settings in `src/weather/rainSettings.ts` use Look Dev's visually approved starting targets; apart from the shared transition, they are not explicitly LOCKED. Look Dev LOCKED the relative Cloudy settings in `src/weather/cloudySettings.ts`: they reduce directional light and cool the phase's ambient and hemisphere colors without adding locked hex colors. The void, fog and warm night practical lights are unchanged.
 
 ## Pixel rendering inspection
 

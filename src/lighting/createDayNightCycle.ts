@@ -4,7 +4,6 @@ import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, type DayNightPhaseNa
 
 // THREE.Color converts the locked sRGB hex values to its linear working space.
 const phaseColors = DAY_NIGHT_PHASES.map((phase) => ({
-  sky: new THREE.Color(phase.sky),
   fog: new THREE.Color(phase.fog),
   ambient: new THREE.Color(phase.ambient),
   hemisphereSky: new THREE.Color(phase.hemisphereSky),
@@ -20,9 +19,8 @@ interface DayNightCycleOptions {
 
 export function createDayNightCycle({ scene, character, windows }: DayNightCycleOptions) {
   const morning = DAY_NIGHT_PHASES[0];
-  const background = new THREE.Color(morning.sky);
+  // The scene owns the fixed diorama void; phases still drive fog and lights.
   const fog = new THREE.FogExp2(morning.fog, morning.fogDensity);
-  scene.background = background;
   scene.fog = fog;
 
   const ambient = new THREE.AmbientLight(morning.ambient, morning.ambientIntensity);
@@ -64,7 +62,6 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
     const blend = THREE.MathUtils.smoothstep(phasePosition - index, 0, 1);
     const lerp = THREE.MathUtils.lerp;
 
-    background.copy(fromColors.sky).lerp(toColors.sky, blend);
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);
     ambientBaseColor.copy(fromColors.ambient).lerp(toColors.ambient, blend);
