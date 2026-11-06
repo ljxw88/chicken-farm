@@ -1,7 +1,7 @@
 EBR-46 QA FIX — slide from the foot pad back to the stairs
 
 Branch: feat/ebr46-stairs
-Tip SHA: run `git rev-parse HEAD`
+Tip SHA: 411fd9cf497c8b0fd23bccea44382bfe5c615bce
 QA-failed base tip: b3bd38eac378312431f1849abf131b035d38fa96
 No push or PR.
 
