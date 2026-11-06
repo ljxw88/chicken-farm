@@ -1,0 +1,124 @@
+{
+  "status": "needs-human",
+  "score": 49,
+  "recipe": {
+    "id": "hay-bale",
+    "category": "prop",
+    "footprint": {
+      "w": 1,
+      "d": 0.7
+    },
+    "height": 0.6,
+    "origin": "base-center",
+    "facing": "+Z",
+    "parts": [
+      {
+        "name": "bale-core",
+        "prim": "bevelBox",
+        "size": [
+          0.86,
+          0.6,
+          0.66
+        ],
+        "bevel": 0.05,
+        "at": [
+          0,
+          0.3,
+          0
+        ],
+        "mat": "dirt.hi",
+        "feature": "bale"
+      },
+      {
+        "name": "end-left",
+        "prim": "box",
+        "size": [
+          0.16,
+          0.56,
+          0.7
+        ],
+        "at": [
+          -0.42,
+          0.3,
+          0
+        ],
+        "mat": "wood.mid",
+        "feature": "ends"
+      },
+      {
+        "name": "end-right",
+        "prim": "box",
+        "size": [
+          0.16,
+          0.56,
+          0.7
+        ],
+        "at": [
+          0.42,
+          0.3,
+          0
+        ],
+        "mat": "wood.mid",
+        "feature": "ends"
+      },
+      {
+        "name": "band-left",
+        "prim": "box",
+        "size": [
+          0.16,
+          0.52,
+          0.74
+        ],
+        "at": [
+          -0.22,
+          0.3,
+          0
+        ],
+        "mat": "timber",
+        "feature": "bands",
+        "exception": "band"
+      },
+      {
+        "name": "band-right",
+        "prim": "box",
+        "size": [
+          0.16,
+          0.52,
+          0.74
+        ],
+        "at": [
+          0.22,
+          0.3,
+          0
+        ],
+        "mat": "timber",
+        "feature": "bands",
+        "exception": "band"
+      }
+    ],
+    "anchors": {},
+    "emissive": [],
+    "collision": {
+      "type": "box",
+      "w": 1,
+      "d": 0.7,
+      "h": 0.6
+    },
+    "slots": {},
+    "tags": [
+      "farm",
+      "cozy"
+    ]
+  },
+  "stage": "blockout",
+  "round": 2,
+  "hardFailureCount": 0,
+  "blockers": [
+    {
+      "code": "CRITIQUE",
+      "message": "silhouette=3; palette=3; shapeLanguage=3; valueStructure=3; sceneFit=3; bale body is pale washed beige, not warm tan/ochre straw; reads as crate/stone at 320x180; binding bands are narrow low-contrast lines, not broad clearly visible timber bindings; the two bands are not separable at game scale; edges are sharp 90-degree box corners with no soft-edged straw rounding; end faces are not distinct from sides; night views collapse to near-background black with no readable top/side/end value separation"
+    }
+  ],
+  "report": "tools/assetgen/runs/hay-bale/round-2/stage-blockout/report.json",
+  "sheet": "tools/assetgen/runs/hay-bale/round-2/stage-blockout/render/sheet.png"
+}

@@ -1,0 +1,210 @@
+{
+  "status": "needs-human",
+  "noRuntimeAssetsRegistered": true,
+  "renderer": "pre-EBR-80",
+  "assets": [
+    {
+      "id": "barrel",
+      "status": "needs-human",
+      "specHash": "3e1ad77629d749d933893b29a8310a29070a6088c1f4403e1253b563170c5983",
+      "bibleHash": "4d8102bae60611f0f0915f87b5e6ae26860004c63c535bd5a293e8060ab1dd79",
+      "recipeHash": "3ba1fc03f195a3c878c86a232d08e220fa5b9d81225691f9490659bfa92b4ead",
+      "hardFailures": [],
+      "checks": {
+        "H1": true,
+        "H2": true,
+        "H3": true,
+        "H4": true,
+        "H5": true,
+        "H6": true,
+        "H7": true,
+        "H8": true,
+        "H9": true,
+        "H10": true
+      },
+      "triangles": 400,
+      "triangleBudget": 600,
+      "partCount": 5,
+      "colorCount": 3,
+      "bounds": {
+        "min": [
+          -0.4,
+          0,
+          -0.4
+        ],
+        "max": [
+          0.4,
+          1,
+          0.4
+        ],
+        "width": 0.8,
+        "depth": 0.8,
+        "height": 1,
+        "centerXZ": [
+          0,
+          0
+        ]
+      },
+      "visualFailures": [],
+      "minimumDayPixels": 58,
+      "identityPartBestPixels": {
+        "body": 32,
+        "hoop-bottom": 11,
+        "hoop-middle": 18,
+        "hoop-top": 13,
+        "lid": 23
+      },
+      "keyLight": {
+        "status": "pass",
+        "code": "S4",
+        "litMean": 0.46169193373329287,
+        "shadeMean": 0.24989702211994405,
+        "message": "Key-facing samples are brighter",
+        "sampleCount": 496
+      },
+      "unmeasured": [
+        "S1 rendered palette-cluster distance after lighting",
+        "S3 three-step value structure",
+        "S5 night glow/highlight analysis",
+        "S7 style-reference distance"
+      ],
+      "frameCount": 76,
+      "browserLoadAttempts": 1
+    },
+    {
+      "id": "hay-bale",
+      "status": "needs-human",
+      "specHash": "eef0aa0b32ca4f9d7032c9adb0e21295aec36dcdd6704c520b24172a420e963b",
+      "bibleHash": "4d8102bae60611f0f0915f87b5e6ae26860004c63c535bd5a293e8060ab1dd79",
+      "recipeHash": "bfb1c68e4a56f2b01b471431a58086894bf7311b808ab7c52f649f9c6f8b563a",
+      "hardFailures": [],
+      "checks": {
+        "H1": true,
+        "H2": true,
+        "H3": true,
+        "H4": true,
+        "H5": true,
+        "H6": true,
+        "H7": true,
+        "H8": true,
+        "H9": true,
+        "H10": true
+      },
+      "triangles": 76,
+      "triangleBudget": 600,
+      "partCount": 5,
+      "colorCount": 3,
+      "bounds": {
+        "min": [
+          -0.5,
+          0,
+          -0.37
+        ],
+        "max": [
+          0.5,
+          0.6,
+          0.37
+        ],
+        "width": 1,
+        "depth": 0.74,
+        "height": 0.6,
+        "centerXZ": [
+          0,
+          0
+        ]
+      },
+      "visualFailures": [],
+      "minimumDayPixels": 59,
+      "identityPartBestPixels": {
+        "bale-core": 53,
+        "band-left": 11,
+        "band-right": 11,
+        "end-left": 23,
+        "end-right": 22
+      },
+      "keyLight": {
+        "status": "pass",
+        "code": "S4",
+        "litMean": 0.4751403692785496,
+        "shadeMean": 0.2302076977555107,
+        "message": "Key-facing samples are brighter",
+        "sampleCount": 536
+      },
+      "unmeasured": [
+        "S1 rendered palette-cluster distance after lighting",
+        "S3 three-step value structure",
+        "S5 night glow/highlight analysis",
+        "S7 style-reference distance"
+      ],
+      "frameCount": 76,
+      "browserLoadAttempts": 1
+    },
+    {
+      "id": "round-oak",
+      "status": "needs-human",
+      "specHash": "afaaead737de5cc37c2e6dd6788199d4c6f69aa9b260cd5865b594c4df41446d",
+      "bibleHash": "4d8102bae60611f0f0915f87b5e6ae26860004c63c535bd5a293e8060ab1dd79",
+      "recipeHash": "cd68af668c5ae48057547eb995d34c28927e0c403758f29d8170d8b23a3a3c6d",
+      "hardFailures": [],
+      "checks": {
+        "H1": true,
+        "H2": true,
+        "H3": true,
+        "H4": true,
+        "H5": true,
+        "H6": true,
+        "H7": true,
+        "H8": true,
+        "H9": true,
+        "H10": true
+      },
+      "triangles": 88,
+      "triangleBudget": 900,
+      "partCount": 4,
+      "colorCount": 4,
+      "bounds": {
+        "min": [
+          -0.8234,
+          0,
+          -0.8234
+        ],
+        "max": [
+          0.8234,
+          3.2561,
+          0.8234
+        ],
+        "width": 1.6468,
+        "depth": 1.6468,
+        "height": 3.2561,
+        "centerXZ": [
+          0,
+          0
+        ]
+      },
+      "visualFailures": [],
+      "minimumDayPixels": 188,
+      "identityPartBestPixels": {
+        "trunk": 82,
+        "crown-top": 86,
+        "crown-tier-left": 56,
+        "crown-tier-right": 55
+      },
+      "keyLight": {
+        "status": "pass",
+        "code": "S4",
+        "litMean": 0.46747850560110776,
+        "shadeMean": 0.26279102371138746,
+        "message": "Key-facing samples are brighter",
+        "sampleCount": 1577
+      },
+      "unmeasured": [
+        "S1 rendered palette-cluster distance after lighting",
+        "S3 three-step value structure",
+        "S5 night glow/highlight analysis",
+        "S7 style-reference distance"
+      ],
+      "frameCount": 76,
+      "browserLoadAttempts": 1
+    }
+  ]
+}

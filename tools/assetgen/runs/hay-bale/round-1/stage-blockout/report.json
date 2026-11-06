@@ -1,0 +1,99 @@
+{
+  "id": "hay-bale",
+  "round": 1,
+  "stage": "blockout",
+  "action": "refine-code",
+  "score": 28,
+  "hard": {
+    "failures": [
+      {
+        "code": "H7",
+        "message": "16 near-coplanar overlaps: bale-core[6]/end-left[6], bale-core[6]/end-left[7], bale-core[6]/end-right[6], bale-core[6]/end-right[7], bale-core[6]/band-left[6], bale-core[6]/band-left[7], bale-core[6]/band-right[6], bale-core[6]/band-right[7]"
+      }
+    ],
+    "metrics": {
+      "checks": {
+        "H1": true,
+        "H2": true,
+        "H3": true,
+        "H4": true,
+        "H5": true,
+        "H6": true,
+        "H7": false,
+        "H8": true,
+        "H9": true,
+        "H10": true
+      },
+      "lowerTrust": false,
+      "triangles": 76,
+      "triangleBudget": 600,
+      "partCount": 5,
+      "bounds": {
+        "min": [
+          -0.5,
+          0,
+          -0.37
+        ],
+        "max": [
+          0.5,
+          0.64,
+          0.37
+        ],
+        "width": 1,
+        "depth": 0.74,
+        "height": 0.64,
+        "centerXZ": [
+          0,
+          0
+        ]
+      },
+      "colorCount": 3,
+      "geometryHashes": [
+        "4cbf734a25ec7f8ec0b5e47e36f98f03f95b957deccfce378d021cb3c120070b",
+        "4cbf734a25ec7f8ec0b5e47e36f98f03f95b957deccfce378d021cb3c120070b"
+      ],
+      "zFightPairs": 16,
+      "disconnectedParts": [],
+      "nonFinite": 0,
+      "degenerate": 0,
+      "badNormals": 0
+    }
+  },
+  "visual": null,
+  "critique": null,
+  "critiqueStatus": "visual critique not run",
+  "generatorSession": "ses_e4ea65cc7ffeLxRD9j1D6yvSCL",
+  "criticSession": null,
+  "generatorDurationMs": 142873,
+  "criticDurationMs": null,
+  "generatorUsage": {
+    "tokens": {
+      "input": 15564,
+      "output": 296,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "cost": 0
+  },
+  "criticUsage": null,
+  "diff": {
+    "added": [
+      "bale-core",
+      "end-left",
+      "end-right",
+      "band-left",
+      "band-right"
+    ],
+    "removed": [],
+    "changed": []
+  },
+  "blockers": [
+    {
+      "code": "H7",
+      "message": "16 near-coplanar overlaps: bale-core[6]/end-left[6], bale-core[6]/end-left[7], bale-core[6]/end-right[6], bale-core[6]/end-right[7], bale-core[6]/band-left[6], bale-core[6]/band-left[7], bale-core[6]/band-right[6], bale-core[6]/band-right[7]"
+    }
+  ]
+}

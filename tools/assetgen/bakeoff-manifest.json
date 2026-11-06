@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "purpose": "review only; not a runtime registry",
+  "assets": [
+    {
+      "id": "barrel",
+      "category": "prop",
+      "status": "needs-human",
+      "signedBy": null,
+      "recipe": "tools/assetgen/runs/barrel/best.json",
+      "recipeSha256": "3ba1fc03f195a3c878c86a232d08e220fa5b9d81225691f9490659bfa92b4ead",
+      "specSha256": "3e1ad77629d749d933893b29a8310a29070a6088c1f4403e1253b563170c5983",
+      "bibleSha256": "4d8102bae60611f0f0915f87b5e6ae26860004c63c535bd5a293e8060ab1dd79",
+      "score": 78,
+      "rounds": 3,
+      "completedStages": [],
+      "triangles": 400,
+      "colors": 3,
+      "hardFailures": [],
+      "visualFailures": [],
+      "criticHistory": [
+        {
+          "sessionId": "ses_e4e977bdaffevyOeZPKWqxkin2",
+          "action": "continue",
+          "features": {
+            "body": true,
+            "hoops": true,
+            "lid": true
+          },
+          "sheetSha256": null
+        },
+        {
+          "sessionId": "ses_e4e96829dffeqE19gKmx2JrS1o",
+          "action": "refine-code",
+          "features": {
+            "body": true,
+            "hoops": true,
+            "lid": false
+          },
+          "sheetSha256": "89c6c0f1d223367ddd0f39f5b5ea66b10f232411e8874fda603de42492bbcea1"
+        }
+      ],
+      "sheet": "evidence/assetgen/barrel-verified-sheet.png"
+    },
+    {
+      "id": "hay-bale",
+      "category": "prop",
+      "status": "needs-human",
+      "signedBy": null,
+      "recipe": "tools/assetgen/runs/hay-bale/best.json",
+      "recipeSha256": "bfb1c68e4a56f2b01b471431a58086894bf7311b808ab7c52f649f9c6f8b563a",
+      "specSha256": "eef0aa0b32ca4f9d7032c9adb0e21295aec36dcdd6704c520b24172a420e963b",
+      "bibleSha256": "4d8102bae60611f0f0915f87b5e6ae26860004c63c535bd5a293e8060ab1dd79",
+      "score": 49,
+      "rounds": 3,
+      "completedStages": [],
+      "triangles": 76,
+      "colors": 3,
+      "hardFailures": [],
+      "visualFailures": [],
+      "criticHistory": [
+        {
+          "sessionId": "ses_e4e977a9fffel5aUa6Bu0KJ0ug",
+          "action": "refine-code",
+          "features": {
+            "bale": true,
+            "bands": false,
+            "ends": false
+          },
+          "sheetSha256": null
+        },
+        {
+          "sessionId": "ses_e4e96829cffeH3bE4Q2R3ai2GV",
+          "action": "continue",
+          "features": {
+            "bale": true,
+            "bands": true,
+            "ends": true
+          },
+          "sheetSha256": "ed96b99266d281df6a0138dffb63a60e48b1f55c6309bbc653e521a9e0d666ad"
+        }
+      ],
+      "sheet": "evidence/assetgen/hay-bale-verified-sheet.png"
+    },
+    {
+      "id": "round-oak",
+      "category": "flora",
+      "status": "needs-human",
+      "signedBy": null,
+      "recipe": "tools/assetgen/runs/round-oak/best.json",
+      "recipeSha256": "cd68af668c5ae48057547eb995d34c28927e0c403758f29d8170d8b23a3a3c6d",
+      "specSha256": "afaaead737de5cc37c2e6dd6788199d4c6f69aa9b260cd5865b594c4df41446d",
+      "bibleSha256": "4d8102bae60611f0f0915f87b5e6ae26860004c63c535bd5a293e8060ab1dd79",
+      "score": 88,
+      "rounds": 5,
+      "completedStages": [
+        "blockout",
+        "form",
+        "material"
+      ],
+      "triangles": 88,
+      "colors": 4,
+      "hardFailures": [],
+      "visualFailures": [],
+      "criticHistory": [
+        {
+          "sessionId": "ses_e4e9ab0d0ffe7a2EFl6BEbr6m3",
+          "action": "continue",
+          "features": {
+            "trunk": true,
+            "crown": true,
+            "foliage-tiers": true
+          },
+          "sheetSha256": null
+        },
+        {
+          "sessionId": "ses_e4e9680d0ffe2QKA2NzArBglfT",
+          "action": "refine-code",
+          "features": {
+            "trunk": true,
+            "crown": true,
+            "foliage-tiers": false
+          },
+          "sheetSha256": "e245dd71c3b1aceb3c82bcad2ad353f270ade86bb4e64d898bd9f8f90b4cb6fc"
+        }
+      ],
+      "sheet": "evidence/assetgen/round-oak-verified-sheet.png"
+    }
+  ]
+}

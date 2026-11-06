@@ -1,0 +1,45 @@
+{
+  "sessionId": "ses_e4e977a9fffel5aUa6Bu0KJ0ug",
+  "durationMs": 23451,
+  "usage": {
+    "tokens": {
+      "input": 12793,
+      "output": 252,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "cost": 0
+  },
+  "review": {
+    "imageReviewed": true,
+    "scores": {
+      "silhouette": 3,
+      "palette": 3,
+      "shapeLanguage": 3,
+      "valueStructure": 3,
+      "sceneFit": 3,
+      "craft": 3
+    },
+    "features": {
+      "bale": true,
+      "bands": false,
+      "ends": false
+    },
+    "blockers": [
+      "bands: two timber bands merge with the bale at 320x180 game scale with no clear hue or value contrast in daytime, sunset or night crops",
+      "ends: end faces are the same flat tan fill as the sides with no chunky framing, bevel or edge definition to read as distinct end faces",
+      "bale edges: soft-edged chunkiness is not visible; at most yaws the bale reads as a plain sharp box"
+    ],
+    "fixes": [
+      "Increase band width to at least 0.12 units and protrude bands 0.02 units from the bale surface with a clearly darker timber value than dirt.hi",
+      "Add visible end definition via slightly inset or darker end caps or a pronounced bevel that catches light differently from the side faces",
+      "Increase bale-to-band value separation while staying in warm tan/ochre so both bands and ends remain readable at 10x8 game pixels"
+    ],
+    "action": "refine-code"
+  },
+  "status": "visual critique recorded; human review required",
+  "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+}

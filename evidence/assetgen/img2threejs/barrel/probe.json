@@ -1,0 +1,11 @@
+{
+  "path": "/tmp/assetgen-img2threejs.REij4K/barrel/reference.png",
+  "type": "png",
+  "bytes": 7303,
+  "width": 640,
+  "height": 640,
+  "aspectRatio": 1.0,
+  "technicalSuitability": "pass",
+  "warnings": [],
+  "note": "This is only technical image probing. Semantic object suitability still requires visual inspection."
+}

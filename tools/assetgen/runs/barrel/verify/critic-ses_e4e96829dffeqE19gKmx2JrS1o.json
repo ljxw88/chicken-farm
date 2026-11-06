@@ -1,0 +1,50 @@
+{
+  "sessionId": "ses_e4e96829dffeqE19gKmx2JrS1o",
+  "durationMs": 36636,
+  "usage": {
+    "tokens": {
+      "input": 12785,
+      "output": 343,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "cost": 0
+  },
+  "review": {
+    "imageReviewed": true,
+    "scores": {
+      "silhouette": 3,
+      "palette": 4,
+      "shapeLanguage": 3,
+      "valueStructure": 2,
+      "sceneFit": 2,
+      "craft": 3
+    },
+    "features": {
+      "body": true,
+      "hoops": true,
+      "lid": false
+    },
+    "blockers": [
+      "lid: contrasting top lid is not readable as a separate cap in daytime, sunset or night 3x crops and reads as the same wood mass as the body",
+      "body: bulge and tapered stave silhouette read as near-cylindrical at game scale with no clear faceted stave breakup",
+      "barrel at night phase: form collapses to near-black against the dark green ground with hoops and top separation unreadable",
+      "signed farm composite: barrel is not recognisable at actual game scale alongside the cottage, coops, trees, fence and character"
+    ],
+    "fixes": [
+      "increase the lathe mid-body bulge and narrow top/bottom within the declared 0.8x1.0 bounds so the barrel profile reads at 8x11 game pixels",
+      "make the lid a proud, contrasting cap using an allowed light token such as wood.light or dirt.hi with a visible rim edge separate from the body",
+      "thicken and space the three timber hoops away from the lid and base so three distinct dark bands read in daytime and sunset crops",
+      "raise body value using wood.light/wood.mid within the palette to preserve separation at night without adding lights, textures or new colours",
+      "re-render the signed farm composite and confirm the barrel is identifiable at 320x180 game scale"
+    ],
+    "action": "refine-code"
+  },
+  "sheetSha256": "89c6c0f1d223367ddd0f39f5b5ea66b10f232411e8874fda603de42492bbcea1",
+  "sheet": "verify/critic-sheet-89c6c0f1d223367d.png",
+  "status": "visual critique recorded; human review required",
+  "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+}

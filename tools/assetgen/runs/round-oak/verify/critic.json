@@ -1,0 +1,37 @@
+{
+  "sessionId": "ses_e4e9ab0d0ffe7a2EFl6BEbr6m3",
+  "durationMs": 28002,
+  "usage": {
+    "tokens": {
+      "input": 12852,
+      "output": 70,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "cost": 0
+  },
+  "review": {
+    "imageReviewed": true,
+    "scores": {
+      "silhouette": 4,
+      "palette": 4,
+      "shapeLanguage": 4,
+      "valueStructure": 4,
+      "sceneFit": 4,
+      "craft": 4
+    },
+    "features": {
+      "trunk": true,
+      "crown": true,
+      "foliage-tiers": true
+    },
+    "blockers": [],
+    "fixes": [],
+    "action": "continue"
+  },
+  "status": "visual critique recorded; human review required",
+  "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+}

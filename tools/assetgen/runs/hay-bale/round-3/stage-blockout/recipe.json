@@ -1,0 +1,113 @@
+{
+  "id": "hay-bale",
+  "category": "prop",
+  "footprint": {
+    "w": 1,
+    "d": 0.7
+  },
+  "height": 0.6,
+  "origin": "base-center",
+  "facing": "+Z",
+  "parts": [
+    {
+      "name": "bale-core",
+      "prim": "bevelBox",
+      "size": [
+        0.84,
+        0.58,
+        0.64
+      ],
+      "bevel": 0.09,
+      "at": [
+        0,
+        0.29,
+        0
+      ],
+      "mat": "wood.light",
+      "feature": "bale"
+    },
+    {
+      "name": "end-left",
+      "prim": "bevelBox",
+      "size": [
+        0.18,
+        0.54,
+        0.68
+      ],
+      "bevel": 0.06,
+      "at": [
+        -0.41,
+        0.29,
+        0
+      ],
+      "mat": "wood.mid",
+      "feature": "ends"
+    },
+    {
+      "name": "end-right",
+      "prim": "bevelBox",
+      "size": [
+        0.18,
+        0.54,
+        0.68
+      ],
+      "bevel": 0.06,
+      "at": [
+        0.41,
+        0.29,
+        0
+      ],
+      "mat": "wood.mid",
+      "feature": "ends"
+    },
+    {
+      "name": "band-left",
+      "prim": "bevelBox",
+      "size": [
+        0.2,
+        0.62,
+        0.72
+      ],
+      "bevel": 0.04,
+      "at": [
+        -0.24,
+        0.32,
+        0
+      ],
+      "mat": "timber",
+      "feature": "bands",
+      "exception": "band"
+    },
+    {
+      "name": "band-right",
+      "prim": "bevelBox",
+      "size": [
+        0.2,
+        0.62,
+        0.72
+      ],
+      "bevel": 0.04,
+      "at": [
+        0.24,
+        0.32,
+        0
+      ],
+      "mat": "timber",
+      "feature": "bands",
+      "exception": "band"
+    }
+  ],
+  "anchors": {},
+  "emissive": [],
+  "collision": {
+    "type": "box",
+    "w": 1,
+    "d": 0.7,
+    "h": 0.6
+  },
+  "slots": {},
+  "tags": [
+    "farm",
+    "cozy"
+  ]
+}

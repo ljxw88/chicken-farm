@@ -1,0 +1,391 @@
+{
+  "id": "barrel",
+  "category": "prop",
+  "status": "needs-human",
+  "signedBy": null,
+  "roundsUsed": 3,
+  "completedStages": [],
+  "corrections": 2,
+  "stageCorrections": {
+    "blockout": 2
+  },
+  "stopReason": "Bounded correction limit reached",
+  "best": {
+    "score": 78,
+    "recipe": {
+      "id": "barrel",
+      "category": "prop",
+      "footprint": {
+        "w": 0.8,
+        "d": 0.8
+      },
+      "height": 1,
+      "origin": "base-center",
+      "facing": "+Z",
+      "parts": [
+        {
+          "name": "body",
+          "prim": "lathe",
+          "profile": [
+            [
+              0,
+              0
+            ],
+            [
+              0.3,
+              0
+            ],
+            [
+              0.35,
+              0.25
+            ],
+            [
+              0.38,
+              0.45
+            ],
+            [
+              0.35,
+              0.65
+            ],
+            [
+              0.3,
+              0.9
+            ],
+            [
+              0,
+              0.9
+            ]
+          ],
+          "segments": 12,
+          "at": [
+            0,
+            0,
+            0
+          ],
+          "mat": "wood.mid",
+          "feature": "body"
+        },
+        {
+          "name": "hoop-bottom",
+          "prim": "lathe",
+          "profile": [
+            [
+              0.3,
+              -0.06
+            ],
+            [
+              0.355,
+              -0.06
+            ],
+            [
+              0.355,
+              0.06
+            ],
+            [
+              0.3,
+              0.06
+            ]
+          ],
+          "segments": 12,
+          "at": [
+            0,
+            0.15,
+            0
+          ],
+          "mat": "timber",
+          "feature": "hoops",
+          "exception": "band"
+        },
+        {
+          "name": "hoop-middle",
+          "prim": "lathe",
+          "profile": [
+            [
+              0.36,
+              -0.07
+            ],
+            [
+              0.4,
+              -0.07
+            ],
+            [
+              0.4,
+              0.07
+            ],
+            [
+              0.36,
+              0.07
+            ]
+          ],
+          "segments": 12,
+          "at": [
+            0,
+            0.45,
+            0
+          ],
+          "mat": "timber",
+          "feature": "hoops",
+          "exception": "band"
+        },
+        {
+          "name": "hoop-top",
+          "prim": "lathe",
+          "profile": [
+            [
+              0.3,
+              -0.06
+            ],
+            [
+              0.355,
+              -0.06
+            ],
+            [
+              0.355,
+              0.06
+            ],
+            [
+              0.3,
+              0.06
+            ]
+          ],
+          "segments": 12,
+          "at": [
+            0,
+            0.75,
+            0
+          ],
+          "mat": "timber",
+          "feature": "hoops",
+          "exception": "band"
+        },
+        {
+          "name": "lid",
+          "prim": "cylinder",
+          "radiusTop": 0.33,
+          "radiusBottom": 0.33,
+          "h": 0.12,
+          "segments": 16,
+          "at": [
+            0,
+            0.94,
+            0
+          ],
+          "mat": "wood.light",
+          "feature": "lid"
+        }
+      ],
+      "anchors": {},
+      "emissive": [],
+      "collision": {
+        "type": "box",
+        "w": 0.8,
+        "d": 0.8,
+        "h": 1
+      },
+      "slots": {},
+      "tags": [
+        "farm",
+        "cozy"
+      ]
+    },
+    "stage": "blockout",
+    "round": 1,
+    "hardFailureCount": 0,
+    "blockers": [
+      {
+        "code": "CRITIQUE",
+        "message": "silhouette=3; shapeLanguage=3; valueStructure=2; craft=3; body: bulging tapered stave profile not readable at native 8px width in 3x crops; silhouette reads as near-straight vertical capsule; hoops: three broad dark bands not individually countable across yaws; they merge in sunset and disappear into shadow at night; lid: contrasting top lid faint in daytime and lost against body in sunset/night phases; value: barrel has minimal separation from grass and path, near-black and illegible at night; identity not seen: hoops"
+      }
+    ],
+    "report": "tools/assetgen/runs/barrel/round-1/stage-blockout/report.json",
+    "sheet": "tools/assetgen/runs/barrel/round-1/stage-blockout/render/sheet.png"
+  },
+  "imageProbe": "three colour probes passed",
+  "lighting": "pre-EBR-80, no visual pass claimed",
+  "wallTimeMs": 194800,
+  "usage": {
+    "input": 140199,
+    "output": 1730,
+    "reasoning": 0,
+    "reportedCostUSD": 0,
+    "sessionsWithUsage": 5,
+    "sessionCount": 5,
+    "complete": true
+  },
+  "tokenCostNote": "Retrieved from the OpenCode session API after the run; 0 is the API-reported cost, not a billing guarantee.",
+  "accountingNote": "The initial loop counted the final failed attempt as a correction even though no fourth candidate was generated. Two revisions followed the initial candidate; the loop has been fixed to count only actual corrections.",
+  "history": [
+    {
+      "round": 1,
+      "stage": "blockout",
+      "action": "refine-code",
+      "score": 78,
+      "blockers": [
+        "CRITIQUE"
+      ],
+      "generatorSession": "ses_e4eaad44dffeEJH1Ly1xp6xWXy",
+      "criticSession": "ses_e4eaa58fbffeNtsI4Vq1BvQcBp"
+    },
+    {
+      "round": 2,
+      "stage": "blockout",
+      "action": "refine-code",
+      "score": 78,
+      "blockers": [
+        "CRITIQUE"
+      ],
+      "generatorSession": "ses_e4ea9f6d5ffexeXpWsTsZqhFHf",
+      "criticSession": "ses_e4ea9277dffeVm7FyDNic4o41l"
+    },
+    {
+      "round": 3,
+      "stage": "blockout",
+      "action": "refine-code",
+      "score": 28,
+      "blockers": [
+        "H7"
+      ],
+      "generatorSession": "ses_e4ea8be09ffez0oChesdnrtiXq",
+      "criticSession": null
+    }
+  ],
+  "postVerificationCritique": {
+    "sessionId": "ses_e4e96829dffeqE19gKmx2JrS1o",
+    "durationMs": 36636,
+    "usage": {
+      "tokens": {
+        "input": 12785,
+        "output": 343,
+        "reasoning": 0,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    "review": {
+      "imageReviewed": true,
+      "scores": {
+        "silhouette": 3,
+        "palette": 4,
+        "shapeLanguage": 3,
+        "valueStructure": 2,
+        "sceneFit": 2,
+        "craft": 3
+      },
+      "features": {
+        "body": true,
+        "hoops": true,
+        "lid": false
+      },
+      "blockers": [
+        "lid: contrasting top lid is not readable as a separate cap in daytime, sunset or night 3x crops and reads as the same wood mass as the body",
+        "body: bulge and tapered stave silhouette read as near-cylindrical at game scale with no clear faceted stave breakup",
+        "barrel at night phase: form collapses to near-black against the dark green ground with hoops and top separation unreadable",
+        "signed farm composite: barrel is not recognisable at actual game scale alongside the cottage, coops, trees, fence and character"
+      ],
+      "fixes": [
+        "increase the lathe mid-body bulge and narrow top/bottom within the declared 0.8x1.0 bounds so the barrel profile reads at 8x11 game pixels",
+        "make the lid a proud, contrasting cap using an allowed light token such as wood.light or dirt.hi with a visible rim edge separate from the body",
+        "thicken and space the three timber hoops away from the lid and base so three distinct dark bands read in daytime and sunset crops",
+        "raise body value using wood.light/wood.mid within the palette to preserve separation at night without adding lights, textures or new colours",
+        "re-render the signed farm composite and confirm the barrel is identifiable at 320x180 game scale"
+      ],
+      "action": "refine-code"
+    },
+    "sheetSha256": "89c6c0f1d223367ddd0f39f5b5ea66b10f232411e8874fda603de42492bbcea1",
+    "sheet": "verify/critic-sheet-89c6c0f1d223367d.png",
+    "status": "visual critique recorded; human review required",
+    "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+  },
+  "postVerificationCritiqueHistory": [
+    {
+      "sessionId": "ses_e4e977bdaffevyOeZPKWqxkin2",
+      "durationMs": 33389,
+      "usage": {
+        "tokens": {
+          "input": 12788,
+          "output": 69,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "review": {
+        "imageReviewed": true,
+        "scores": {
+          "silhouette": 4,
+          "palette": 4,
+          "shapeLanguage": 4,
+          "valueStructure": 4,
+          "sceneFit": 4,
+          "craft": 4
+        },
+        "features": {
+          "body": true,
+          "hoops": true,
+          "lid": true
+        },
+        "blockers": [],
+        "fixes": [],
+        "action": "continue"
+      },
+      "status": "visual critique recorded; human review required",
+      "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+    },
+    {
+      "sessionId": "ses_e4e96829dffeqE19gKmx2JrS1o",
+      "durationMs": 36636,
+      "usage": {
+        "tokens": {
+          "input": 12785,
+          "output": 343,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "review": {
+        "imageReviewed": true,
+        "scores": {
+          "silhouette": 3,
+          "palette": 4,
+          "shapeLanguage": 3,
+          "valueStructure": 2,
+          "sceneFit": 2,
+          "craft": 3
+        },
+        "features": {
+          "body": true,
+          "hoops": true,
+          "lid": false
+        },
+        "blockers": [
+          "lid: contrasting top lid is not readable as a separate cap in daytime, sunset or night 3x crops and reads as the same wood mass as the body",
+          "body: bulge and tapered stave silhouette read as near-cylindrical at game scale with no clear faceted stave breakup",
+          "barrel at night phase: form collapses to near-black against the dark green ground with hoops and top separation unreadable",
+          "signed farm composite: barrel is not recognisable at actual game scale alongside the cottage, coops, trees, fence and character"
+        ],
+        "fixes": [
+          "increase the lathe mid-body bulge and narrow top/bottom within the declared 0.8x1.0 bounds so the barrel profile reads at 8x11 game pixels",
+          "make the lid a proud, contrasting cap using an allowed light token such as wood.light or dirt.hi with a visible rim edge separate from the body",
+          "thicken and space the three timber hoops away from the lid and base so three distinct dark bands read in daytime and sunset crops",
+          "raise body value using wood.light/wood.mid within the palette to preserve separation at night without adding lights, textures or new colours",
+          "re-render the signed farm composite and confirm the barrel is identifiable at 320x180 game scale"
+        ],
+        "action": "refine-code"
+      },
+      "sheetSha256": "89c6c0f1d223367ddd0f39f5b5ea66b10f232411e8874fda603de42492bbcea1",
+      "sheet": "verify/critic-sheet-89c6c0f1d223367d.png",
+      "status": "visual critique recorded; human review required",
+      "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+    }
+  ]
+}

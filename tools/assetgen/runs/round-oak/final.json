@@ -1,0 +1,509 @@
+{
+  "id": "round-oak",
+  "category": "flora",
+  "status": "needs-human",
+  "signedBy": null,
+  "roundsUsed": 5,
+  "completedStages": [
+    "blockout",
+    "form",
+    "material"
+  ],
+  "corrections": 4,
+  "stageCorrections": {
+    "blockout": 1,
+    "form": 2,
+    "detail": 1
+  },
+  "stopReason": "Bounded correction limit reached",
+  "best": {
+    "score": 88,
+    "recipe": {
+      "id": "round-oak",
+      "category": "flora",
+      "footprint": {
+        "w": 1.6,
+        "d": 1.6
+      },
+      "height": 3.4,
+      "origin": "base-center",
+      "facing": "+Z",
+      "parts": [
+        {
+          "name": "trunk",
+          "prim": "cylinder",
+          "radiusTop": 0.2,
+          "radiusBottom": 0.32,
+          "h": 2,
+          "segments": 7,
+          "at": [
+            0,
+            1,
+            0
+          ],
+          "mat": "trunk",
+          "feature": "trunk"
+        },
+        {
+          "name": "crown-top",
+          "prim": "sphere",
+          "radius": 0.7,
+          "detail": 0,
+          "at": [
+            0,
+            2.75,
+            0
+          ],
+          "scale": [
+            1,
+            0.85,
+            1
+          ],
+          "mat": "foliage.light",
+          "feature": "crown"
+        },
+        {
+          "name": "crown-tier-left",
+          "prim": "sphere",
+          "radius": 0.58,
+          "detail": 0,
+          "at": [
+            -0.33,
+            2.15,
+            0.33
+          ],
+          "scale": [
+            1,
+            0.8,
+            1
+          ],
+          "mat": "foliage.mid",
+          "feature": "foliage-tiers"
+        },
+        {
+          "name": "crown-tier-right",
+          "prim": "sphere",
+          "radius": 0.58,
+          "detail": 0,
+          "at": [
+            0.33,
+            2.15,
+            -0.33
+          ],
+          "scale": [
+            1,
+            0.8,
+            1
+          ],
+          "mat": "foliage.dark",
+          "feature": "foliage-tiers"
+        }
+      ],
+      "anchors": {},
+      "emissive": [],
+      "collision": {
+        "type": "box",
+        "w": 1.6,
+        "d": 1.6,
+        "h": 3.4
+      },
+      "slots": {},
+      "tags": [
+        "farm",
+        "cozy"
+      ]
+    },
+    "stage": "material",
+    "round": 4,
+    "hardFailureCount": 0,
+    "lowerTrust": false,
+    "blockers": [],
+    "report": "tools/assetgen/runs/round-oak/round-4/stage-material/report.json",
+    "sheet": "tools/assetgen/runs/round-oak/round-4/stage-material/render/sheet.png"
+  },
+  "imageProbe": "three colour probes passed",
+  "lighting": "pre-EBR-80, no visual pass claimed",
+  "wallTimeMs": 670444,
+  "usage": {
+    "input": 237470,
+    "output": 3181,
+    "reasoning": 0,
+    "reportedCostUSD": 0,
+    "sessionsWithUsage": 13,
+    "sessionCount": 13,
+    "complete": true
+  },
+  "tokenCostNote": "Usage/cost are OpenCode session-reported values when available; missing sessions are not estimated.",
+  "history": [
+    {
+      "round": 1,
+      "stage": "blockout",
+      "action": "refine-code",
+      "score": 28,
+      "blockers": [
+        "H3"
+      ],
+      "generatorSession": "ses_e4ea65d9dffeGK2FMcTzUXtrFj",
+      "criticSession": null,
+      "generatorUsage": {
+        "tokens": {
+          "input": 19004,
+          "output": 268,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": null
+    },
+    {
+      "round": 2,
+      "stage": "blockout",
+      "action": "continue",
+      "score": 88,
+      "blockers": [],
+      "generatorSession": "ses_e4ea57d30ffe4MvtReotPUG44q",
+      "criticSession": "ses_e4ea438f8ffeLzLYF6rjL4PdTp",
+      "generatorUsage": {
+        "tokens": {
+          "input": 21085,
+          "output": 297,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": {
+        "tokens": {
+          "input": 12875,
+          "output": 76,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      }
+    },
+    {
+      "round": 2,
+      "stage": "form",
+      "action": "refine-code",
+      "score": 49,
+      "blockers": [
+        "CRITIQUE"
+      ],
+      "generatorSession": "ses_e4ea36c3cffelFp0ckGq4316jd",
+      "criticSession": "ses_e4ea19449ffeECpdVgMdeyWsKq",
+      "generatorUsage": {
+        "tokens": {
+          "input": 22126,
+          "output": 299,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": {
+        "tokens": {
+          "input": 12874,
+          "output": 220,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      }
+    },
+    {
+      "round": 3,
+      "stage": "form",
+      "action": "refine-code",
+      "score": 21,
+      "blockers": [
+        "H3",
+        "H8"
+      ],
+      "generatorSession": "ses_e4ea04907ffep64HnmBPQZS3PD",
+      "criticSession": null,
+      "generatorUsage": {
+        "tokens": {
+          "input": 22628,
+          "output": 324,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": null
+    },
+    {
+      "round": 4,
+      "stage": "form",
+      "action": "continue",
+      "score": 88,
+      "blockers": [],
+      "generatorSession": "ses_e4e9fe592ffeHW0iEnSw41j7eQ",
+      "criticSession": "ses_e4e9efe48ffeCmzkbsDVbeDf6q",
+      "generatorUsage": {
+        "tokens": {
+          "input": 21211,
+          "output": 324,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": {
+        "tokens": {
+          "input": 12864,
+          "output": 70,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      }
+    },
+    {
+      "round": 4,
+      "stage": "material",
+      "action": "continue",
+      "score": 88,
+      "blockers": [],
+      "generatorSession": "ses_e4e9e5df0ffeAAXQ8n1FONwxTO",
+      "criticSession": "ses_e4e9e1011ffe7VmvQjWDWmTovW",
+      "generatorUsage": {
+        "tokens": {
+          "input": 22184,
+          "output": 326,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": {
+        "tokens": {
+          "input": 12862,
+          "output": 75,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      }
+    },
+    {
+      "round": 4,
+      "stage": "detail",
+      "action": "refine-code",
+      "score": 49,
+      "blockers": [
+        "CRITIQUE"
+      ],
+      "generatorSession": "ses_e4e9da3f9ffeCfu0hZZmdp0B0T",
+      "criticSession": "ses_e4e9d37cdffeLLT6F9xzk2zNjG",
+      "generatorUsage": {
+        "tokens": {
+          "input": 22141,
+          "output": 327,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": {
+        "tokens": {
+          "input": 12865,
+          "output": 251,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      }
+    },
+    {
+      "round": 5,
+      "stage": "detail",
+      "action": "refine-code",
+      "score": 28,
+      "blockers": [
+        "H3"
+      ],
+      "generatorSession": "ses_e4e9cb978ffenZB4X4J042RL5I",
+      "criticSession": null,
+      "generatorUsage": {
+        "tokens": {
+          "input": 22751,
+          "output": 324,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "criticUsage": null
+    }
+  ],
+  "bestSelectionNote": "Tie-break correction: prefer a later equally scored, equally clean and equally trusted stage. Previous selection: {\"round\":2,\"stage\":\"blockout\",\"score\":88}. Historical reports and critic sheets are unchanged.",
+  "postVerificationCritique": {
+    "sessionId": "ses_e4e9680d0ffe2QKA2NzArBglfT",
+    "durationMs": 59493,
+    "usage": {
+      "tokens": {
+        "input": 29051,
+        "output": 235,
+        "reasoning": 0,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "cost": 0
+    },
+    "review": {
+      "imageReviewed": true,
+      "scores": {
+        "silhouette": 4,
+        "palette": 4,
+        "shapeLanguage": 3,
+        "valueStructure": 4,
+        "sceneFit": 4,
+        "craft": 4
+      },
+      "features": {
+        "trunk": true,
+        "crown": true,
+        "foliage-tiers": false
+      },
+      "blockers": [
+        "foliage-tiers: the three crown masses merge into a single two-tone blob at 320x180 with no readable three-mass or tier breaks across the eight yaws"
+      ],
+      "fixes": [
+        "Vertically separate and slightly offset the three foliage masses in X/Z with differing radii so two silhouette steps/notches remain visible at 320x180 in all yaws",
+        "Assign foliage.light, foliage.mid and foliage.dark distinctly to the top, middle and lower masses and adjust overlap so tonal tiers survive daytime lighting"
+      ],
+      "action": "refine-code"
+    },
+    "sheetSha256": "e245dd71c3b1aceb3c82bcad2ad353f270ade86bb4e64d898bd9f8f90b4cb6fc",
+    "sheet": "verify/critic-sheet-e245dd71c3b1aceb.png",
+    "status": "visual critique recorded; human review required",
+    "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+  },
+  "postVerificationCritiqueHistory": [
+    {
+      "sessionId": "ses_e4e9ab0d0ffe7a2EFl6BEbr6m3",
+      "durationMs": 28002,
+      "usage": {
+        "tokens": {
+          "input": 12852,
+          "output": 70,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "review": {
+        "imageReviewed": true,
+        "scores": {
+          "silhouette": 4,
+          "palette": 4,
+          "shapeLanguage": 4,
+          "valueStructure": 4,
+          "sceneFit": 4,
+          "craft": 4
+        },
+        "features": {
+          "trunk": true,
+          "crown": true,
+          "foliage-tiers": true
+        },
+        "blockers": [],
+        "fixes": [],
+        "action": "continue"
+      },
+      "status": "visual critique recorded; human review required",
+      "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+    },
+    {
+      "sessionId": "ses_e4e9680d0ffe2QKA2NzArBglfT",
+      "durationMs": 59493,
+      "usage": {
+        "tokens": {
+          "input": 29051,
+          "output": 235,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "cost": 0
+      },
+      "review": {
+        "imageReviewed": true,
+        "scores": {
+          "silhouette": 4,
+          "palette": 4,
+          "shapeLanguage": 3,
+          "valueStructure": 4,
+          "sceneFit": 4,
+          "craft": 4
+        },
+        "features": {
+          "trunk": true,
+          "crown": true,
+          "foliage-tiers": false
+        },
+        "blockers": [
+          "foliage-tiers: the three crown masses merge into a single two-tone blob at 320x180 with no readable three-mass or tier breaks across the eight yaws"
+        ],
+        "fixes": [
+          "Vertically separate and slightly offset the three foliage masses in X/Z with differing radii so two silhouette steps/notches remain visible at 320x180 in all yaws",
+          "Assign foliage.light, foliage.mid and foliage.dark distinctly to the top, middle and lower masses and adjust overlap so tonal tiers survive daytime lighting"
+        ],
+        "action": "refine-code"
+      },
+      "sheetSha256": "e245dd71c3b1aceb3c82bcad2ad353f270ade86bb4e64d898bd9f8f90b4cb6fc",
+      "sheet": "verify/critic-sheet-e245dd71c3b1aceb.png",
+      "status": "visual critique recorded; human review required",
+      "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+    }
+  ]
+}

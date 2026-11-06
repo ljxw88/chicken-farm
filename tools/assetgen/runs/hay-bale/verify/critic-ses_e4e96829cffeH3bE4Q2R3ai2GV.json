@@ -1,0 +1,39 @@
+{
+  "sessionId": "ses_e4e96829cffeH3bE4Q2R3ai2GV",
+  "durationMs": 50001,
+  "usage": {
+    "tokens": {
+      "input": 12790,
+      "output": 73,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "cost": 0
+  },
+  "review": {
+    "imageReviewed": true,
+    "scores": {
+      "silhouette": 4,
+      "palette": 4,
+      "shapeLanguage": 4,
+      "valueStructure": 4,
+      "sceneFit": 4,
+      "craft": 5
+    },
+    "features": {
+      "bale": true,
+      "bands": true,
+      "ends": true
+    },
+    "blockers": [],
+    "fixes": [],
+    "action": "continue"
+  },
+  "sheetSha256": "ed96b99266d281df6a0138dffb63a60e48b1f55c6309bbc653e521a9e0d666ad",
+  "sheet": "verify/critic-sheet-ed96b99266d281df.png",
+  "status": "visual critique recorded; human review required",
+  "purpose": "Re-critique fixed-framing verification sheet; no new generation or correction round."
+}

@@ -1,0 +1,88 @@
+{
+  "id": "barrel",
+  "round": 3,
+  "stage": "blockout",
+  "action": "refine-code",
+  "score": 28,
+  "hard": {
+    "failures": [
+      {
+        "code": "H7",
+        "message": "32 near-coplanar overlaps: hoop-top[32]/lid[36], hoop-top[32]/lid[37], hoop-top[33]/lid[36], hoop-top[33]/lid[37], hoop-top[34]/lid[37], hoop-top[34]/lid[38], hoop-top[35]/lid[37], hoop-top[35]/lid[38]"
+      }
+    ],
+    "metrics": {
+      "checks": {
+        "H1": true,
+        "H2": true,
+        "H3": true,
+        "H4": true,
+        "H5": true,
+        "H6": true,
+        "H7": false,
+        "H8": true,
+        "H9": true,
+        "H10": true
+      },
+      "lowerTrust": false,
+      "triangles": 272,
+      "triangleBudget": 600,
+      "partCount": 5,
+      "bounds": {
+        "min": [
+          -0.42,
+          0,
+          -0.42
+        ],
+        "max": [
+          0.42,
+          1,
+          0.42
+        ],
+        "width": 0.84,
+        "depth": 0.84,
+        "height": 1,
+        "centerXZ": [
+          0,
+          0
+        ]
+      },
+      "colorCount": 3,
+      "geometryHashes": [
+        "66d2739cb0a9314d14180971ff654b3d31d9353ac8020de150c357769a0a81f6",
+        "66d2739cb0a9314d14180971ff654b3d31d9353ac8020de150c357769a0a81f6"
+      ],
+      "zFightPairs": 32,
+      "disconnectedParts": [],
+      "nonFinite": 0,
+      "degenerate": 0,
+      "badNormals": 0
+    }
+  },
+  "visual": null,
+  "critique": null,
+  "critiqueStatus": "visual critique not run",
+  "generatorSession": "ses_e4ea8be09ffez0oChesdnrtiXq",
+  "criticSession": null,
+  "generatorDurationMs": 57934,
+  "criticDurationMs": null,
+  "generatorTokenUsage": null,
+  "tokenCost": null,
+  "diff": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "body",
+      "hoop-bottom",
+      "hoop-middle",
+      "hoop-top",
+      "lid"
+    ]
+  },
+  "blockers": [
+    {
+      "code": "H7",
+      "message": "32 near-coplanar overlaps: hoop-top[32]/lid[36], hoop-top[32]/lid[37], hoop-top[33]/lid[36], hoop-top[33]/lid[37], hoop-top[34]/lid[37], hoop-top[34]/lid[38], hoop-top[35]/lid[37], hoop-top[35]/lid[38]"
+    }
+  ]
+}
