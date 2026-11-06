@@ -3,8 +3,8 @@
 **Decision:** keep Three.js and build a thin game layer using Miniplex. Jiaxu confirmed this direction.
 This is a proposal, not an implementation or a performance result.
 
-The baseline description below is historical. For the EBR-74 character port
-and current module locations, see [src/core/README.md](../src/core/README.md).
+The baseline description below is historical. For the character, placement and
+environment ports, see [src/core/README.md](../src/core/README.md).
 
 ## Where we are
 

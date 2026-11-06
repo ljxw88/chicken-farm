@@ -1,18 +1,20 @@
 import type { InputActions } from './actions';
 
 export interface InputBindingOptions {
-  // Placement is still a synchronous legacy handler and must see the pointer first.
   ownMovement?: boolean;
+  ownPlacement?: boolean;
   onPointerDown?: (event: PointerEvent) => boolean;
 }
 
-/** Bind the action mapper; unported placement handlers retain their original priority. */
+/** Placement actions run at event time; movement still sees the pointer second. */
 export function bindInputActions(actions: InputActions, target: Window, canvas: HTMLCanvasElement,
   options: InputBindingOptions = {}) {
-  // Capture observes the event before the existing placement/character handlers
-  // call preventDefault. It never consumes the event itself.
   const capture = { capture: true };
-  target.addEventListener('keydown', actions.keyDown, capture);
+  const keyDown = (event: KeyboardEvent) => actions.keyDown(event, options.ownPlacement);
+  target.addEventListener('keydown', keyDown, capture);
+  // Match the old window-level placement handler: target handlers may first
+  // prevent a shortcut, while held movement continues to be captured.
+  if (options.ownPlacement) target.addEventListener('keydown', actions.placementKeyDown);
   target.addEventListener('keyup', actions.keyUp, capture);
   target.addEventListener('click', actions.activate, capture);
   target.addEventListener('blur', actions.blur);
@@ -26,8 +28,6 @@ export function bindInputActions(actions: InputActions, target: Window, canvas: 
     actions.pointerDown(event, handled, context);
   };
   if (options.ownMovement) {
-    // At bubble time this follows the placement key handler, just as the old
-    // walking handler did. Capture above still records placement actions.
     target.addEventListener('keydown', actions.preventMovementDefault);
     canvas.addEventListener('pointerdown', handlePointerDown);
   } else {
@@ -35,7 +35,8 @@ export function bindInputActions(actions: InputActions, target: Window, canvas: 
   }
 
   return () => {
-    target.removeEventListener('keydown', actions.keyDown, capture);
+    target.removeEventListener('keydown', keyDown, capture);
+    if (options.ownPlacement) target.removeEventListener('keydown', actions.placementKeyDown);
     target.removeEventListener('keyup', actions.keyUp, capture);
     target.removeEventListener('click', actions.activate, capture);
     target.removeEventListener('blur', actions.blur);

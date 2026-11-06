@@ -12,8 +12,7 @@ export type EngineFrameSystem<Components extends object = CoreComponents> =
 interface EngineOptions<Components extends object> {
   setAnimationLoop: (callback: ((time: number) => void) | null) => void;
   beforeFrame?: () => void;
-  // Unported environment paths retain their original full elapsed delta.
-  update: (deltaSeconds: number) => void;
+  update?: (deltaSeconds: number) => void;
   render: (deltaSeconds: number) => void;
   systems?: readonly EngineSystem<Components>[];
   // Movement stays frame-timed until fixed-step gameplay can pass parity.
@@ -45,7 +44,7 @@ export function createEngine<Components extends object = CoreComponents>(options
     fixed.advance(deltaSeconds);
     const move = input.movement();
     for (const system of frameSystems) system(world, move, deltaSeconds);
-    options.update(deltaSeconds);
+    options.update?.(deltaSeconds);
     options.render(deltaSeconds);
   }
 

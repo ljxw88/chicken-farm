@@ -1,0 +1,127 @@
+{
+  "baselineSha": "dcbaf70b8f2c1038afe5c0b70f506ec7de931214",
+  "candidateSha": "0014fb504538a493ee46c5141df8caaefcc94328",
+  "sourceStatus": "M src/character/createCharacterController.ts\n M src/core/README.md\n M src/core/input/actions.ts\n M src/core/input/bindInputActions.ts\n M src/core/input/index.ts\n M src/main.ts\n D src/placement/createPlacement.ts\n M src/placement/createPlacementControls.ts\n M src/placement/index.ts\n?? src/placement/createPlacementAdapter.ts\n?? src/placement/placementSystem.ts\n?? tests/browser/placement-environment-replay.browser.mjs\n?? tools/placement-environment-replay.mjs",
+  "browser": "153.0.8010.12",
+  "renderer": "SwiftShader",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1,
+  "seed": 3950313473,
+  "referenceTrace": "/tmp/ebr75-main-3PHym3/.ebr75-reference-YTWoXj/trace.json",
+  "referenceSha256": "7a72837cacd24041ed95ae905ea632315937eee461d54d2e8d319a2998f7a5a8",
+  "results": {
+    "placement": {
+      "actions": 37,
+      "samples": 39,
+      "identical": true
+    },
+    "environment-cycle": {
+      "actions": 31,
+      "samples": 94,
+      "identical": true
+    },
+    "url-morning-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-morning-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-morning-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-daytime-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-daytime-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-daytime-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-sunset-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-sunset-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-sunset-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-night-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-night-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-night-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "invalid-url": {
+      "actions": 3,
+      "samples": 3,
+      "identical": true
+    }
+  },
+  "visualResults": {
+    "preview-valid": 0,
+    "preview-rotated": 0,
+    "preview-player": 0,
+    "preview-deck": 0,
+    "preview-water": 0,
+    "preview-cottage": 0,
+    "placed-fence-frame": 0,
+    "touch-preview": 0,
+    "touch-rotated": 0,
+    "placed-fence-plot": 0,
+    "cancel-frame": 0,
+    "undo-frame": 0,
+    "remove-frame": 0,
+    "weather-half-rain": 0,
+    "weather-crossfade": 0,
+    "weather-full-rain": 0,
+    "weather-half-cloud": 0,
+    "weather-full-cloud": 0,
+    "weather-clear": 0,
+    "weather-night-rain": 0,
+    "url-morning-clear": 0,
+    "url-morning-cloudy": 0,
+    "url-morning-rain": 0,
+    "url-daytime-clear": 0,
+    "url-daytime-cloudy": 0,
+    "url-daytime-rain": 0,
+    "url-sunset-clear": 0,
+    "url-sunset-cloudy": 0,
+    "url-sunset-rain": 0,
+    "url-night-clear": 0,
+    "url-night-cloudy": 0,
+    "url-night-rain": 0
+  },
+  "mismatches": []
+}

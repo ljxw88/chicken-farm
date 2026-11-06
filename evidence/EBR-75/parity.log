@@ -1,0 +1,22 @@
+[heavy] slot /tmp/farm-heavy.2.lock acquired (waits for QA gate lock if held): npm run parity
+
+> chicken-farm@0.0.0 parity
+> node tools/parity.mjs
+
+Captured candidate spawn
+Captured candidate stairs-pad
+Captured candidate placement-ghost
+Captured candidate day
+Captured candidate night
+Captured candidate rain
+Captured candidate cottage-coops-day
+Captured candidate cottage-coops-night
+spawn: 0 changed pixels
+stairs-pad: 0 changed pixels
+placement-ghost: 0 changed pixels
+day: 0 changed pixels
+night: 0 changed pixels
+rain: 0 changed pixels
+cottage-coops-day: 0 changed pixels
+cottage-coops-night: 0 changed pixels
+[heavy] released /tmp/farm-heavy.2.lock rc=0
