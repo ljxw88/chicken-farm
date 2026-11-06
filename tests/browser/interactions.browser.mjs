@@ -67,14 +67,14 @@ async function capture(page, name) {
   if (evidenceDir) await page.screenshot({ path: join(evidenceDir, name) });
 }
 
-async function worldPoint(page, x, y, z) {
-  return page.evaluate(({ x, y, z }) => {
+async function worldPoint(page, x, z) {
+  return page.evaluate(({ x, z }) => {
     const { camera, character } = window.__ebr55Test;
     camera.updateMatrixWorld();
-    const projected = character.position.clone().set(x, y, z).project(camera);
+    const projected = character.position.clone().set(x, character.position.y, z).project(camera);
     const rect = document.querySelector('#scene').getBoundingClientRect();
     return { x: rect.left + (projected.x + 1) * rect.width / 2, y: rect.top + (1 - projected.y) * rect.height / 2 };
-  }, { x, y, z });
+  }, { x, z });
 }
 
 async function chickenPoint(page) {
@@ -110,11 +110,16 @@ test('production: approach chicken, press E once, then click the egg prompt to c
     return context?.getParameter(context.VERSION);
   });
   assert.match(webgl, /WebGL 2\.0/);
+  const pixel = await page.evaluate(() => window.getPixelRendering());
+  assert.equal(pixel.enabled, true);
+  assert.deepEqual([pixel.canvasWidth, pixel.canvasHeight], [320, 180]);
+  await page.evaluate(() => window.setWeather('rain'));
   assert.equal(await page.locator('.interaction-prompt').isVisible(), false);
 
   await page.keyboard.down('s');
   await chicken.waitFor({ state: 'visible', timeout: 10000 });
   await page.keyboard.up('s');
+  assert.equal(await chicken.evaluate((element) => getComputedStyle(element).imageRendering), 'auto');
   assert.equal(await status.textContent(), ''); // Entering the range is not an action.
   await capture(page, '01-chicken-prompt.png');
 
@@ -149,7 +154,13 @@ test('walking through a proximity area on a ground destination never activates i
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, devUrl, true);
-  const destination = await worldPoint(page, 3.5, 0, 3.5);
+  const heights = await page.evaluate(() => {
+    const { scene, character } = window.__ebr55Test;
+    const y = (name) => scene.getObjectByName(name).getWorldPosition(character.position.clone()).y;
+    return ['island-top', 'qa-chicken-stub', 'qa-egg-stub', 'qa-sign-stub', 'qa-feed-bin-stub'].map(y);
+  });
+  assert.deepEqual(heights, [2.4, 2.4, 2.4, 2.4, 2.4]);
+  const destination = await worldPoint(page, 3.5, 3.5);
   await page.mouse.click(destination.x, destination.y);
   await page.locator('.interaction-prompt[data-interactable="qa-chicken"]').waitFor({ state: 'visible', timeout: 10000 });
   assert.equal(await page.locator('[role="status"]').textContent(), '');
@@ -190,7 +201,7 @@ test('sign and bin expose their stub actions and only the supplied signed rates'
   const sign = page.locator('.interaction-prompt[data-interactable="qa-sign"]');
   const bin = page.locator('.interaction-prompt[data-interactable="qa-feed-bin"]');
   const status = page.locator('[role="status"]');
-  const signDestination = await worldPoint(page, 0.4, 0, -1.5);
+  const signDestination = await worldPoint(page, 0.4, -1.5);
   await page.mouse.click(signDestination.x, signDestination.y);
   await sign.waitFor({ state: 'visible', timeout: 10000 });
   await page.keyboard.press('e');
@@ -199,7 +210,7 @@ test('sign and bin expose their stub actions and only the supplied signed rates'
   assert.match(await status.textContent(), /Trading is not connected/);
   await capture(page, '07-sign.png');
 
-  const destination = await worldPoint(page, -2.3, 0, -0.85);
+  const destination = await worldPoint(page, -2.3, -0.85);
   await page.mouse.click(destination.x, destination.y);
   await bin.waitFor({ state: 'visible', timeout: 10000 });
   assert.match(await bin.textContent(), /Open feed bin/);
@@ -218,7 +229,7 @@ test('portrait touch can approach and use the prompt without sending a ground cl
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, devUrl, true);
-  const target = await worldPoint(page, 1.2, 0, 1.2);
+  const target = await worldPoint(page, 1.2, 1.2);
   await page.touchscreen.tap(target.x, target.y);
   const chicken = page.locator('.interaction-prompt[data-interactable="qa-chicken"]');
   await chicken.waitFor({ state: 'visible', timeout: 10000 });

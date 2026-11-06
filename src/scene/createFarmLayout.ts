@@ -23,10 +23,10 @@ function createPath(group: THREE.Group) {
   const points = [
     [-3.4, -1.3], [-2.5, -1.22], [-1.6, -1.1], [-0.75, -0.65], [0, 0],
     [0.85, -0.2], [1.6, -0.9], [2.5, -1.7], [3.4, -1.93], [4.3, -1.95],
-    [5.15, -1.65], [6, -0.9], [7.6, 0.4], [9.5, 2], [12, 4.4], [14, 7.7], [16, 7.7],
+    [5.15, -1.65], [6, -0.9], [7.6, 0.4], [8.7, 1.35],
   ];
   // One continuous S-shaped route runs from the barn, past spawn and the pond,
-  // to the ground edge. The outer ribbon is the darker soil border.
+  // to the island edge. The outer ribbon is the darker soil border.
   const curve = new THREE.CatmullRomCurve3(points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
 
   function ribbon(width: number, height: number, color: number, name: string) {
@@ -61,7 +61,7 @@ function createPath(group: THREE.Group) {
     mesh.name = name;
     path.add(mesh);
 
-    // Round the barn end; the other end meets the edge of the ground.
+    // Round the barn end; the other end meets the edge of the island.
     const [endX, endZ] = points[0];
     const end = new THREE.Mesh(new THREE.CircleGeometry(width / 2, 20), material);
     end.rotation.x = -Math.PI / 2;
@@ -77,11 +77,14 @@ function createPath(group: THREE.Group) {
     const point = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
     const offset = [0.38, -0.32, 0.18][index % 3];
+    const x = point.x - tangent.z * offset;
+    const z = point.z + tangent.x * offset;
+    if (Math.abs(x) > GROUND_SIZE / 2 - 0.15 || Math.abs(z) > GROUND_SIZE / 2 - 0.15) continue;
     const dash = new THREE.Mesh(new THREE.PlaneGeometry(index % 3 === 0 ? 0.19 : 0.13, 0.065), highlight);
     dash.name = 'farm-path-highlight';
     dash.rotation.x = -Math.PI / 2;
     dash.rotateZ(Math.atan2(-tangent.z, tangent.x) + (index % 2 === 0 ? 0.2 : -0.2));
-    dash.position.set(point.x - tangent.z * offset, GROUND_HEIGHT + 0.027, point.z + tangent.x * offset);
+    dash.position.set(x, GROUND_HEIGHT + 0.027, z);
     path.add(dash);
   }
 }

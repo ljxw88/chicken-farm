@@ -2,6 +2,13 @@ export type FarmObstacle =
   | { kind: 'box'; name: string; minX: number; maxX: number; minZ: number; maxZ: number }
   | { kind: 'circle'; name: string; x: number; z: number; radius: number };
 
+export interface FarmBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
   return obstacles.some((obstacle) => {
     if (obstacle.kind === 'circle') {
@@ -25,8 +32,16 @@ export function moveWithFarmCollisions(
   dz: number,
   radius: number,
   obstacles: readonly FarmObstacle[],
+  bounds?: FarmBounds,
 ) {
-  if (obstacles.length === 0 || (dx === 0 && dz === 0)) return { x: x + dx, z: z + dz };
+  const clampX = (value: number) => bounds
+    ? Math.max(bounds.minX + radius, Math.min(value, bounds.maxX - radius)) : value;
+  const clampZ = (value: number) => bounds
+    ? Math.max(bounds.minZ + radius, Math.min(value, bounds.maxZ - radius)) : value;
+
+  x = clampX(x);
+  z = clampZ(z);
+  if (obstacles.length === 0 || (dx === 0 && dz === 0)) return { x: clampX(x + dx), z: clampZ(z + dz) };
 
   const distance = Math.hypot(dx, dz);
   const maxStep = Math.min(0.1, Math.max(0.01, radius / 2));
@@ -35,12 +50,16 @@ export function moveWithFarmCollisions(
   const stepZ = dz / steps;
 
   for (let step = 0; step < steps; step++) {
-    if (!isBlocked(x + stepX, z + stepZ, radius, obstacles)) {
-      x += stepX;
-      z += stepZ;
+    // Clamp each substep, not just the final position: otherwise a diagonal
+    // movement can travel outside the island and bypass a prop along the rim.
+    const nextX = clampX(x + stepX);
+    const nextZ = clampZ(z + stepZ);
+    if (!isBlocked(nextX, nextZ, radius, obstacles)) {
+      x = nextX;
+      z = nextZ;
     } else {
-      if (!isBlocked(x + stepX, z, radius, obstacles)) x += stepX;
-      if (!isBlocked(x, z + stepZ, radius, obstacles)) z += stepZ;
+      if (!isBlocked(nextX, z, radius, obstacles)) x = nextX;
+      if (!isBlocked(x, nextZ, radius, obstacles)) z = nextZ;
     }
   }
 

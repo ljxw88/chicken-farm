@@ -280,3 +280,40 @@ test('the HUD phase follows the existing lighting cycle', { timeout: 30000 }, as
   await page.waitForFunction(() => document.querySelector('[data-phase]')?.textContent === 'Night');
   assert.deepEqual(errors, []);
 });
+
+test('pinned weather, pixel island and the collection HUD work together', { timeout: 30000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=night&weather=cloudy`, true);
+  await page.waitForFunction(() => window.getWeather().cloudyAmount > 0.99, null, { timeout: 15000 });
+  assert.equal(await page.locator('[data-phase]').textContent(), 'Night');
+  const state = await page.evaluate(() => {
+    const { scene, character } = window.__ebr65Test;
+    const ground = scene.getObjectByName('island-top');
+    const egg = scene.getObjectByName('qa-egg-stub');
+    return {
+      groundHeight: ground.getWorldPosition(character.position.clone()).y,
+      eggHeight: egg.getWorldPosition(character.position.clone()).y,
+      background: scene.background.getHex(),
+      pixel: window.getPixelRendering(),
+      hudRendering: getComputedStyle(document.querySelector('#farm-hud')).imageRendering,
+    };
+  });
+  assert.equal(state.groundHeight, 2.4);
+  assert.equal(state.eggHeight, state.groundHeight);
+  assert.equal(state.background, 0x101416);
+  assert.equal(state.pixel.enabled, true);
+  assert.deepEqual([state.pixel.canvasWidth, state.pixel.canvasHeight], [320, 180]);
+  assert.equal(state.hudRendering, 'auto');
+
+  await page.locator('[data-collect]').click();
+  await assertCollected(page);
+  assert.equal(await page.evaluate(() => window.__ebr65Test.scene.getObjectByName('qa-egg-stub').visible), false);
+  await page.evaluate(() => window.setPixelRendering(false));
+  assert.equal(await page.evaluate(() => window.getPixelRendering().canvasWidth), 1280);
+  await page.evaluate(() => window.setPixelRendering(true));
+  assert.equal(await page.evaluate(() => window.getPixelRendering().canvasWidth), 320);
+  await page.evaluate(() => window.setDayNightPhase('sunset'));
+  await page.waitForFunction(() => document.querySelector('[data-phase]')?.textContent === 'Sunset');
+  assert.deepEqual(errors, []);
+});

@@ -7,10 +7,13 @@ const vite = await createServer({ configFile: false, server: { middlewareMode: t
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
+const { configureDayNightFromUrl } = await vite.ssrLoadModule('/src/lighting/configureDayNightFromUrl.ts');
+const { VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 function fixture() {
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(VOID_COLOR);
   const character = createCharacter();
   scene.add(character);
   const { windows } = createFarmLayout(scene);
@@ -37,7 +40,7 @@ function colorNear(actual, expected, tolerance = 1e-9) {
   near(actual.b, expected.b, tolerance);
 }
 
-test('all four phases use the locked environment and light presets', () => {
+test('all four phases keep the void and use the locked fog and light presets', () => {
   const { scene, cycle, ambient, hemisphere, directional, windows, windowLights, lanternGlass, lanternLight } = fixture();
   const expected = {
     morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.25, 0xe8d4c8, 0xa8c090, 0.55, 0xffe8c8, 0.55],
@@ -51,7 +54,7 @@ test('all four phases use the locked environment and light presets', () => {
   assert.ok(windows.every((window) => window.parent.name === 'farm-barn'));
   for (const [phase, values] of Object.entries(expected)) {
     cycle.setDayNightPhase(phase);
-    assert.equal(scene.background.getHex(), values[0], phase);
+    assert.equal(scene.background.getHex(), 0x101416, phase);
     assert.equal(scene.fog.color.getHex(), values[1], phase);
     near(scene.fog.density, values[2]);
     assert.equal(ambient.color.getHex(), values[3], phase);
@@ -79,14 +82,15 @@ test('all four phases use the locked environment and light presets', () => {
 });
 
 test('the default 72-second cycle advances through all four phases and wraps', () => {
-  const { scene, cycle } = fixture();
-  assert.equal(scene.background.getHex(), 0xe8d4c8);
+  const { scene, cycle, hemisphere } = fixture();
+  assert.equal(hemisphere.color.getHex(), 0xe8d4c8);
   for (const sky of [0xa8d4f0, 0xf0a878, 0x2a2848, 0xe8d4c8]) {
     cycle.update(18);
-    assert.equal(scene.background.getHex(), sky);
+    assert.equal(hemisphere.color.getHex(), sky);
+    assert.equal(scene.background.getHex(), 0x101416);
   }
   cycle.update(72 * 3 + 18);
-  assert.equal(scene.background.getHex(), 0xa8d4f0);
+  assert.equal(hemisphere.color.getHex(), 0xa8d4f0);
 });
 
 test('the current phase can be read as the existing lighting cycle advances or is set', () => {
@@ -106,7 +110,9 @@ test('colors, intensities, fog and practical lights blend smoothly between prese
   const { scene, cycle, ambient, hemisphere, directional, windowLights, lanternLight } = fixture();
   cycle.update(4.5); // A quarter of the morning-to-day interval, smoothstep = 0.15625.
   const blend = 0.15625;
-  colorNear(scene.background, new THREE.Color(0xe8d4c8).lerp(new THREE.Color(0xa8d4f0), blend));
+  assert.equal(scene.background.getHex(), 0x101416);
+  colorNear(hemisphere.color, new THREE.Color(0xe8d4c8).lerp(new THREE.Color(0xa8d4f0), blend));
+  colorNear(scene.fog.color, new THREE.Color(0xe8d4c8).lerp(new THREE.Color(0xc8e0f0), blend));
   colorNear(ambient.color, new THREE.Color(0xf0e0d0).lerp(new THREE.Color(0xe8f0e8), blend));
   colorNear(hemisphere.groundColor, new THREE.Color(0xa8c090).lerp(new THREE.Color(0x9cb88a), blend));
   colorNear(directional.color, new THREE.Color(0xffe8c8).lerp(new THREE.Color(0xfff2d6), blend));
@@ -129,17 +135,19 @@ test('colors, intensities, fog and practical lights blend smoothly between prese
 });
 
 test('the night-to-morning wrap has no lighting or directional-position jump', () => {
-  const { scene, cycle, directional, lanternLight } = fixture();
-  const morningSky = scene.background.clone();
+  const { scene, cycle, directional, hemisphere, lanternLight } = fixture();
+  const morningSky = hemisphere.color.clone();
   const morningDirection = directional.position.clone();
   cycle.setDayNightPhase('night');
   cycle.update(18 - 0.001);
-  colorNear(scene.background, morningSky, 1e-8);
+  colorNear(hemisphere.color, morningSky, 1e-8);
+  assert.equal(scene.background.getHex(), 0x101416);
   assert.ok(directional.position.distanceTo(morningDirection) < 0.005);
   assert.ok(lanternLight.intensity < 0.000001);
   cycle.update(0.002);
   assert.ok(directional.position.distanceTo(morningDirection) < 0.005);
-  colorNear(scene.background, morningSky, 1e-8);
+  colorNear(hemisphere.color, morningSky, 1e-8);
+  assert.equal(scene.background.getHex(), 0x101416);
 });
 
 test('the sun and moon arc above the ground with a low sunset', () => {
@@ -174,13 +182,13 @@ test('the lantern stays attached to the moving and turning character', () => {
 });
 
 test('changing cycle speed preserves progress and rejects invalid inputs', () => {
-  const { scene, cycle } = fixture();
+  const { cycle, hemisphere } = fixture();
   cycle.update(9);
-  const before = scene.background.clone();
+  const before = hemisphere.color.clone();
   cycle.setDayNightCycleSeconds(144);
-  colorNear(scene.background, before);
+  colorNear(hemisphere.color, before);
   cycle.update(18);
-  assert.equal(scene.background.getHex(), 0xa8d4f0);
+  assert.equal(hemisphere.color.getHex(), 0xa8d4f0);
   for (const invalid of [0, -1, Infinity, NaN, '12']) {
     assert.throws(() => cycle.setDayNightCycleSeconds(invalid), RangeError);
   }
@@ -188,5 +196,37 @@ test('changing cycle speed preserves progress and rejects invalid inputs', () =>
   assert.throws(() => cycle.update(-1), RangeError);
   assert.throws(() => cycle.update(Infinity), RangeError);
   cycle.update(36);
-  assert.equal(scene.background.getHex(), 0xf0a878);
+  assert.equal(hemisphere.color.getHex(), 0xf0a878);
+});
+
+test('a valid phase URL selects and holds each phase without changing the void', () => {
+  const expected = {
+    morning: [0xe8d4c8, 0xffe8c8, 0],
+    daytime: [0xa8d4f0, 0xfff2d6, 0],
+    sunset: [0xf0a878, 0xff8a50, 0],
+    night: [0x2a2848, 0xc8d4f0, 0.55],
+  };
+  for (const [phase, [sky, sun, lanternIntensity]] of Object.entries(expected)) {
+    const { scene, cycle, hemisphere, directional, lanternLight } = fixture();
+    const update = configureDayNightFromUrl(`?other=kept&phase=${phase}`, cycle);
+    assert.equal(hemisphere.color.getHex(), sky, phase);
+    assert.equal(directional.color.getHex(), sun, phase);
+    near(lanternLight.intensity, lanternIntensity);
+    cycle.setDayNightCycleSeconds(1);
+    update(125);
+    assert.equal(hemisphere.color.getHex(), sky, phase);
+    assert.equal(directional.color.getHex(), sun, phase);
+    assert.equal(scene.background.getHex(), 0x101416, phase);
+    near(lanternLight.intensity, lanternIntensity);
+  }
+});
+
+test('missing or invalid phase URLs retain the normal running cycle', () => {
+  for (const search of ['', '?weather=clear', '?phase=', '?phase=midnight', '?phase=SUNSET']) {
+    const { cycle, hemisphere } = fixture();
+    const update = configureDayNightFromUrl(search, cycle);
+    assert.equal(hemisphere.color.getHex(), 0xe8d4c8, search);
+    update(18);
+    assert.equal(hemisphere.color.getHex(), 0xa8d4f0, search);
+  }
 });
