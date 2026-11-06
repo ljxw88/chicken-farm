@@ -5,11 +5,14 @@ import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { comparePlacementEnvironmentReplay } from '../../tools/placement-environment-replay.mjs';
 
-const baselineSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
+const references = [
+  { label: 'dcbaf70', sha: 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214', env: 'EBR75_DCB_BASELINE_WORKTREE' },
+  { label: '5d9ba48', sha: '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff', env: 'EBR75_MAIN_BASELINE_WORKTREE' },
+];
 
-test('placement and environment replay exactly matches a clean dcbaf70 worktree', { timeout: 300000 }, async (t) => {
+for (const reference of references) test(`placement and environment replay against clean main ${reference.label}`, { timeout: 300000 }, async (t) => {
   const root = process.cwd();
-  let baseline = process.env.EBR75_BASELINE_WORKTREE;
+  let baseline = process.env[reference.env];
   let owned = false;
   try {
     if (!baseline) {
@@ -19,14 +22,15 @@ test('placement and environment replay exactly matches a clean dcbaf70 worktree'
         if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
         baseline = await mkdtemp(join(tmpdir(), 'ebr75-main-'));
       }
-      execFileSync('git', ['worktree', 'add', '--detach', baseline, baselineSha], { cwd: root });
+      execFileSync('git', ['worktree', 'add', '--detach', baseline, reference.sha], { cwd: root });
       owned = true;
       await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
     }
     const report = await comparePlacementEnvironmentReplay({ baselineRoot: resolve(baseline), candidateRoot: root,
-      evidenceDir: process.env.EBR75_REPLAY_EVIDENCE_DIR && resolve(process.env.EBR75_REPLAY_EVIDENCE_DIR) });
+      baselineSha: reference.sha,
+      evidenceDir: process.env.EBR75_REPLAY_EVIDENCE_DIR && resolve(process.env.EBR75_REPLAY_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
-    t.diagnostic(`Additional frames: ${Object.keys(report.visualResults).length}; changed pixels: ${Object.values(report.visualResults).reduce((a, b) => a + b, 0)}`);
+    t.diagnostic(`Additional frames: ${Object.keys(report.visualResults).length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
   } finally {
     if (owned) {
       // This worktree and its reference trace were created only by this test.

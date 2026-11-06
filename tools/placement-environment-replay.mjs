@@ -7,7 +7,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
-const baselineSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
+const historicalSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
+const mergedMainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb750001;
 const phases = ['morning', 'daytime', 'sunset', 'night'];
@@ -345,12 +346,26 @@ function assertReferenceCoverage(reference) {
   }
 }
 
-/** Record the clean dcbaf70 worktree first, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, evidenceDir }) {
+// EBR-88 intentionally changed only the rain presentation/particle stream. The
+// historical replay still checks every gameplay, clock, weather and lighting
+// value; the new-main replay below checks these rain fields without exclusions.
+function historicalBehavior(trace) {
+  const copy = structuredClone(trace);
+  for (const entry of copy) for (const sample of entry.samples) {
+    delete sample.environment.randomCalls;
+    sample.environment.rain = { visible: sample.environment.rain.visible };
+  }
+  return copy;
+}
+
+/** Record a clean main worktree first, then replay identical events and timestamps. */
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
+  assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
+  const historical = baselineSha === historicalSha;
   assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
   assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-    'The reference must be a clean dcbaf70 worktree');
+    'The reference must be a clean main worktree');
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },
     { name: 'environment-cycle', search: '?phase=sunset&weather=clear' },
@@ -382,13 +397,21 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const results = {};
     const mismatches = [];
     const visualResults = {};
+    const expectedRainChanges = [];
+    const unexpectedVisualChanges = [];
+    const rawTraceDifferences = [];
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const scenario of scenarios) {
       const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script);
       const expected = saved.scenarios[scenario.name].trace;
-      const index = actual.trace.findIndex((entry, i) => !isDeepStrictEqual(entry, expected[i]));
+      for (let i = 0; i < actual.trace.length; i++) {
+        if (!isDeepStrictEqual(actual.trace[i], expected[i])) rawTraceDifferences.push(`${scenario.name}:${actual.trace[i].label}`);
+      }
+      const comparedActual = historical ? historicalBehavior(actual.trace) : actual.trace;
+      const comparedExpected = historical ? historicalBehavior(expected) : expected;
+      const index = comparedActual.findIndex((entry, i) => !isDeepStrictEqual(entry, comparedExpected[i]));
       const identical = index === -1 && actual.trace.length === expected.length;
-      if (!identical) mismatches.push({ scenario: scenario.name, action: index, expected: expected[index], actual: actual.trace[index],
+      if (!identical) mismatches.push({ scenario: scenario.name, action: index, expected: comparedExpected[index], actual: comparedActual[index],
         expectedActions: expected.length, actualActions: actual.trace.length });
       results[scenario.name] = { actions: actual.trace.length,
         samples: actual.trace.reduce((sum, entry) => sum + entry.samples.length, 0), identical };
@@ -397,6 +420,10 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
         assert.ok(original, `Missing reference frame: ${name}`);
         const diff = await pixelDiff(diffPage, original, bytes);
         visualResults[name] = diff.changedPixels;
+        const captured = expected.find((entry) => entry.label === name)?.samples[0];
+        assert.ok(captured, `Missing reference snapshot: ${name}`);
+        if (diff.changedPixels && historical && captured.environment.weather.rainAmount > 0) expectedRainChanges.push(name);
+        else if (diff.changedPixels) unexpectedVisualChanges.push(name);
         if (evidenceDir) {
           for (const dir of ['baseline', 'candidate', 'diff']) await mkdir(join(evidenceDir, dir), { recursive: true });
           await writeFile(join(evidenceDir, 'baseline', `${name}.png`), original);
@@ -410,13 +437,15 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--', 'src', 'index.html',
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
-      referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'), results, visualResults, mismatches };
+      referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
+      excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
+      results, rawTraceDifferences, visualResults, expectedRainChanges, unexpectedVisualChanges, mismatches };
     if (evidenceDir) {
       await mkdir(evidenceDir, { recursive: true });
       await writeFile(join(evidenceDir, 'replay.json'), `${JSON.stringify(report, null, 2)}\n`);
     }
     assert.deepEqual(mismatches, [], 'Placement/environment replay differs from clean main');
-    assert.ok(Object.values(visualResults).every((count) => count === 0), 'Additional placement/environment frames differ from clean main');
+    assert.deepEqual(unexpectedVisualChanges, [], 'Additional non-rain placement/environment frames differ from clean main');
     return report;
   } finally {
     await browser?.close();
