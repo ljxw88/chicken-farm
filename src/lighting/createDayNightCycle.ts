@@ -240,5 +240,6 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     setShadowWeather,
     updateCharacterShadow,
     getPhase: () => DAY_NIGHT_PHASES[Math.floor(progress * DAY_NIGHT_PHASES.length)].name,
+    getNightAmount: () => nightAmount,
   };
 }

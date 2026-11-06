@@ -3,6 +3,7 @@ import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterController, type CharacterComponents } from './character';
 import { createEngine } from './core/loop';
 import { createChimneySmoke } from './effects/createChimneySmoke';
+import { createFireflies } from './effects/createFireflies';
 import { createVisualRandom } from './effects/createVisualRandom';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createPlacement } from './placement';
@@ -67,6 +68,8 @@ const weather = createWeatherSystem({
 });
 const smoke = createChimneySmoke({ scene,
   random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x534d4f4b) });
+const fireflies = createFireflies({ scene, camera, groundHeight: GROUND_HEIGHT,
+  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x464c4945) });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase);
 if (startup.weather) weather.setWeather(startup.weather);
@@ -123,7 +126,9 @@ const engine = createEngine<CharacterComponents>({
     follow(character.position);
     placement.update();
     weather.update(deltaSeconds);
-    smoke.update(deltaSeconds, weather.getWeather().rainAmount);
+    const { rainAmount, cloudyAmount } = weather.getWeather();
+    smoke.update(deltaSeconds, rainAmount);
+    fireflies.update(deltaSeconds, dayNight.getNightAmount(), rainAmount, cloudyAmount);
     updateWaterfall(deltaSeconds);
   },
   render: (deltaSeconds) => composer.render(deltaSeconds),
