@@ -1,4 +1,4 @@
-import type { FarmObstacle } from '../scene/farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 
 // The existing fence is 1.47 units wide, including its posts. One tile leaves
 // a tiny gap between neighbouring segments without changing their proportions.

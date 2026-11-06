@@ -3,14 +3,15 @@ import { after, test } from 'node:test';
 import { JSDOM } from 'jsdom';
 import * as THREE from 'three';
 import { createServer } from 'vite';
+import { loadCharacterFixture } from './characterFixture.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createGrid, TILE_SIZE, footprintCells, intersectsFootprint, fenceCollision } =
   await vite.ssrLoadModule('/src/placement/grid.ts');
 const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlacement.ts');
-const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const createCharacterControls = await loadCharacterFixture(vite);
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
-const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 after(() => vite.close());
 
@@ -259,6 +260,27 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
   f.key('KeyZ');
   assert.equal(f.count('placed-fence'), 0);
   assert.equal(f.obstacles.length, 1); // The pre-existing obstacle is untouched.
+});
+
+test('a placed fence blocks the character system immediately and undo removes its entity', (t) => {
+  const f = fixture(t);
+  f.key('KeyF');
+  f.pointer('pointermove', 3.75, 3.75);
+  f.pointer('pointerdown', 3.75, 3.75);
+  assert.equal(f.count('placed-fence'), 1);
+  f.key('Escape');
+  f.character.position.set(3.75, 2.4, 2);
+  f.key('KeyS');
+  f.key('KeyA'); // World +Z, toward the fence.
+  f.controls.update(1);
+  assert.ok(f.character.position.z <= 3.22 && f.character.position.z > 3.1);
+  assert.ok([...f.controls.world.with('obstacle')].some((entry) => entry.obstacle.name.startsWith('placed-fence-')));
+  f.key('KeyZ');
+  assert.equal(f.count('placed-fence'), 0);
+  f.character.position.set(3.75, 2.4, 2);
+  f.controls.update(1);
+  assert.ok(f.character.position.z > 5.49);
+  assert.equal([...f.controls.world.with('obstacle')].some((entry) => entry.obstacle.name.startsWith('placed-fence-')), false);
 });
 
 test('extra world objects and a moving player are rechecked before confirming; touch previews before Place', (t) => {

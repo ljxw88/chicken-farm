@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GROUND_HEIGHT } from './createIsland';
-import type { FarmObstacle } from './farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 import { WATER_FEATURE } from './waterFeatureSpec';
 
 function grade(localX: number) {

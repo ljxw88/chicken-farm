@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import * as THREE from 'three';
 import { createServer } from 'vite';
+import { loadCharacterFixture } from './characterFixture.mjs';
 
 // Vite loads the same TypeScript modules as the app without a test-only compiler.
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
-const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const createCharacterControls = await loadCharacterFixture(vite);
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
-const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 const { createIsland, GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
@@ -120,6 +121,15 @@ test('clicking the ground reaches the selected point without overshooting', (t) 
   click(destination);
   controls.update(10);
   near(character.position.distanceTo(destination), 0);
+  controls.update(10);
+  near(character.position.distanceTo(destination), 0);
+});
+
+test('a click is raycast at event time, before a later camera follow', (t) => {
+  const { character, controls, click, follow } = fixture(t);
+  const destination = new THREE.Vector3(3, 0, -2);
+  click(destination);
+  follow(new THREE.Vector3(5, 0, 4));
   controls.update(10);
   near(character.position.distanceTo(destination), 0);
 });

@@ -11,6 +11,7 @@ export type InputAction =
   | { type: 'placement-remove'; mode: 'toggle' | 'hovered' }
   | { type: 'placement-undo' }
   | { type: 'placement-cancel' };
+export type MovementAction = Extract<InputAction, { type: 'move-to' | 'cancel-move-to' }>;
 
 export type InputFrame = {
   move: MoveAction;
@@ -41,6 +42,11 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
   const discreteHeld = new Set<string>();
   let pending: InputAction[] = [];
   let pointer: PointerPoint | undefined;
+  const movementListeners = new Set<(action: MovementAction) => void>();
+
+  function notifyMovement(action: MovementAction) {
+    for (const listener of movementListeners) listener(action);
+  }
 
   function enqueue(action: InputAction) {
     pending.push(action);
@@ -54,6 +60,8 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     if (MOVEMENT_KEYS.has(event.code)) {
       if (!held.has(event.code)) pending.push({ type: 'cancel-move-to' });
       held.add(event.code);
+      // The previous controller cancelled on every keydown, including repeats.
+      notifyMovement({ type: 'cancel-move-to' });
       return;
     }
     if (event.defaultPrevented || event.repeat || event.isComposing || discreteHeld.has(event.code)) return;
@@ -86,6 +94,7 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     held.clear();
     discreteHeld.clear();
     pending.push({ type: 'cancel-move-to' });
+    notifyMovement({ type: 'cancel-move-to' });
   }
 
   function point(event: PointerEvent): PointerPoint {
@@ -98,18 +107,20 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     if (getPlacement().active) pending.push({ type: 'placement-preview', point: pointer });
   }
 
-  function pointerDown(event: PointerEvent) {
+  function pointerDown(event: PointerEvent, movementBlocked = false, context = getPlacement()) {
     if (!event.isPrimary || event.button !== 0) return;
-    const context = getPlacement();
     if (context.active) {
       // Placement wins over click-to-move. Touch/pen preview without placing.
       pointer = point(event);
       pending.push({ type: 'placement-preview', point: pointer });
       if (context.removing) pending.push({ type: 'placement-remove', mode: 'hovered' });
       else if (!event.pointerType || event.pointerType === 'mouse') pending.push({ type: 'placement-confirm' });
-    } else if (held.size === 0) {
+    } else if (held.size === 0 && !movementBlocked) {
       pointer = point(event);
-      pending.push({ type: 'move-to', point: pointer });
+      const action: MovementAction = { type: 'move-to', point: pointer };
+      pending.push(action);
+      // Resolve the raycast at pointer-event time, as the old controller did.
+      notifyMovement(action);
     }
   }
 
@@ -128,14 +139,18 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     if (action) enqueue(action);
   }
 
+  function movement(): MoveAction {
+    return {
+      type: 'move', right: Number(held.has('KeyD')) - Number(held.has('KeyA')),
+      forward: Number(held.has('KeyW')) - Number(held.has('KeyS')), active: held.size > 0,
+    };
+  }
+
   function consume(): InputFrame {
     const actions = pending;
     pending = [];
     return {
-      move: {
-        type: 'move', right: Number(held.has('KeyD')) - Number(held.has('KeyA')),
-        forward: Number(held.has('KeyW')) - Number(held.has('KeyS')), active: held.size > 0,
-      },
+      move: movement(),
       pointer: pointer && { ...pointer },
       actions,
     };
@@ -148,7 +163,17 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     pointer = undefined;
   }
 
-  return { keyDown, keyUp, blur, pointerMove, pointerDown, activate, consume, reset };
+  function onMovement(listener: (action: MovementAction) => void) {
+    movementListeners.add(listener);
+    return () => movementListeners.delete(listener);
+  }
+
+  function preventMovementDefault(event: KeyboardEvent) {
+    if (MOVEMENT_KEYS.has(event.code) && !modified(event) && !editable(event.target)) event.preventDefault();
+  }
+
+  return { keyDown, keyUp, blur, pointerMove, pointerDown, activate, movement, onMovement, preventMovementDefault,
+    placementContext: getPlacement, consume, reset };
 }
 
 export type InputActions = ReturnType<typeof createInputActions>;
