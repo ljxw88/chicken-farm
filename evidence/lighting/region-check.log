@@ -1,0 +1,10 @@
+morning-clear: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS
+daytime-clear: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS
+sunset samples: {'grass': {'before': (67, 65, 20), 'after': (64, 81, 35)}, 'pond': {'before': (45, 42, 31), 'after': (41, 52, 51)}, 'stream': {'before': (45, 43, 32), 'after': (41, 54, 54)}, 'waterfall': {'before': (86, 77, 60), 'after': (93, 114, 114)}} PASS
+sunset-clear: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS
+night-clear luma above void: {'roof': 21.1, 'wall': 44.4, 'coop-a': 19.2, 'coop-b': 19.2} PASS
+night-clear: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS
+night-rain luma above void: {'roof': 16.5, 'wall': 61.8, 'coop-a': 15.0, 'coop-b': 15.0} PASS
+night-rain: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS
+daytime-cloudy: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS
+daytime-rain: HUD changed [0, 0], void (16, 20, 22) -> (16, 20, 22) PASS

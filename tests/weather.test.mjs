@@ -229,6 +229,10 @@ test('the sun or moon remains stronger than the flat fill in every phase and wea
       cycle.setDayNightPhase(phase);
       assert.ok(ambient.intensity + hemisphere.intensity < directional.intensity, `${phase}/${mode}: fill overpowered key`);
     }
+    for (let i = 0; i < 128; i++) {
+      cycle.update(72 / 128);
+      assert.ok(ambient.intensity + hemisphere.intensity < directional.intensity, `${mode}: fill overpowered key between phases`);
+    }
   }
 });
 

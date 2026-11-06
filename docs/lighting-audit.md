@@ -1,6 +1,8 @@
 # Lighting and graphics audit
 
-Baseline: `origin/main` at `a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671` (the local `main` is older). Values below describe that baseline, before the lighting correction. The background is always the signed `#101416` void; phase `sky` values are hemisphere/fog inputs, not the background.
+Baseline: `origin/main` at `c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa`, including EBR-73 and EBR-48. Its lighting code is unchanged from `a61bac9`; the stream, bridge and waterfall are new. The background is the signed `#101416` void; phase `sky` values are hemisphere/fog inputs, not the background.
+
+Sources read: `lookdev-lighting/LIGHTING-BRIEF.md`, its `proto-v2.png` and `scratch-values.diff`, `ebr48-look-lock.md`, and QA's `GRAPHICS-GATE.md`, `gfx-audit.mjs`, `analyze-lighting.py`, `compare-frames.py` and supplied main frames. Linear EBR-80 comment `dc2b4a90` was **not accessible**: this session exposes no Linear connector and the web page returned only “Loading…”. The detailed EBR-80 rulings supplied in the task were applied; the complete Linear comment remains unverified.
 
 ## Baseline light inventory
 
@@ -34,43 +36,88 @@ The baseline daytime shadow's pixel centroid is **0.044 low-resolution pixels to
 
 ## Correction and measured result
 
-The existing sun/moon arc, target, directional colors and intensities, fog, window lights, signed material colors, HUD, placement tints and pixel pass are unchanged. Only the flat fill intensities change:
+The key now has a fixed world azimuth `(-11, h, 4)` → `(0,0,0)` (screen upper-left). Only height, color and intensity vary. Signed farm, water, bridge, cottage, coop, stair and ghost material hexes, fog, HUD and pixel pass are unchanged. The light colors were adjusted at sunset to keep grass green and water blue; night fill is cool and below the moon key.
 
-| Phase | Ambient before → after | Hemisphere before → after | Directional after | Cloudy directional | Rain directional |
-| --- | --- | --- | --- | --- | --- |
-| Morning | 0.25 → 0.16 | 0.55 → 0.35 | `#ffe8c8` / 0.55 | 0.396 | 0.44 |
-| Daytime | 0.15 → 0.10 | 0.85 → 0.55 | `#fff2d6` / 1.1 | 0.792 | 0.88 |
-| Sunset | 0.28 → 0.12 | 0.45 → 0.20 | `#ff8a50` / 0.65 | 0.468 | 0.52 |
-| Night | 0.18 → 0.18 | 0.22 → 0.22 | `#c8d4f0` / 0.22 | 0.1584 | 0.176 |
+| Phase | Position / directional color / intensity | Ambient color / intensity | Hemisphere sky / ground / intensity | Character shadow X/Z |
+| --- | --- | --- | --- | --- |
+| Morning | `(-11,4,4)` / `#ffe8c8` / 1.4 | `#f0e0d0` / 0.08 | `#e8d4c8` / `#a8c090` / 0.25 | `(+0.451,-0.164)` |
+| Daytime | `(-11,12,4)` / `#fff2d6` / 1.8 | `#e8f0e8` / 0.07 | `#a8d4f0` / `#9cb88a` / 0.35 | `(+0.250,-0.091)` |
+| Sunset | `(-11,4,4)` / `#ffeddb` / 1.2 | `#eadbc8` / 0.08 | `#e8dec6` / `#b5b99a` / 0.20 | `(+0.451,-0.164)` |
+| Night | `(-11,9,4)` / `#c8d4f0` / 0.7 | `#aeb8c9` / 0.4 | `#2a2848` / `#1e2430` / 0.20 | `(+0.150,-0.055)` |
 
-The color values in the baseline table remain the actual phase colors; cloudy still applies the same linear-RGB gains to those colors and rain leaves them alone. The lantern point light is now 0.08 peak, distance 2, decay 2, still `#ffb060` and still zero at day/sunset. Its glass stays at the original 0.55 emissive peak; window and coop glows stay unchanged. The existing contact shadow is stretched/offset away from the **same** directional target-to-light vector, independent of character yaw, and black alpha darkens rather than brightens the ground. It shortens near unsupported island/landing edges, preserving the void. This is deliberately a stylized ground-plane projection, not a newly enabled shadow-map system; see the limitation below.
+Cloudy still applies the locked directional multiplier 0.72 and linear-RGB fill gains `(0.86,0.96,1.08)`; full rain uses a 0.70 key multiplier to retain the specified softer shade/lit ratio. At night only, cloudy multiplies fill intensities by 0.82 and rain by 0.80 so fill remains below the weather-dimmed moon. Thus clear/cloudy/rain key intensities are day 1.8/1.296/1.26 and night 0.7/0.504/0.49; night ambient+hemisphere intensities are 0.60/0.492/0.48. Transitions remain 1.75 s and continuous.
+
+The carried lantern remains `#ffb060`, zero in day/sunset, now 0.08 peak, distance 2, decay 2; its glass keeps the original 0.55 emissive peak. `lantern-reach.json` compares the real point light on/off near the existing sign: one nearby ground sample gains 1.57/255 luminance and one sign sample 1.21, so the weak practical still reaches both. Window lights and window/coop emissive colors and intensities are unchanged. The body remains non-emissive standard material, now with an Engineer-selected yellow lift and a lighter top via vertex colors; no camera light or glow was added. Capsule normals/winding remain outward.
+
+Black-alpha ground blobs follow the same key and shorten safely at island/stair/bridge edges. Trees use 1.8× the character offset; the cottage, both coops, chicken, bridge and waterfall lip get corresponding offsets. Cloudy halves offset/opacity; rain uses 0.49× offset and 0.20× opacity; night is faint. The waterfall shadow's base is inset on the island side so it cannot paint the void. No shadow maps were enabled. The EBR-48 waterfall retains its existing tilted water normals, `DoubleSide`, vertex alpha and 2× reflected-light shader; it is not emissive.
 
 | Controlled measurement (0–255 sRGB luminance) | Before | After |
 | --- | --- | --- |
-| Day sunward / away, azimuth `(-12,12,12)` | 127.49 / 94.49 | 115.52 / 77.57 |
-| Day sunward / away, azimuth `(12,12,-12)` | 136.07 / 97.82 | 125.93 / 80.29 |
-| Sunset sunward / away, azimuth `(-12,3,12)` | 91.42 / 76.42 | 74.80 / 54.64 |
-| Sunset sunward / away, azimuth `(12,3,-12)` | 94.48 / 78.86 | 79.97 / 56.53 |
-| Sunset same camera-facing pixels, backlit / frontlit | 78.21 / 96.09 (0.814) | 56.08 / 81.45 (0.688) |
-| Night backlit pixels, lantern on / off | 65.88 / 15.41 | 31.06 / 15.41 |
-| Day shadow centroid toward sun, render pixels | +0.044 | −2.575 |
-| Sunset / night dark shadow pixels | 0 / 0 (brightened instead) | 63 / 44 |
-| Sunset / night centroid toward sun, render pixels | not measurable | −5.901 / −2.886 |
+| Day sunward / away, azimuth `(-12,12,12)` | 127.49 / 94.49 | 165.80 / 87.16 |
+| Day sunward / away, azimuth `(12,12,-12)` | 136.07 / 97.82 | 188.99 / 89.69 |
+| Sunset sunward / away, azimuth `(-12,3,12)` | 91.42 / 76.42 | 147.69 / 81.80 |
+| Sunset sunward / away, azimuth `(12,3,-12)` | 94.48 / 78.86 | 166.94 / 83.78 |
+| Sunset same camera-facing pixels, backlit / frontlit | 78.21 / 96.09 (0.814) | 83.75 / 169.52 (0.494) |
+| Night controlled backlight, lantern on / off | 65.88 / 15.41 | 79.56 / 71.95 |
+| Day shadow centroid toward sun, render pixels | +0.044 | −2.189 |
+| Sunset / night dark shadow pixels | 0 / 0 (brightened instead) | 49 / 25 |
+| Sunset / night centroid toward sun, render pixels | not measurable | −4.066 / −1.419 |
 
 The detector uses the real body/material, a fixed isometric camera pose and two opposing, known azimuths; it zooms for body sampling but keeps the 320×180 render buffer and 4-CSS-pixel presentation. Raycasts exclude the face and lantern, classify the cylindrical body by its outward radial normal, and sample the rendered pixels. It separately compares identical front-facing pixels with the key behind/in front. The shadow test compares rendered pixels with and without the shadow mesh at the actual phase positions; negative centroid projection means away from the sun in screen space. It also checks that the foot-pad shadow does not darken `#101416` void. Minimum side contrast is 18/255 with away/sunward ≤0.78; the backlit/frontlit ratio must be ≤0.72. Unit tests cover all 64 cycle steps and four character rotations.
 
-Reproduce with `node tools/lighting-baseline.mjs` (archives the recorded main SHA, runs the *same current detector*, and **must fail** the old shading/shadow assertions) and `node --test tests/browser/lighting.browser.mjs` (must pass on this branch). `LIGHTING_URL=http://100.88.150.21:5184 LIGHTING_EVIDENCE_DIR=evidence/lighting LIGHTING_CAPTURE_LABEL=after` records the after screenshots and JSON. `before/after-*-full.png` are ordinary 1280×720 held-phase frames; `*-character.png` is a nearest-neighbor 5× center crop from the corresponding full frame, also 1280×720. `*-backlit.png` uses a test-only 3× camera zoom and known behind-camera azimuth to make the defect visible. `before-detector.log`, `before-baseline.json`, and the before/after measurement JSONs contain the exact proof.
+Reproduce with `node tools/lighting-baseline.mjs` (archives the recorded main SHA, runs the *same current detector*, and **must fail** the old shading/shadow assertions) and `node --test tests/browser/lighting.browser.mjs` (must pass on this branch). `LIGHTING_URL=http://100.88.150.21:5184 LIGHTING_EVIDENCE_DIR=evidence/lighting LIGHTING_CAPTURE_LABEL=after` records the after screenshots and JSON. Controlled backlit captures are diagnostic only: the actual shipped key is upper-left, not camera-backlit.
+
+`review-{before,after}-{phase}-{weather}-full.png` are seeded, fixed-URL 1280×720 whole-island views. The matching `-water.png` frames show stream, bridge and waterfall at 1.5× camera zoom. For day/sunset/night, `-toward-crop.png` and `-away-crop.png` are true 4× nearest-neighbor crops from the normal pixel pass; `-toward.png`/`-away.png` are separate 3× camera views. `review-before.json`, `review-after.json`, `before-detector.log`, `before-baseline.json`, and `detector-final/suite-{measurements,phase-gate}.json` record settings and numbers.
+
+### Phase/facing measurements
+
+The QA-compatible probe uses 0–255 luminance. Facing order is toward camera / away / left / right. Shade/lit is away-facing half divided by sun-facing half; bounds are minima, not target retunes.
+
+| Case | Shade/lit before → after (minimum) | Asymmetry before → after | Facing luminances before → after | Ground contrast before → after |
+| --- | --- | --- | --- | --- |
+| Morning | 0.831 → 0.740 (0.50) | 0.185 → 0.298 | 110.7/118.0/120.0/118.0 → 105.9/110.8/101.1/110.8 | 1.44 → 1.40 |
+| Day | 0.852 → 0.708 (0.55) | 0.160 → 0.342 | 114.9/121.4/121.3/121.4 → 109.7/114.6/106.9/114.6 | 1.13 → 1.10 |
+| Sunset | 0.985 → 0.741 (0.45) | 0.015 → 0.297 | 76.4/80.4/80.3/80.4 → 99.5/103.9/95.0/103.9 | 1.26 → 1.36 |
+| Day cloudy | 0.874 → 0.749 (0.70) | 0.134 → 0.287 | 107.4/113.6/113.6/113.6 → 102.8/108.0/101.3/108.0 | 1.15 → 1.17 |
+| Day rain | 0.871 → 0.763 (0.75) | 0.137 → 0.269 | 111.4/117.4/117.4/117.4 → 104.3/109.8/103.1/109.8 | 1.15 → 1.18 |
+| Night clear | — | — | 62.1/36.8/70.7/36.7 → 84.1/82.7/84.7/82.7 | 1.21 → 1.35 |
+| Night rain | — | — | 60.8/33.6/68.7/33.6 → 76.5/74.1/77.5/74.1 | 1.26 → 1.36 |
+
+Sunset visible body/top is 0.944 → 0.778 (maximum 0.80). Night clear/rain minima are 82.7/74.1 and spreads are 2.4%/4.5% (minimum 45/255, maximum spread 35%). `qa-main-c59-analysis.txt` and `qa-c59-post-analysis.txt` are the separate real-input checks; slight rain/ground differences reflect their unseeded particles and timed key holds.
+
+The real 4-CSS-px sunset samples in `region-proof.json` are: grass `(67,65,20)` → `(64,81,35)`, G/R **1.266**; pond `(45,42,31)` → `(41,52,51)`; stream `(45,43,32)` → `(41,54,54)`; waterfall `(86,77,60)` → `(93,114,114)`. All water samples retain blue without changing any water hex. At night the sampled roof/wall/coop A/coop B luminances are respectively 21.1/44.4/19.2/19.2 above the void (night rain 16.5/61.8/15.0/15.0; a seeded streak can affect the wall sample). The two HUD rectangles have zero changed pixels in all seven seeded frames; an empty void sample remains `(16,20,22)` / `#101416`, and both runs use the 320×180 / 4-CSS-px pass.
+
+### Engineer: unresolved gate conflicts
+
+The supplied unmodified QA analyzer is **not green**: `qa-main-c59-analysis.txt` has 23 failures and `qa-c59-post-analysis.txt` has 10. On the post-rebase candidate its C1 and C3 checks pass, as do the sunset/night contrast checks, but:
+
+1. **C2 versus the specified offset.** Look Dev's day offset `(+0.25,-0.09)` is 0.266 units; exactly half in cloudy is 0.133 and nearly centered rain is 0.130. QA requires ≥0.15 whenever key intensity ≥0.5. The direction cosine is 1.00 in both cases. Engineer retained the specified offsets rather than silently enlarging them; QA/Look Dev must reconcile the threshold. Night cloudy similarly has a 0.08 offset with a 0.504 key.
+2. **C4 daytime luminance versus hue allowance.** The raw analyzer reports day/cloudy/rain contrast about 1.10/1.16/1.18, below 1.30. The fixed-view body/adjacent-grass hue separations are about 37°/33°/37°; the character hue lift is limited to the character and no farm palette hex was changed. Engineer retained that hue separation instead of overexposing/recoloring the signed palette. A Look Dev/QA ruling is still required; the analyzer's failures remain failures.
+3. **C5 versus EBR-48 waterfall animation.** EBR-48 requires stepped scrolling at 0.25 units/s; the QA tool demands four identical full frames with no input. Both main and candidate fail that raw check. `waterfall-motion-check.log` and `waterfall-motion-proof.json` show zero exact changed pixels outside the visible waterfall mask in all five non-rain cases. This is not a replacement or a pass for the raw C5 gate; QA must decide how to exclude the intentional animation.
+
+The task authorizes pushing/opening a PR **only after green gates**. Since the supplied QA analyzer exits 1, Engineer has not pushed or opened a PR. Do not re-baseline Gate G until Look Dev signs.
+
+### Parity and comparison
+
+The original EBR-73 baseline at `a61bac9` is byte-for-byte unchanged. `PARITY_EVIDENCE_DIR=evidence/lighting/gate-g npm run parity` uses a copy of that baseline and exits 1, as expected for lit frames. Changed pixels: spawn 265,136; stairs-pad 230,160; placement ghost 264,743; day 267,648; night 265,136; rain 265,136; cottage/coops day 558,016; cottage/coops night 557,968. `npm run lighting:parity` adds sunset and cloudy (265,136 each). These frames change from the new lighting/shadows **and** the EBR-48 water feature relative to the older baseline. The old direct stairs click now crosses water, so the harness uses real clicks via the bridge; stairs-pad and day position/yaw/camera differ from the pre-water baseline and are recorded, not hidden.
+
+QA's `compare-frames.py` reports all 70 full lit frames changed (`qa-compare-raw.log`); `qa-compare-allowed.log` explicitly allows those lit-frame changes and is not a claim of world pixel parity. The independent seeded region check verifies HUD, void sample and 4-pixel presentation separately. No Gate G reference was re-recorded.
 
 ## Other graphics audit
 
 | Suggested ticket | Finding and screenshot reference | Disposition |
 | --- | --- | --- |
-| **Correct downward-wound path triangles** | The path's tight bend produces four downward-facing edge triangles and three downward-facing surface triangles; `path-before.png` hides the character and zooms the unchanged view, with counts in `path-before.json`. The rest of the character/prop geometries examined have consistent face/vertex winding; no mesh had a negative world determinant. | Small geometry correction, separately tracked. |
-| **Stop contact shadows brightening at night** | The fixed tree and decorative-chicken blobs brighten rather than darken the ground: `prop-before-tree.png`, `prop-before-chicken.png`, `prop-before.json` (441/85 brightened render pixels). | Small blending correction, separately tracked. |
+| **Correct downward-wound path triangles** | The path bend had four downward edge and three downward surface triangles. `path-before.png`, `path-after.png`, their JSONs and `path-before-test.log` show 7 → 0; the two fixed-view frames differ by 0 pixels. The character/prop winding check also covers the new water geometry. | Fixed separately in `fix: keep path triangles facing upward`. |
+| **Unfold the tight path ribbon** | `path-after.png` and `path-overlap.json`: the ribbon still self-overlaps at the bend (323 edge / 163 surface sampled points at 0.01-unit spacing). Same-colored coplanar triangles show no visible flicker in the captured frames, but could z-fight after future material changes. | Report only: reshaping the signed route is not a tiny normals fix. |
+| **Stop contact shadows brightening at night** | `prop-before-tree.png` / `prop-after-tree.png`: 438 brightened render pixels → 0; the new blob darkens 437. Chicken frames and JSONs are also recorded. | Fixed with the separately committed key-aligned farm shadows. |
+| **Make the lantern grip legible** | The old 0.055-radius wing was often a subpixel gap; `review-arm-before-night-clear-{toward,away}.png` and matching `review-arm-after-*` show the same endpoints with a 0.08-radius wing. Point-light and glass colors are unchanged. | Tiny separate fix; body/lantern overlap is tested. |
+| **Review east-gable window contrast** | `window-audit.png` and `window-audit.json`: east/front panes are all 0.8×0.8 with emissive intensity 0.85. East mean/max luminance 158/182 is not greater than front 168–180/191–194, but its emissive lift against the darker wall is 116 versus 85–93; the coop roof also partly occludes it. | Report only: perceived hotness/composition needs Look Dev review; no signed pane retune. |
 | **Resolve tree 4 / coop B roof intersection** | `before-roof-tree-crop.png`; the existing mesh probe in `evidence/EBR-47/browser-proof.json` found 328 overlapping 0.02-unit ray samples, not just overlapping screen silhouettes. | Report only: changing signed building/tree layout needs review. |
 | **Stabilize pixel-world motion without changing the locked look** | `before-motion-a.png` and `before-motion-b.png` are 0.05 world units apart with the ordinary following camera; fine foliage and edges jump between 4-CSS-pixel cells. `before-audit-capture.json` records the positions. | Report only: snapping/interpolation changes camera feel and needs look review. |
 | **Keep rain streaks legible at pixel resolution** | `before-rain.png` shows tiny scattered pixels; the 0.075–0.095-world-unit streaks project to roughly 2–3 CSS px, smaller than one 4-CSS-px world pixel. | Report only: animation/pixel treatment needs design and motion review. |
+| **Keep rain from reading as stars over the void** | `review-after-night-rain-full.png` and `review-after-daytime-rain-full.png` show sparse specks over the void and weak contrast over grass. | Report only: particle masking/scale is not a tiny lighting fix. |
 | **Evaluate subtle pond motion** | `before-pond-crop.png`: the water layers and three ripples are static geometry (`createFarmLayout.ts`), so it reads as a flat painted patch. | Report only: animation would change the approved look. |
+| **Review the flat void as a deliberate backdrop** | `review-after-daytime-clear-full.png` shows the flat surround. | Report only: `#101416` is expressly locked; no sky was added. |
 | **Project player shadows across stepped receivers** | `after-stairs-edge.png`: the safe stylized blob shortens at the landing edge and remains on the current floor plane; it cannot cast onto lower steps or prop walls. | Report only: proper receiver-aware shadows are a larger rendering change. |
 
 No obvious z-fighting, shadow acne/peter-panning, posterization, dither noise, or wrong void/fog color was observed in the inspected frames. This is not a claim that every angle or GPU is free of such artifacts.

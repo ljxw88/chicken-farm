@@ -1,14 +1,14 @@
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtemp, mkdir, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createServer } from 'vite';
 
 // Run the supplied Graphics Gate against a pristine archived main, without
 // touching this branch or re-recording the signed EBR-73 parity baseline.
-const ref = process.env.LIGHTING_BASELINE_REF || '4ea8249c73701be49a005265a1fb2f2f9d0d035b';
+const ref = process.env.LIGHTING_BASELINE_REF || 'c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa';
 const gate = process.env.GRAPHICS_GATE_DIR || '/home/michael/OpenBot/Shared/qa-graphics-gate';
-const output = resolve(process.env.GRAPHICS_MAIN_OUTPUT || 'evidence/lighting/qa-main');
+const output = resolve(process.env.GRAPHICS_MAIN_OUTPUT || 'evidence/lighting/qa-main-c59');
 const root = process.cwd();
 const sha = execFileSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], { encoding: 'utf8' }).trim();
 let temp;
@@ -32,6 +32,7 @@ try {
   console.log(`QA baseline ${sha}`);
   const baseUrl = `http://127.0.0.1:${address.port}`;
   const review = process.argv.includes('--review');
+  if (!review) await writeFile(join(output, 'source.json'), `${JSON.stringify({ ref, sha, source: 'git archive' }, null, 2)}\n`);
   const script = review ? resolve('tools/lighting-review.mjs') : join(gate, 'gfx-audit.mjs');
   const args = review ? [script] : [script, baseUrl, output, `${root}/`];
   const child = spawn(process.execPath, args, {

@@ -21,11 +21,11 @@
           "y": 94.84998969071067
         },
         "centroid": {
-          "x": 162.52654301987738,
-          "y": 95.5327798653951
+          "x": 162.1057895976453,
+          "y": 95.44762093190148
         },
-        "towardSunPixels": -2.617177503453089,
-        "shadowPixels": 41,
+        "towardSunPixels": -2.1887573593496352,
+        "shadowPixels": 38,
         "brightenedPixels": 0
       },
       "samples": [

@@ -1,43 +1,49 @@
 TAP version 13
-# PHASE_GRAPHICS {"morning-clear":{"asymmetry":0.2983188444913381,"ratio":0.7404025597176341,"bodyToTop":0.7790841692874995,"contrast":1.396397280754777,"facings":{"toward_cam_S":105.85203461538457,"away_W":110.8321484615384,"left_A":101.14606153846145,"right_D":110.8321484615384}},"day-clear":{"asymmetry":0.3415795368181545,"ratio":0.7082486147087633,"bodyToTop":0.5419131526645802,"contrast":1.0976730222260025,"facings":{"toward_cam_S":109.69832615384615,"away_W":114.62210230769233,"left_A":106.87930923076922,"right_D":114.62210230769233}},"sunset-clear":{"asymmetry":0.2971215487434221,"ratio":0.7413096848044854,"bodyToTop":0.7777860755226343,"contrast":1.355639163499305,"facings":{"toward_cam_S":99.47280846153845,"away_W":103.92599923076924,"left_A":95.00214384615384,"right_D":103.92599923076924}},"night-clear":{"asymmetry":0.1638874572136974,"ratio":0.8485249714190543,"bodyToTop":0.7198540956131441,"contrast":1.3525826940482801,"facings":{"toward_cam_S":84.08030461538459,"away_W":82.6731592307692,"left_A":84.68332076923076,"right_D":82.67040846153844}},"day-cloudy":{"asymmetry":0.28690305649207465,"ratio":0.7490903204859406,"bodyToTop":0.5720425635409184,"contrast":1.1658902679162488,"facings":{"toward_cam_S":102.75852307692304,"away_W":108.04105076923075,"left_A":101.25323923076922,"right_D":108.04105076923075}},"day-rain":{"asymmetry":0.26901013481594904,"ratio":0.7628832672994915,"bodyToTop":0.5830502964832236,"contrast":1.1838543163221742,"facings":{"toward_cam_S":104.25436153846154,"away_W":109.81672615384616,"left_A":103.10461615384617,"right_D":109.81672615384616}},"night-rain":{"asymmetry":0.12197244007453706,"ratio":0.8850386199452689,"bodyToTop":0.7598587475107142,"contrast":1.4190966601711674,"facings":{"toward_cam_S":81.97566384615382,"away_W":80.82800692307688,"left_A":83.52420153846154,"right_D":80.82443846153843}}}
-# Subtest: fixed upper-left key meets phase, weather and facing graphics checks
-ok 1 - fixed upper-left key meets phase, weather and facing graphics checks
+# PHASE_GRAPHICS {"morning-clear":{"asymmetry":0.2983188444913381,"ratio":0.7404025597176341,"bodyToTop":0.7790841692874995,"contrast":1.396397280754777,"facings":{"toward_cam_S":105.85203461538457,"away_W":110.8321484615384,"left_A":101.14606153846145,"right_D":110.8321484615384}},"day-clear":{"asymmetry":0.3415795368181545,"ratio":0.7082486147087633,"bodyToTop":0.5419131526645802,"contrast":1.0976730222260025,"facings":{"toward_cam_S":109.69832615384615,"away_W":114.62210230769233,"left_A":106.87930923076922,"right_D":114.62210230769233}},"sunset-clear":{"asymmetry":0.2971215487434221,"ratio":0.7413096848044854,"bodyToTop":0.7777860755226343,"contrast":1.355639163499305,"facings":{"toward_cam_S":99.47280846153845,"away_W":103.92599923076924,"left_A":95.00214384615384,"right_D":103.92599923076924}},"night-clear":{"asymmetry":0.1638874572136974,"ratio":0.8485249714190543,"bodyToTop":0.7198540956131441,"contrast":1.3525826940482801,"facings":{"toward_cam_S":84.08030461538459,"away_W":82.6731592307692,"left_A":84.68332076923076,"right_D":82.67040846153844}},"day-cloudy":{"asymmetry":0.28690305649207465,"ratio":0.7490903204859406,"bodyToTop":0.5720425635409184,"contrast":1.1658902679162488,"facings":{"toward_cam_S":102.75852307692304,"away_W":108.04105076923075,"left_A":101.25323923076922,"right_D":108.04105076923075}},"day-rain":{"asymmetry":0.26901013481594904,"ratio":0.7628832672994915,"bodyToTop":0.5830502964832236,"contrast":1.1838543163221742,"facings":{"toward_cam_S":104.25436153846154,"away_W":109.81672615384616,"left_A":103.10461615384617,"right_D":109.81672615384616}},"night-rain":{"asymmetry":0.14823422247255016,"ratio":0.8619943571125711,"bodyToTop":0.7340730035073064,"contrast":1.3595499798410755,"facings":{"toward_cam_S":76.52910076923074,"away_W":74.07564846153844,"left_A":77.53860384615382,"right_D":74.07207999999997}}}
+# Subtest: fixed upper-left key follows the specified phase, weather and facing rules
+ok 1 - fixed upper-left key follows the specified phase, weather and facing rules
   ---
-  duration_ms: 17592.929751
+  duration_ms: 22253.848051
   type: 'test'
   ...
-# LIGHTING_MEASUREMENTS {"daytime":{"lightPosition":[-11,12,4],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":162.52654301987738,"y":95.5327798653951},"towardSunPixels":-2.617177503453089,"shadowPixels":41,"brightenedPixels":0},"samples":[{"lightPosition":[-12,12,12],"sunward":165.79514576271183,"away":87.15741538461536,"difference":78.63773037809646,"ratio":0.5256934090781897,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,12,-12],"sunward":188.99239230769228,"away":89.69169152542369,"difference":99.30070078226859,"ratio":0.47457831730813593,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,12,-12],"luminance":89.39560360360362,"pixels":111},"frontlitFront":{"lightPosition":[12,12,12],"luminance":191.78758918918916,"pixels":111},"backlitRatio":0.46611777113178676,"errors":[]},"sunset":{"lightPosition":[-11,4.000000000000001,4],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":163.9266328434081,"y":95.90350536457032},"towardSunPixels":-4.065503954400455,"shadowPixels":49,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":147.69058305084744,"away":81.79904615384612,"difference":65.89153689700132,"ratio":0.5538541758324839,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":166.94305384615387,"away":83.77722711864408,"difference":83.1658267275098,"ratio":0.5018311645110366,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":83.75022702702695,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":169.51643063063074,"pixels":111},"backlitRatio":0.49405374284641007,"errors":[]},"night":{"lightPosition":[-11,9,4],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":161.36424093335407,"y":95.23990518384069},"towardSunPixels":-1.4187042641209544,"shadowPixels":25,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":105.11903050847458,"away":74.02549230769233,"difference":31.09353820078225,"ratio":0.7042063834647379,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":115.02421538461532,"away":75.28811525423728,"difference":39.736100130378034,"ratio":0.6545414372312006,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":79.56071531531533,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":119.52319279279277,"pixels":111},"backlitRatio":0.6656508536652214,"nightLantern":{"intensity":0.08,"withLantern":79.56071531531533,"withoutLantern":71.95152432432428},"errors":[]}}
+# LIGHTING_MEASUREMENTS {"daytime":{"lightPosition":[-11,12,4],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":162.1057895976453,"y":95.44762093190148},"towardSunPixels":-2.1887573593496352,"shadowPixels":38,"brightenedPixels":0},"samples":[{"lightPosition":[-12,12,12],"sunward":165.79514576271183,"away":87.15741538461536,"difference":78.63773037809646,"ratio":0.5256934090781897,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,12,-12],"sunward":188.99239230769228,"away":89.69169152542369,"difference":99.30070078226859,"ratio":0.47457831730813593,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,12,-12],"luminance":89.39560360360362,"pixels":111},"frontlitFront":{"lightPosition":[12,12,12],"luminance":191.78758918918916,"pixels":111},"backlitRatio":0.46611777113178676,"errors":[]},"sunset":{"lightPosition":[-11,4.000000000000001,4],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":163.9266328434081,"y":95.90350536457032},"towardSunPixels":-4.065503954400455,"shadowPixels":49,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":147.69058305084744,"away":81.79904615384612,"difference":65.89153689700132,"ratio":0.5538541758324839,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":166.94305384615387,"away":83.77722711864408,"difference":83.1658267275098,"ratio":0.5018311645110366,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":83.75022702702695,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":169.51643063063074,"pixels":111},"backlitRatio":0.49405374284641007,"errors":[]},"night":{"lightPosition":[-11,9,4],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":161.36424093335407,"y":95.23990518384069},"towardSunPixels":-1.4187042641209544,"shadowPixels":25,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":105.11903050847458,"away":74.02549230769233,"difference":31.09353820078225,"ratio":0.7042063834647379,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":115.02421538461532,"away":75.28811525423728,"difference":39.736100130378034,"ratio":0.6545414372312006,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":79.56071531531533,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":119.52319279279277,"pixels":111},"backlitRatio":0.6656508536652214,"nightLantern":{"intensity":0.08,"withLantern":79.56071531531533,"withoutLantern":71.95152432432428},"errors":[]}}
 # Subtest: directional character shading and visible shadow follow the key light
     # Subtest: sun-facing body is brighter, including when the sun is behind the camera-facing front
     ok 1 - sun-facing body is brighter, including when the sun is behind the camera-facing front
       ---
-      duration_ms: 1.09759
+      duration_ms: 0.986521
       type: 'test'
       ...
     # Subtest: the visible shadow is opposite the actual phase sun or moon
     ok 2 - the visible shadow is opposite the actual phase sun or moon
       ---
-      duration_ms: 2.645766
+      duration_ms: 2.919165
       type: 'test'
       ...
     # Subtest: a sunset shadow does not extend into the void at the foot-pad edge
     ok 3 - a sunset shadow does not extend into the void at the foot-pad edge
       ---
-      duration_ms: 2042.606685
+      duration_ms: 2536.706577
       type: 'test'
       ...
-    1..3
+    # Subtest: the player shadow stays on the raised bridge deck
+    ok 4 - the player shadow stays on the raised bridge deck
+      ---
+      duration_ms: 1584.746397
+      type: 'test'
+      ...
+    1..4
 ok 2 - directional character shading and visible shadow follow the key light
   ---
-  duration_ms: 14388.033057
+  duration_ms: 18540.754692
   type: 'test'
   ...
 1..2
-# tests 5
+# tests 6
 # suites 0
-# pass 5
+# pass 6
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 32737.73005
+# duration_ms 41622.603482

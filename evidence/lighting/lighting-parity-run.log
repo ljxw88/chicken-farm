@@ -1,0 +1,39 @@
+
+> chicken-farm@0.0.0 lighting:parity
+> node tools/lighting-parity.mjs
+
+Captured candidate spawn
+Captured candidate stairs-pad
+Captured candidate placement-ghost
+Captured candidate day
+Captured candidate sunset
+Captured candidate night
+Captured candidate rain
+Captured candidate cloudy
+Captured candidate cottage-coops-day
+Captured candidate cottage-coops-night
+spawn: 265136 changed pixels
+stairs-pad: 230160 changed pixels
+placement-ghost: 264743 changed pixels
+day: 267648 changed pixels
+sunset: 265136 changed pixels
+night: 265136 changed pixels
+rain: 265136 changed pixels
+cloudy: 265136 changed pixels
+cottage-coops-day: 558016 changed pixels
+cottage-coops-night: 557968 changed pixels
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Gate G: pixel differences found
+    at file:///home/michael/Developer/chicken-farm/worktrees/light/tools/lighting-parity.mjs:152:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.2
