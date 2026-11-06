@@ -31,8 +31,9 @@ function fixture(t, farm = false) {
   const groundHeight = farm ? GROUND_HEIGHT : 0;
   const groundSize = farm ? GROUND_SIZE : 32;
   let ground;
+  let stairs;
   if (farm) {
-    ground = createIsland(scene).ground;
+    ({ ground, stairs } = createIsland(scene));
   } else {
     ground = new THREE.Mesh(new THREE.PlaneGeometry(groundSize, groundSize), new THREE.MeshBasicMaterial());
     ground.rotation.x = -Math.PI / 2;
@@ -44,7 +45,7 @@ function fixture(t, farm = false) {
   const canvas = new FakeElement();
   const obstacles = farm ? createFarmLayout(scene).obstacles : [];
   const controls = createCharacterControls({
-    character, camera, canvas, ground, groundSize, groundHeight, characterRadius: 0.4, obstacles,
+    character, camera, canvas, ground, groundSize, groundHeight, characterRadius: 0.4, obstacles, stairs,
   });
   t.after(controls.dispose);
 
@@ -194,12 +195,12 @@ test('all four island edges stop WASD at the character radius and allow sliding'
     assert.ok(Math.abs(character.position.x) <= 7.6 && Math.abs(character.position.z) <= 7.6);
   }
 
-  character.position.set(7.55, groundHeight, 0);
+  character.position.set(7.55, groundHeight, 2);
   key('keydown', 'KeyS'); // World +X/+Z: push into the rim while moving along it.
   controls.update(1);
   key('keyup', 'KeyS');
   near(character.position.x, 7.6);
-  assert.ok(character.position.z > 2.4);
+  assert.ok(character.position.z > 4.4);
 });
 
 test('clicking the void does nothing and clicking the rim stays on the top', (t) => {

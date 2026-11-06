@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { StoneStairs } from '../scene/createStoneStairs';
 import { moveWithFarmCollisions, type FarmObstacle } from '../scene/farmCollisions';
 
 interface CharacterControlsOptions {
@@ -10,6 +11,8 @@ interface CharacterControlsOptions {
   groundHeight: number;
   characterRadius: number;
   obstacles?: readonly FarmObstacle[];
+  stairs?: StoneStairs;
+  groundShadow?: THREE.Object3D;
   onPointerDown?: (event: PointerEvent) => boolean;
 }
 
@@ -26,6 +29,8 @@ export function createCharacterControls({
   groundHeight,
   characterRadius,
   obstacles = [],
+  stairs,
+  groundShadow,
   onPointerDown,
 }: CharacterControlsOptions) {
   const keys = new Set<string>();
@@ -37,7 +42,9 @@ export function createCharacterControls({
   const raycaster = new THREE.Raycaster();
   const limit = groundSize / 2 - characterRadius;
   const halfSize = groundSize / 2;
-  const bounds = { minX: -halfSize, maxX: halfSize, minZ: -halfSize, maxZ: halfSize };
+  const bounds = stairs?.bounds ?? { minX: -halfSize, maxX: halfSize, minZ: -halfSize, maxZ: halfSize };
+  const surfaces = [ground, ...(stairs?.treads ?? [])];
+  const shadowOffset = groundShadow?.position.y ?? 0;
   let hasTarget = false;
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -68,16 +75,23 @@ export function createCharacterControls({
     );
 
     camera.updateMatrixWorld();
-    ground.updateWorldMatrix(true, false);
+    surfaces.forEach((surface) => surface.updateWorldMatrix(true, false));
     raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObject(ground)[0];
+    const hit = raycaster.intersectObjects(surfaces)[0];
     if (!hit) return;
 
-    target.set(
-      THREE.MathUtils.clamp(hit.point.x, -limit, limit),
-      groundHeight,
-      THREE.MathUtils.clamp(hit.point.z, -limit, limit),
-    );
+    if (hit.object === ground) {
+      target.set(
+        THREE.MathUtils.clamp(hit.point.x, -limit, limit),
+        groundHeight,
+        THREE.MathUtils.clamp(hit.point.z, -limit, limit),
+      );
+    } else {
+      // Only the actual tread tops are destinations; don't walk through a riser.
+      if (!stairs || !hit.face || hit.face.normal.y < 0.5) return;
+      const destination = stairs.target(hit.point.x, hit.point.z, characterRadius);
+      target.set(destination.x, groundHeight, destination.z);
+    }
     hasTarget = true;
   }
 
@@ -118,11 +132,13 @@ export function createCharacterControls({
     }
 
     const next = moveWithFarmCollisions(
-      startX, startZ, direction.x * step, direction.z * step, characterRadius, obstacles, bounds,
+      startX, startZ, direction.x * step, direction.z * step, characterRadius, obstacles, bounds, stairs?.supports,
     );
     character.position.x = next.x;
-    character.position.y = groundHeight;
+    const floor = stairs?.floorHeight(next.x) ?? groundHeight;
+    character.position.y = stairs?.characterHeight(next.x, characterRadius) ?? groundHeight;
     character.position.z = next.z;
+    if (groundShadow) groundShadow.position.y = shadowOffset + floor - character.position.y;
     const movedX = character.position.x - startX;
     const movedZ = character.position.z - startZ;
     const moving = Math.hypot(movedX, movedZ) > 0.000001;

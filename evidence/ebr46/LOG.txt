@@ -1,0 +1,24 @@
+EBR-46 browser evidence — 2026-11-06
+
+Chromium 153.0.8010.12, headless SwiftShader/WebGL2, 1280x720, DPR 1.
+Default pixel pass: 4 CSS pixels; world canvas: 320x180.
+Dev server: http://127.0.0.1:36239/?phase=daytime
+
+01-daytime-overview.png: unmodified app, island and stair silhouette.
+02-bottom-tread.png: clicked the lowest tread, then pushed S+D to the end.
+03-mid-climb.png: paused during W+A ascent.
+04-returned-to-path.png: returned to the original plateau.
+05-night-overview.png: unmodified app, locked night lighting.
+
+The movement page exposed scene/character state for measurement only; input
+was real mouse and keyboard, with no teleport. Both stair sides and the bottom
+stopped at the visible edge. Across 279 sampled frames (159 descent, 104
+ascent), the capsule did not intersect the stone and the sampled footprint
+stayed on the island or stair tops. See browser-proof.json for positions and
+geometry. No application errors were recorded (favicon errors were excluded).
+The lowest tread ends at the void; there is no separate lower slab.
+
+Compared the chunky tread/riser silhouette with the reference linked in
+README.md; this is a qualitative inspection, not independent Look Dev approval.
+Independent gameplay QA, touch traversal on the stairs and hardware-GPU
+rendering were not verified.

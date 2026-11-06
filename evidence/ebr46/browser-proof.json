@@ -1,0 +1,116 @@
+{
+  "browser": "Chromium 153.0.8010.12",
+  "url": "http://127.0.0.1:36239",
+  "viewport": "1280x720",
+  "rendering": {
+    "pixel": {
+      "enabled": true,
+      "cssPixelSize": 4,
+      "devicePixelRatio": 1,
+      "rendererPixelRatio": 1,
+      "canvasWidth": 320,
+      "canvasHeight": 180,
+      "viewport": {
+        "displayWidth": 1280,
+        "displayHeight": 720,
+        "targetWidth": 320,
+        "targetHeight": 180,
+        "pixelSize": 4,
+        "cropLeft": 0,
+        "cropRight": 0,
+        "cropBottom": 0,
+        "cropTop": 0
+      }
+    },
+    "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+  },
+  "geometry": {
+    "background": 1053718,
+    "ground": {
+      "width": 16,
+      "height": 16,
+      "widthSegments": 1,
+      "heightSegments": 1
+    },
+    "boxes": [
+      {
+        "minX": 7.999999999999999,
+        "maxX": 8.899999999999999,
+        "minY": 0,
+        "maxY": 2.4,
+        "minZ": 0.15000000000000002,
+        "maxZ": 1.35
+      },
+      {
+        "minX": 8.9,
+        "maxX": 9.799999999999999,
+        "minY": 0,
+        "maxY": 1.92,
+        "minZ": 0.15000000000000002,
+        "maxZ": 1.35
+      },
+      {
+        "minX": 9.8,
+        "maxX": 10.7,
+        "minY": 0,
+        "maxY": 1.44,
+        "minZ": 0.15000000000000002,
+        "maxZ": 1.35
+      },
+      {
+        "minX": 10.700000000000001,
+        "maxX": 11.6,
+        "minY": 0,
+        "maxY": 0.96,
+        "minZ": 0.15000000000000002,
+        "maxZ": 1.35
+      },
+      {
+        "minX": 11.600000000000001,
+        "maxX": 12.5,
+        "minY": 0,
+        "maxY": 0.48,
+        "minZ": 0.15000000000000002,
+        "maxZ": 1.35
+      }
+    ]
+  },
+  "input": {
+    "bottomTreadClick": {
+      "x": 927.6510385866874,
+      "y": 625.1327697588512
+    },
+    "bottom": [
+      12.1,
+      0.48,
+      0.749998912149735
+    ],
+    "sideA": [
+      12.1,
+      0.48,
+      0.9499999965593899
+    ],
+    "sideB": [
+      12.058669608639644,
+      0.501330391360356,
+      0.5500000001048426
+    ],
+    "middle": [
+      10.48366960863965,
+      1.44,
+      0.7250000001048426
+    ],
+    "top": [
+      7.391769608639647,
+      2.4,
+      0.7250000001048426
+    ]
+  },
+  "frames": {
+    "total": 279,
+    "descent": 159,
+    "ascent": 104,
+    "clippedOrUnsupported": 0
+  },
+  "errors": []
+}

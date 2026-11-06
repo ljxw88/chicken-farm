@@ -13,7 +13,7 @@ export function createScene(canvas: HTMLCanvasElement) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setClearColor(VOID_COLOR, 1);
 
-  const { ground } = createIsland(scene);
+  const { ground, stairs } = createIsland(scene);
 
   function resize() {
     const width = window.innerWidth;
@@ -21,5 +21,5 @@ export function createScene(canvas: HTMLCanvasElement) {
     resizeCamera(width, height);
   }
 
-  return { scene, camera, renderer, ground, follow, resize };
+  return { scene, camera, renderer, ground, stairs, follow, resize };
 }
