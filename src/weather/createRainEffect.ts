@@ -64,8 +64,9 @@ export function createRainEffect({
   });
 
   const anchorPosition = new THREE.Vector3();
-  const forward = new THREE.Vector3();
+  const streakDirection = new THREE.Vector3(RAIN_LOOK.streakDirectionX, 0, RAIN_LOOK.streakDirectionZ).normalize();
   const screenRight = new THREE.Vector3();
+  const screenUp = new THREE.Vector3();
   anchor.getWorldPosition(anchorPosition);
   cloud.position.set(anchorPosition.x, groundHeight, anchorPosition.z);
 
@@ -121,17 +122,20 @@ export function createRainEffect({
       splash.material.opacity = RAIN_LOOK.splashOpacity * amount * (1 - age);
     }
 
-    // World vertical is foreshortened in the isometric view. Adjust horizontal
-    // drift so the streaks appear tilted by the requested angle on screen.
-    camera.getWorldDirection(forward);
-    screenRight.setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
-    const verticalProjection = Math.sqrt(Math.max(0, 1 - forward.y * forward.y));
-    const drift = Math.tan(THREE.MathUtils.degToRad(RAIN_LOOK.streakTiltDegrees)) * verticalProjection;
+    // Project the world-space direction onto both screen axes: unlike screen
+    // right, it also contributes vertical motion in the isometric view.
+    camera.updateWorldMatrix(true, false);
+    screenRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    screenUp.setFromMatrixColumn(camera.matrixWorld, 1);
+    const tilt = Math.tan(THREE.MathUtils.degToRad(RAIN_LOOK.streakTiltDegrees));
+    const drift = (screenRight.y + tilt * screenUp.y) /
+      (screenRight.dot(streakDirection) + tilt * screenUp.dot(streakDirection));
+    const verticalLengthScale = 1 / Math.hypot(1, drift);
 
     for (let i = 0; i < RAIN_LOOK.streakCount; i++) {
       const fall = speeds[i] * deltaSeconds;
-      const x = wrap(xPositions[i] - anchorDeltaX + screenRight.x * fall * drift + halfField, RAIN_LOOK.fieldWidth) - halfField;
-      const z = wrap(zPositions[i] - anchorDeltaZ + screenRight.z * fall * drift + halfField, RAIN_LOOK.fieldWidth) - halfField;
+      const x = wrap(xPositions[i] - anchorDeltaX + streakDirection.x * fall * drift + halfField, RAIN_LOOK.fieldWidth) - halfField;
+      const z = wrap(zPositions[i] - anchorDeltaZ + streakDirection.z * fall * drift + halfField, RAIN_LOOK.fieldWidth) - halfField;
       let y = yPositions[i] - fall;
       if (y <= 0) {
         // Avoid a burst of old impacts after a background tab resumes.
@@ -144,12 +148,13 @@ export function createRainEffect({
       yPositions[i] = y;
       zPositions[i] = z;
       const offset = i * 6;
+      const length = lengths[i] * verticalLengthScale;
       positions[offset] = x;
       positions[offset + 1] = y;
       positions[offset + 2] = z;
-      positions[offset + 3] = x + screenRight.x * lengths[i] * drift;
-      positions[offset + 4] = y - lengths[i];
-      positions[offset + 5] = z + screenRight.z * lengths[i] * drift;
+      positions[offset + 3] = x + streakDirection.x * length * drift;
+      positions[offset + 4] = y - length;
+      positions[offset + 5] = z + streakDirection.z * length * drift;
     }
     attribute.needsUpdate = true;
   }
