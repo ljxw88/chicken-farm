@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import { createStoneStairs } from './createStoneStairs';
 import { FARM_PALETTE } from './farmPalette';
 
-// The walkable surface and all four collision boundaries share these dimensions.
+// The original plateau and its four rim faces share these dimensions.
 export const GROUND_SIZE = 16;
 export const GROUND_HEIGHT = 2.4;
 export const ISLAND_BOTTOM = 0;
@@ -128,5 +129,6 @@ export function createIsland(scene: THREE.Scene) {
   underside.position.y = ISLAND_BOTTOM;
   island.add(underside);
 
-  return { island, ground };
+  const stairs = createStoneStairs(island, GROUND_SIZE, GROUND_HEIGHT, ISLAND_BOTTOM);
+  return { island, ground, stairs };
 }

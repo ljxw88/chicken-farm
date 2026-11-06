@@ -32,7 +32,7 @@ if (!hudRoot) {
   throw new Error('Farm HUD root not found');
 }
 
-const { scene, camera, renderer, ground, follow, resize } = createScene(canvas);
+const { scene, camera, renderer, ground, stairs, follow, resize } = createScene(canvas);
 const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
@@ -65,6 +65,8 @@ const controls = createCharacterControls({
   groundHeight: GROUND_HEIGHT,
   characterRadius: CHARACTER_RADIUS,
   obstacles,
+  stairs,
+  groundShadow: character.getObjectByName('character-shadow'),
 });
 const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
 const composer = createComposer(renderer, scene, camera);

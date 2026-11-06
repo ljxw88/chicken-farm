@@ -36,6 +36,7 @@ export function createCharacter() {
     new THREE.CircleGeometry(CHARACTER_RADIUS, 24),
     new THREE.MeshBasicMaterial({ color: 0x263b20, transparent: true, opacity: 0.22, depthWrite: false }),
   );
+  shadow.name = 'character-shadow';
   shadow.rotation.x = -Math.PI / 2;
   shadow.scale.y = 0.7;
   // Stay above the slightly raised dirt path without changing the walking height.

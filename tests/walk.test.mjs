@@ -31,8 +31,9 @@ function fixture(t, farm = false) {
   const groundHeight = farm ? GROUND_HEIGHT : 0;
   const groundSize = farm ? GROUND_SIZE : 32;
   let ground;
+  let stairs;
   if (farm) {
-    ground = createIsland(scene).ground;
+    ({ ground, stairs } = createIsland(scene));
   } else {
     ground = new THREE.Mesh(new THREE.PlaneGeometry(groundSize, groundSize), new THREE.MeshBasicMaterial());
     ground.rotation.x = -Math.PI / 2;
@@ -44,7 +45,7 @@ function fixture(t, farm = false) {
   const canvas = new FakeElement();
   const obstacles = farm ? createFarmLayout(scene).obstacles : [];
   const controls = createCharacterControls({
-    character, camera, canvas, ground, groundSize, groundHeight, characterRadius: 0.4, obstacles,
+    character, camera, canvas, ground, groundSize, groundHeight, characterRadius: 0.4, obstacles, stairs,
   });
   t.after(controls.dispose);
 
@@ -52,9 +53,9 @@ function fixture(t, farm = false) {
     window.dispatchEvent(Object.assign(new Event(type, { cancelable: true }), { code }));
   }
 
-  function click(point) {
+  function click(point, height = groundHeight) {
     camera.updateMatrixWorld();
-    const projected = point.clone().setY(groundHeight).project(camera);
+    const projected = point.clone().setY(height).project(camera);
     const rect = canvas.getBoundingClientRect();
     canvas.dispatchEvent(Object.assign(new Event('pointerdown'), {
       isPrimary: true,
@@ -64,7 +65,7 @@ function fixture(t, farm = false) {
     }));
   }
 
-  return { camera, follow, resize, character, controls, key, click, groundHeight };
+  return { camera, follow, resize, character, controls, key, click, groundHeight, stairs };
 }
 
 function near(actual, expected, tolerance = 1e-6) {
@@ -194,12 +195,12 @@ test('all four island edges stop WASD at the character radius and allow sliding'
     assert.ok(Math.abs(character.position.x) <= 7.6 && Math.abs(character.position.z) <= 7.6);
   }
 
-  character.position.set(7.55, groundHeight, 0);
+  character.position.set(7.55, groundHeight, 2);
   key('keydown', 'KeyS'); // World +X/+Z: push into the rim while moving along it.
   controls.update(1);
   key('keyup', 'KeyS');
   near(character.position.x, 7.6);
-  assert.ok(character.position.z > 2.4);
+  assert.ok(character.position.z > 4.4);
 });
 
 test('clicking the void does nothing and clicking the rim stays on the top', (t) => {
@@ -214,6 +215,24 @@ test('clicking the void does nothing and clicking the rim stays on the top', (t)
   near(character.position.x, 7.6);
   near(character.position.z, 0);
   near(character.position.y, groundHeight);
+});
+
+test('click-to-walk reaches the foot pad and returns to the original island', (t) => {
+  const { character, controls, click, follow, groundHeight, stairs } = fixture(t, true);
+  const { footPad } = stairs;
+  const destination = new THREE.Vector3(footPad.position.x, footPad.position.y + footPad.geometry.parameters.height / 2, footPad.position.z);
+  click(destination, destination.y);
+  for (let i = 0; i < 4; i++) controls.update(10);
+  near(character.position.x, destination.x, 0.01);
+  near(character.position.z, destination.z, 0.01);
+  assert.ok(character.position.y >= destination.y && character.position.y < groundHeight);
+
+  follow(character.position);
+  click(new THREE.Vector3(7.2, groundHeight, 0.75));
+  for (let i = 0; i < 4; i++) controls.update(10);
+  near(character.position.x, 7.2, 0.01);
+  near(character.position.y, groundHeight);
+  near(character.position.z, 0.75, 0.01);
 });
 
 test('WASD cannot tunnel through the front or side of the barn', (t) => {
