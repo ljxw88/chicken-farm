@@ -32,7 +32,21 @@ after(async () => {
 });
 
 async function capture(page, name) {
-  if (evidenceDir) await page.screenshot({ path: join(evidenceDir, name) });
+  return page.screenshot(evidenceDir ? { path: join(evidenceDir, name) } : {});
+}
+
+async function samplePixels(page, screenshot, points) {
+  return page.evaluate(async ({ data, points }) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${data}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0);
+    return points.map(([x, y]) => [...context.getImageData(x, y, 1, 1).data.slice(0, 3)]);
+  }, { data: screenshot.toString('base64'), points });
 }
 
 function collectErrors(page, errors) {
@@ -42,10 +56,11 @@ function collectErrors(page, errors) {
   });
 }
 
-async function holdUntil(page, keys, predicate) {
+async function holdUntil(page, keys, predicate, argument, dwell = 0) {
   for (const key of keys) await page.keyboard.down(key);
   try {
-    await page.waitForFunction(predicate, null, { timeout: 20000 });
+    await page.waitForFunction(predicate, argument, { timeout: 20000 });
+    if (dwell) await page.waitForTimeout(dwell);
   } finally {
     for (const key of keys) await page.keyboard.up(key);
   }
@@ -74,7 +89,7 @@ function assertNoClipping(frame, boxes) {
   }
 }
 
-test('real clicks and WASD traverse the visible stairs without clipping', { timeout: 120000 }, async (t) => {
+test('real clicks and WASD traverse the visible stairs and foot pad without clipping', { timeout: 120000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const errors = [];
@@ -92,7 +107,7 @@ test('real clicks and WASD traverse the visible stairs without clipping', { time
   assert.equal(rendering.pixel.cssPixelSize, 4);
   assert.deepEqual([rendering.pixel.canvasWidth, rendering.pixel.canvasHeight], [320, 180]);
   assert.match(rendering.webgl, /WebGL 2\.0/);
-  await capture(overview, '01-daytime-overview.png');
+  const overviewScreenshot = await capture(overview, '01-daytime-overview.png');
   await overview.close();
 
   const page = await context.newPage();
@@ -106,24 +121,65 @@ test('real clicks and WASD traverse the visible stairs without clipping', { time
   await page.locator('[data-growing-toggle]').click();
 
   const geometry = await page.evaluate(() => {
-    const { scene, stairs } = window.__ebr46Test;
+    const { scene, camera, stairs } = window.__ebr46Test;
+    const rgb = (hex) => [hex >> 16 & 255, hex >> 8 & 255, hex & 255];
+    const describe = (mesh) => {
+      const p = mesh.getWorldPosition(mesh.position.clone());
+      const { width, height, depth } = mesh.geometry.parameters;
+      return {
+        minX: p.x - width / 2, maxX: p.x + width / 2,
+        minY: p.y - height / 2, maxY: p.y + height / 2,
+        minZ: p.z - depth / 2, maxZ: p.z + depth / 2,
+      };
+    };
+    camera.updateMatrixWorld();
+    const project = (point) => {
+      point.project(camera);
+      return [Math.round((point.x + 1) * 640), Math.round((1 - point.y) * 360)];
+    };
     return {
       background: scene.background.getHex(),
       ground: scene.getObjectByName('island-top').geometry.parameters,
-      boxes: stairs.treads.map((mesh) => {
+      boxes: stairs.treads.map(describe),
+      pad: describe(stairs.footPad),
+      colors: {
+        barnWall: rgb(scene.getObjectByName('barn-walls').material.color.getHex()),
+        dirtPath: rgb(scene.getObjectByName('farm-path-surface').material.color.getHex()),
+        riser: rgb(stairs.treads[0].material[0].color.getHex()),
+        treads: stairs.treads.map((mesh) => rgb(mesh.material[2].color.getHex())),
+        edges: stairs.treads.map((mesh) => rgb(mesh.material[6].color.getHex())),
+        emissive: [...stairs.treads, stairs.footPad].flatMap((mesh) => mesh.material.map((material) => material.emissive.getHex())),
+      },
+      topPoints: stairs.treads.map((mesh) => {
         const p = mesh.getWorldPosition(mesh.position.clone());
-        const { width, height, depth } = mesh.geometry.parameters;
-        return {
-          minX: p.x - width / 2, maxX: p.x + width / 2,
-          minY: p.y - height / 2, maxY: p.y + height / 2,
-          minZ: p.z - depth / 2, maxZ: p.z + depth / 2,
-        };
+        p.y += mesh.geometry.parameters.height / 2;
+        return project(p);
+      }),
+      riserPoints: stairs.treads.map((mesh) => {
+        const p = mesh.getWorldPosition(mesh.position.clone());
+        p.x += mesh.geometry.parameters.width / 2;
+        p.y += mesh.geometry.parameters.height / 2 - 0.24;
+        return project(p);
+      }),
+      edgePoints: stairs.treads.map((mesh) => {
+        const p = mesh.getWorldPosition(mesh.position.clone());
+        p.x += mesh.geometry.parameters.width / 2 - 0.09;
+        p.y += mesh.geometry.parameters.height / 2;
+        return project(p);
       }),
     };
   });
   assert.equal(geometry.background, 0x101416);
   assert.deepEqual([geometry.ground.width, geometry.ground.height], [16, 16]);
   assert.equal(geometry.boxes.length, 5);
+  assert.deepEqual(geometry.colors.barnWall, [212, 165, 116]);
+  assert.deepEqual(geometry.colors.dirtPath, [166, 124, 82]);
+  assert.ok(geometry.colors.emissive.every((value) => value === 0));
+  assert.ok(Math.abs(geometry.pad.maxX - geometry.pad.minX - 1.5) < 1e-6);
+  assert.ok(Math.abs(geometry.pad.maxZ - geometry.pad.minZ - 1.6) < 1e-6);
+  assert.ok(Math.abs(geometry.pad.maxY - geometry.pad.minY - 0.16) < 1e-6);
+  const dayPixels = await samplePixels(page, overviewScreenshot,
+    [geometry.topPoints[3], geometry.riserPoints[3], geometry.edgePoints[3], [1200, 300]]);
   await page.evaluate(() => {
     window.__ebr46Stage = 'approach';
     window.__ebr46Frames = [];
@@ -137,7 +193,7 @@ test('real clicks and WASD traverse the visible stairs without clipping', { time
 
   const click = await page.evaluate(() => {
     const { camera, stairs } = window.__ebr46Test;
-    const mesh = stairs.treads.at(-1);
+    const mesh = stairs.footPad;
     const point = mesh.getWorldPosition(mesh.position.clone());
     point.y += mesh.geometry.parameters.height / 2;
     camera.updateMatrixWorld();
@@ -148,22 +204,37 @@ test('real clicks and WASD traverse the visible stairs without clipping', { time
   assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, click), 'scene');
   await page.evaluate(() => { window.__ebr46Stage = 'descent'; });
   await page.mouse.click(click.x, click.y);
-  await page.waitForFunction(() => window.__ebr46Test.character.position.x > 12.04, null, { timeout: 20000 });
-  await holdUntil(page, ['s', 'd'], () => window.__ebr46Test.character.position.x > 12.095);
+  const padCenterX = (geometry.pad.minX + geometry.pad.maxX) / 2;
+  await page.waitForFunction((x) => window.__ebr46Test.character.position.x > x - 0.01, padCenterX, { timeout: 20000 });
+  await holdUntil(page, ['s', 'd'], (x) => window.__ebr46Test.character.position.x > x - 0.005,
+    geometry.pad.maxX - 0.4, 300);
   await page.waitForTimeout(100);
   const bottom = await page.evaluate(() => window.__ebr46Test.character.position.toArray());
-  assert.ok(bottom[0] <= geometry.boxes.at(-1).maxX - 0.4 + 1e-6);
-  assert.ok(Math.abs(bottom[1] - geometry.boxes.at(-1).maxY) < 0.01);
+  assert.ok(Math.abs(bottom[0] - (geometry.pad.maxX - 0.4)) < 0.001);
+  assert.ok(Math.abs(bottom[1] - geometry.pad.maxY) < 0.01);
   await capture(page, '02-bottom-tread.png');
 
   await page.evaluate(() => { window.__ebr46Stage = 'side-boundaries'; });
-  await holdUntil(page, ['s', 'a'], () => window.__ebr46Test.character.position.z > 0.945);
+  await holdUntil(page, ['s', 'a'], (z) => window.__ebr46Test.character.position.z > z - 0.005,
+    geometry.pad.maxZ - 0.4, 100);
   const sideA = await page.evaluate(() => window.__ebr46Test.character.position.toArray());
-  assert.ok(sideA[2] <= geometry.boxes[0].maxZ - 0.4 + 1e-6);
-  await holdUntil(page, ['w', 'd'], () => window.__ebr46Test.character.position.z < 0.555);
+  assert.ok(Math.abs(sideA[2] - (geometry.pad.maxZ - 0.4)) < 0.001);
+  await holdUntil(page, ['w', 'd'], (z) => window.__ebr46Test.character.position.z < z + 0.005,
+    geometry.pad.minZ + 0.4, 100);
   const sideB = await page.evaluate(() => window.__ebr46Test.character.position.toArray());
-  assert.ok(sideB[2] >= geometry.boxes[0].minZ + 0.4 - 1e-6);
-  await holdUntil(page, ['s', 'a'], () => window.__ebr46Test.character.position.z > 0.69);
+  assert.ok(Math.abs(sideB[2] - (geometry.pad.minZ + 0.4)) < 0.001);
+
+  const centerTarget = { x: geometry.pad.maxX - 0.55, y: geometry.pad.maxY, z: 0.75 };
+  const centerPoint = await page.evaluate(({ x, y, z }) => {
+    const { camera, character } = window.__ebr46Test;
+    camera.updateMatrixWorld();
+    const point = character.position.clone().set(x, y, z).project(camera);
+    const rect = document.querySelector('#scene').getBoundingClientRect();
+    return { x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 };
+  }, centerTarget);
+  await page.mouse.click(centerPoint.x, centerPoint.y);
+  await page.waitForFunction(({ x, z }) => Math.hypot(window.__ebr46Test.character.position.x - x,
+    window.__ebr46Test.character.position.z - z) < 0.03, centerTarget, { timeout: 20000 });
 
   await page.evaluate(() => { window.__ebr46Stage = 'ascent'; });
   await holdUntil(page, ['w', 'a'], () => window.__ebr46Test.character.position.x < 10.5);
@@ -179,19 +250,22 @@ test('real clicks and WASD traverse the visible stairs without clipping', { time
   const descent = frames.filter((frame) => frame.stage === 'descent');
   const ascent = frames.filter((frame) => frame.stage === 'ascent');
   assert.ok(descent.length >= 20 && ascent.length >= 20);
-  assert.ok(Math.min(...descent.map((frame) => frame.y)) < 0.6);
+  assert.ok(Math.min(...descent.map((frame) => frame.y)) < 0.2);
   assert.ok(Math.max(...ascent.map((frame) => frame.y)) >= 2.39);
-  for (const frame of frames) assertNoClipping(frame, geometry.boxes);
+  for (const frame of frames) assertNoClipping(frame, [...geometry.boxes, geometry.pad]);
 
   const night = await context.newPage();
   collectErrors(night, errors);
   await night.goto(`${url}/?phase=night`, { waitUntil: 'networkidle' });
   assert.equal(await night.locator('[data-phase]').textContent(), 'Night');
-  await capture(night, '05-night-overview.png');
+  const nightScreenshot = await capture(night, '05-night-overview.png');
+  const nightPixels = await samplePixels(night, nightScreenshot, [geometry.topPoints[3], geometry.edgePoints[3], [1200, 300]]);
+  assert.ok(nightPixels[1][0] > nightPixels[2][0] + 8, 'night tread edge should remain distinguishable from the void');
   assert.deepEqual(errors, []);
   proof = {
     browser: `Chromium ${browser.version()}`, url, viewport: '1280x720', rendering,
-    geometry, input: { bottomTreadClick: click, bottom, sideA, sideB, middle, top },
+    geometry, pixels: { day: dayPixels, night: nightPixels },
+    input: { footPadClick: click, bottom, sideA, sideB, middle, top },
     frames: { total: frames.length, descent: descent.length, ascent: ascent.length, clippedOrUnsupported: 0 },
     errors,
   };

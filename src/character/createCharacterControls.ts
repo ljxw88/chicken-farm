@@ -43,7 +43,7 @@ export function createCharacterControls({
   const limit = groundSize / 2 - characterRadius;
   const halfSize = groundSize / 2;
   const bounds = stairs?.bounds ?? { minX: -halfSize, maxX: halfSize, minZ: -halfSize, maxZ: halfSize };
-  const surfaces = [ground, ...(stairs?.treads ?? [])];
+  const surfaces = stairs ? [ground, ...stairs.treads, stairs.footPad] : [ground];
   const shadowOffset = groundShadow?.position.y ?? 0;
   let hasTarget = false;
 
@@ -87,7 +87,7 @@ export function createCharacterControls({
         THREE.MathUtils.clamp(hit.point.z, -limit, limit),
       );
     } else {
-      // Only the actual tread tops are destinations; don't walk through a riser.
+      // Only the tread and pad tops are destinations; don't walk through a riser.
       if (!stairs || !hit.face || hit.face.normal.y < 0.5) return;
       const destination = stairs.target(hit.point.x, hit.point.z, characterRadius);
       target.set(destination.x, groundHeight, destination.z);

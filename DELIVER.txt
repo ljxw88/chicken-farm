@@ -1,57 +1,57 @@
-EBR-46 — stone stairs on the existing island
+EBR-46 REWORK — warm stone and foot pad
 
 Branch: feat/ebr46-stairs
-Implementation tip SHA: 3996a5e7ddca1e3be968028fe2c5c0da9ea5c603
-Current branch tip SHA: run `git rev-parse HEAD`. This handoff is a
-documentation-only commit above the implementation; a commit cannot contain
-its own SHA. The final branch tip is also reported in the delivery response.
+Tip SHA: run `git rev-parse HEAD`
+Base reviewed tip: 978059ca14e316bad95d92516bfcb89e073d2c0c
 No push or PR.
 
 Open and walk
-- The Vite dev server is running at http://127.0.0.1:36239/?phase=daytime
-  while its process remains alive. To restart: `npm ci`, then
-  `npm run dev -- --host 127.0.0.1 --port 36239 --strictPort` (choose a free
-  port if needed).
-- At 1280x720, follow the dirt path past the pond to the camera-facing rim.
-  Click the bottom stone tread to descend; from the initial view its center
-  is approximately (928, 625). Or align with the run and hold S+D.
-- At the bottom, S+D stops at the edge. S+A and W+D push against the two
-  sides. Hold W+A to climb back to the path; clicking the path also returns.
-  The Growing panel can be collapsed to uncover more of the scene.
+- Tailscale: http://100.88.150.21:5179/?phase=daytime
+  Night comparison: http://100.88.150.21:5179/?phase=night
+  The server is bound to 100.88.150.21:5179 while its process remains alive.
+  Restart with `npm run dev -- --host 100.88.150.21 --port 5179 --strictPort`.
+- At 1280x720, click the foot pad beyond the path and five stairs. From spawn
+  its center is approximately (947, 646). Or align with the run and hold S+D.
+  Keep S+D held to test the outer stop; S+A and W+D test the pad sides.
+  W+A climbs back to the path. Collapse Growing to uncover more of the scene.
 
-Scope
-- Five 1.2-wide warm stone treads join the unchanged 16x16 plateau at the path.
-  Their lighter tops and darker risers span the existing 2.4-unit rim. The
-  soil/rock rim and #101416 void are unchanged. The last tread stops at the
-  void; there is no second island or lower ground beyond it.
-- Tread raycasts, capsule-height clearance and footprint boundaries match the
-  visible run. Existing prop collisions and the other rim edges remain active.
+What changed
+- Source material samples: barn wall rgb(212,165,116), dirt path
+  rgb(166,124,82). The stone colors are derived from these existing colors.
+- Before source tread/riser albedo: rgb(195,180,155) / rgb(159,142,120).
+  After, the fourth tread/riser is rgb(206,159,111) / rgb(175,133,89); other
+  tread tops vary slightly from rgb(202,156,109) to rgb(206,159,111).
+- At the same daytime screen pixels, the fourth tread/riser changed from
+  rgb(136,131,112) / rgb(62,66,54) to rgb(144,116,80) / rgb(69,61,39).
+  Its slightly lighter non-emissive night edge is rgb(43,35,30), against
+  the unchanged void rgb(16,20,22). The camera and lighting were not changed.
+- A 1.5-long x 1.6-wide x 0.16-high stone foot pad overlaps the lowest tread
+  by 0.45 units. It is raycastable and walkable; its sides, inside corners and
+  outer edge block the void. There is no second slab or lower terrace.
+  The signed 16x16 plateau, soil/rock rim, #101416 void and props are unchanged.
 
 Evidence
-- evidence/ebr46/01-daytime-overview.png — unmodified daytime app.
-- evidence/ebr46/02-bottom-tread.png — descent and bottom-edge stop.
-- evidence/ebr46/03-mid-climb.png — paused during ascent.
-- evidence/ebr46/04-returned-to-path.png — back on the plateau.
-- evidence/ebr46/05-night-overview.png — unmodified night app.
-- evidence/ebr46/LOG.txt and evidence/ebr46/browser-proof.json — browser,
-  renderer, real input, sampled positions and geometry. The movement page
-  exposes scene state for measurement only; it does not teleport the player.
+- evidence/ebr46/01-daytime-overview.png — unmodified daytime view.
+- evidence/ebr46/02-bottom-tread.png — descent, pad and outer-edge stop.
+- evidence/ebr46/03-mid-climb.png and 04-returned-to-path.png — ascent/return.
+- evidence/ebr46/05-night-overview.png — unmodified night view.
+- evidence/ebr46/LOG.txt and evidence/ebr46/browser-proof.json — source and
+  rendered colors, pad dimensions, real input and sampled collision evidence.
+  The movement page exposes scene state for measurement only; no teleport.
 
 Checks run
-- `npm ci`: passed; 0 vulnerabilities reported.
-- `npm run build`: passed, including TypeScript `tsc`; Vite reported the
-  existing >500 kB bundle-size advisory. No separate typecheck script exists.
-- `npm test`: 82 passed, 0 failed.
-- `EBR46_URL=http://127.0.0.1:36239 EBR46_EVIDENCE_DIR=evidence/ebr46 npm run test:browser`:
-  17 passed, 0 failed, including existing production-preview tests and the
-  dev-server stair traversal in Chromium 153 / WebGL2 / SwiftShader.
-- `node --test tests/stairs.test.mjs tests/walk.test.mjs`: 18 passed, 0 failed.
-- `git diff --cached --check`: passed before the implementation commit.
-- The stair browser check sampled 279 frames of mouse/keyboard movement: no
-  capsule/stone intersections or sampled footprint over the void. The 4-CSS-px
-  pass used a 320x180 world canvas at 1280x720; no application errors were
-  observed (favicon errors excluded).
+- `npm run build`: passed, including TypeScript `tsc`. Vite retained its
+  existing >500 kB bundle-size advisory.
+- `npm test`: 84 passed, 0 failed.
+- `node --test tests/stairs.test.mjs tests/walk.test.mjs`: 20 passed, 0 failed.
+- `EBR46_URL=http://100.88.150.21:5179 EBR46_EVIDENCE_DIR=evidence/ebr46 npm run test:browser`:
+  17 passed, 0 failed; includes the stair browser test and refreshed frames.
+- Chromium 153 / WebGL2 / SwiftShader at 1280x720: 4-CSS-px pixel pass,
+  320x180 world canvas; 385 sampled movement frames with no capsule/stone
+  intersections or sampled footprint over the void. No application errors
+  observed (favicon errors excluded); all stone materials have zero emissive.
+- `git diff --check`: passed. Tailscale-bound server returned HTTP 200 locally.
 
-Not verified: independent gameplay QA or Look Dev sign-off, touch traversal on
-the stairs, hardware-GPU rendering, or stair traversal in every weather/phase.
-Reference comparison was qualitative; see evidence/ebr46/LOG.txt.
+Not verified: independent gameplay QA or Look Dev sign-off, remote access from
+another tailnet device, touch traversal on the stairs, hardware-GPU rendering,
+or stair traversal in every weather/phase.

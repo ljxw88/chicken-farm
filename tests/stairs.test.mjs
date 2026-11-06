@@ -9,6 +9,7 @@ const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayo
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createCharacter, CHARACTER_RADIUS } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
 after(() => vite.close());
 
 class FakeCanvas extends EventTarget {
@@ -41,7 +42,9 @@ function fixture(t) {
     groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE, characterRadius: CHARACTER_RADIUS, obstacles,
   });
   scene.updateMatrixWorld(true);
-  const boxes = stairs.treads.map((mesh) => new THREE.Box3().setFromObject(mesh));
+  const treadBoxes = stairs.treads.map((mesh) => new THREE.Box3().setFromObject(mesh));
+  const padBox = new THREE.Box3().setFromObject(stairs.footPad);
+  const boxes = [...treadBoxes, padBox];
   t.after(controls.dispose);
 
   function key(type, code) {
@@ -56,7 +59,7 @@ function fixture(t) {
     }));
   }
 
-  return { scene, ground, stairs, boxes, character, shadow, controls, camera, follow, key, click };
+  return { scene, ground, stairs, treadBoxes, padBox, boxes, character, shadow, controls, camera, follow, key, click };
 }
 
 // Test the actual capsule against the rendered block volumes, not the height
@@ -84,33 +87,63 @@ function assertSupported(character, boxes) {
   }
 }
 
-test('one path-width stone run joins the unchanged slab and spans its rim', (t) => {
-  const { scene, ground, stairs, boxes } = fixture(t);
+test('a path-width stone run and small foot pad join the unchanged slab', (t) => {
+  const { scene, ground, stairs, treadBoxes, padBox } = fixture(t);
   assert.deepEqual([ground.geometry.parameters.width, ground.geometry.parameters.height], [16, 16]);
   assert.equal(scene.getObjectsByProperty('name', 'island-stone-stairs').length, 1);
   assert.ok(stairs.treads.length >= 3 && stairs.treads.length <= 5);
-  near(boxes[0].min.x, GROUND_SIZE / 2);
-  near(boxes[0].max.y, GROUND_HEIGHT);
-  for (const [index, box] of boxes.entries()) {
+  near(treadBoxes[0].min.x, GROUND_SIZE / 2);
+  near(treadBoxes[0].max.y, GROUND_HEIGHT);
+  for (const [index, box] of treadBoxes.entries()) {
     near(box.max.z - box.min.z, 1.2);
     near(box.min.y, ISLAND_BOTTOM);
     if (index > 0) {
-      near(box.min.x, boxes[index - 1].max.x);
-      assert.ok(box.max.y < boxes[index - 1].max.y);
+      near(box.min.x, treadBoxes[index - 1].max.x);
+      assert.ok(box.max.y < treadBoxes[index - 1].max.y);
     }
-    const materials = stairs.treads[index].material;
-    const luminance = (color) => 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
-    assert.ok(luminance(materials[2].color) > luminance(materials[0].color), 'tread should be lighter than riser');
   }
-  near(boxes.at(-1).max.y, (GROUND_HEIGHT - ISLAND_BOTTOM) / stairs.treads.length);
+  near(treadBoxes.at(-1).max.y, (GROUND_HEIGHT - ISLAND_BOTTOM) / stairs.treads.length);
+  near(padBox.max.x - padBox.min.x, 1.5);
+  near(padBox.max.z - padBox.min.z, 1.6);
+  near(padBox.max.y - padBox.min.y, 0.16);
+  near(padBox.min.y, ISLAND_BOTTOM);
+  assert.ok(padBox.min.x < treadBoxes.at(-1).max.x && padBox.max.x > treadBoxes.at(-1).max.x);
+  assert.ok(padBox.min.z < treadBoxes.at(-1).min.z && padBox.max.z > treadBoxes.at(-1).max.z);
+  assert.ok(padBox.max.y < treadBoxes.at(-1).max.y);
 
   const path = scene.getObjectByName('farm-path-surface');
   const ray = new THREE.Raycaster(new THREE.Vector3(7.98, 10, 0.75), new THREE.Vector3(0, -1, 0));
   assert.ok(ray.intersectObject(path).length, 'dirt path must meet the stair entrance');
 });
 
-test('WASD descends and climbs without clipping, unsupported feet or an off-edge escape', (t) => {
-  const { boxes, character, shadow, controls, key } = fixture(t);
+test('stone derives from the barn and path, with subtle variations and non-emissive tread edges', (t) => {
+  const { stairs, treadBoxes, padBox } = fixture(t);
+  const barn = new THREE.Color(FARM_PALETTE.barnWood);
+  const dirt = new THREE.Color(FARM_PALETTE.dirt);
+  const luminance = (color) => 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+  const colors = [];
+  const ray = new THREE.Raycaster();
+  for (const [mesh, box] of [...stairs.treads.map((step, index) => [step, treadBoxes[index]]), [stairs.footPad, padBox]]) {
+    const [riser, , tread, , , , edge] = mesh.material;
+    for (const channel of ['r', 'g', 'b']) {
+      assert.ok(riser.color[channel] >= dirt[channel] && riser.color[channel] <= barn[channel]);
+      assert.ok(tread.color[channel] >= dirt[channel] && tread.color[channel] <= barn[channel]);
+    }
+    assert.ok(luminance(tread.color) > luminance(riser.color));
+    assert.ok(luminance(edge.color) > luminance(tread.color));
+    assert.ok(mesh.material.every((material) => material.emissive.getHex() === 0));
+    ray.set(new THREE.Vector3(box.max.x - 0.075, box.max.y + 1, (box.min.z + box.max.z) / 2), new THREE.Vector3(0, -1, 0));
+    const hit = ray.intersectObject(mesh)[0];
+    assert.equal(hit.face.materialIndex, 6, 'visible front edge has its own lighter tint');
+    colors.push(tread.color.getHex());
+  }
+  assert.ok(new Set(colors.slice(0, -1)).size > 1, 'treads have small value variations');
+  const lightness = stairs.treads.map((step) => luminance(step.material[2].color));
+  assert.ok(Math.max(...lightness) - Math.min(...lightness) < 0.05);
+});
+
+test('WASD descends to the pad and climbs without clipping or an off-edge escape', (t) => {
+  const { boxes, treadBoxes, padBox, character, shadow, controls, key } = fixture(t);
   const seenFloors = new Set();
   function check() {
     assertNoClipping(character, boxes);
@@ -134,14 +167,14 @@ test('WASD descends and climbs without clipping, unsupported feet or an off-edge
   }
   key('keyup', 'KeyS');
   key('keyup', 'KeyD');
-  near(character.position.x, boxes.at(-1).max.x - CHARACTER_RADIUS, 0.04);
-  near(character.position.y, boxes.at(-1).max.y, 0.06);
-  assert.equal(seenFloors.size, boxes.length);
+  near(character.position.x, padBox.max.x - CHARACTER_RADIUS, 0.04);
+  near(character.position.y, padBox.max.y, 0.01);
+  assert.equal(seenFloors.size, treadBoxes.length + 1);
 
   key('keydown', 'KeyW');
   key('keydown', 'KeyA'); // World -X, back to the plateau.
   previous = character.position.y;
-  for (let i = 0; i < 160; i++) {
+  for (let i = 0; i < 200; i++) {
     controls.update(0.01);
     check();
     assert.ok(character.position.y >= previous - 1e-7);
@@ -154,8 +187,8 @@ test('WASD descends and climbs without clipping, unsupported feet or an off-edge
   near(character.position.y, GROUND_HEIGHT);
 });
 
-test('the stair sides and the unrelated island rim remain solid during long moves', (t) => {
-  const { boxes, character, controls, key } = fixture(t);
+test('stair and pad sides, inside corners and the unrelated rim remain solid during long moves', (t) => {
+  const { boxes, treadBoxes, padBox, character, controls, key } = fixture(t);
   character.position.set(10, GROUND_HEIGHT, 0.75);
   controls.update(0);
   key('keydown', 'KeyS');
@@ -163,7 +196,7 @@ test('the stair sides and the unrelated island rim remain solid during long move
   controls.update(10);
   key('keyup', 'KeyS');
   key('keyup', 'KeyA');
-  assert.ok(character.position.z <= boxes[0].max.z - CHARACTER_RADIUS + 1e-7);
+  assert.ok(character.position.z <= treadBoxes[0].max.z - CHARACTER_RADIUS + 1e-7);
   assert.ok(character.position.z > 0.85);
   assertSupported(character, boxes);
   assertNoClipping(character, boxes);
@@ -173,8 +206,37 @@ test('the stair sides and the unrelated island rim remain solid during long move
   controls.update(10);
   key('keyup', 'KeyW');
   key('keyup', 'KeyD');
-  assert.ok(character.position.z >= boxes[0].min.z + CHARACTER_RADIUS - 1e-7);
+  assert.ok(character.position.z >= treadBoxes[0].min.z + CHARACTER_RADIUS - 1e-7);
   assert.ok(character.position.z < 0.65);
+  assertSupported(character, boxes);
+  assertNoClipping(character, boxes);
+
+  character.position.set(13, GROUND_HEIGHT, 0.75);
+  controls.update(0);
+  key('keydown', 'KeyS');
+  key('keydown', 'KeyA');
+  controls.update(10);
+  key('keyup', 'KeyS');
+  key('keyup', 'KeyA');
+  near(character.position.z, padBox.max.z - CHARACTER_RADIUS, 1e-6);
+  assertSupported(character, boxes);
+  key('keydown', 'KeyW');
+  key('keydown', 'KeyD');
+  controls.update(10);
+  key('keyup', 'KeyW');
+  key('keyup', 'KeyD');
+  near(character.position.z, padBox.min.z + CHARACTER_RADIUS, 1e-6);
+  assertSupported(character, boxes);
+  assertNoClipping(character, boxes);
+
+  character.position.set(12.8, GROUND_HEIGHT, 1.1);
+  controls.update(0);
+  key('keydown', 'KeyW');
+  key('keydown', 'KeyA'); // Push from the wider pad toward the narrow stairs.
+  controls.update(10);
+  key('keyup', 'KeyW');
+  key('keyup', 'KeyA');
+  assert.ok(character.position.x > padBox.min.x + 0.3 && character.position.x < padBox.min.x + 0.4);
   assertSupported(character, boxes);
   assertNoClipping(character, boxes);
 
@@ -188,24 +250,45 @@ test('the stair sides and the unrelated island rim remain solid during long move
   assertSupported(character, boxes);
 });
 
-test('clicking a tread walks there and back; clicking a vertical riser does not', (t) => {
-  const { boxes, character, controls, click, follow } = fixture(t);
-  const bottom = boxes.at(-1);
-  click(new THREE.Vector3((bottom.min.x + bottom.max.x) / 2, bottom.max.y, 0.75));
+test('clicking the pad and a tinted edge walks there; a vertical riser is not a destination', (t) => {
+  const { boxes, treadBoxes, padBox, character, controls, click, follow } = fixture(t);
+  click(new THREE.Vector3((padBox.min.x + padBox.max.x) / 2, padBox.max.y, 0.75));
   controls.update(10);
-  near(character.position.x, (bottom.min.x + bottom.max.x) / 2, 0.01);
+  near(character.position.x, (padBox.min.x + padBox.max.x) / 2, 0.01);
   assertNoClipping(character, boxes);
   assertSupported(character, boxes);
 
   follow(character.position);
-  click(new THREE.Vector3(7.2, GROUND_HEIGHT, 0.75));
+  click(new THREE.Vector3(padBox.max.x - 0.075, padBox.max.y, 0.75));
   controls.update(10);
+  near(character.position.x, padBox.max.x - CHARACTER_RADIUS, 0.01);
+  assertSupported(character, boxes);
+
+  follow(character.position);
+  click(new THREE.Vector3(13, padBox.max.y, padBox.max.z - 0.45));
+  controls.update(10);
+  near(character.position.z, padBox.max.z - 0.45, 0.01);
+  assertSupported(character, boxes);
+
+  follow(character.position);
+  click(new THREE.Vector3(7.2, GROUND_HEIGHT, 0.75));
+  for (let i = 0; i < 4; i++) controls.update(10);
   near(character.position.x, 7.2, 0.01);
   near(character.position.y, GROUND_HEIGHT);
 
   follow(character.position);
+  const edge = treadBoxes[1];
+  click(new THREE.Vector3(edge.max.x - 0.075, edge.max.y, 0.75));
+  controls.update(10);
+  near(character.position.x, edge.max.x - 0.075, 0.01);
+  assertNoClipping(character, boxes);
+
+  follow(character.position);
+  click(new THREE.Vector3(7.2, GROUND_HEIGHT, 0.75));
+  controls.update(10);
+  follow(character.position);
   const before = character.position.clone();
-  click(new THREE.Vector3(boxes[0].max.x, (boxes[0].max.y + boxes[1].max.y) / 2, 0.75));
+  click(new THREE.Vector3(treadBoxes[0].max.x, (treadBoxes[0].max.y + treadBoxes[1].max.y) / 2, 0.75));
   controls.update(10);
   near(character.position.distanceTo(before), 0);
 });
