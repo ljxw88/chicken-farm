@@ -9,25 +9,33 @@ configured `opencode/crouton-alpha-free` and the alternative
 No paid key or paid model was used. The image probe immediately beforehand
 passed 3/3 on `opencode/crouton-alpha-free`; subsequent generation could not
 proceed. The tool emits work orders and marks the visual critique **not run**.
-No new B sessions were started because the same free provider was unavailable;
-the installed Apache-2.0 skill remains outside this repository. The per-asset
-30-minute B limit was not consumed on this continuation.
+Each B arm was attempted in a separate scratch session using the installed
+Apache-2.0 skill and the same free provider; all three returned 429 before a
+model was generated. The per-asset 30-minute B limit was not consumed.
 
 | Brief | A loop on | A loop off | B img2threejs | New quality/cost comparison |
 | --- | --- | --- | --- | --- |
-| Barrel | Blocked: 429, no recipe | Blocked: 429, no recipe | Blocked by same provider quota; no session | No score / unavailable |
-| Hay bale | Blocked: 429, no recipe | Blocked: 429, no recipe | Blocked by same provider quota; no session | No score / unavailable |
-| Round oak | Blocked: 429, no recipe | Blocked: 429, no recipe | Blocked by same provider quota; no session | No score / unavailable |
+| Barrel | Blocked: 3 failed attempts, 2.18s, no recipe/score | Blocked: 1 attempt, 0.86s, no recipe/score | Session returned 429 in 2.2s; 0 input/output tokens reported | No score / unavailable |
+| Hay bale | Blocked: 3 failed attempts, 1.97s, no recipe/score | Blocked: 1 attempt, 1.14s, no recipe/score | Session returned 429 in 1.0s; 0 input/output tokens reported | No score / unavailable |
+| Round oak | Blocked: 1 attempt, 1.23s, no recipe/score | Blocked: 1 attempt, 1.22s, no recipe/score | Session returned 429 in 1.2s; 0 input/output tokens reported | No score / unavailable |
 
 The six attempts are preserved under `tools/assetgen/runs-ebr83-85/` and
 `runs-ebr83-85-off/`; `final.json` records rounds, time, status, and
 `visual critique not run`. The first four attempts did not preserve the 429
 stdout; the OpenCode server reported the quota error and the runner was fixed
 to retain it. The oak attempts include the actual 429 events. No output token
-cost is available for failed requests. The approach-B inputs, where prepared,
-are A-derived rather than independent references and remain a bias even after
-quota recovery. Without independent B models, comparable scores, and human
+cost is available for the first four A failures; each B session reported zero
+tokens and zero cost, not a billing guarantee. The A-derived B reference PNGs
+were re-rendered under EBR-80 on transparent backgrounds and all three passed
+img2threejs's technical admission check. They are not independent references
+and remain a bias even after quota recovery. Without independent B models, comparable scores, and human
 review, recommending a winner would be misleading.
+The three B attempt records and admitted transparent inputs are under
+[`evidence/assetgen/ebr83-85/img2threejs/`](../evidence/assetgen/ebr83-85/img2threejs/).
+The review layouts for [barrel](../evidence/assetgen/ebr83-85/comparisons/barrel-blocked.png),
+[hay](../evidence/assetgen/ebr83-85/comparisons/hay-bale-blocked.png) and
+[oak](../evidence/assetgen/ebr83-85/comparisons/round-oak-blocked.png) explicitly
+show **NO B MODEL** alongside A's historical sheet; they are not B contact sheets.
 
 For Look Dev's P0-only review, **historical** loop outputs (not new runs and
 not shippable assets) were re-rendered with the merged EBR-80 lights:

@@ -1,0 +1,8 @@
+{
+  "modelId": "opencode/nemotron-3.5-super-vl-free",
+  "sessionId": "ses_e4d587767ffeMmqA5l0BzupLqE",
+  "status": "provider.free-limit",
+  "httpStatus": 429,
+  "retryAfterMs": 11980000,
+  "result": "No response generated; this alternate free model hit the same provider quota."
+}
