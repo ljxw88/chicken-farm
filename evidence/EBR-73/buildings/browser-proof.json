@@ -1,0 +1,201 @@
+{
+  "screenshots": [
+    "01-daytime-front.png",
+    "05-tree4-coopB-crop.png",
+    "02-sunset.png",
+    "03-night-glow.png",
+    "04-rain.png",
+    "06-ramp-plot-rejected.png",
+    "07-ramp-walk-blocked.png"
+  ],
+  "browser": "Chromium 153.0.8010.12 (headless, SwiftShader)",
+  "viewport": "1280x720",
+  "tree4": {
+    "position": [
+      0.05,
+      2.4,
+      -5.6
+    ],
+    "crownBoxesOverlappingRoof": [
+      true,
+      false,
+      true,
+      true
+    ],
+    "meshProbe": {
+      "step": 0.02,
+      "overlappingSamples": 328,
+      "example": {
+        "x": 0.5200000000000001,
+        "z": -5.660000011920932,
+        "roofBottom": 3.7023076637433108,
+        "roofTop": 3.8423076702998205
+      }
+    }
+  },
+  "appearanceAndLights": {
+    "daytime": {
+      "oldBarn": false,
+      "components": [
+        {
+          "kind": "box",
+          "name": "cottage",
+          "minX": -5.6,
+          "maxX": -1.1999999999999997,
+          "minZ": -4.9,
+          "maxZ": -1.9
+        },
+        {
+          "kind": "box",
+          "name": "ramp-coop-1-body",
+          "minX": -0.5499999999999999,
+          "maxX": 0.85,
+          "minZ": -3.85,
+          "maxZ": -2.5500000000000003
+        },
+        {
+          "kind": "box",
+          "name": "ramp-coop-1-ramp",
+          "minX": -0.15,
+          "maxX": 0.44999999999999996,
+          "minZ": -2.55,
+          "maxZ": -1.45
+        },
+        {
+          "kind": "box",
+          "name": "ramp-coop-2-body",
+          "minX": 0.6500000000000001,
+          "maxX": 2.05,
+          "minZ": -5.65,
+          "maxZ": -4.35
+        },
+        {
+          "kind": "box",
+          "name": "ramp-coop-2-ramp",
+          "minX": 1.05,
+          "maxX": 1.6500000000000001,
+          "minZ": -4.35,
+          "maxZ": -3.25
+        }
+      ],
+      "names": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      }
+    },
+    "lights": {
+      "windows": [
+        {
+          "parent": "farm-cottage",
+          "emissive": 0.85,
+          "intensity": 0.85,
+          "offsetZ": 0.7
+        },
+        {
+          "parent": "farm-cottage",
+          "emissive": 0.85,
+          "intensity": 0.85,
+          "offsetZ": 0.7
+        }
+      ],
+      "accents": [
+        0.85,
+        0.595,
+        0.595
+      ],
+      "points": [
+        "lantern-light",
+        "window-light-1",
+        "window-light-2"
+      ],
+      "lantern": 0.55,
+      "lanternParent": "character",
+      "characterName": "character"
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "errors": []
+  },
+  "placement": {
+    "rejected": [
+      "fence/0/cottage",
+      "fence/0/ramp-coop-1-body",
+      "fence/0/ramp-coop-1-ramp",
+      "fence/0/ramp-coop-2-body",
+      "fence/0/ramp-coop-2-ramp",
+      "fence/1/cottage",
+      "fence/1/ramp-coop-1-body",
+      "fence/1/ramp-coop-1-ramp",
+      "fence/1/ramp-coop-2-body",
+      "fence/1/ramp-coop-2-ramp",
+      "plot/0/cottage",
+      "plot/0/ramp-coop-1-body",
+      "plot/0/ramp-coop-1-ramp",
+      "plot/0/ramp-coop-2-body",
+      "plot/0/ramp-coop-2-ramp",
+      "plot/1/cottage",
+      "plot/1/ramp-coop-1-body",
+      "plot/1/ramp-coop-1-ramp",
+      "plot/1/ramp-coop-2-body",
+      "plot/1/ramp-coop-2-ramp"
+    ],
+    "openTile": true,
+    "errors": []
+  },
+  "walking": {
+    "stopped": [
+      {
+        "name": "cottage",
+        "front": -1.9,
+        "position": [
+          -3.3999997424375774,
+          2.4,
+          -1.4999999984392893
+        ]
+      },
+      {
+        "name": "ramp-coop-1-ramp",
+        "front": -1.45,
+        "position": [
+          0.13410644441161446,
+          2.4,
+          -1.049999999515225
+        ]
+      },
+      {
+        "name": "ramp-coop-2-ramp",
+        "front": -3.25,
+        "position": [
+          1.3500742033649662,
+          2.4,
+          -2.8499999968846756
+        ]
+      }
+    ],
+    "errors": []
+  }
+}
