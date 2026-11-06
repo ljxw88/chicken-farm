@@ -40,13 +40,13 @@ function colorNear(actual, expected, tolerance = 1e-9) {
   near(actual.b, expected.b, tolerance);
 }
 
-test('all four phases keep the void, signed colors and directional key with reduced fill', () => {
+test('all four phases keep the void and use the upper-left key with fill below it', () => {
   const { scene, cycle, ambient, hemisphere, directional, windows, windowLights, lanternGlass, lanternLight } = fixture();
   const expected = {
-    morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.16, 0xe8d4c8, 0xa8c090, 0.35, 0xffe8c8, 0.55],
-    daytime: [0xa8d4f0, 0xc8e0f0, 0.006, 0xe8f0e8, 0.1, 0xa8d4f0, 0x9cb88a, 0.55, 0xfff2d6, 1.1],
-    sunset: [0xf0a878, 0xe89870, 0.015, 0xe89870, 0.12, 0xf0a878, 0xc89070, 0.2, 0xff8a50, 0.65],
-    night: [0x2a2848, 0x1e2430, 0.02, 0x3a4560, 0.18, 0x2a2848, 0x1e2430, 0.22, 0xc8d4f0, 0.22],
+    morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.08, 0xe8d4c8, 0xa8c090, 0.25, 0xffe8c8, 1.4],
+    daytime: [0xa8d4f0, 0xc8e0f0, 0.006, 0xe8f0e8, 0.07, 0xa8d4f0, 0x9cb88a, 0.35, 0xfff2d6, 1.8],
+    sunset: [0xf0a878, 0xe89870, 0.015, 0xeadbc8, 0.08, 0xe8dec6, 0xb5b99a, 0.2, 0xffeddb, 1.2],
+    night: [0x2a2848, 0x1e2430, 0.02, 0xaeb8c9, 0.4, 0x2a2848, 0x1e2430, 0.2, 0xc8d4f0, 0.7],
   };
 
   assert.equal(scene.fog.isFogExp2, true);
@@ -64,6 +64,7 @@ test('all four phases keep the void, signed colors and directional key with redu
     near(hemisphere.intensity, values[7]);
     assert.equal(directional.color.getHex(), values[8], phase);
     near(directional.intensity, values[9]);
+    assert.ok(ambient.intensity + hemisphere.intensity < directional.intensity, phase);
     for (const [index, light] of windowLights.entries()) {
       assert.equal(light.color.getHex(), 0xffcc88);
       near(light.intensity, phase === 'night' ? 0.85 : 0);
@@ -115,7 +116,7 @@ test('east window and coop glows follow the night ramp without adding point ligh
 test('the default 72-second cycle advances through all four phases and wraps', () => {
   const { scene, cycle, hemisphere } = fixture();
   assert.equal(hemisphere.color.getHex(), 0xe8d4c8);
-  for (const sky of [0xa8d4f0, 0xf0a878, 0x2a2848, 0xe8d4c8]) {
+  for (const sky of [0xa8d4f0, 0xe8dec6, 0x2a2848, 0xe8d4c8]) {
     cycle.update(18);
     assert.equal(hemisphere.color.getHex(), sky);
     assert.equal(scene.background.getHex(), 0x101416);
@@ -148,9 +149,9 @@ test('colors, intensities, fog and practical lights blend smoothly between prese
   colorNear(hemisphere.groundColor, new THREE.Color(0xa8c090).lerp(new THREE.Color(0x9cb88a), blend));
   colorNear(directional.color, new THREE.Color(0xffe8c8).lerp(new THREE.Color(0xfff2d6), blend));
   near(scene.fog.density, 0.012 + (0.006 - 0.012) * blend);
-  near(ambient.intensity, 0.16 + (0.1 - 0.16) * blend);
-  near(hemisphere.intensity, 0.35 + (0.55 - 0.35) * blend);
-  near(directional.intensity, 0.55 + (1.1 - 0.55) * blend);
+  near(ambient.intensity, 0.08 + (0.07 - 0.08) * blend);
+  near(hemisphere.intensity, 0.25 + (0.35 - 0.25) * blend);
+  near(directional.intensity, 1.4 + (1.8 - 1.4) * blend);
 
   cycle.setDayNightPhase('sunset');
   cycle.update(9);
@@ -181,19 +182,49 @@ test('the night-to-morning wrap has no lighting or directional-position jump', (
   assert.equal(scene.background.getHex(), 0x101416);
 });
 
-test('the sun and moon arc above the ground with a low sunset', () => {
+test('sun and moon keep one upper-left azimuth with a low sunset', () => {
   const { cycle, directional } = fixture();
+  for (const [phase, height] of [['morning', 4], ['daytime', 12], ['sunset', 4], ['night', 9]]) {
+    cycle.setDayNightPhase(phase);
+    near(directional.position.x, -11);
+    near(directional.position.y, height);
+    near(directional.position.z, 4);
+    assert.deepEqual(directional.target.position.toArray(), [0, 0, 0]);
+  }
   cycle.setDayNightPhase('daytime');
   const daytimeElevation = Math.atan2(directional.position.y, Math.hypot(directional.position.x, directional.position.z));
   cycle.setDayNightPhase('sunset');
   const sunsetElevation = Math.atan2(directional.position.y, Math.hypot(directional.position.x, directional.position.z));
-  assert.ok(sunsetElevation < Math.PI / 12);
+  assert.ok(sunsetElevation < Math.PI / 8);
   assert.ok(daytimeElevation > sunsetElevation);
   cycle.setDayNightPhase('night');
   assert.ok(directional.position.y > 0);
   for (let i = 0; i < 64; i++) {
     cycle.update(72 / 64);
     assert.ok(directional.position.y > 0);
+    near(directional.position.x, -11);
+    near(directional.position.z, 4);
+  }
+});
+
+test('the character has a non-emissive, outward-normal body and a lighter crown', () => {
+  const { character } = fixture();
+  const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+  assert.equal(body.material.isMeshStandardMaterial, true);
+  assert.equal(body.material.emissive.getHex(), 0);
+  assert.equal(body.material.vertexColors, true);
+  assert.equal(body.material.side, THREE.FrontSide);
+  const position = body.geometry.getAttribute('position');
+  const normal = body.geometry.getAttribute('normal');
+  const color = body.geometry.getAttribute('color');
+  for (let i = 0; i < position.count; i++) {
+    const p = new THREE.Vector3().fromBufferAttribute(position, i);
+    const capCenter = new THREE.Vector3(0, THREE.MathUtils.clamp(p.y, -0.3, 0.3), 0);
+    const outward = p.sub(capCenter).normalize();
+    const n = new THREE.Vector3().fromBufferAttribute(normal, i).normalize();
+    assert.ok(outward.dot(n) > 0.99, `inverted capsule normal at vertex ${i}`);
+    if (position.getY(i) > 0.5) assert.ok(color.getX(i) > 1.2);
+    if (position.getY(i) < -0.2) near(color.getX(i), 1, 1e-6);
   }
 });
 
@@ -276,14 +307,14 @@ test('changing cycle speed preserves progress and rejects invalid inputs', () =>
   assert.throws(() => cycle.update(-1), RangeError);
   assert.throws(() => cycle.update(Infinity), RangeError);
   cycle.update(36);
-  assert.equal(hemisphere.color.getHex(), 0xf0a878);
+  assert.equal(hemisphere.color.getHex(), 0xe8dec6);
 });
 
 test('a valid phase URL selects and holds each phase without changing the void', () => {
   const expected = {
     morning: [0xe8d4c8, 0xffe8c8, 0],
     daytime: [0xa8d4f0, 0xfff2d6, 0],
-    sunset: [0xf0a878, 0xff8a50, 0],
+    sunset: [0xe8dec6, 0xffeddb, 0],
     night: [0x2a2848, 0xc8d4f0, 0.08],
   };
   for (const [phase, [sky, sun, lanternIntensity]] of Object.entries(expected)) {

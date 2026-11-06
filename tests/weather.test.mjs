@@ -33,7 +33,8 @@ function fixture(t) {
   const weather = createWeatherSystem({
     scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE, splashExclusions,
     setDirectionalIntensityMultiplier: cycle.setDirectionalIntensityMultiplier,
-    setAmbientHemisphereColorMultiplier: cycle.setAmbientHemisphereColorMultiplier, random,
+    setAmbientHemisphereColorMultiplier: cycle.setAmbientHemisphereColorMultiplier,
+    setShadowWeather: cycle.setShadowWeather, random,
   });
   t.after(weather.dispose);
   const streaks = scene.getObjectByName('rain-streaks');
@@ -82,13 +83,13 @@ test('clear and rain blend smoothly and reverse without a jump', (t) => {
   cycle.setDayNightPhase('daytime');
   assert.deepEqual(weather.getWeather(), { mode: 'clear', rainAmount: 0, cloudyAmount: 0 });
   assert.equal(streaks.visible, false);
-  near(directional.intensity, 1.1);
+  near(directional.intensity, 1.8);
 
   weather.setWeather('rain');
   weather.update(0.875);
   near(weather.getWeather().rainAmount, 0.5);
   near(streaks.material.opacity, 0.175);
-  near(directional.intensity, 1.1 * 0.9);
+  near(directional.intensity, 1.8 * 0.85);
   weather.setWeather('clear');
   weather.update(0);
   near(weather.getWeather().rainAmount, 0.5);
@@ -96,30 +97,52 @@ test('clear and rain blend smoothly and reverse without a jump', (t) => {
   assert.ok(weather.getWeather().rainAmount > 0 && weather.getWeather().rainAmount < 0.5);
   weather.update(0.4375);
   near(weather.getWeather().rainAmount, 0);
-  near(directional.intensity, 1.1);
+  near(directional.intensity, 1.8);
   assert.equal(streaks.visible, false);
 
   weather.setWeather('rain');
   weather.update(1.75);
   near(weather.getWeather().rainAmount, 1);
   near(streaks.material.opacity, 0.35);
-  near(directional.intensity, 1.1 * 0.8);
+  near(directional.intensity, 1.8 * 0.7);
   weather.setWeather('clear');
   weather.update(1.75);
-  near(directional.intensity, 1.1);
+  near(directional.intensity, 1.8);
   assert.throws(() => weather.setWeather('storm'), RangeError);
   assert.throws(() => weather.update(-1), RangeError);
   assert.throws(() => weather.update(Infinity), RangeError);
+});
+
+test('cloudy and rain fade the shadow length and opacity with the same weather envelope', (t) => {
+  const { character, cycle, weather } = fixture(t);
+  const shadow = character.getObjectByName('character-shadow');
+  cycle.setDayNightPhase('daytime');
+  const horizontalOffset = () => Math.hypot(shadow.position.x, shadow.position.z);
+  near(horizontalOffset(), 0.305);
+  near(shadow.material.opacity, 0.22);
+  weather.setWeather('cloudy');
+  weather.update(1.75);
+  near(horizontalOffset(), 0.305 * 0.5);
+  near(shadow.material.opacity, 0.22 * 0.5);
+  weather.setWeather('rain');
+  weather.update(1.75);
+  near(horizontalOffset(), 0.305 * 0.55);
+  near(shadow.material.opacity, 0.22 * 0.2);
+  weather.setWeather('clear');
+  weather.update(1.75);
+  near(horizontalOffset(), 0.305);
+  near(shadow.material.opacity, 0.22);
+  assert.throws(() => cycle.setShadowWeather(0.8, 0.8), RangeError);
 });
 
 test('rain tracks all current phases without accumulating or changing practical lights', (t) => {
   const { scene, cycle, weather, directional, ambient, windows, lantern } = fixture(t);
   const hemisphere = scene.getObjectByName('day-night-hemisphere');
   const phases = [
-    ['morning', 0.55, 0xffe8c8, 0xf0e0d0],
-    ['daytime', 1.1, 0xfff2d6, 0xe8f0e8],
-    ['sunset', 0.65, 0xff8a50, 0xe89870],
-    ['night', 0.22, 0xc8d4f0, 0x3a4560],
+    ['morning', 1.4, 0xffe8c8, 0xf0e0d0],
+    ['daytime', 1.8, 0xfff2d6, 0xe8f0e8],
+    ['sunset', 1.2, 0xffeddb, 0xeadbc8],
+    ['night', 0.7, 0xc8d4f0, 0xaeb8c9],
   ];
   for (const [phase, intensity, color, ambientColor] of phases) {
     cycle.setDayNightPhase(phase);
@@ -130,7 +153,7 @@ test('rain tracks all current phases without accumulating or changing practical 
     weather.update(1.75);
     for (let i = 0; i < 5; i++) {
       weather.update(0.1);
-      near(directional.intensity, intensity * 0.8);
+      near(directional.intensity, intensity * 0.7);
     }
     assert.equal(scene.background.getHex(), sky);
     assert.equal(directional.color.getHex(), color);
@@ -152,11 +175,11 @@ test('rain tracks all current phases without accumulating or changing practical 
   weather.setWeather('rain');
   weather.update(1.75);
   cycle.update(9); // Halfway between sunset and night.
-  near(directional.intensity, ((0.65 + 0.22) / 2) * 0.8);
+  near(directional.intensity, ((1.2 + 0.7) / 2) * 0.7);
   near(windows[0].children.find((child) => child.isPointLight).intensity, 0.425);
   weather.setWeather('clear');
   weather.update(1.75);
-  near(directional.intensity, (0.65 + 0.22) / 2);
+  near(directional.intensity, (1.2 + 0.7) / 2);
   assert.throws(() => cycle.setDirectionalIntensityMultiplier(-0.1), RangeError);
   assert.throws(() => cycle.setDirectionalIntensityMultiplier(NaN), RangeError);
   assert.throws(() => cycle.setDirectionalIntensityMultiplier(1.1), RangeError);
@@ -263,7 +286,7 @@ test('rain and cloudy crossfade continuously, preserve particles and reverse mid
   assert.deepEqual(lightingSnapshot(farm), midwayLighting);
   weather.update(1.75);
   assert.deepEqual(weather.getWeather(), { mode: 'rain', rainAmount: 1, cloudyAmount: 0 });
-  near(directional.intensity, 1.1 * 0.8);
+  near(directional.intensity, 1.8 * 0.7);
 
   weather.setWeather('cloudy');
   weather.update(0.875);
@@ -431,8 +454,8 @@ test('disposing rain restores the current phase intensity and removes the effect
   cycle.setDayNightPhase('night');
   weather.setWeather('rain');
   weather.update(1.75);
-  near(directional.intensity, 0.22 * 0.8);
+  near(directional.intensity, 0.7 * 0.7);
   weather.dispose();
-  near(directional.intensity, 0.22);
+  near(directional.intensity, 0.7);
   assert.equal(scene.getObjectByName('weather-rain'), undefined);
 });

@@ -45,6 +45,7 @@ const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
   setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
+  setShadowWeather: dayNight.setShadowWeather,
 });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase);

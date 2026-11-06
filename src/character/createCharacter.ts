@@ -8,10 +8,20 @@ export function createCharacter() {
   const character = new THREE.Group();
   character.name = 'character';
 
-  const body = new THREE.Mesh(
-    new THREE.CapsuleGeometry(CHARACTER_RADIUS, BODY_LENGTH, 6, 12),
-    new THREE.MeshStandardMaterial({ color: 0xffd477, roughness: 0.9 }),
-  );
+  const bodyGeometry = new THREE.CapsuleGeometry(CHARACTER_RADIUS, BODY_LENGTH, 6, 12);
+  const positions = bodyGeometry.getAttribute('position');
+  const colors = new Float32Array(positions.count * 3);
+  for (let i = 0; i < positions.count; i++) {
+    // A subtle, rotation-independent lighter crown helps the sun/moon read
+    // from above without adding an emissive or camera-facing light.
+    const t = THREE.MathUtils.clamp((positions.getY(i) + 0.05) / 0.7, 0, 1);
+    const value = 1 + 0.4 * THREE.MathUtils.smoothstep(t, 0, 1);
+    colors.set([value, value, value], i * 3);
+  }
+  bodyGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const body = new THREE.Mesh(bodyGeometry, new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0xfff087).multiplyScalar(1.45), roughness: 0.9, vertexColors: true,
+  }));
   body.position.y = CHARACTER_RADIUS + BODY_LENGTH / 2;
   character.add(body);
 

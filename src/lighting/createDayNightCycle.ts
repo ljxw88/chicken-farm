@@ -49,6 +49,10 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
   let progress = 0;
   let directionalMultiplier = 1;
   let directionalBaseIntensity: number = morning.directionalIntensity;
+  let shadowOffset: number = morning.shadowOffset;
+  let shadowOpacity: number = morning.shadowOpacity;
+  let rainAmount = 0;
+  let cloudyAmount = 0;
   const ambientBaseColor = new THREE.Color();
   const hemisphereSkyBaseColor = new THREE.Color();
   const hemisphereGroundBaseColor = new THREE.Color();
@@ -76,7 +80,9 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
       characterShadow.scale.x = 1;
       return;
     }
-    let offset = Math.min(0.9, 0.7 * horizontal / Math.max(lightDirection.y, 0.01));
+    // Overcast contact shadows are half as long/strong; rain is nearly
+    // centered and faint. The envelopes crossfade with the weather system.
+    let offset = shadowOffset * (1 - 0.5 * cloudyAmount - 0.45 * rainAmount);
     const awayX = -lightDirection.x / horizontal;
     const awayZ = -lightDirection.z / horizontal;
     if (shadowSupported) {
@@ -108,6 +114,18 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     // The circle's local +X is the major axis after the -90° X rotation.
     characterShadow.rotation.z = Math.atan2(-localShadowDirection.z, localShadowDirection.x);
     characterShadow.scale.x = 1 + offset / CHARACTER_RADIUS;
+    if (characterShadow instanceof THREE.Mesh && characterShadow.material instanceof THREE.MeshBasicMaterial) {
+      characterShadow.material.opacity = shadowOpacity * (1 - 0.5 * cloudyAmount - 0.8 * rainAmount);
+    }
+  }
+
+  function setShadowWeather(rain: number, cloudy: number) {
+    if ([rain, cloudy].some((value) => !Number.isFinite(value) || value < 0 || value > 1) || rain + cloudy > 1 + 1e-9) {
+      throw new RangeError('Shadow weather amounts must be between zero and one and sum to at most one');
+    }
+    rainAmount = rain;
+    cloudyAmount = cloudy;
+    updateCharacterShadow();
   }
 
   function applyLighting() {
@@ -132,14 +150,16 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     directional.color.copy(fromColors.directional).lerp(toColors.directional, blend);
     directionalBaseIntensity = lerp(from.directionalIntensity, to.directionalIntensity, blend);
     directional.intensity = directionalBaseIntensity * directionalMultiplier;
+    shadowOffset = lerp(from.shadowOffset, to.shadowOffset, blend);
+    shadowOpacity = lerp(from.shadowOpacity, to.shadowOpacity, blend);
     practicalLights.setNightAmount(lerp(from.nightLights, to.nightLights, blend));
 
-    // The sun rises and sets low; the moon follows the other half of the arc
-    // above the ground and toward the camera-facing side of the character.
+    // All phases use the same upper-left azimuth. Only the elevation changes:
+    // low morning/sunset sun, higher daytime sun, and a cool moon at night.
     const angle = progress * Math.PI * 2;
     const height = Math.sin(angle);
     const moonArc = Math.min(0, height) ** 2;
-    directional.position.set(Math.cos(angle) * 12 + 6 * moonArc, 3 + 9 * height * height, height * 6 + 12 * moonArc);
+    directional.position.set(-11, 4 + 8 * Math.max(0, height) + 5 * moonArc, 4);
     updateCharacterShadow();
   }
 
@@ -191,6 +211,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     setDayNightPhase,
     setDirectionalIntensityMultiplier,
     setAmbientHemisphereColorMultiplier,
+    setShadowWeather,
     updateCharacterShadow,
     getPhase: () => DAY_NIGHT_PHASES[Math.floor(progress * DAY_NIGHT_PHASES.length)].name,
   };
