@@ -1,192 +1,225 @@
-import { copyFile, mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
-import { basename, dirname, join, relative } from 'node:path';
-import { assetPath, evidenceDirectory, listSpecs, readBible, readSpec, root, runDirectory } from './config.mjs';
-import { critique, generate, makePrompt } from './generator.mjs';
-import { loadSceneConstants, sha256, verifyAsset } from './verify.mjs';
-import { createBundleSheet, createVisualRunner } from './visual.mjs';
+import { mkdtemp, mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, relative } from 'node:path';
+import { evidenceDirectory, listSpecs, readBible, readSpec, recipePath, root, runDirectory } from './config.mjs';
+import { inspectRecipe } from './geometry.mjs';
+import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
+import { createVisualRunner } from './visual.mjs';
 
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
-const exists = async (path) => { try { await readFile(path); return true; } catch (error) { if (error.code === 'ENOENT') return false; throw error; } };
-const summarize = (report) => `${report.id}: ${report.status} · ${report.metrics.geometry?.triangles ?? '?'} tris · ${report.failures.map((failure) => failure.code).join(', ') || 'checks passed'}`;
+const digestParts = (before, after) => {
+  const old = new Map((before?.parts || []).map((part) => [part.name, JSON.stringify(part)]));
+  const next = new Map((after?.parts || []).map((part) => [part.name, JSON.stringify(part)]));
+  return { added: [...next.keys()].filter((key) => !old.has(key)), removed: [...old.keys()].filter((key) => !next.has(key)),
+    changed: [...next.keys()].filter((key) => old.has(key) && old.get(key) !== next.get(key)) };
+};
 
-async function saveRound(spec, round, result, extra = {}) {
-  const directory = join(runDirectory, spec.id, `round-${round}`);
-  await mkdir(directory, { recursive: true });
-  await Promise.all([
-    writeFile(join(directory, 'report.json'), json(result.report)),
-    writeFile(join(directory, 'source.ts'), result.source),
-    writeFile(join(directory, 'sheet.png'), result.sheet),
-    ...Object.entries(extra).map(([name, content]) => writeFile(join(directory, name), content)),
-  ]);
+async function isolatedSessionDirectory() {
+  // Only model output and an attached image are needed. A hard tool policy
+  // prevents generated prompts from editing the worktree or using the network.
+  const directory = await mkdtemp(join(tmpdir(), 'assetgen-model-session-'));
+  await writeFile(join(directory, 'opencode.json'), json({ $schema: 'https://opencode.ai/config.json',
+    policies: [{ action: 'tool.use', resource: '*', effect: 'deny' }] }));
   return directory;
 }
 
-async function newAsset(input, args) {
-  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--check|--force] [--rounds 1..4]');
-  const { spec } = await readSpec(input);
+async function setup() {
   const bible = await readBible();
-  const path = assetPath(spec);
+  const runner = await createVisualRunner();
+  const { buildRecipe } = await runner.server.ssrLoadModule('/src/assets/buildRecipe.ts');
+  const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
+  let probe = null;
+  try { probe = JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe/result.json'), 'utf8')); } catch { /* no probe */ }
+  return { bible, runner, environment: { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS }, probe };
+}
+
+function score(hard, visual, critic) {
+  const hardCodes = new Set(hard.failures.map((failure) => failure.code));
+  if (hardCodes.size) return Math.max(0, 35 - hardCodes.size * 7);
+  const visualCodes = new Set((visual?.failures || []).map((failure) => failure.code));
+  const criticMean = critic?.scores ? Object.values(critic.scores).reduce((sum, value) => sum + value, 0) / 30 * 100 : 0;
+  return Math.max(0, Math.round((criticMean || 50) * 0.6 + 40 - visualCodes.size * 8));
+}
+
+async function newAsset(input, args) {
+  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order]');
+  const { spec } = await readSpec(input);
   const run = join(runDirectory, spec.id);
   await mkdir(run, { recursive: true });
-  const old = await exists(path) ? await readFile(path, 'utf8') : null;
-  const workOrder = args.includes('--work-order');
-  const check = args.includes('--check');
-  if (old !== null && !args.includes('--force') && !check && !workOrder) {
-    throw new Error(`${relative(root, path)} already exists; use --force to preserve/replace it, or --check for a work-order result`);
+  if (!args.includes('--work-order')) {
+    try {
+      await readFile(join(run, 'final.json'));
+      throw new Error(`${spec.id} already has a completed bounded run; existing evidence will not be overwritten`);
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
-  if (workOrder) {
-    const prompt = await makePrompt(spec, bible, null);
-    await writeFile(join(run, 'work-order.md'), `${prompt}\n\nSave the module to ${relative(root, path)}, then run: npm run asset:new -- ${spec.id} --check\n`);
-    console.log(`Work order: ${relative(root, join(run, 'work-order.md'))}`);
-    return;
-  }
-  if (check && old === null) throw new Error(`No candidate exists at ${relative(root, path)}`);
-  const roundsFlag = args.indexOf('--rounds');
-  const maxRounds = check ? 1 : roundsFlag === -1 ? 4 : Number(args[roundsFlag + 1]);
-  if (!Number.isInteger(maxRounds) || maxRounds < 1 || maxRounds > 4) throw new Error('--rounds must be an integer from 1 to 4');
-  const oldRounds = (await readdir(run)).map((name) => /^round-(\d+)$/.exec(name)).filter(Boolean).map((match) => Number(match[1]));
-  const firstRound = oldRounds.length ? Math.max(...oldRounds) + 1 : 1;
-  const runner = await createVisualRunner();
-  let final = null;
-  let previous = null;
-  let previousSheet = null;
+  const context = await setup();
+  const { bible, runner, environment, probe } = context;
+  const sessionDir = await isolatedSessionDirectory();
   try {
-    const constants = await loadSceneConstants(runner.server);
-    await mkdir(dirname(path), { recursive: true });
-    for (let index = 0; index < maxRounds; index++) {
-      const round = firstRound + index;
-      const prompt = await makePrompt(spec, bible, previous);
-      let generation = { source: old || '', transcript: '' };
-      if (!check) {
-        try {
-          generation = await generate(prompt, previousSheet);
-          await writeFile(path, generation.source);
-        } catch (error) {
-          const message = `OpenCode generation unavailable: ${String(error)}. A work order has been saved.`;
-          await writeFile(join(run, 'work-order.md'), `${prompt}\n\nSave the module to ${relative(root, path)}, then run: npm run asset:new -- ${spec.id} --check\n`);
-          const result = { source: generation.source, sheet: await runner.placeholder(spec, message), report: {
-            id: spec.id, category: spec.category, status: 'REJECTED', failures: [{ code: 'GENERATOR', message }], metrics: {}, score: 0,
-          } };
-          await saveRound(spec, round, result, { 'prompt.txt': prompt });
-          final = { ...result.report, roundsUsed: index + 1, lastRound: round };
-          console.error(message);
-          break;
-        }
-      }
-      const result = await verifyAsset(spec, bible, runner, constants);
-      const directory = await saveRound(spec, round, result, { 'prompt.txt': prompt, 'generation.jsonl': generation.transcript });
-      let review;
+    if (args.includes('--work-order')) {
+      const prompt = await makePrompt(spec, bible, 'blockout', null, null, null);
+      const path = join(run, 'work-order.md');
+      await writeFile(path, `${prompt}\n\nSave JSON to ${relative(root, recipePath(spec))}, then run npm run asset:verify -- ${spec.id}.\n`);
+      console.log(`Work order: ${relative(root, path)}`);
+      return;
+    }
+    const first = Date.now();
+    let round = 1, corrections = 0, stageIndex = 0;
+    let current = null, previous = null, best = null, stopReason = null;
+    let previousSheet = null;
+    const stageCorrections = {};
+    const history = [];
+    const stages = bible.rules.loop.stages;
+    while (round <= bible.rules.loop.maxRounds && stageIndex < stages.length) {
+      const stage = stages[stageIndex];
+      const stageDir = join(run, `round-${round}`, `stage-${stage}`);
+      await mkdir(stageDir, { recursive: true });
+      const prompt = await makePrompt(spec, bible, stage, current, previous, best?.recipe);
+      await writeFile(join(stageDir, 'prompt.txt'), prompt);
+      let generated;
       try {
-        review = await critique(spec, result.report, join(directory, 'sheet.png'));
-        await writeFile(join(directory, 'critique.jsonl'), review.transcript);
-        delete review.transcript;
-        if (!review.accept) result.report.failures.push({ code: 'CRITIQUE', message: review.concerns.join('; ') || 'AI critique requested a revision' });
+        generated = await generateRecipe(prompt, sessionDir, probe?.imageReadingObserved ? previousSheet : null);
+        await writeFile(join(stageDir, 'generator.jsonl'), generated.transcript);
       } catch (error) {
-        review = { imageReviewed: false, attachmentUsed: false, accept: false, score: 0, concerns: [String(error)] };
-        result.report.failures.push({ code: 'CRITIQUE_UNAVAILABLE', message: String(error) });
+        const message = String(error);
+        await writeFile(join(stageDir, 'generation-error.txt'), `${message}\n`);
+        previous = { failures: [{ code: 'GENERATOR', message }], instruction: 'Retry the JSON generation/build with the exact error.' };
+        history.push({ round, stage, action: 'refine-code', failure: message });
+        if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= bible.rules.loop.maxRounds) { stopReason = 'Generation retries exhausted'; break; }
+        corrections++; stageCorrections[stage] = (stageCorrections[stage] || 0) + 1;
+        round++; continue;
       }
-      result.report.critique = review;
-      result.report.score = Math.max(0, Math.round(review.score - Math.min(60, result.report.failures.length * 8)));
-      result.report.status = result.report.failures.length ? 'REJECTED' : 'PASS';
-      await writeFile(join(directory, 'report.json'), json(result.report));
+      const old = current;
+      current = generated.recipe;
+      await writeFile(recipePath(spec), json(current));
+      await writeFile(join(stageDir, 'recipe.json'), json(current));
+      const inspected = inspectRecipe(current, spec, bible.rules, environment);
+      const hard = { failures: inspected.failures, metrics: inspected.metrics };
+      let visual = null, review = null, criticSession = null, criticDurationMs = null, criticUsage = null, criticError = null;
+      if (!hard.failures.length) {
+        visual = await runner.capture(spec, bible.rules, join(stageDir, 'render')); // Only after the hard gate.
+        const sheet = join(stageDir, 'render/sheet.png');
+        if (probe?.imageReadingObserved && !visual.failures.some((failure) => failure.code === 'BROWSER')) {
+          try {
+            const result = await critiqueRecipe(spec, bible, stage, { hard, visual }, sheet, sessionDir);
+            criticSession = result.sessionId;
+            criticDurationMs = result.durationMs;
+            criticUsage = result.usage;
+            await writeFile(join(stageDir, 'critic.jsonl'), result.transcript);
+            review = result.review;
+            if (!criticSession || criticSession === generated.sessionId) throw new Error('Critic did not use a distinct OpenCode session');
+            if (!review.imageReviewed) criticError = 'visual critique not run: critic reported that the image was unavailable';
+          } catch (error) { criticError = `visual critique not run: ${String(error)}`; review = null; }
+        } else criticError = 'visual critique not run: image capability was not demonstrated or render was unavailable';
+        previousSheet = visual.failures.some((failure) => failure.code === 'BROWSER') ? null : sheet;
+      }
+      const identityMissing = review ? spec.identityFeatures.filter((feature) => !review.features[feature.id]).map((feature) => feature.id) : [];
+      const weakScores = review ? Object.entries(review.scores).filter(([, value]) => value < 4).map(([key, value]) => `${key}=${value}`) : [];
+      const blockers = [...hard.failures, ...(visual?.failures || [])];
+      if (criticError) blockers.push({ code: 'CRITIQUE_UNAVAILABLE', message: criticError });
+      if (stage === 'lighting' && visual?.metrics?.unmeasured?.some((item) => item.startsWith('S3 ') || item.startsWith('S5 '))) {
+        blockers.push({ code: 'LIGHTING_UNMEASURED', message: 'Three-step value and night-glow checks are not implemented; EBR-80 is not integrated.' });
+      }
+      if (review && (weakScores.length || review.blockers.length || identityMissing.length)) {
+        blockers.push({ code: 'CRITIQUE', message: [...weakScores, ...review.blockers, ...identityMissing.map((id) => `identity not seen: ${id}`)].join('; ') });
+      }
+      let stageScore = score(hard, visual, review);
+      if (identityMissing.length || weakScores.length || review?.blockers.length) stageScore = Math.min(stageScore, 49);
+      let action = blockers.length ? 'refine-code' : 'continue';
+      if (review && ['request-input', 'stop', 'refine-spec', 'refine-code'].includes(review.action)) action = review.action;
+      if (blockers.some((blocker) => blocker.code === 'LIGHTING_UNMEASURED')) action = 'request-input';
+      const result = { id: spec.id, round, stage, action, score: stageScore, hard, visual, critique: review,
+        critiqueStatus: criticError || (review?.imageReviewed ? 'independent visual critique recorded' : 'visual critique not run'),
+        generatorSession: generated.sessionId, criticSession, generatorDurationMs: generated.durationMs, criticDurationMs,
+        generatorUsage: generated.usage, criticUsage, diff: digestParts(old, current), blockers };
+      await writeFile(join(stageDir, 'report.json'), json(result));
+      history.push({ round, stage, action, score: stageScore, blockers: blockers.map((item) => item.code),
+        generatorSession: generated.sessionId, criticSession, generatorUsage: generated.usage, criticUsage });
+      if (!best || stageScore > best.score || (stageScore === best.score && !hard.failures.length && best.hardFailureCount)) {
+        best = { score: stageScore, recipe: current, stage, round, hardFailureCount: hard.failures.length, blockers,
+          report: relative(root, join(stageDir, 'report.json')), sheet: visual ? relative(root, join(stageDir, 'render/sheet.png')) : null };
+        await writeFile(join(run, 'best.json'), json({ status: 'needs-human', ...best }));
+      }
+      console.log(`${spec.id} round ${round} ${stage}: ${action}; score ${stageScore}; ${blockers.map((item) => item.code).join(', ') || 'stage checks clear'}; ${result.critiqueStatus}`);
+      const visualSummary = Array.isArray(visual?.metrics?.samples) ? { identityVisibility: visual.metrics.identityVisibility, keyLight: visual.metrics.keyLight,
+        minimumDayPixels: Math.min(...visual.metrics.samples.filter((sample) => sample.phase === 'daytime').map((sample) => sample.pixels)),
+        unmeasured: visual.metrics.unmeasured } : null;
+      if (action === 'continue') { stageIndex++; previous = { action, diff: result.diff, hard, visual: visualSummary, critique: review }; continue; }
+      if (['request-input', 'stop', 'refine-spec'].includes(action)) { stopReason = `Critic requested ${action}; spec is not silently changed`; break; }
+      previous = { action, diff: result.diff, failures: blockers.slice(0, 15), hard: hard.metrics, visual: visualSummary, critique: review };
+      if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= bible.rules.loop.maxRounds) {
+        stopReason = 'Bounded correction limit reached'; break;
+      }
+      corrections++; stageCorrections[stage] = (stageCorrections[stage] || 0) + 1;
+      round++;
+    }
+    if (!stopReason) stopReason = stageIndex === stages.length ? 'All stages completed; human and EBR-80 review still required' : 'Round limit reached';
+    if (best) await writeFile(recipePath(spec), json(best.recipe));
+    if (best?.sheet) {
       await mkdir(evidenceDirectory, { recursive: true });
-      await copyFile(join(directory, 'sheet.png'), join(evidenceDirectory, `${spec.id}.png`));
-      console.log(`round ${round}: ${summarize(result.report)} · score ${result.report.score} · image ${review.imageReviewed ? 'reviewed' : 'not reviewed'}`);
-      final = { ...result.report, roundsUsed: index + 1, lastRound: round };
-      if (result.report.status === 'PASS') break;
-      previous = { failures: result.report.failures, metrics: result.report.metrics, critique: review };
-      previousSheet = join(directory, 'sheet.png');
+      await copyFile(join(root, best.sheet), join(evidenceDirectory, `${spec.id}-recipe-sheet.png`));
     }
-    if (final?.status !== 'PASS' && !check) {
-      if (old !== null) await writeFile(path, old);
-      else if (await exists(path)) await unlink(path); // Only a candidate created by this invocation.
-    }
-    if (final) await writeFile(join(run, 'final.json'), json(final));
-    if (!final || final.status !== 'PASS') process.exitCode = 1;
-  } finally {
-    await runner.close();
-  }
+    const usageEntries = history.flatMap((item) => [item.generatorUsage, item.criticUsage]).filter(Boolean);
+    const sessionCount = history.reduce((sum, item) => sum + Number(!!item.generatorSession) + Number(!!item.criticSession), 0);
+    const totalUsage = usageEntries.length ? {
+      input: usageEntries.reduce((sum, item) => sum + (item.tokens.input || 0), 0),
+      output: usageEntries.reduce((sum, item) => sum + (item.tokens.output || 0), 0),
+      reasoning: usageEntries.reduce((sum, item) => sum + (item.tokens.reasoning || 0), 0),
+      reportedCostUSD: usageEntries.length === sessionCount && usageEntries.every((item) => item.cost !== null) ? usageEntries.reduce((sum, item) => sum + item.cost, 0) : null,
+      sessionsWithUsage: usageEntries.length, sessionCount, complete: usageEntries.length === sessionCount,
+    } : null;
+    const final = { id: spec.id, category: spec.category, status: 'needs-human', signedBy: null, roundsUsed: round,
+      completedStages: stages.slice(0, stageIndex), corrections, stageCorrections, stopReason, best,
+      imageProbe: probe?.imageReadingObserved ? 'three colour probes passed' : 'visual critique not run',
+      lighting: 'pre-EBR-80, no visual pass claimed', wallTimeMs: Date.now() - first, usage: totalUsage,
+      tokenCostNote: 'Usage/cost are OpenCode session-reported values when available; missing sessions are not estimated.', history };
+    await writeFile(join(run, 'final.json'), json(final));
+    console.log(`${spec.id}: needs-human · ${stageIndex}/${stages.length} stages · ${stopReason}`);
+    if (!best) process.exitCode = 1;
+  } finally { await runner.close(); }
 }
 
 async function verifyCommand(input) {
   if (!input) throw new Error('Usage: npm run asset:verify -- <id|all>');
-  const bible = await readBible();
   const candidates = input === 'all' ? await listSpecs() : [await readSpec(input)];
-  const runner = await createVisualRunner();
+  const { bible, runner, environment } = await setup();
   try {
-    const constants = await loadSceneConstants(runner.server);
-    let tested = 0;
+    let count = 0;
     for (const { spec } of candidates) {
-      if (input === 'all' && !await exists(assetPath(spec))) continue;
-      const { report } = await verifyAsset(spec, bible, runner, constants);
-      tested++;
-      console.log(summarize(report));
-      for (const failure of report.failures) console.error(`  ${failure.code}: ${failure.message}`);
-      if (report.status !== 'PASS') process.exitCode = 1;
-    }
-    if (!tested) throw new Error('No asset source files found');
-    console.log(`Verified ${tested} asset(s).`);
-  } finally {
-    await runner.close();
-  }
-}
-
-async function bundle() {
-  const bible = await readBible();
-  const candidates = await listSpecs();
-  const runner = await createVisualRunner();
-  try {
-    const constants = await loadSceneConstants(runner.server);
-    const accepted = [];
-    const gallery = [];
-    for (const { spec } of candidates) {
-      const finalPath = join(runDirectory, spec.id, 'final.json');
-      let final;
-      try { final = JSON.parse(await readFile(finalPath, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-      if (!await exists(assetPath(spec))) {
-        if (final) {
-          const sheet = join(runDirectory, spec.id, `round-${final.lastRound}`, 'sheet.png');
-          if (await exists(sheet)) gallery.push({ id: spec.id, status: 'REJECTED', sheet: await readFile(sheet) });
-        }
-        console.log(`${spec.id}: not shipped (no source)`);
-        continue;
+      let recipe;
+      try {
+        const best = JSON.parse(await readFile(join(runDirectory, spec.id, 'best.json'), 'utf8'));
+        recipe = best.recipe;
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        try { recipe = JSON.parse(await readFile(recipePath(spec), 'utf8')); }
+        catch (missing) { if (input === 'all' && missing.code === 'ENOENT') continue; throw missing; }
       }
-      const result = await verifyAsset(spec, bible, runner, constants);
-      const validProvenance = final?.status === 'PASS' && final.sourceHash === result.report.sourceHash &&
-        final.specHash === result.report.specHash && final.bibleHash === result.report.bibleHash;
-      if (!validProvenance) result.report.failures.push({ code: 'PROVENANCE', message: 'No passing loop report for this exact source, spec and bible' });
-      result.report.status = result.report.failures.length ? 'REJECTED' : 'PASS';
-      console.log(summarize(result.report));
-      gallery.push({ id: spec.id, status: result.report.status, sheet: result.sheet });
-      await mkdir(evidenceDirectory, { recursive: true });
-      await writeFile(join(evidenceDirectory, `${spec.id}.png`), result.sheet);
-      if (result.report.status === 'PASS') accepted.push({ spec, report: result.report, final });
-      else process.exitCode = 1;
+      count++;
+      await mkdir(join(runDirectory, spec.id), { recursive: true });
+      await writeFile(recipePath(spec), json(recipe));
+      const result = inspectRecipe(recipe, spec, bible.rules, environment);
+      console.log(json({ id: spec.id, hard: { failures: result.failures, metrics: result.metrics } }));
+      const verificationDir = join(runDirectory, spec.id, 'verify');
+      await mkdir(verificationDir, { recursive: true });
+      if (result.failures.length) {
+        await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
+        process.exitCode = 1; continue;
+      }
+      const visual = await runner.capture(spec, bible.rules, verificationDir);
+      await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', hard: { failures: result.failures, metrics: result.metrics }, visual,
+        critiqueStatus: 'not rerun by asset:verify; see the original independent critic session' }));
+      console.log(json({ id: spec.id, visual }));
+      if (visual.failures.length) process.exitCode = 1;
     }
-    const imports = accepted.map(({ spec }, index) => `import * as asset${index} from './${spec.category}/${spec.id}';`).join('\n');
-    const entries = accepted.map(({ spec }, index) => `  '${spec.id}': asset${index},`).join('\n');
-    await writeFile(join(root, 'src/assets/index.ts'), `// Generated by npm run asset:bundle. Do not edit by hand.\nimport type { AssetModule } from './types';\n${imports}\n\nexport const assets: Readonly<Record<string, AssetModule>> = {\n${entries}\n};\n`);
-    const manifest = { version: 1, assets: accepted.map(({ spec, report, final }) => ({ id: spec.id, category: spec.category,
-      footprint: { width: spec.size.width, depth: spec.size.depth }, height: spec.size.height,
-      sourceHash: report.sourceHash, triangles: report.metrics.geometry.triangles, score: final.score, rounds: final.roundsUsed })) };
-    await writeFile(join(root, 'src/assets/manifest.json'), json(manifest));
-    if (gallery.length) {
-      await mkdir(evidenceDirectory, { recursive: true });
-      await createBundleSheet(runner.browser, gallery, join(evidenceDirectory, 'bundle-sheet.png'));
-    }
-    console.log(`Bundled ${accepted.length} verified assets; gallery has ${gallery.length} tiles.`);
-  } finally {
-    await runner.close();
-  }
+    if (!count) throw new Error('No bake-off candidates found');
+  } finally { await runner.close(); }
 }
 
 const [command, input, ...args] = process.argv.slice(2);
 try {
   if (command === 'new') await newAsset(input, args);
   else if (command === 'verify') await verifyCommand(input);
-  else if (command === 'bundle') await bundle();
-  else throw new Error(`Unknown assetgen command: ${basename(command || '')}`);
-} catch (error) {
-  console.error(error?.stack || error);
-  process.exitCode = 1;
-}
+  else if (command === 'bundle') throw new Error('Bundle disabled: bake-off only; EBR-80 and Look Dev signoff are required.');
+  else throw new Error(`Unknown assetgen command ${command || ''}`);
+} catch (error) { console.error(error?.stack || error); process.exitCode = 1; }

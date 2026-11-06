@@ -1,88 +1,70 @@
-import { execFile } from 'node:child_process';
-import { homedir } from 'node:os';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { promisify } from 'node:util';
 import { root } from './config.mjs';
+import { runOpenCode, textEvents } from './opencode.mjs';
 
-const execute = promisify(execFile);
-const referencePaths = {
-  'signed-tree': 'src/scene/createFarmLayout.ts',
-  'signed-cottage': 'src/scene/createCottage.ts',
-  'signed-coop': 'src/scene/createRampCoop.ts',
-  'signed-fence': 'src/placement/createPlacementVisual.ts',
+const references = {
+  'signed-tree': 'src/scene/createFarmLayout.ts', 'signed-cottage': 'src/scene/createCottage.ts',
+  'signed-coop': 'src/scene/createRampCoop.ts', 'signed-fence': 'src/placement/createPlacementVisual.ts',
   'signed-sign': 'src/scene/createFarmDecorations.ts',
 };
 
-export async function makePrompt(spec, bible, previous) {
-  const references = [];
-  for (const id of spec.referenceAssetIds.slice(0, 2)) {
-    const path = referencePaths[id];
-    if (!path) throw new Error(`Unknown reference asset id: ${id}`);
-    references.push(`REFERENCE ${id} (${path}):\n\`\`\`typescript\n${await readFile(join(root, path), 'utf8')}\n\`\`\``);
-  }
-  return `You are the procedural 3D asset generator for this farm. Return ONLY one fenced typescript code block containing the COMPLETE module. Do not use tools, edit files, call the network, or return a patch. A program will write your block to src/assets/${spec.category}/${spec.id}.ts and independently compile, build, render and test it.
-
-Implement an original, polished and recognisable asset, not a generic placeholder. Follow the style bible and the brief. Export const meta and export function build(): THREE.Group. Import * as THREE from 'three', FARM_PALETTE from '../../scene/farmPalette', BUILDING_PALETTE from '../../scene/farmBuildingMaterials' as needed, and optionally import type { AssetMeta } from '../types'. Do not import anything else. The exact metadata is: id '${spec.id}', category '${spec.category}', footprint { width: ${spec.size.width}, depth: ${spec.size.depth} }, height ${spec.size.height}, palette as an array of qualified keys actually used (e.g. 'farm.barnWood', 'building.timber'), triBudget an integer at most ${bible.rules.triBudgets[spec.category]}. Only use named palette values, no hex literals. Material is opaque THREE.MeshStandardMaterial with flatShading: true and roughness: 1, with no textures, emissive, polygon offset, transparency, lights or shadow maps. Return a new identity-transform THREE.Group. Center the total X/Z bounds on the origin; the bottom must touch y=0; front is +Z. Actual total bounds should closely match the declared dimensions. The verifier detects every pair of overlapping nearly coplanar triangles, including hidden faces and different meshes. Avoid coincident overlapping faces: intersect components by >0.004 units or separate them by >0.004 units. Do not use ConeGeometry or a cylinder with a zero-radius end (degenerate triangles); create a nondegenerate pointed mesh if needed. Use unit, outward-facing normals and no tiny or zero-area triangles. Keep details chunky and the silhouette distinctive at 320x180. No nondeterminism, HTML, animation, text, environment access, or external resources.
-
-STYLE BIBLE:\n${bible.text}
-
-SPEC:\n${JSON.stringify(spec, null, 2)}
-
-${references.join('\n\n')}
-
-${previous ? `PREVIOUS VERIFIER REPORT AND CRITIQUE: Fix all failures and preserve successes. The attached image, if present, is the previous contact sheet.\n${JSON.stringify(previous, null, 2)}` : 'This is the first generation round.'}
-
-Output the TypeScript module only, in a single fenced typescript block.`;
+function parseJson(text) {
+  const block = text.match(/```(?:json)?\s*\n([\s\S]*?)```/i)?.[1] ?? text;
+  const start = block.indexOf('{'), end = block.lastIndexOf('}');
+  if (start < 0 || end < start) throw new Error(`No JSON object in model response: ${text.slice(0, 1000)}`);
+  return JSON.parse(block.slice(start, end + 1));
 }
 
-async function opencode(message, attachment) {
-  const binary = process.env.OPENCODE_BIN || join(homedir(), '.opencode/bin/opencode');
+async function run(message, { cwd, attachment, timeout } = {}) {
   const args = ['run', '--format', 'json'];
-  if (attachment && process.env.ASSETGEN_IMAGES !== '0') args.push('--file', attachment);
+  if (attachment) args.push('--file', attachment);
   args.push(message);
-  const { stdout, stderr } = await execute(binary, args, { cwd: root, timeout: 240000, maxBuffer: 16 * 1024 * 1024 });
-  const events = stdout.split('\n').filter(Boolean).map((line) => {
-    try { return JSON.parse(line); } catch { return { type: 'unparsed', text: line }; }
-  });
+  const result = await runOpenCode(args, { cwd, timeout });
+  const { events, text } = textEvents(result.stdout);
   const errors = events.filter((event) => event.type === 'error');
-  if (errors.length) throw new Error(`OpenCode error: ${JSON.stringify(errors)}${stderr ? ` ${stderr}` : ''}`);
-  const text = events.filter((event) => event.type === 'text').map((event) => event.part?.text || event.text || '').join('\n');
-  if (!text.trim()) throw new Error(`OpenCode returned no text${stderr ? `: ${stderr}` : ''}`);
-  return { text, transcript: stdout, attachmentUsed: !!attachment && process.env.ASSETGEN_IMAGES !== '0' };
+  if (errors.length || !text.trim()) throw new Error(`OpenCode returned no usable text: ${JSON.stringify(errors)} ${result.stderr}`);
+  const sessionId = events.find((event) => event.sessionID)?.sessionID ?? null;
+  let usage = null;
+  if (sessionId) {
+    try {
+      const metadata = await runOpenCode(['api', 'get', `/api/session/${sessionId}`], { cwd, timeout: 30000 });
+      const data = JSON.parse(metadata.stdout).data;
+      if (data?.tokens) usage = { tokens: data.tokens, cost: typeof data.cost === 'number' ? data.cost : null };
+    } catch { /* A missing usage endpoint is recorded as unknown, not estimated. */ }
+  }
+  return { text, transcript: result.stdout, sessionId, durationMs: result.durationMs, usage };
 }
 
-export async function generate(prompt, previousSheet) {
-  let response;
-  try {
-    response = await opencode(prompt, previousSheet);
-  } catch (error) {
-    if (!previousSheet || process.env.ASSETGEN_IMAGES === '0') throw error;
-    response = await opencode(`${prompt}\nThe image attachment was unavailable; use the numeric report.`, null);
-    response.attachmentError = String(error);
+export async function makePrompt(spec, bible, stage, current, previous, best) {
+  const cheat = await readFile(join(root, 'tools/assetgen/recipe-cheatsheet.md'), 'utf8');
+  const examples = [];
+  for (const id of spec.referenceAssetIds.slice(0, 3)) {
+    const path = references[id];
+    if (!path) throw new Error(`Unknown signed reference ${id}`);
+    examples.push(`SIGNED REFERENCE ${id} (${path}; shapes only, not permission to copy legacy colours):\n${await readFile(join(root, path), 'utf8')}`);
   }
-  const match = response.text.match(/```(?:typescript|ts)\s*\n([\s\S]*?)```/i) || response.text.match(/```\s*\n([\s\S]*?)```/);
-  if (!match) throw new Error(`OpenCode did not return a fenced TypeScript module: ${response.text.slice(0, 1200)}`);
-  return { ...response, source: `${match[1].trim()}\n` };
+  return `You are a game-art recipe generator. Do not call tools, edit files, use the network, or output TypeScript. Return ONE complete fenced JSON object. It is automatically built and independently checked.\n\nCURRENT STAGE: ${stage}. ${current ? 'Revise the current recipe only where this stage or the feedback requires; preserve successful geometry.' : 'Create the initial blockout, including a coarse but visible version of every identity feature.'} The six stages are blockout, form, material, detail, lighting and optimise. Every stage must already satisfy H1–H10, the 10% size tolerance, and render every identity feature; do not defer a missing feature to a later stage. No part thinner than 0.1 except labelled bands/cleats. Follow the exact spec dimensions. The standard material is already supplied by the builder. Never invent tokens or hexes.\n\nSTYLE BIBLE:\n${bible.text}\n\nRECIPE CHEAT SHEET:\n${cheat}\n\nSPEC:\n${JSON.stringify(spec, null, 2)}\n\n${examples.join('\n\n')}\n\n${current ? `CURRENT RECIPE:\n${JSON.stringify(current, null, 2)}` : 'No current recipe.'}\n\n${previous ? `PREVIOUS VERIFICATION / CRITIQUE / CHANGE DIFF (fix the exact named failures):\n${JSON.stringify(previous, null, 2)}` : ''}\n\n${best ? `BEST CANDIDATE SO FAR:\n${JSON.stringify(best, null, 2)}` : ''}\n\nReturn exactly one complete JSON recipe in a fenced json block.`;
 }
 
-export async function critique(spec, report, sheetPath) {
-  const prompt = `Review this procedural Three.js farm asset against the supplied contact sheet and numeric report. The first three panels are zoomed front/side/three-quarter views; the fourth is the actual game camera beside the signed cottage, coops, trees and fence. Be concrete: check whether the subject is recognisable as the brief, has a chunky clean silhouette, coherent palette and believable scale, and whether it survives the small 4-CSS-pixel game view. Automated hard failures cannot be overridden. Do not claim to see the image if you cannot. Return ONLY JSON with {"imageReviewed": boolean, "accept": boolean, "score": integer from 0 to 100, "concerns": [short concrete strings]}. Set accept false for concrete problems requiring revision; if the image is unavailable, assess only the numeric report and state that limitation. This is a preliminary AI critique, not Look Dev approval.\nSPEC: ${JSON.stringify(spec)}\nNUMERIC REPORT: ${JSON.stringify(report)}`;
-  let response;
-  try {
-    response = await opencode(prompt, sheetPath);
-  } catch (error) {
-    response = await opencode(`${prompt}\nImage attachment unavailable; critique the numeric report only.`, null);
-    response.attachmentError = String(error);
+export async function generateRecipe(prompt, cwd, attachment) {
+  const result = await run(prompt, { cwd, attachment, timeout: 240000 });
+  return { ...result, recipe: parseJson(result.text) };
+}
+
+export async function critiqueRecipe(spec, bible, stage, report, sheet, cwd) {
+  const visual = report.visual;
+  const compact = { hard: report.hard, visual: { failures: visual?.failures, identityVisibility: visual?.metrics?.identityVisibility,
+    keyLight: visual?.metrics?.keyLight, referenceScale: visual?.metrics?.referenceScale, unmeasured: visual?.metrics?.unmeasured,
+    daytimeSamples: visual?.metrics?.samples?.filter((sample) => sample.phase === 'daytime') } };
+  const prompt = `You are an independent visual critic, not the generator. Look at the attached contact sheet: eight fixed yaws in each light phase, and signed-farm composites. These are preliminary pre-EBR-80 lights; do not claim human approval. The first three rows are 3x crops of the actual 320x180 game render. Judge the current ${stage} stage for recognisable identity, chunky shape, palette fit, value, scene scale and craft. Automated hard failures cannot be overridden. Every identity feature must be visible, not merely named in JSON. Return ONLY JSON: {"imageReviewed":true|false,"scores":{"silhouette":1..5,"palette":1..5,"shapeLanguage":1..5,"valueStructure":1..5,"sceneFit":1..5,"craft":1..5},"features":{"feature-id":true|false,...},"blockers":["specific part and issue"],"fixes":["specific fix"],"action":"continue|refine-spec|refine-code|request-input|stop"}. If the image is not visible set imageReviewed false and do not invent visual claims. Scores are integers. A score below 4, any blocker or any absent identity feature must request revision.\nSTYLE BIBLE: ${bible.text}\nSPEC: ${JSON.stringify(spec)}\nDETERMINISTIC REPORT: ${JSON.stringify(compact)}`;
+  const result = await run(prompt, { cwd, attachment: sheet, timeout: 180000 });
+  const review = parseJson(result.text);
+  const keys = ['silhouette', 'palette', 'shapeLanguage', 'valueStructure', 'sceneFit', 'craft'];
+  if (typeof review.imageReviewed !== 'boolean' || !review.scores || !keys.every((key) => Number.isInteger(review.scores[key]) && review.scores[key] >= 1 && review.scores[key] <= 5) ||
+      !review.features || !spec.identityFeatures.every((feature) => typeof review.features[feature.id] === 'boolean') ||
+      !Array.isArray(review.blockers) || !Array.isArray(review.fixes) || !['continue', 'refine-spec', 'refine-code', 'request-input', 'stop'].includes(review.action)) {
+    throw new Error(`Invalid critic response: ${result.text.slice(0, 1200)}`);
   }
-  const cleaned = response.text.replace(/```(?:json)?/gi, '').trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error(`OpenCode critique did not return JSON: ${cleaned.slice(0, 1200)}`);
-  const value = JSON.parse(match[0]);
-  if (typeof value.accept !== 'boolean' || typeof value.imageReviewed !== 'boolean' || !Number.isFinite(value.score) ||
-      value.score < 0 || value.score > 100 || !Array.isArray(value.concerns) || !value.concerns.every((item) => typeof item === 'string')) {
-    throw new Error('OpenCode critique JSON has an invalid shape');
-  }
-  if (!response.attachmentUsed) value.imageReviewed = false;
-  return { ...value, attachmentUsed: response.attachmentUsed, attachmentError: response.attachmentError || null, transcript: response.transcript };
+  return { ...result, review };
 }

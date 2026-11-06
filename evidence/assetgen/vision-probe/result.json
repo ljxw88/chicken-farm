@@ -1,0 +1,28 @@
+{
+  "imageReadingObserved": true,
+  "trials": [
+    {
+      "image": "probe-1.png",
+      "expected": "BLUE",
+      "answer": "BLUE",
+      "correct": true,
+      "error": null
+    },
+    {
+      "image": "probe-2.png",
+      "expected": "GREEN",
+      "answer": "GREEN",
+      "correct": true,
+      "error": null
+    },
+    {
+      "image": "probe-3.png",
+      "expected": "RED",
+      "answer": "RED",
+      "correct": true,
+      "error": null
+    }
+  ],
+  "method": "Three shuffled dominant-colour PNGs; separate OpenCode run sessions; exact one-word answers.",
+  "caveat": "Colour recognition is a capability probe, not proof of reliable asset critique."
+}

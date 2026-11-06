@@ -8,7 +8,7 @@ export const runDirectory = join(root, 'tools/assetgen/runs');
 export const evidenceDirectory = join(root, 'evidence/assetgen');
 export const biblePath = join(root, 'docs/asset-style-bible.md');
 export const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const categories = ['trees', 'rocks', 'fences', 'props', 'farm'];
+export const categories = ['prop', 'flora', 'animal', 'building', 'terrain'];
 
 export async function readBible() {
   const text = await readFile(biblePath, 'utf8');
@@ -28,6 +28,11 @@ export function validateSpec(spec) {
       throw new Error(`Spec needs a nonempty ${field} array`);
     }
   }
+  if (!Array.isArray(spec.identityFeatures) || spec.identityFeatures.length < 3 || spec.identityFeatures.length > 5 ||
+      !spec.identityFeatures.every((feature) => idPattern.test(feature.id) && typeof feature.description === 'string' && feature.description.length > 5) ||
+      new Set(spec.identityFeatures.map((feature) => feature.id)).size !== spec.identityFeatures.length) {
+    throw new Error('Spec needs 3–5 uniquely named identityFeatures with descriptions');
+  }
   return spec;
 }
 
@@ -42,14 +47,7 @@ export async function listSpecs() {
   return Promise.all(names.map((name) => readSpec(join(specDirectory, name))));
 }
 
-export function assetPath(spec) {
+export function recipePath(spec) {
   validateSpec(spec);
-  return join(root, 'src/assets', spec.category, `${spec.id}.ts`);
-}
-
-export function qualifiedPalette(farm, building) {
-  return Object.fromEntries([
-    ...Object.entries(farm).map(([key, value]) => [`farm.${key}`, value]),
-    ...Object.entries(building).map(([key, value]) => [`building.${key}`, value]),
-  ]);
+  return join(runDirectory, spec.id, 'candidate.json');
 }
