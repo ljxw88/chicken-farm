@@ -34,3 +34,12 @@ or graphics changes can alter pixels even when application code does not.
 For an external `--url`, the server's source SHA is unknown rather than inferred
 from the local checkout. For a local run, `parity.json` records both HEAD and
 any source changes present during capture.
+
+For EBR-80, leave the signed `evidence/EBR-73/` files untouched. Copy its
+`baseline.json` and `baseline/` into a separate directory and run, for example,
+`PARITY_EVIDENCE_DIR=evidence/lighting/gate-g npm run parity`. Do not re-record
+the baseline until Look Dev signs. On the EBR-48 layout the stairs capture uses
+real clicks along the bridge route; the old direct click crosses the new water.
+The old baseline's stair pose and the WASD walk can therefore differ as well as
+the intentionally lit pixels. `npm run lighting:parity` adds sunset/cloudy
+scenarios against its separately recorded pre-lighting reference.

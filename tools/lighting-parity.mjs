@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
 
 // Based on the EBR-73 Gate G harness. Main did not yet contain that tool.
 // Baselines are explicit archived commits; a comparison never re-records one.
@@ -197,19 +198,23 @@ async function capture(browser, url, scenario, path) {
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => window.__parityStep(0));
     if (scenario.setup === 'stairs') {
-      const point = await page.evaluate(() => {
-        const { camera, character, stairs } = window.__parity;
-        const pad = stairs.footPad;
-        const p = pad.getWorldPosition(character.position.clone());
-        p.y += pad.geometry.parameters.height / 2;
-        camera.updateMatrixWorld();
-        p.project(camera);
-        const rect = document.querySelector('#scene').getBoundingClientRect();
-        return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2 };
-      });
-      assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
-      await page.mouse.click(point.x, point.y);
-      await page.evaluate(() => { for (let i = 1; i <= 50; i++) window.__parityStep(i * 100); });
+      if (await page.evaluate(() => Boolean(window.__parity.scene.getObjectByName('farm-water-feature')))) {
+        await approachStairsAcrossBridge(page, '__parity', '__parityStep');
+      } else {
+        const point = await page.evaluate(() => {
+          const { camera, character, stairs } = window.__parity;
+          const pad = stairs.footPad;
+          const p = pad.getWorldPosition(character.position.clone());
+          p.y += pad.geometry.parameters.height / 2;
+          camera.updateMatrixWorld();
+          p.project(camera);
+          const rect = document.querySelector('#scene').getBoundingClientRect();
+          return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2 };
+        });
+        assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
+        await page.mouse.click(point.x, point.y);
+        await page.evaluate(() => { for (let i = 1; i <= 50; i++) window.__parityStep(i * 100); });
+      }
       const distance = await page.evaluate(() => Math.hypot(window.__parity.character.position.x - window.__parity.stairs.footPad.position.x,
         window.__parity.character.position.z - window.__parity.stairs.footPad.position.z));
       assert.ok(distance < 0.03, `Click-walk did not reach stairs pad: ${distance}`);

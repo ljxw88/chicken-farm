@@ -7,6 +7,7 @@ import { resolve, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
 
 // The baseline is an archived commit, never the current working tree. Recording
 // it is explicit so a normal candidate run cannot silently bless a regression.
@@ -221,19 +222,23 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
     await page.evaluate(() => window.__ebr73Step(0));
 
     if (scenario.setup === 'stairs') {
-      const point = await page.evaluate(() => {
-        const { camera, character, stairs } = window.__ebr73Parity;
-        const pad = stairs.footPad;
-        const p = pad.getWorldPosition(character.position.clone());
-        p.y += pad.geometry.parameters.height / 2;
-        camera.updateMatrixWorld();
-        p.project(camera);
-        const rect = document.querySelector('#scene').getBoundingClientRect();
-        return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2 };
-      });
-      assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
-      await page.mouse.click(point.x, point.y);
-      await page.evaluate(() => { for (let i = 1; i <= 50; i++) window.__ebr73Step(i * 100); });
+      if (await page.evaluate(() => Boolean(window.__ebr73Parity.scene.getObjectByName('farm-water-feature')))) {
+        await approachStairsAcrossBridge(page, '__ebr73Parity', '__ebr73Step');
+      } else {
+        const point = await page.evaluate(() => {
+          const { camera, character, stairs } = window.__ebr73Parity;
+          const pad = stairs.footPad;
+          const p = pad.getWorldPosition(character.position.clone());
+          p.y += pad.geometry.parameters.height / 2;
+          camera.updateMatrixWorld();
+          p.project(camera);
+          const rect = document.querySelector('#scene').getBoundingClientRect();
+          return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2 };
+        });
+        assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
+        await page.mouse.click(point.x, point.y);
+        await page.evaluate(() => { for (let i = 1; i <= 50; i++) window.__ebr73Step(i * 100); });
+      }
       const distance = await page.evaluate(() => {
         const { character, stairs } = window.__ebr73Parity;
         return Math.hypot(character.position.x - stairs.footPad.position.x, character.position.z - stairs.footPad.position.z);
