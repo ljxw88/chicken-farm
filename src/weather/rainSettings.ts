@@ -1,4 +1,5 @@
-// Look Dev visually approved these starting targets; they are not explicitly LOCKED.
+// Look Dev visually approved the rain starting targets; they are not explicitly LOCKED.
+// The shared 1.75-second weather transition is LOCKED for EBR-40.
 // Streak length is world-space;
 // the eventual 1x3–5 px pixel-art treatment is intentionally not implemented here.
 export const RAIN_LOOK = {
