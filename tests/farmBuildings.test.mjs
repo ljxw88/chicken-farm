@@ -242,7 +242,8 @@ test('walking obstacles match only the visible wall, coop bodies and ramps, whil
   const scene = new THREE.Scene();
   const { obstacles, splashExclusions } = createFarmLayout(scene);
   scene.updateMatrixWorld(true);
-  assert.equal(obstacles.length, 10); // Five building boxes, four trunks, one pond.
+  const originalNames = [...components.map(({ name }) => name), 'tree-1', 'tree-2', 'tree-3', 'tree-4', 'pond'];
+  assert.deepEqual(obstacles.filter((entry) => originalNames.includes(entry.name)).map((entry) => entry.name), originalNames);
   for (const { name, mesh, bounds: expected } of components) {
     const box = bounds(scene, mesh);
     const obstacle = obstacles.find((entry) => entry.name === name);

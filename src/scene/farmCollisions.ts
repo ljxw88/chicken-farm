@@ -1,6 +1,7 @@
-export type FarmObstacle =
+export type FarmObstacle = (
   | { kind: 'box'; name: string; minX: number; maxX: number; minZ: number; maxZ: number }
-  | { kind: 'circle'; name: string; x: number; z: number; radius: number };
+  | { kind: 'circle'; name: string; x: number; z: number; radius: number }
+) & { blocksWalking?: boolean };
 
 export interface FarmBounds {
   minX: number;
@@ -13,6 +14,8 @@ export type FarmBoundarySlide = (x: number, z: number, radius: number, distance:
 
 function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
   return obstacles.some((obstacle) => {
+    // A walkable bridge still reserves placement tiles in this shared array.
+    if (obstacle.blocksWalking === false) return false;
     if (obstacle.kind === 'circle') {
       const dx = x - obstacle.x;
       const dz = z - obstacle.z;

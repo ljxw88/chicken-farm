@@ -21,7 +21,12 @@ test('the original farm palette stays locked alongside the building palette', ()
   createFarmLayout(scene);
   const allowed = new Set([...Object.values(FARM_PALETTE), ...Object.values(BUILDING_PALETTE)]);
   scene.traverse((object) => {
-    if (object.isMesh) assert.ok(allowed.has(object.material.color.getHex()), `unexpected color on ${object.name}`);
+    if (!object.isMesh) return;
+    // The separately locked water feature has its own palette; keep checking
+    // every pre-existing farm mesh rather than expanding that palette.
+    let ancestor = object.parent;
+    while (ancestor && ancestor.name !== 'farm-water-feature') ancestor = ancestor.parent;
+    if (!ancestor) assert.ok(allowed.has(object.material.color.getHex()), `unexpected color on ${object.name}`);
   });
 });
 

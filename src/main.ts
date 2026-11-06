@@ -39,7 +39,7 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const { windows, extraEmissives, obstacles, splashExclusions } = createFarmLayout(scene);
+const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
 const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
@@ -78,6 +78,7 @@ const controls = createCharacterControls({
   characterRadius: CHARACTER_RADIUS,
   obstacles,
   stairs,
+  bridgeHeight,
   groundShadow: character.getObjectByName('character-shadow'),
   onPointerDown: placement.handlePointerDown,
 });
@@ -116,6 +117,7 @@ createEngine({
     follow(character.position);
     placement.update();
     weather.update(deltaSeconds);
+    updateWaterfall(deltaSeconds);
   },
   render: (deltaSeconds) => composer.render(deltaSeconds),
 }).start();

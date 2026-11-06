@@ -4,6 +4,7 @@ import { after, before, test } from 'node:test';
 import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { approachStairs } from './bridgeRoute.mjs';
 
 const evidenceDir = process.env.EBR46_EVIDENCE_DIR;
 const slideProofPath = process.env.EBR46_SLIDE_PROOF;
@@ -220,6 +221,8 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
     requestAnimationFrame(record);
   });
 
+  await approachStairs(page, '__ebr46Test');
+
   const click = await page.evaluate(() => {
     const { camera, stairs } = window.__ebr46Test;
     const mesh = stairs.footPad;
@@ -345,9 +348,19 @@ for (const scenario of padSideScenarios) {
       requestAnimationFrame(record);
     });
 
-    // Reproduce QA with real pointer and key input; do not recenter or teleport.
-    assert.equal(await page.evaluate(() => document.elementFromPoint(947, 646)?.id), 'scene');
-    await page.mouse.click(947, 646);
+    // Reproduce QA with real pointer and key input; cross the bridge first.
+    await approachStairs(page, '__ebr46Test');
+    const padPoint = await page.evaluate(() => {
+      const { camera, stairs } = window.__ebr46Test;
+      const point = stairs.footPad.getWorldPosition(stairs.footPad.position.clone());
+      point.y += stairs.footPad.geometry.parameters.height / 2;
+      camera.updateMatrixWorld();
+      point.project(camera);
+      const rect = document.querySelector('#scene').getBoundingClientRect();
+      return { x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 };
+    });
+    assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, padPoint), 'scene');
+    await page.mouse.click(padPoint.x, padPoint.y);
     await page.waitForFunction(() => {
       const { character, stairs } = window.__ebr46Test;
       return Math.hypot(character.position.x - stairs.footPad.position.x, character.position.z - 0.75) < 0.03;

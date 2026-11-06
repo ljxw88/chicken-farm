@@ -213,6 +213,7 @@ test('real fence and plot previews reject the cottage, both bodies and both ramp
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
+  const initialObstacles = await page.evaluate(() => window.__ebr47Test.obstacles.length);
   const components = await page.evaluate((names) => names.map((name) => {
     const obstacle = window.__ebr47Test.obstacles.find((entry) => entry.name === name);
     return { name, x: (obstacle.minX + obstacle.maxX) / 2, z: (obstacle.minZ + obstacle.maxZ) / 2 };
@@ -241,7 +242,7 @@ test('real fence and plot previews reject the cottage, both bodies and both ramp
   await page.mouse.click(open.x, open.y);
   assert.equal(await page.evaluate(() => window.__ebr47Test.scene.getObjectsByProperty('name', 'placed-fence').length), 1);
   await page.keyboard.press('z');
-  assert.equal(await page.evaluate(() => window.__ebr47Test.obstacles.length), 10);
+  assert.equal(await page.evaluate(() => window.__ebr47Test.obstacles.length), initialObstacles);
   assert.deepEqual(errors, []);
   proof.placement = { rejected, openTile: true, errors };
 });

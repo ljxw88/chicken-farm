@@ -4,6 +4,7 @@ import { after, before, test } from 'node:test';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
+import { approachStairs } from './bridgeRoute.mjs';
 
 const evidenceDir = process.env.EBR56_EVIDENCE_DIR;
 const proof = { screenshots: [], checks: [] };
@@ -171,7 +172,7 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
     pixel: window.getPixelRendering(),
   }));
   assert.equal(initial.gridVisible, false);
-  assert.equal(initial.obstacles, 10);
+  assert.ok(initial.obstacles > 10); // The original farm plus the water/bridge zones.
   await page.keyboard.press('f');
 
   // The former negative-Z player tile now partially intersects coop A's ramp.
@@ -216,7 +217,7 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   await page.keyboard.press('r');
   await page.mouse.click(fencePoint.x, fencePoint.y);
   assert.equal(await count(page, 'placed-fence'), 1);
-  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 11);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initial.obstacles + 1);
   assert.equal(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placed-fence').rotation.y), Math.PI);
   assert.deepEqual(await position(page), [0, 2.4, 0]);
   assert.match(await page.locator('.placement-status').textContent(), /Space already occupied/);
@@ -230,7 +231,7 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   await capture(page, '05-rotated-plot-preview.png');
   await page.mouse.click(plotPoint.x, plotPoint.y);
   assert.equal(await count(page, 'placed-plot'), 1);
-  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 11);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initial.obstacles + 1);
   assert.deepEqual(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placed-plot').children.map((part) => part.material.color.getHex())),
     [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
   await page.keyboard.press('Escape');
@@ -266,7 +267,7 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   assert.equal(await page.locator('[data-remove]').isEnabled(), true);
   await page.keyboard.press('Delete');
   assert.equal(await count(page, 'placed-fence'), 0);
-  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 10);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initial.obstacles);
   await page.keyboard.press('Escape');
   await page.keyboard.down('s');
   await page.keyboard.down('a');
@@ -291,12 +292,13 @@ test('a placed plot can be crossed by WASD and removed from its footprint', { ti
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
   await assertNoSimUi(page);
+  const initialObstacles = await page.evaluate(() => window.__ebr56Test.obstacles.length);
   await page.keyboard.press('p');
   const plotPoint = await moveWorld(page, -0.75, 3.75);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   await page.mouse.click(plotPoint.x, plotPoint.y);
   assert.equal(await count(page, 'placed-plot'), 1);
-  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 10);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initialObstacles);
   await page.keyboard.press('Escape');
   await page.evaluate(() => {
     window.__ebr56WalkFrames = [];
@@ -324,7 +326,7 @@ test('a placed plot can be crossed by WASD and removed from its footprint', { ti
   await moveWorld(page, -0.75, 3.75);
   await page.keyboard.press('Delete');
   assert.equal(await count(page, 'placed-plot'), 0);
-  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 10);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initialObstacles);
   assert.deepEqual(errors, []);
   proof.plotWalk = { end, sampledFrames: frames.length, walkedOverDirt: true, removedWithDelete: true, errors };
   proof.checks.push(`Dev WASD: crossed a placed plot to z=${end[2].toFixed(2)} and removed the plot with Delete; it added no walking obstacle.`);
@@ -345,6 +347,8 @@ test('the foot pad and corner slide remain climbable with a fence and plot place
   assert.equal(await count(page, 'placed-fence'), 1);
   assert.equal(await count(page, 'placed-plot'), 1);
   await page.keyboard.press('Escape');
+
+  await approachStairs(page, '__ebr56Test');
 
   const pad = await page.evaluate(() => {
     const { camera, character, stairs } = window.__ebr56Test;
@@ -424,6 +428,7 @@ test('touch emulation previews first, rotates and confirms with the direct contr
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
   await assertNoSimUi(page);
+  const initialObstacles = await page.evaluate(() => window.__ebr56Test.obstacles.length);
   await page.locator('[data-fence]').tap();
   const point = await worldPoint(page, 0.75, -6.75);
   assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
@@ -439,7 +444,7 @@ test('touch emulation previews first, rotates and confirms with the direct contr
   await page.locator('[data-remove]').tap();
   await page.touchscreen.tap(point.x, point.y);
   assert.equal(await count(page, 'placed-fence'), 0);
-  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 10);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initialObstacles);
   assert.deepEqual(errors, []);
   proof.touch = { viewport: '1280×720', previewBeforeConfirm: true, rotated: true, removed: true, errors };
   proof.checks.push('1280×720 touch emulation: tap previews, Rotate changes only ghost, Place confirms and Remove deletes without simulation UI.');

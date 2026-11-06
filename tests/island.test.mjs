@@ -63,7 +63,10 @@ test('the existing farm, path and props all remain over the island top', () => {
   createFarmLayout(scene);
   scene.updateMatrixWorld(true);
   const half = GROUND_SIZE / 2;
-  for (const name of ['farm-layout', 'farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2',
+  // The new waterfall intentionally hangs in front of the +Z cliff; the
+  // original path and every original prop must still stay on the island.
+  assert.ok(scene.getObjectByName('farm-layout'));
+  for (const name of ['farm-path', 'farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2',
     'farm-pond', 'farm-tree-1', 'farm-tree-2', 'farm-tree-3', 'farm-tree-4']) {
     const object = scene.getObjectByName(name);
     assert.ok(object, name);

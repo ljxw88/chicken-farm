@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createFarmBuildings } from './createFarmBuildings';
+import { createWaterFeature } from './createWaterFeature';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
 import type { FarmObstacle } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
@@ -175,7 +176,7 @@ function createPond(group: THREE.Group) {
   }
 }
 
-function createGrassTufts(group: THREE.Group) {
+function createGrassTufts(group: THREE.Group, stream: THREE.CatmullRomCurve3) {
   const positions = [
     [-6.2, 2.5], [-3.8, 2.65], [-2.6, 3.1], [-0.8, 2.8], [1, 3.4], [3.5, 1.5],
     [5.4, 1.3], [6.2, -1.4], [6, -5.7], [2.9, -6.3], [1.3, -6.8], [-2.2, -5.7],
@@ -187,11 +188,14 @@ function createGrassTufts(group: THREE.Group) {
   const tufts = new THREE.InstancedMesh(geometry, material, positions.length * 3);
   tufts.name = 'farm-grass-tufts';
   const blade = new THREE.Object3D();
+  const centerline = stream.getSpacedPoints(400);
   let index = 0;
   for (const [x, z] of positions) {
+    const hidden = centerline.some((point) => Math.hypot(point.x - x, point.z - z) < 0.9);
     for (const [offsetX, offsetZ, tilt] of [[-0.08, 0, 0.22], [0.07, 0.03, -0.25], [0, -0.08, 0.08]]) {
       blade.position.set(x + offsetX, GROUND_HEIGHT + 0.13, z + offsetZ);
       blade.rotation.set(0, index * 0.7, tilt);
+      blade.scale.setScalar(hidden ? 0 : 1);
       blade.updateMatrix();
       tufts.setMatrixAt(index++, blade.matrix);
     }
@@ -207,7 +211,8 @@ export function createFarmLayout(scene: THREE.Scene) {
   const { windows, extraEmissives, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
   createTrees(group);
   createPond(group);
-  createGrassTufts(group);
+  const water = createWaterFeature(group);
+  createGrassTufts(group, water.curve);
 
   const { trees, pond } = FARM_LAYOUT;
   const pondObstacle: FarmObstacle = {
@@ -221,6 +226,7 @@ export function createFarmLayout(scene: THREE.Scene) {
       kind: 'circle', name: `tree-${index + 1}`, x, z, radius: 0.32 * scale,
     })),
     pondObstacle,
+    ...water.obstacles,
   ];
   const splashExclusions: FarmObstacle[] = [
     ...buildingShelters,
@@ -229,6 +235,7 @@ export function createFarmLayout(scene: THREE.Scene) {
       kind: 'circle', name: `tree-canopy-${index + 1}`, x, z, radius: 1.02 * scale,
     })),
     pondObstacle,
+    ...water.splashExclusions,
   ];
-  return { windows, extraEmissives, obstacles, splashExclusions };
+  return { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight: water.bridgeHeight, updateWaterfall: water.updateWaterfall };
 }
