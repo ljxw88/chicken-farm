@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
@@ -11,6 +11,7 @@ import { approachStairsAcrossBridge } from '../../tools/parity-bridge-route.mjs'
 // Gate G against an archived clean main: same seeded weather, controlled frame
 // times, camera, pose and pixel pass. All instrumentation is response-only.
 const expectedMain = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+const signedHead = '9305bd41ed71f1d885646ac5d9b1bc145fb2594e';
 const seed = 0xeb730001;
 const candidateUrl = (process.env.EBR42_URL || 'http://100.88.150.21:5212').replace(/\/$/, '');
 const output = resolve('evidence/EBR-42');
@@ -18,6 +19,9 @@ const candidateHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'ut
 const sourceStatus = execFileSync('git', ['status', '--porcelain', '--untracked-files=all', '--',
   'src', 'index.html', 'package.json', 'package-lock.json'], { encoding: 'utf8' }).trim();
 assert.equal(sourceStatus, '', 'Commit the candidate source before capturing evidence');
+const readability = JSON.parse(await readFile(join(output, 'smoke-retune/readability.json'), 'utf8'));
+assert.equal(readability.head, candidateHead, 'Regenerate per-puff measurements for this source tip first');
+assert.deepEqual(readability.failures, [], 'Smoke composite-contribution or selected independent checks failed');
 const viewport = { width: 1280, height: 720 };
 const matrix = ['morning', 'daytime', 'sunset', 'night'].flatMap((phase) =>
   ['clear', 'cloudy', 'rain'].map((weather) => ({ name: `${phase}-${weather}`, phase, weather, setup: 'spawn' })));
@@ -27,12 +31,17 @@ const scenarios = [...matrix,
   { name: 'stairs-daytime-clear', phase: 'daytime', weather: 'clear', setup: 'stairs' },
 ];
 const hash = (data) => createHash('sha256').update(data).digest('hex');
-for (const name of ['baseline', 'candidate', 'no-effects', 'diff', 'mask/smoke', 'mask/fireflies', 'mask/combined', 'crops']) {
+for (const name of ['baseline', 'candidate', 'no-effects', 'diff', 'mask/smoke', 'mask/fireflies', 'mask/combined',
+  'mask/smoke-retune', 'smoke-retune/before', 'smoke-retune/diff', 'smoke-retune/crops', 'crops']) {
   await mkdir(join(output, name), { recursive: true });
 }
 
 const sha = execFileSync('git', ['rev-parse', '--verify', `${expectedMain}^{commit}`], { encoding: 'utf8' }).trim();
 assert.equal(sha, expectedMain);
+assert.equal(execFileSync('git', ['rev-parse', '--verify', `${signedHead}^{commit}`], { encoding: 'utf8' }).trim(), signedHead);
+execFileSync('git', ['diff', '--quiet', signedHead, 'HEAD', '--', 'src/effects/createFireflies.ts', 'tests/fireflies.test.mjs']);
+const signedReport = JSON.parse(execFileSync('git', ['show', `${signedHead}:evidence/EBR-42/comparison.json`], { encoding: 'utf8' }));
+execFileSync('git', ['diff', '--quiet', signedReport.candidateHead, signedHead, '--', 'src', 'index.html', 'package.json', 'package-lock.json']);
 let temp;
 try { temp = await mkdtemp('/tmp/opencode/ebr42-main-'); }
 catch (error) {
@@ -54,15 +63,40 @@ try {
   const mainUrl = `http://127.0.0.1:${address.port}`;
   browser = await chromium.launch({ headless: true,
     args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
+  assert.equal(browser.version(), signedReport.browser, 'Use the same Chromium version as the signed firefly capture');
+  assert.equal(signedReport.seed, seed, 'Signed firefly seed differs');
+  assert.deepEqual(signedReport.viewport, viewport);
+  assert.equal(signedReport.deviceScaleFactor, 1);
   const comparisonPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
-  const report = { main: sha, candidateHead, sourceStatus, candidateUrl, browser: browser.version(), viewport, deviceScaleFactor: 1,
-    seed, time: '3.0 s in 100 ms steps except stairs (real click route)', cases: {} };
+  const report = { main: sha, signedHead, candidateHead, sourceStatus, candidateUrl, browser: browser.version(), viewport, deviceScaleFactor: 1,
+    seed, time: '3.0 s in 100 ms steps except stairs (real click route)', cases: {}, retuneCrops: {} };
 
   for (const scenario of scenarios) {
     const before = await capture(mainUrl, scenario, false);
     const after = await capture(candidateUrl, scenario, true);
     assert.deepEqual(after.state, before.state, `${scenario.name}: camera, gameplay, lights or weather changed`);
+    const signed = signedReport.cases[scenario.name];
+    assert.deepEqual(after.state, signed.state, `${scenario.name}: state differs from the signed head`);
+    assert.deepEqual(after.effectState.fireflyOpacity, signed.effectState.fireflyOpacity, `${scenario.name}: firefly opacity changed`);
     const result = await compare(comparisonPage, before.image, after);
+    const fromSigned = (folder) => execFileSync('git', ['show', `${signedHead}:evidence/EBR-42/${folder}/${scenario.name}.png`]);
+    const signedFrame = fromSigned('candidate');
+    const signedSmoke = fromSigned('mask/smoke');
+    const signedFlies = fromSigned('mask/fireflies');
+    const retune = await compareRetune(comparisonPage, signedFrame, after.image, signedSmoke,
+      Buffer.from(result.smokePng, 'base64'), signedFlies, Buffer.from(result.firefliesPng, 'base64'));
+    let puffBrightMaskOutside = null;
+    if (readability.cases[scenario.name]) {
+      const measured = readability.cases[scenario.name].samples.find((sample) => sample.time === 3);
+      assert.ok(measured, `Missing t=3 smoke measurement: ${scenario.name}`);
+      const puffState = (puff) => ({ name: puff.name, position: puff.position, size: puff.size, opacity: puff.opacity });
+      assert.deepEqual(after.effectState.smokePuffs.map(puffState), measured.puffs.map(puffState),
+        `${scenario.name}: per-puff measurements do not match the captured frame`);
+      const masks = await Promise.all(measured.puffs.map((puff) =>
+        readFile(join(output, 'mask/puff-bright', `${scenario.name}-${puff.name}.png`))));
+      puffBrightMaskOutside = await countMaskOutside(comparisonPage, Buffer.from(result.smokePng, 'base64'), masks);
+      assert.equal(puffBrightMaskOutside, 0, `${scenario.name}: bright-puff masks exceed the smoke mask`);
+    }
     const save = async (name, data) => writeFile(join(output, name, `${scenario.name}.png`), data);
     await save('baseline', before.image);
     await save('candidate', after.image);
@@ -71,10 +105,15 @@ try {
     await save('mask/smoke', Buffer.from(result.smokePng, 'base64'));
     await save('mask/fireflies', Buffer.from(result.firefliesPng, 'base64'));
     await save('mask/combined', Buffer.from(result.combinedPng, 'base64'));
+    await save('mask/smoke-retune', Buffer.from(retune.maskPng, 'base64'));
+    await save('smoke-retune/before', signedFrame);
+    await save('smoke-retune/diff', Buffer.from(retune.diffPng, 'base64'));
     assert.equal(result.unmasked, 0, `${scenario.name}: changes outside rendered effect masks`);
     assert.equal(result.hiddenChanged, 0, `${scenario.name}: hiding effects did not restore clean main`);
     assert.ok(result.fireflies.maximum.every((value) => value < 250), `${scenario.name}: firefly output reached 250`);
     assert.equal(result.fireflies.voidBackground, 0, `${scenario.name}: firefly rendered over the void`);
+    assert.equal(retune.outsideSmoke, 0, `${scenario.name}: retune changed pixels outside old/new smoke masks`);
+    assert.equal(retune.fireflyMaskChanged, 0, `${scenario.name}: signed firefly pixels changed`);
     if (scenario.setup === 'spawn') {
       const expected = scenario.phase !== 'night' ? 0 : { clear: 14, cloudy: 10, rain: 6 }[scenario.weather];
       assert.equal(after.effectState.activeFireflies, expected, `${scenario.name}: wrong firefly count`);
@@ -83,10 +122,20 @@ try {
       else assert.equal(result.fireflies.changed, 0);
     }
     const { diffPng, smokePng, firefliesPng, combinedPng, ...metrics } = result;
+    const { diffPng: retuneDiff, maskPng: retuneMask, ...retuneMetrics } = retune;
     report.cases[scenario.name] = { ...metrics, state: after.state, effectState: after.effectState,
-      renderCalls: after.renderCalls, baselineSha256: hash(before.image), candidateSha256: hash(after.image),
+      retune: retuneMetrics, puffBrightMaskOutside, renderCalls: after.renderCalls, baselineSha256: hash(before.image), candidateSha256: hash(after.image),
       errors: { baseline: before.errors, candidate: after.errors },
       faviconErrors: { baseline: before.faviconErrors, candidate: after.faviconErrors } };
+    if (['daytime-clear', 'daytime-rain', 'sunset-clear', 'sunset-rain',
+      'night-clear', 'night-cloudy', 'night-rain'].includes(scenario.name)) {
+      const crops = await makeRetuneCrops(comparisonPage, signedFrame, after.image, retune.maskPng,
+        signed.smoke.bounds, result.smoke.bounds);
+      for (const [name, data] of Object.entries(crops.images)) {
+        await writeFile(join(output, 'smoke-retune/crops', `${scenario.name}-${name}.png`), Buffer.from(data, 'base64'));
+      }
+      report.retuneCrops[scenario.name] = crops.rectangle;
+    }
     if (scenario.name === 'night-clear') {
       const crops = await makeCrops(comparisonPage, before.image, after.image, result);
       for (const [name, data] of Object.entries(crops.images)) {
@@ -94,7 +143,8 @@ try {
       }
       report.crops = crops.rectangles;
     }
-    console.log(`${scenario.name}: ${result.rawChanged} changed; ${result.unmasked} outside effect masks; ${result.hiddenChanged} with effects hidden`);
+    console.log(`${scenario.name}: ${result.rawChanged} vs main, ${retune.changedPixels} vs signed; ` +
+      `${result.unmasked}/${retune.outsideSmoke} outside masks, ${retune.fireflyMaskChanged} firefly-mask changes`);
   }
 
   const replay = await capture(candidateUrl, matrix.find((item) => item.name === 'night-rain'), true);
@@ -102,7 +152,7 @@ try {
   assert.equal(report.nightRainReplay.matches, true, 'seeded night-rain frame did not replay exactly');
   await writeFile(join(output, 'comparison.json'), `${JSON.stringify(report, null, 2)}\n`);
   await comparisonPage.close();
-  console.log(`Gate G PASS: ${scenarios.length} frames, exact effect masks, seeded replay`);
+  console.log(`Gate G PASS: ${scenarios.length} main and signed-head frames, exact masks, unchanged fireflies, seeded replay`);
 } finally {
   await browser?.close();
   await server?.close();
@@ -218,7 +268,7 @@ async function capture(url, scenario, candidate) {
         return {
           activeFireflies: flies.visible ? opacity.filter((value) => value > 0).length : 0,
           fireflyOpacity: opacity, smokePuffs: smoke.children.filter((puff) => puff.visible).map((puff) => ({
-            position: puff.position.toArray(), size: puff.scale.x, opacity: puff.material.opacity,
+            name: puff.name, position: puff.position.toArray(), size: puff.scale.x, opacity: puff.material.opacity,
           })),
         };
       });
@@ -315,6 +365,96 @@ async function compare(page, before, after) {
       diffPng: png(raw), smokePng: png(smoke), firefliesPng: png(flies), combinedPng: png(combined) };
   }, { base: before.toString('base64'), current: after.image.toString('base64'), hidden: after.hidden.toString('base64'),
     noSmoke: after.noSmoke.toString('base64'), noFireflies: after.noFireflies.toString('base64'), windowCenters: after.state.windowCenters });
+}
+
+async function compareRetune(page, signed, current, oldSmoke, newSmoke, oldFlies, newFlies) {
+  return page.evaluate(async ({ signed, current, oldSmoke, newSmoke, oldFlies, newFlies }) => {
+    const decode = async (data) => {
+      const image = new Image(); image.src = `data:image/png;base64,${data}`; await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, image.width, image.height);
+    };
+    const [a, b, oldMask, newMask, oldFly, newFly] = await Promise.all(
+      [signed, current, oldSmoke, newSmoke, oldFlies, newFlies].map(decode),
+    );
+    const { width, height } = a;
+    if (width !== 1280 || height !== 720 || [b, oldMask, newMask, oldFly, newFly].some((image) => image.width !== width || image.height !== height)) {
+      throw new Error('Retune frames must all be 1280x720');
+    }
+    const diff = new Uint8ClampedArray(width * height * 4);
+    const mask = new Uint8ClampedArray(width * height * 4);
+    let changedPixels = 0; let outsideSmoke = 0; let fireflyMaskChanged = 0;
+    let changedBounds = null;
+    for (let p = 0; p < width * height; p++) {
+      const i = p * 4; const x = p % width; const y = Math.floor(p / width);
+      const changed = a.data[i] !== b.data[i] || a.data[i + 1] !== b.data[i + 1] ||
+        a.data[i + 2] !== b.data[i + 2] || a.data[i + 3] !== b.data[i + 3];
+      const allowed = oldMask.data[i] !== 0 || newMask.data[i] !== 0;
+      if (changed) {
+        changedPixels++; diff[i] = 255; diff[i + 2] = 255;
+        if (!allowed) outsideSmoke++;
+        if (!changedBounds) changedBounds = [x, y, x + 1, y + 1];
+        else {
+          changedBounds[0] = Math.min(changedBounds[0], x); changedBounds[1] = Math.min(changedBounds[1], y);
+          changedBounds[2] = Math.max(changedBounds[2], x + 1); changedBounds[3] = Math.max(changedBounds[3], y + 1);
+        }
+      }
+      if (oldFly.data[i] !== newFly.data[i] || oldFly.data[i + 1] !== newFly.data[i + 1] ||
+        oldFly.data[i + 2] !== newFly.data[i + 2] || oldFly.data[i + 3] !== newFly.data[i + 3]) fireflyMaskChanged++;
+      if (allowed) mask[i] = mask[i + 1] = mask[i + 2] = 255;
+      diff[i + 3] = mask[i + 3] = 255;
+    }
+    const png = (data) => {
+      const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').putImageData(new ImageData(data, width, height), 0, 0);
+      return canvas.toDataURL('image/png').split(',')[1];
+    };
+    return { changedPixels, changedBounds, outsideSmoke, fireflyMaskChanged, diffPng: png(diff), maskPng: png(mask) };
+  }, { signed: signed.toString('base64'), current: current.toString('base64'), oldSmoke: oldSmoke.toString('base64'),
+    newSmoke: newSmoke.toString('base64'), oldFlies: oldFlies.toString('base64'), newFlies: newFlies.toString('base64') });
+}
+
+async function countMaskOutside(page, smokeMask, puffMasks) {
+  return page.evaluate(async ({ smoke, puffs }) => {
+    const decode = async (data) => {
+      const image = new Image(); image.src = `data:image/png;base64,${data}`; await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, image.width, image.height);
+    };
+    const allowed = await decode(smoke);
+    let outside = 0;
+    for (const data of puffs) {
+      const puff = await decode(data);
+      if (puff.width !== allowed.width || puff.height !== allowed.height) throw new Error('Puff-mask size differs');
+      for (let i = 0; i < puff.data.length; i += 4) {
+        if (puff.data[i] !== 0 && allowed.data[i] === 0) outside++;
+      }
+    }
+    return outside;
+  }, { smoke: smokeMask.toString('base64'), puffs: puffMasks.map((mask) => mask.toString('base64')) });
+}
+
+async function makeRetuneCrops(page, signed, current, mask, oldBounds, newBounds) {
+  return page.evaluate(async ({ signed, current, mask, oldBounds, newBounds }) => {
+    const load = async (data) => { const image = new Image(); image.src = `data:image/png;base64,${data}`; await image.decode(); return image; };
+    const [before, after, allowed] = await Promise.all([signed, current, mask].map(load));
+    const boxes = [oldBounds, newBounds].filter(Boolean);
+    if (!boxes.length) throw new Error('No smoke bounds for retune crop');
+    const left = Math.max(0, Math.min(...boxes.map((box) => box[0])) - 48);
+    const top = Math.max(0, Math.min(...boxes.map((box) => box[1])) - 48);
+    const right = Math.min(1280, Math.max(...boxes.map((box) => box[2])) + 48);
+    const bottom = Math.min(720, Math.max(...boxes.map((box) => box[3])) + 48);
+    const rectangle = [left, top, right - left, bottom - top];
+    const crop = (image) => {
+      const canvas = document.createElement('canvas'); canvas.width = rectangle[2] * 3; canvas.height = rectangle[3] * 3;
+      const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(image, ...rectangle, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/png').split(',')[1];
+    };
+    return { rectangle, images: { before: crop(before), after: crop(after), mask: crop(allowed) } };
+  }, { signed: signed.toString('base64'), current: current.toString('base64'), mask, oldBounds, newBounds });
 }
 
 async function makeCrops(page, before, after, result) {

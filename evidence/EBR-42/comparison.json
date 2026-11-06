@@ -1,6 +1,7 @@
 {
   "main": "5d9ba48f6bd9bfbc3974351b50d0ce89934380ff",
-  "candidateHead": "1b3dc061f1ac7eb1d65be3743023db15dfab91f4",
+  "signedHead": "9305bd41ed71f1d885646ac5d9b1bc145fb2594e",
+  "candidateHead": "2dfc6689889a4bbca679b050fefbf77c13075b4c",
   "sourceStatus": "",
   "candidateUrl": "http://100.88.150.21:5212",
   "browser": "153.0.8010.12",
@@ -13,30 +14,30 @@
   "time": "3.0 s in 100 ms steps except stairs (real click route)",
   "cases": {
     "morning-clear": {
-      "rawChanged": 832,
+      "rawChanged": 1200,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 832,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
+          132,
+          740,
           192
         ],
         "maximum": [
-          132,
-          111,
-          85
+          225,
+          199,
+          158
         ],
-        "maximumLuminance": 113.5874,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 72.61779999999999,
-        "meanLuminance": 41.52908076923086,
+        "maximumLuminance": 201.5674,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 201.5674,
+        "meanLuminance": 124.60902400000013,
         "voidMeanRgb": [
-          32.63636363636363,
-          33.31818181818182,
-          31.113636363636363
+          131.2,
+          119.64615384615385,
+          98.12307692307692
         ]
       },
       "fireflies": {
@@ -568,60 +569,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.14555591557414757
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.75
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": null,
       "renderCalls": {
-        "both": 250,
+        "both": 251,
         "noSmoke": 245,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "a95ec7ef42177655c40b5cb024c0e1116b0bf18544930cb5d6a9f1a2ae76a511",
-      "candidateSha256": "8278e767cd8f9395ab92f188c956d7bcdc4b0af51ebe8435448b2060c6e2ffc1",
+      "candidateSha256": "adb148c6a1f7ac9f5771f8dba15d3914c4e122346794c99f586cee509bad5464",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -632,30 +660,30 @@
       }
     },
     "morning-cloudy": {
-      "rawChanged": 832,
+      "rawChanged": 1200,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 832,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
+          132,
+          740,
           192
         ],
         "maximum": [
-          119,
-          102,
-          80
+          225,
+          204,
+          166
         ],
-        "maximumLuminance": 104.02579999999999,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 66.694,
-        "meanLuminance": 39.5260500000001,
+        "maximumLuminance": 205.72099999999998,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 205.72099999999998,
+        "meanLuminance": 124.7040293333327,
         "voidMeanRgb": [
-          30.886363636363637,
-          32.22727272727273,
-          30.75
+          128.87692307692308,
+          120.75384615384615,
+          102.2
         ]
       },
       "fireflies": {
@@ -1187,60 +1215,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.14555591557414757
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.75
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": null,
       "renderCalls": {
-        "both": 250,
+        "both": 251,
         "noSmoke": 245,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "e867e14c3737be1f572a3799ef4bd7e17aa923f8804f27958fe651e31cdb7a03",
-      "candidateSha256": "219a4f252243df01f8e4e85127e2486ec1b1bc0a7ac10287eabcbc39999a3b75",
+      "candidateSha256": "9dd1a7d62051eee6e0b7ed686b241cec2726fc745fe186cffd0940fdb972e428",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -1251,30 +1306,30 @@
       }
     },
     "morning-rain": {
-      "rawChanged": 560,
+      "rawChanged": 656,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 560,
+        "changed": 656,
         "bounds": [
           692,
           156,
-          720,
-          188
+          724,
+          192
         ],
         "maximum": [
-          113,
-          98,
-          84
+          177,
+          157,
+          131
         ],
-        "maximumLuminance": 96.5232,
-        "voidBackground": 384,
-        "voidMaximumLuminance": 43.992,
-        "meanLuminance": 44.82844000000003,
+        "maximumLuminance": 158.725,
+        "voidBackground": 432,
+        "voidMaximumLuminance": 155.52040000000002,
+        "meanLuminance": 112.74084390243901,
         "voidMeanRgb": [
-          28.5,
-          30.041666666666668,
-          28.875
+          115.5925925925926,
+          106.14814814814815,
+          87.88888888888889
         ]
       },
       "fireflies": {
@@ -1806,43 +1861,59 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.29636363636363655,
-            "opacity": 0.2399999999999998
+            "size": 0.2910319355283672,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3727272727272729,
-            "opacity": 0.1499999999999998
+            "size": 0.34315048387794933,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.2200000000000002,
-            "opacity": 0.3299999999999998
+            "size": 0.4184338683520712,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
             ],
-            "size": 0.44909090909090926,
-            "opacity": 0.059999999999999803
+            "size": 0.5111384004724512,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 672,
+        "changedBounds": [
+          692,
+          156,
+          724,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": null,
       "renderCalls": {
         "both": 250,
         "noSmoke": 246,
@@ -1850,7 +1921,7 @@
         "noEffects": 246
       },
       "baselineSha256": "cb23a9bfe24d398ec3a2c53e80cf6a944721156e56fa4547c2ed17d6bf891d2c",
-      "candidateSha256": "53c6cafef298599cc9f73d46df74c9685bec67ac8a2aeacb51709bcf5fffb26f",
+      "candidateSha256": "37314e9d610cbd7f37daa9e317dc3a7fdaaed01c236979c017e2c6fe0b9c92ac",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -1861,30 +1932,30 @@
       }
     },
     "daytime-clear": {
-      "rawChanged": 832,
+      "rawChanged": 1200,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 832,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
+          132,
+          740,
           192
         ],
         "maximum": [
-          131,
-          119,
-          94
+          219,
+          214,
+          178
         ],
-        "maximumLuminance": 119.03099999999999,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 69.7714,
-        "meanLuminance": 41.728076923077005,
+        "maximumLuminance": 212.4638,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 212.4638,
+        "meanLuminance": 125.96809866666695,
         "voidMeanRgb": [
-          30.954545454545453,
-          33.40909090909091,
-          31.65909090909091
+          121.21538461538462,
+          123.03076923076924,
+          106.06153846153846
         ]
       },
       "fireflies": {
@@ -2416,60 +2487,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.14555591557414757
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.75
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
-        "both": 250,
+        "both": 251,
         "noSmoke": 245,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "90612eec2b98200952a81ca2d529d0c5fb92916328ba6938d6b31316b07b9589",
-      "candidateSha256": "28eb1303a9f24865fe15e56d6199014ff966051831f96a26c26abde0f24e60ca",
+      "candidateSha256": "89db1f60fee04b55d7163be0f70fa477fd149f88eaa06d13f066708100e42af3",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -2480,30 +2578,30 @@
       }
     },
     "daytime-cloudy": {
-      "rawChanged": 832,
+      "rawChanged": 1200,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 832,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
+          132,
+          740,
           192
         ],
         "maximum": [
-          114,
-          105,
-          85
+          212,
+          214,
+          185
         ],
-        "maximumLuminance": 105.4694,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 62.98799999999999,
-        "meanLuminance": 38.98446538461535,
+        "maximumLuminance": 211.481,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 211.481,
+        "meanLuminance": 124.7147253333337,
         "voidMeanRgb": [
-          28.931818181818183,
-          31.977272727272727,
-          31.022727272727273
+          117.93846153846154,
+          122.83076923076923,
+          109.66153846153846
         ]
       },
       "fireflies": {
@@ -3035,60 +3133,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.14555591557414757
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.75
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
-        "both": 250,
+        "both": 251,
         "noSmoke": 245,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "0893308686541e26527a3922819c70717e83101239bcdc92b557ca09fb4f328a",
-      "candidateSha256": "5285439736a397dccd3fbd1f141aaa0f2ca0e5c88ebfb9acb6e752ff9a744d7a",
+      "candidateSha256": "27ac278a38006711eac031982e21cee0741e9710094688ff18af5bfa3ee22264",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -3099,30 +3224,30 @@
       }
     },
     "daytime-rain": {
-      "rawChanged": 576,
+      "rawChanged": 656,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 576,
+        "changed": 656,
         "bounds": [
           692,
           156,
-          720,
+          724,
           192
         ],
         "maximum": [
-          107,
-          105,
-          84
+          172,
+          169,
+          142
         ],
-        "maximumLuminance": 98.54159999999999,
-        "voidBackground": 384,
-        "voidMaximumLuminance": 43.498599999999996,
-        "meanLuminance": 45.84380000000001,
+        "maximumLuminance": 167.32739999999998,
+        "voidBackground": 432,
+        "voidMaximumLuminance": 163.18579999999997,
+        "meanLuminance": 114.42274634146303,
         "voidMeanRgb": [
-          27.125,
-          29.833333333333332,
-          29.208333333333332
+          108.85185185185185,
+          110.44444444444444,
+          96.14814814814815
         ]
       },
       "fireflies": {
@@ -3654,43 +3779,59 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.29636363636363655,
-            "opacity": 0.2399999999999998
+            "size": 0.2910319355283672,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3727272727272729,
-            "opacity": 0.1499999999999998
+            "size": 0.34315048387794933,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.2200000000000002,
-            "opacity": 0.3299999999999998
+            "size": 0.4184338683520712,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
             ],
-            "size": 0.44909090909090926,
-            "opacity": 0.059999999999999803
+            "size": 0.5111384004724512,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 672,
+        "changedBounds": [
+          692,
+          156,
+          724,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
         "both": 250,
         "noSmoke": 246,
@@ -3698,7 +3839,7 @@
         "noEffects": 246
       },
       "baselineSha256": "7576ba917954f8cfb1944bc242aae7d23f2660a2035db9bd89cbd3feba07adfc",
-      "candidateSha256": "014a873a4dd378e90cd49a6549dbf019de2aa90f0d8f4c0d7ee60702e7d3a634",
+      "candidateSha256": "2e1ef20240376507cabfdeec539675a09d40e20358e3f2a7bb2534e2930e9264",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -3709,30 +3850,30 @@
       }
     },
     "sunset-clear": {
-      "rawChanged": 832,
+      "rawChanged": 1200,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 832,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
+          132,
+          740,
           192
         ],
         "maximum": [
-          109,
-          87,
-          66
+          220,
+          193,
+          154
         ],
-        "maximumLuminance": 90.161,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 58.9066,
-        "meanLuminance": 36.126092307692275,
+        "maximumLuminance": 195.92439999999996,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 195.92439999999996,
+        "meanLuminance": 113.73977066666706,
         "voidMeanRgb": [
-          29.431818181818183,
-          29.863636363636363,
-          28.386363636363637
+          121.81538461538462,
+          109.38461538461539,
+          89.27692307692308
         ]
       },
       "fireflies": {
@@ -4264,60 +4405,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.14555591557414757
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.75
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
-        "both": 250,
+        "both": 251,
         "noSmoke": 245,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "aba99aa05c9cbab359c5cad5b28bc38481ad6416729f611e8dce241e1b089ce6",
-      "candidateSha256": "60a4f5f21810ae469ff547fc37daf925fd66ac6c64439654012413311f0d607f",
+      "candidateSha256": "7a911714340cfbb077d2761f42fa886d905fbdef0a89ebc23342e630fcb3b7ab",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -4328,30 +4496,30 @@
       }
     },
     "sunset-cloudy": {
-      "rawChanged": 816,
+      "rawChanged": 1200,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 816,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
-          188
+          132,
+          740,
+          192
         ],
         "maximum": [
-          98,
-          81,
-          61
+          218,
+          195,
+          160
         ],
-        "maximumLuminance": 82.455,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 54.7662,
-        "meanLuminance": 34.04852941176487,
+        "maximumLuminance": 197.3628,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 197.3628,
+        "meanLuminance": 112.08083733333366,
         "voidMeanRgb": [
-          28.113636363636363,
-          29.113636363636363,
-          27.931818181818183
+          117.50769230769231,
+          108.4,
+          90.9076923076923
         ]
       },
       "fireflies": {
@@ -4883,60 +5051,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.14555591557414757
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.75
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
-        "both": 250,
+        "both": 251,
         "noSmoke": 245,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "03ccf9bc2347fbacb487139c1e8e51e321ce4a1df3cef38dd592a263c76f48a9",
-      "candidateSha256": "fecb154d9ac1c59770453f273d5b098436ab9b8a0e89454ce55eb9e14352730b",
+      "candidateSha256": "6edbf8560b2e37cf9fff82d29b1ae0e6f10abc42f49e7c23a4d2a8d785037e50",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -4947,30 +5142,30 @@
       }
     },
     "sunset-rain": {
-      "rawChanged": 560,
+      "rawChanged": 656,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 560,
+        "changed": 656,
         "bounds": [
           692,
           156,
-          720,
-          188
+          724,
+          192
         ],
         "maximum": [
-          94,
-          79,
-          81
+          168,
+          148,
+          120
         ],
-        "maximumLuminance": 78.0814,
-        "voidBackground": 384,
-        "voidMaximumLuminance": 38.1364,
-        "meanLuminance": 39.87754285714279,
+        "maximumLuminance": 150.23039999999997,
+        "voidBackground": 432,
+        "voidMaximumLuminance": 150.23039999999997,
+        "meanLuminance": 102.33696585365809,
         "voidMeanRgb": [
-          26.083333333333332,
-          27.458333333333332,
-          26.666666666666668
+          108.03703703703704,
+          97.70370370370371,
+          80.74074074074075
         ]
       },
       "fireflies": {
@@ -5502,43 +5697,59 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.29636363636363655,
-            "opacity": 0.2399999999999998
+            "size": 0.2910319355283672,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3727272727272729,
-            "opacity": 0.1499999999999998
+            "size": 0.34315048387794933,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.2200000000000002,
-            "opacity": 0.3299999999999998
+            "size": 0.4184338683520712,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
             ],
-            "size": 0.44909090909090926,
-            "opacity": 0.059999999999999803
+            "size": 0.5111384004724512,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 672,
+        "changedBounds": [
+          692,
+          156,
+          724,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
         "both": 250,
         "noSmoke": 246,
@@ -5546,7 +5757,7 @@
         "noEffects": 246
       },
       "baselineSha256": "c8a01872e7084f9ad567103390d0ec41041c20809975670996df8a2d22824e2d",
-      "candidateSha256": "f0a8b5d984f9272adae4fd4865c13364cc9ffef339364233fc7cf2f657a80c7c",
+      "candidateSha256": "9fd356cbd32de52f38e5d4080d9f4402ad32974fbd31289493bae599999a5f86",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -5557,30 +5768,30 @@
       }
     },
     "night-clear": {
-      "rawChanged": 2320,
+      "rawChanged": 2704,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 816,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
-          188
+          132,
+          740,
+          192
         ],
         "maximum": [
-          57,
-          55,
-          55
+          116,
+          117,
+          116
         ],
-        "maximumLuminance": 55.425200000000004,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 39.574799999999996,
-        "meanLuminance": 27.782266666666725,
+        "maximumLuminance": 116.71520000000001,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 116.71520000000001,
+        "meanLuminance": 65.88991199999984,
         "voidMeanRgb": [
-          22.318181818181817,
-          25.636363636363637,
-          27.113636363636363
+          61.6,
+          64.56923076923077,
+          65.52307692307693
         ]
       },
       "fireflies": {
@@ -6117,60 +6328,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.08733354934448855
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.44999999999999996
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
-        "both": 251,
+        "both": 252,
         "noSmoke": 246,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "5dfef0b26aaf3880a897bd2e401ab5824d0d9194bf6df482628f2bad38727935",
-      "candidateSha256": "ad81105495ca479aa7848943b151c07c2de2a0b5d1d7e9ac73aae713a80b8cca",
+      "candidateSha256": "fd7a9530dc80ec4f1029c482c7e7e64b250980044642831a555a08bc3fcdda9b",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -6181,30 +6419,30 @@
       }
     },
     "night-cloudy": {
-      "rawChanged": 1904,
+      "rawChanged": 2288,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 816,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          732,
-          188
+          132,
+          740,
+          192
         ],
         "maximum": [
-          49,
-          49,
-          49
+          107,
+          110,
+          112
         ],
-        "maximumLuminance": 48.99999999999999,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 36.362199999999994,
-        "meanLuminance": 26.263156862745117,
+        "maximumLuminance": 109.50659999999999,
+        "voidBackground": 1040,
+        "voidMaximumLuminance": 109.50659999999999,
+        "meanLuminance": 61.44930933333376,
         "voidMeanRgb": [
-          21.295454545454547,
-          24.636363636363637,
-          26.386363636363637
+          56.353846153846156,
+          60.55384615384615,
+          62.87692307692308
         ]
       },
       "fireflies": {
@@ -6741,60 +6979,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.08733354934448855
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.44999999999999996
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1232,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
-        "both": 251,
+        "both": 252,
         "noSmoke": 246,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "1537dac957a0170568b70784ec71890741e6df92759dd153fb6de0e773229d58",
-      "candidateSha256": "91f24c3d066e41a9261d19fdaf44e2e92f80fce1f1dfcb1df8bb141f4f926aef",
+      "candidateSha256": "428bdca09676b36d4fed86a55b421eb5239e10e5a0e8327e08f27377d7c13631",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -6805,30 +7070,30 @@
       }
     },
     "night-rain": {
-      "rawChanged": 1296,
+      "rawChanged": 1392,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 560,
+        "changed": 656,
         "bounds": [
           692,
           156,
-          720,
-          188
+          724,
+          192
         ],
         "maximum": [
-          65,
-          72,
-          77
+          119,
+          120,
+          119
         ],
-        "maximumLuminance": 70.8728,
-        "voidBackground": 384,
-        "voidMaximumLuminance": 28.647000000000002,
-        "meanLuminance": 30.748257142857145,
+        "maximumLuminance": 119.71520000000001,
+        "voidBackground": 432,
+        "voidMaximumLuminance": 119.71520000000001,
+        "meanLuminance": 77.66285853658499,
         "voidMeanRgb": [
-          20.541666666666668,
-          23.916666666666668,
-          25.291666666666668
+          74.66666666666667,
+          77.14814814814815,
+          77.44444444444444
         ]
       },
       "fireflies": {
@@ -7365,43 +7630,59 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.29636363636363655,
-            "opacity": 0.2399999999999998
+            "size": 0.2910319355283672,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3727272727272729,
-            "opacity": 0.1499999999999998
+            "size": 0.34315048387794933,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.2200000000000002,
-            "opacity": 0.3299999999999998
+            "size": 0.4184338683520712,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
             ],
-            "size": 0.44909090909090926,
-            "opacity": 0.059999999999999803
+            "size": 0.5111384004724512,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 672,
+        "changedBounds": [
+          692,
+          156,
+          724,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": 0,
       "renderCalls": {
         "both": 251,
         "noSmoke": 247,
@@ -7409,7 +7690,7 @@
         "noEffects": 246
       },
       "baselineSha256": "f73919627ba59971a8c5ca41c350291431a133855ae172635ab12b7c2aa4b2f4",
-      "candidateSha256": "241c0cdc8fe8fbe36626a402689dd6c5e7bf8105b3f88969bd6229d60a017468",
+      "candidateSha256": "7b7e028d7575e066dee49807c4de1a2efd759118040dbd110c1e610946c3da53",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -7420,30 +7701,30 @@
       }
     },
     "walk-night-clear": {
-      "rawChanged": 2336,
+      "rawChanged": 2672,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 832,
+        "changed": 1168,
         "bounds": [
           696,
-          84,
-          736,
+          80,
+          744,
           136
         ],
         "maximum": [
-          55,
-          53,
-          54
+          113,
+          114,
+          113
         ],
-        "maximumLuminance": 53.497400000000006,
-        "voidBackground": 704,
-        "voidMaximumLuminance": 39.7874,
-        "meanLuminance": 27.852530769230835,
+        "maximumLuminance": 113.71520000000001,
+        "voidBackground": 947,
+        "voidMaximumLuminance": 113.71520000000001,
+        "meanLuminance": 64.6576657534246,
         "voidMeanRgb": [
-          22,
-          25.272727272727273,
-          26.90909090909091
+          63.26187961985217,
+          66.1129883843717,
+          67.11615628299894
         ]
       },
       "fireflies": {
@@ -7980,60 +8261,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.08733354934448855
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.44999999999999996
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1200,
+        "changedBounds": [
+          696,
+          80,
+          744,
+          136
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": null,
       "renderCalls": {
-        "both": 251,
+        "both": 252,
         "noSmoke": 246,
-        "noFireflies": 250,
+        "noFireflies": 251,
         "noEffects": 245
       },
       "baselineSha256": "9991ba7f8bddbcb733fc2589da878b7e2ee2ebd9f98350cfa4e13e71af347cad",
-      "candidateSha256": "f9c3a32fb61ea5b4566955165101db4662c1128da8dae3a14458dcbcc43a8de4",
+      "candidateSha256": "695d754c614bddaca3d48197a3927579f0a4dfc20a9bbcdceadded2c2a7c47dc",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -8044,30 +8352,30 @@
       }
     },
     "placement-night-clear": {
-      "rawChanged": 2131,
+      "rawChanged": 2704,
       "hiddenChanged": 0,
       "unmasked": 0,
       "smoke": {
-        "changed": 627,
+        "changed": 1200,
         "bounds": [
           692,
-          140,
-          728,
-          188
+          132,
+          740,
+          192
         ],
         "maximum": [
-          135,
-          141,
-          129
+          137,
+          143,
+          130
         ],
-        "maximumLuminance": 138.858,
-        "voidBackground": 8,
-        "voidMaximumLuminance": 37.0722,
-        "meanLuminance": 45.76184114832532,
+        "maximumLuminance": 140.7858,
+        "voidBackground": 12,
+        "voidMaximumLuminance": 94.57479999999998,
+        "meanLuminance": 71.17529016666624,
         "voidMeanRgb": [
-          31,
-          32.5,
-          33
+          74.66666666666667,
+          76.66666666666667,
+          76.33333333333333
         ]
       },
       "fireflies": {
@@ -8612,60 +8920,87 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
               -1.1947178306871207,
-              7.500000000000001,
+              7.3500000000000005,
               -4.355102061240828
             ],
-            "size": 0.4825000000000001,
-            "opacity": 0.03437499999999982
+            "size": 0.5614685364957106,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.8999999999999997,
-              6.000000000000001,
-              -4.1
+              -1.0654160996464261,
+              7.597500000000001,
+              -4.401870772468314
             ],
-            "size": 0.22000000000000008,
-            "opacity": 0.5499999999999998
+            "size": 0.6423184939940363,
+            "opacity": 0.08733354934448855
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.7589435661374238,
-              6.300000000000001,
-              -4.151020412248165
+              -1.8412264858905931,
+              6.112500000000001,
+              -4.121258505103402
             ],
-            "size": 0.27250000000000013,
-            "opacity": 0.4468749999999998
+            "size": 0.2867710806380921,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.617887132274848,
-              6.6000000000000005,
-              -4.202040824496331
+              -1.7119247548498986,
+              6.36,
+              -4.168027216330888
             ],
-            "size": 0.3250000000000001,
-            "opacity": 0.3437499999999998
+            "size": 0.3187599272650405,
+            "opacity": 0.44999999999999996
           },
           {
+            "name": "chimney-smoke-5",
             "position": [
-              -1.4768306984122723,
-              6.9,
-              -4.253061236744497
+              -1.582623023809204,
+              6.607500000000001,
+              -4.214795927558373
             ],
-            "size": 0.3775000000000001,
-            "opacity": 0.24062499999999978
+            "size": 0.36496667545279166,
+            "opacity": 0.44999999999999996
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.4533212927685097,
+              6.855,
+              -4.261564638785858
+            ],
+            "size": 0.42186601654208783,
+            "opacity": 0.44999999999999996
           }
         ]
       },
+      "retune": {
+        "changedPixels": 1212,
+        "changedBounds": [
+          692,
+          132,
+          740,
+          192
+        ],
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": null,
       "renderCalls": {
-        "both": 256,
+        "both": 257,
         "noSmoke": 251,
-        "noFireflies": 255,
+        "noFireflies": 256,
         "noEffects": 250
       },
       "baselineSha256": "caa8aa4a77cd917a8eea208094f3235ae34b47df910bc32cdcb9f1b5a9174356",
-      "candidateSha256": "23d1eeb9e4a193f55cfaf56b7189c558bb0a05a861f59db4b8a65d5aae093177",
+      "candidateSha256": "098412e3ef619bae8c1a5797c4bfd3de5f0089579d1654d2ba86fa506272b044",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -9222,43 +9557,74 @@
         ],
         "smokePuffs": [
           {
+            "name": "chimney-smoke-1",
             "position": [
-              -1.7119247548498988,
-              6.4,
-              -4.168027216330887
+              -1.7706982689593054,
+              6.2475,
+              -4.146768711227485
             ],
-            "size": 0.29000000000000004,
-            "opacity": 0.4124999999999999
+            "size": 0.30209489831305714,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-2",
             "position": [
-              -1.570868320987323,
-              6.7,
-              -4.219047628579053
+              -1.6413965379186108,
+              6.495,
+              -4.19353742245497
             ],
-            "size": 0.3425,
-            "opacity": 0.30937499999999996
+            "size": 0.34249380970715965,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-3",
             "position": [
-              -1.4298118871247472,
-              7,
-              -4.270068040827219
+              -1.5120948068779163,
+              6.7425,
+              -4.240306133682456
             ],
-            "size": 0.395,
-            "opacity": 0.20624999999999996
+            "size": 0.39480845939884857,
+            "opacity": 0.75
           },
           {
+            "name": "chimney-smoke-4",
             "position": [
-              -1.2887554532621714,
-              7.300000000000001,
-              -4.321088453075385
+              -1.382793075837222,
+              6.99,
+              -4.287074844909941
             ],
-            "size": 0.4475,
-            "opacity": 0.10312499999999995
+            "size": 0.45675918650445707,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-5",
+            "position": [
+              -1.2534913447965277,
+              7.2375,
+              -4.333843556137426
+            ],
+            "size": 0.5270284729197059,
+            "opacity": 0.75
+          },
+          {
+            "name": "chimney-smoke-6",
+            "position": [
+              -1.1241896137558332,
+              7.485,
+              -4.380612267364911
+            ],
+            "size": 0.6047273607140247,
+            "opacity": 0.7499774198829221
           }
         ]
       },
+      "retune": {
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0
+      },
+      "puffBrightMaskOutside": null,
       "renderCalls": {
         "both": 240,
         "noSmoke": 240,
@@ -9277,12 +9643,56 @@
       }
     }
   },
+  "retuneCrops": {
+    "daytime-clear": [
+      644,
+      84,
+      144,
+      156
+    ],
+    "daytime-rain": [
+      644,
+      108,
+      128,
+      132
+    ],
+    "sunset-clear": [
+      644,
+      84,
+      144,
+      156
+    ],
+    "sunset-rain": [
+      644,
+      108,
+      128,
+      132
+    ],
+    "night-clear": [
+      644,
+      84,
+      144,
+      156
+    ],
+    "night-cloudy": [
+      644,
+      84,
+      144,
+      156
+    ],
+    "night-rain": [
+      644,
+      108,
+      128,
+      132
+    ]
+  },
   "crops": {
     "chimney": [
       644,
-      92,
-      136,
-      144
+      84,
+      144,
+      156
     ],
     "fireflyCluster": [
       401,
@@ -9294,7 +9704,7 @@
     "enlargement": 3
   },
   "nightRainReplay": {
-    "sha256": "241c0cdc8fe8fbe36626a402689dd6c5e7bf8105b3f88969bd6229d60a017468",
+    "sha256": "7b7e028d7575e066dee49807c4de1a2efd759118040dbd110c1e610946c3da53",
     "matches": true
   }
 }
