@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
 const evidenceDir = process.env.EBR46_EVIDENCE_DIR;
+const slideProofPath = process.env.EBR46_SLIDE_PROOF;
+const slideResults = [];
 let devServer;
 let browser;
 let url = process.env.EBR46_URL;
@@ -27,6 +29,11 @@ before(async () => {
 
 after(async () => {
   if (evidenceDir && proof) await writeFile(join(evidenceDir, 'browser-proof.json'), `${JSON.stringify(proof, null, 2)}\n`);
+  if (slideProofPath && slideResults.length === 3) {
+    await mkdir(dirname(slideProofPath), { recursive: true });
+    await writeFile(slideProofPath, `${JSON.stringify({ browser: `Chromium ${browser.version()}`, url,
+      viewport: '1280x720', scenarios: slideResults }, null, 2)}\n`);
+  }
   await browser?.close();
   await devServer?.close();
 });
@@ -61,6 +68,15 @@ async function holdUntil(page, keys, predicate, argument, dwell = 0) {
   try {
     await page.waitForFunction(predicate, argument, { timeout: 20000 });
     if (dwell) await page.waitForTimeout(dwell);
+  } finally {
+    for (const key of keys) await page.keyboard.up(key);
+  }
+}
+
+async function holdFor(page, keys, milliseconds) {
+  for (const key of keys) await page.keyboard.down(key);
+  try {
+    await page.waitForTimeout(milliseconds);
   } finally {
     for (const key of keys) await page.keyboard.up(key);
   }
@@ -270,3 +286,89 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
     errors,
   };
 });
+
+const padSideScenarios = [
+  { name: 'A: S+A then W+A', pushes: [['s', 'a']], climbMs: 4000, sideZ: 1.15 },
+  { name: 'B: W+D then W+A', pushes: [['w', 'd']], climbMs: 6000, sideZ: 0.35 },
+  { name: 'S+D, S+A, W+D, W+A', pushes: [['s', 'd'], ['s', 'a'], ['w', 'd']], climbMs: 6000, sideZ: 0.35 },
+];
+
+for (const scenario of padSideScenarios) {
+  test(`pad-side QA ${scenario.name} reaches the path without leaving the visible ground`, { timeout: 60000 }, async (t) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    t.after(() => context.close());
+    const page = await context.newPage();
+    const errors = [];
+    collectErrors(page, errors);
+    await page.route('**/src/main.ts*', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
+    });
+    await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => Boolean(window.__ebr46Test));
+    await page.locator('[data-growing-toggle]').click();
+    const boxes = await page.evaluate(() => {
+      const { stairs } = window.__ebr46Test;
+      return [...stairs.treads, stairs.footPad].map((mesh) => {
+        const p = mesh.getWorldPosition(mesh.position.clone());
+        const { width, height, depth } = mesh.geometry.parameters;
+        return {
+          minX: p.x - width / 2, maxX: p.x + width / 2,
+          minY: p.y - height / 2, maxY: p.y + height / 2,
+          minZ: p.z - depth / 2, maxZ: p.z + depth / 2,
+        };
+      });
+    });
+    await page.evaluate(() => {
+      window.__ebr46Stage = 'approach';
+      window.__ebr46Frames = [];
+      function record() {
+        const { character } = window.__ebr46Test;
+        window.__ebr46Frames.push({ stage: window.__ebr46Stage, x: character.position.x, y: character.position.y, z: character.position.z });
+        requestAnimationFrame(record);
+      }
+      requestAnimationFrame(record);
+    });
+
+    // Reproduce QA with real pointer and key input; do not recenter or teleport.
+    assert.equal(await page.evaluate(() => document.elementFromPoint(947, 646)?.id), 'scene');
+    await page.mouse.click(947, 646);
+    await page.waitForFunction(() => {
+      const { character, stairs } = window.__ebr46Test;
+      return Math.hypot(character.position.x - stairs.footPad.position.x, character.position.z - 0.75) < 0.03;
+    }, null, { timeout: 20000 });
+    for (const keys of scenario.pushes) await holdFor(page, keys, 2200);
+    const afterPush = await page.evaluate(() => window.__ebr46Test.character.position.toArray());
+    assert.ok(Math.abs(afterPush[2] - scenario.sideZ) < 0.02, `${scenario.name}: did not reach pad side`);
+    await page.evaluate(() => { window.__ebr46Stage = 'climb'; });
+    await holdFor(page, ['w', 'a'], scenario.climbMs);
+    const afterClimb = await page.evaluate(() => window.__ebr46Test.character.position.toArray());
+    const frames = await page.evaluate(() => window.__ebr46Frames);
+    const pathCrossing = await page.evaluate(() => {
+      const { scene, character } = window.__ebr46Test;
+      const path = scene.getObjectByName('farm-path-surface');
+      path.updateWorldMatrix(true, false);
+      const positions = path.geometry.getAttribute('position');
+      const indices = path.geometry.getIndex();
+      const vertex = (index) => path.localToWorld(character.position.clone().fromBufferAttribute(positions, index));
+      const triangles = [];
+      for (let i = 0; i < indices.count; i += 3) {
+        triangles.push([vertex(indices.getX(i)), vertex(indices.getX(i + 1)), vertex(indices.getX(i + 2))]);
+      }
+      const sign = (a, b, point) => (b.x - a.x) * (point.z - a.z) - (b.z - a.z) * (point.x - a.x);
+      return window.__ebr46Frames.find((point) => point.stage === 'climb' && Math.abs(point.y - 2.4) < 1e-6 &&
+        triangles.some(([a, b, c]) => {
+          if (Math.abs(sign(a, b, c)) < 1e-10) return false;
+          const sides = [sign(a, b, point), sign(b, c, point), sign(c, a, point)];
+          return !sides.some((side) => side < -1e-7) || !sides.some((side) => side > 1e-7);
+        }));
+    });
+    for (const frame of frames) assertNoClipping(frame, boxes);
+    assert.ok(afterClimb[0] < 7.6 && Math.abs(afterClimb[1] - 2.4) < 1e-6,
+      `${scenario.name}: stuck at ${afterClimb}`);
+    assert.ok(pathCrossing, `${scenario.name}: did not reach the dirt path`);
+    assert.deepEqual(errors, []);
+    slideResults.push({ scenario: scenario.name, pushesMs: 2200, climbMs: scenario.climbMs,
+      afterPush, afterClimb, pathCrossing, frames: frames.length, clippedOrUnsupported: 0, errors });
+  });
+}

@@ -9,6 +9,8 @@ export interface FarmBounds {
   maxZ: number;
 }
 
+export type FarmBoundarySlide = (x: number, z: number, radius: number, distance: number) => { x: number; z: number } | undefined;
+
 function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
   return obstacles.some((obstacle) => {
     if (obstacle.kind === 'circle') {
@@ -34,6 +36,7 @@ export function moveWithFarmCollisions(
   obstacles: readonly FarmObstacle[],
   bounds?: FarmBounds,
   supports?: (x: number, z: number, radius: number) => boolean,
+  slideBoundary?: FarmBoundarySlide,
 ) {
   const clampX = (value: number) => bounds
     ? Math.max(bounds.minX + radius, Math.min(value, bounds.maxX - radius)) : value;
@@ -74,10 +77,24 @@ export function moveWithFarmCollisions(
       x = nextX;
       z = nextZ;
     } else {
+      const startX = x;
+      const startZ = z;
       if (!blocked(nextX, z)) x = nextX;
       else x = approachEdge(x, nextX, (value) => !blocked(value, z));
       if (!blocked(x, nextZ)) z = nextZ;
       else z = approachEdge(z, nextZ, (value) => !blocked(x, value));
+
+      // An inward step can be pinned at a concave walkable-surface corner even
+      // when its screen-diagonal input has no lateral world-space component.
+      // Use only the unspent movement to slide toward the adjoining surface.
+      if (slideBoundary && supports && nextX < x && !supports(nextX, z, radius)) {
+        const remaining = Math.max(0, Math.hypot(nextX - startX, nextZ - startZ) - Math.hypot(x - startX, z - startZ));
+        const slide = slideBoundary(x, z, radius, remaining);
+        if (slide && !blocked(slide.x, slide.z)) {
+          x = slide.x;
+          z = slide.z;
+        }
+      }
     }
   }
 

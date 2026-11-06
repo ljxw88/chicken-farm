@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { FarmBounds } from './farmCollisions';
+import type { FarmBoundarySlide, FarmBounds } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
 
 // The path meets the +X rim at z ~= 0.75. These dimensions describe both the
@@ -20,6 +20,7 @@ export interface StoneStairs {
   footPad: THREE.Mesh;
   bounds: FarmBounds;
   supports(x: number, z: number, radius: number): boolean;
+  slidePadCorner: FarmBoundarySlide;
   floorHeight(x: number): number;
   characterHeight(x: number, radius: number): number;
   target(x: number, z: number, radius: number): { x: number; z: number };
@@ -104,6 +105,14 @@ export function createStoneStairs(island: THREE.Group, size: number, top: number
     return z >= minZ + cornerInset && z <= maxZ - cornerInset;
   }
 
+  const slidePadCorner: FarmBoundarySlide = (x, z, radius, distance) => {
+    if (x < padStart || x > padStart + radius || distance <= 0) return undefined;
+    const openingZ = THREE.MathUtils.clamp(z, minZ + radius, maxZ - radius);
+    const offset = openingZ - z;
+    if (offset === 0) return undefined;
+    return { x, z: z + Math.sign(offset) * Math.min(Math.abs(offset), distance) };
+  };
+
   function treadIndex(x: number) {
     return Math.min(TREAD_COUNT - 1, Math.max(0, Math.floor((x - edge) / TREAD_DEPTH)));
   }
@@ -146,5 +155,5 @@ export function createStoneStairs(island: THREE.Group, size: number, top: number
     };
   }
 
-  return { treads, footPad, bounds, supports, floorHeight, characterHeight, target };
+  return { treads, footPad, bounds, supports, slidePadCorner, floorHeight, characterHeight, target };
 }

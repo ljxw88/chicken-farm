@@ -1,8 +1,8 @@
-EBR-46 REWORK — warm stone and foot pad
+EBR-46 QA FIX — slide from the foot pad back to the stairs
 
 Branch: feat/ebr46-stairs
 Tip SHA: run `git rev-parse HEAD`
-Base reviewed tip: 978059ca14e316bad95d92516bfcb89e073d2c0c
+QA-failed base tip: b3bd38eac378312431f1849abf131b035d38fa96
 No push or PR.
 
 Open and walk
@@ -12,10 +12,21 @@ Open and walk
   Restart with `npm run dev -- --host 100.88.150.21 --port 5179 --strictPort`.
 - At 1280x720, click the foot pad beyond the path and five stairs. From spawn
   its center is approximately (947, 646). Or align with the run and hold S+D.
-  Keep S+D held to test the outer stop; S+A and W+D test the pad sides.
-  W+A climbs back to the path. Collapse Growing to uncover more of the scene.
+  Collapse Growing, wait until the character reaches the pad, then hold S+A
+  for 2.2s and W+A for 4s: the character slides around the corner and climbs.
+  Repeat with W+D for 2.2s then W+A for 6s, or S+D, S+A, W+D then W+A.
 
-What changed
+Root cause and fix
+- W+A is screen-diagonal but moves along world -X. After a side push the
+  character's circular footprint hit the concave pad-to-tread junction. The
+  axis-only collision fallback had no world-Z input to slide around that corner.
+  The previous browser check recentered on the pad before climbing, masking it.
+- At that junction only, blocked inward movement uses its unspent distance to
+  slide toward the narrow stair opening. The existing support and obstacle
+  checks still constrain each substep; pad edges and the void remain solid.
+  The fix does not alter tread geometry, pad size, colors, lighting or camera.
+
+Unchanged Look Dev rework
 - Source material samples: barn wall rgb(212,165,116), dirt path
   rgb(166,124,82). The stone colors are derived from these existing colors.
 - Before source tread/riser albedo: rgb(195,180,155) / rgb(159,142,120).
@@ -36,20 +47,26 @@ Evidence
 - evidence/ebr46/03-mid-climb.png and 04-returned-to-path.png — ascent/return.
 - evidence/ebr46/05-night-overview.png — unmodified night view.
 - evidence/ebr46/LOG.txt and evidence/ebr46/browser-proof.json — source and
-  rendered colors, pad dimensions, real input and sampled collision evidence.
-  The movement page exposes scene state for measurement only; no teleport.
+  rendered colors, pad dimensions and the earlier rework capture.
+- evidence/ebr46/qa-slide-proof.json — real mouse/keyboard Repro A, Repro B
+  and the long sequence, with path-crossing positions and per-frame checks.
+  Scene state is exposed only for measurement; there is no teleport/recenter.
+- The five refreshed PNGs were not altered. New in-memory 1280x720 daytime
+  and night captures were byte-identical to 01 and 05, respectively.
 
 Checks run
 - `npm run build`: passed, including TypeScript `tsc`. Vite retained its
   existing >500 kB bundle-size advisory.
-- `npm test`: 84 passed, 0 failed.
-- `node --test tests/stairs.test.mjs tests/walk.test.mjs`: 20 passed, 0 failed.
-- `EBR46_URL=http://100.88.150.21:5179 EBR46_EVIDENCE_DIR=evidence/ebr46 npm run test:browser`:
-  17 passed, 0 failed; includes the stair browser test and refreshed frames.
-- Chromium 153 / WebGL2 / SwiftShader at 1280x720: 4-CSS-px pixel pass,
-  320x180 world canvas; 385 sampled movement frames with no capsule/stone
-  intersections or sampled footprint over the void. No application errors
-  observed (favicon errors excluded); all stone materials have zero emissive.
+- `npm test`: 85 passed, 0 failed.
+- `node --test tests/stairs.test.mjs tests/walk.test.mjs`: 21 passed, 0 failed.
+- `EBR46_URL=http://100.88.150.21:5179 EBR46_SLIDE_PROOF=evidence/ebr46/qa-slide-proof.json npm run test:browser`:
+  20 passed, 0 failed. It does not overwrite the existing evidence frames.
+- Before the fix, `EBR46_URL=http://100.88.150.21:5179 node --test --test-name-pattern='pad-side QA' tests/browser/stairs.browser.mjs`
+  reproduced all three failures at the pad junction. After the fix, all three
+  passed with the same real-input holds and each crossed the dirt path.
+- Chromium 153 / WebGL2 / SwiftShader at 1280x720: 1,472 sampled frames across
+  the three sequences, with no capsule/stone intersections or sampled
+  footprint over the void. No application errors (favicon errors excluded).
 - `git diff --check`: passed. Tailscale-bound server returned HTTP 200 locally.
 
 Not verified: independent gameplay QA or Look Dev sign-off, remote access from

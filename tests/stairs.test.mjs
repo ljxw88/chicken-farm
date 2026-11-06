@@ -187,6 +187,38 @@ test('WASD descends to the pad and climbs without clipping or an off-edge escape
   near(character.position.y, GROUND_HEIGHT);
 });
 
+test('climbing after pushing either pad side, or both sides in sequence, does not pin the character', (t) => {
+  const { boxes, padBox, character, controls, key } = fixture(t);
+  const cases = [
+    { name: 'S+A', pushes: [['KeyS', 'KeyA']], climbSeconds: 4 },
+    { name: 'W+D', pushes: [['KeyW', 'KeyD']], climbSeconds: 6 },
+    { name: 'S+D, S+A, W+D', pushes: [['KeyS', 'KeyD'], ['KeyS', 'KeyA'], ['KeyW', 'KeyD']], climbSeconds: 6 },
+  ];
+
+  function hold(codes, seconds, deltaSeconds) {
+    codes.forEach((code) => key('keydown', code));
+    for (let frame = 0; frame < Math.round(seconds / deltaSeconds); frame++) {
+      const previous = character.position.clone();
+      controls.update(deltaSeconds);
+      assertSupported(character, boxes);
+      assertNoClipping(character, boxes);
+      assert.ok(Math.hypot(character.position.x - previous.x, character.position.z - previous.z) <= 3.5 * deltaSeconds + 1e-6);
+    }
+    codes.forEach((code) => key('keyup', code));
+  }
+
+  for (const deltaSeconds of [1 / 60, 0.1]) {
+    for (const scenario of cases) {
+      character.position.set((padBox.min.x + padBox.max.x) / 2, padBox.max.y, 0.75);
+      controls.update(0);
+      scenario.pushes.forEach((codes) => hold(codes, 2.2, deltaSeconds));
+      hold(['KeyW', 'KeyA'], scenario.climbSeconds, deltaSeconds);
+      assert.ok(character.position.x < 7.6, `${scenario.name} at ${deltaSeconds}s: stuck at ${character.position.toArray()}`);
+      near(character.position.y, GROUND_HEIGHT);
+    }
+  }
+});
+
 test('stair and pad sides, inside corners and the unrelated rim remain solid during long moves', (t) => {
   const { boxes, treadBoxes, padBox, character, controls, key } = fixture(t);
   character.position.set(10, GROUND_HEIGHT, 0.75);
@@ -233,10 +265,10 @@ test('stair and pad sides, inside corners and the unrelated rim remain solid dur
   controls.update(0);
   key('keydown', 'KeyW');
   key('keydown', 'KeyA'); // Push from the wider pad toward the narrow stairs.
-  controls.update(10);
+  controls.update(1);
   key('keyup', 'KeyW');
   key('keyup', 'KeyA');
-  assert.ok(character.position.x > padBox.min.x + 0.3 && character.position.x < padBox.min.x + 0.4);
+  assert.ok(character.position.x < padBox.min.x - 1, 'should slide past the inside corner');
   assertSupported(character, boxes);
   assertNoClipping(character, boxes);
 

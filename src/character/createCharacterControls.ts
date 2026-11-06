@@ -132,7 +132,8 @@ export function createCharacterControls({
     }
 
     const next = moveWithFarmCollisions(
-      startX, startZ, direction.x * step, direction.z * step, characterRadius, obstacles, bounds, stairs?.supports,
+      startX, startZ, direction.x * step, direction.z * step, characterRadius, obstacles, bounds,
+      stairs?.supports, stairs?.slidePadCorner,
     );
     character.position.x = next.x;
     const floor = stairs?.floorHeight(next.x) ?? groundHeight;
