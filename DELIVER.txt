@@ -1,0 +1,57 @@
+EBR-46 — stone stairs on the existing island
+
+Branch: feat/ebr46-stairs
+Implementation tip SHA: 3996a5e7ddca1e3be968028fe2c5c0da9ea5c603
+Current branch tip SHA: run `git rev-parse HEAD`. This handoff is a
+documentation-only commit above the implementation; a commit cannot contain
+its own SHA. The final branch tip is also reported in the delivery response.
+No push or PR.
+
+Open and walk
+- The Vite dev server is running at http://127.0.0.1:36239/?phase=daytime
+  while its process remains alive. To restart: `npm ci`, then
+  `npm run dev -- --host 127.0.0.1 --port 36239 --strictPort` (choose a free
+  port if needed).
+- At 1280x720, follow the dirt path past the pond to the camera-facing rim.
+  Click the bottom stone tread to descend; from the initial view its center
+  is approximately (928, 625). Or align with the run and hold S+D.
+- At the bottom, S+D stops at the edge. S+A and W+D push against the two
+  sides. Hold W+A to climb back to the path; clicking the path also returns.
+  The Growing panel can be collapsed to uncover more of the scene.
+
+Scope
+- Five 1.2-wide warm stone treads join the unchanged 16x16 plateau at the path.
+  Their lighter tops and darker risers span the existing 2.4-unit rim. The
+  soil/rock rim and #101416 void are unchanged. The last tread stops at the
+  void; there is no second island or lower ground beyond it.
+- Tread raycasts, capsule-height clearance and footprint boundaries match the
+  visible run. Existing prop collisions and the other rim edges remain active.
+
+Evidence
+- evidence/ebr46/01-daytime-overview.png — unmodified daytime app.
+- evidence/ebr46/02-bottom-tread.png — descent and bottom-edge stop.
+- evidence/ebr46/03-mid-climb.png — paused during ascent.
+- evidence/ebr46/04-returned-to-path.png — back on the plateau.
+- evidence/ebr46/05-night-overview.png — unmodified night app.
+- evidence/ebr46/LOG.txt and evidence/ebr46/browser-proof.json — browser,
+  renderer, real input, sampled positions and geometry. The movement page
+  exposes scene state for measurement only; it does not teleport the player.
+
+Checks run
+- `npm ci`: passed; 0 vulnerabilities reported.
+- `npm run build`: passed, including TypeScript `tsc`; Vite reported the
+  existing >500 kB bundle-size advisory. No separate typecheck script exists.
+- `npm test`: 82 passed, 0 failed.
+- `EBR46_URL=http://127.0.0.1:36239 EBR46_EVIDENCE_DIR=evidence/ebr46 npm run test:browser`:
+  17 passed, 0 failed, including existing production-preview tests and the
+  dev-server stair traversal in Chromium 153 / WebGL2 / SwiftShader.
+- `node --test tests/stairs.test.mjs tests/walk.test.mjs`: 18 passed, 0 failed.
+- `git diff --cached --check`: passed before the implementation commit.
+- The stair browser check sampled 279 frames of mouse/keyboard movement: no
+  capsule/stone intersections or sampled footprint over the void. The 4-CSS-px
+  pass used a 320x180 world canvas at 1280x720; no application errors were
+  observed (favicon errors excluded).
+
+Not verified: independent gameplay QA or Look Dev sign-off, touch traversal on
+the stairs, hardware-GPU rendering, or stair traversal in every weather/phase.
+Reference comparison was qualitative; see evidence/ebr46/LOG.txt.
