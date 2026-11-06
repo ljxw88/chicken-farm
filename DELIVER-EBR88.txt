@@ -1,7 +1,11 @@
 EBR-88 — rain readable over grass and roofs
 
 Branch: feat/ebr88-rain-readable
-Base: 9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4 (origin/main)
+Original base: 9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4
+Merged main: dcbaf70b8f2c1038afe5c0b70f506ec7de931214 (EBR-74, PR #18)
+Merge commit: d6e60649778766cd17896dbafeaa41a1e39edff3
+Look Dev SIGNED tip: 6c3c03a6c5bfe12ad98de019f7abc757897680c4
+Engine rain-follow test: 55b21463a0154b5ad35465c3e7fc128dbcefc882
 Tested rain implementation: b24e2189b5b06fe766ad2eca5b25f4da4ceee9f4
 Lighting-probe test adjustment: 8854215eea171c4c5f4332a4b6e2cea33b8c4320
 Spec: /home/michael/OpenBot/Shared/ebr88-look-spec.md, Linear EBR-88 comment 2a0aa692.
@@ -13,7 +17,43 @@ Open / try
   and `http://127.0.0.1:5173/?phase=night&weather=rain`.
 - Compare the main and candidate full frames and the 4x nearest-neighbour grass
   and roof crops under `evidence/EBR-88/`. See its README and comparison.json
-  for capture and masking methods. Look Dev approval is still required.
+  for capture and masking methods. Look Dev SIGNED the 6c3c03a look; merge
+  comparisons against new main and the signed tip are under
+  `evidence/EBR-88/merge-dcbaf70/`.
+
+EBR-74 merge / conflicts
+- No textual conflicts occurred. Git combined EBR-74's moved FarmObstacle type
+  imports with the signed rain implementation; `src/main.ts`, `src/core/` and
+  `src/character/` are unchanged from new main. The entire signed rainSettings
+  file is byte-for-byte identical, including its historical pending-signoff
+  comment; Look Dev has since SIGNED the 6c3c03a look.
+- The engine moves the character before camera/weather updates, and the signed
+  rain field continues to follow that character. A new regression test compares
+  all endpoints while the ECS-controlled character moves. Engineer kept the
+  signed player-following field and did not introduce island-centre clipping.
+
+Merge verification against dcbaf70 and signed 6c3c03a
+- `grep MemAvailable /proc/meminfo`: 47,516,892 kB before work, above 4 GB.
+  The lockfile was unchanged and `npm ls --depth=0` passed; `npm ci` was not
+  needed. Build passed, `npm test` passed 134/134 and `npm run test:browser`
+  passed 33/33 (27 top-level), with test files run serially.
+- At 1280x720, seed 0xeb730001, Chromium 153.0.8010.12 / SwiftShader / DPR 1:
+  versus new main, clear and cloudy each changed 0 pixels. Day rain changed
+  31,407 and night rain 31,442 raw pixels; 0 lie outside the rendered-streak
+  masks, and hiding streaks leaves 0 changed pixels in both frames.
+- Versus the SIGNED tip, day rain and night rain each changed 0 full-frame and
+  streak pixels; streak masks and geometry hashes are identical. The recaptured
+  signed frames match the previously committed signed PNG hashes exactly.
+  An extra real-keyboard walking-rain frame also changed 0 versus signed, with
+  identical geometry and the field centred at the engine character position.
+- A new-main walking-rain frame changed 31,968 raw pixels, all within the
+  streak mask. HUD state matched and browser console warnings/errors were 0.
+- Gate G re-recorded `dcbaf70`: all seven non-rain scenarios changed 0 pixels;
+  the unmodified all-zero checker exits nonzero for the intended 31,407 day-rain
+  pixels, with no state mismatches. The separate streak-mask check above passes.
+  Logs, full frames, diffs and the reproducible three-worktree capture are in
+  `evidence/EBR-88/merge-dcbaf70/`. Capture source is 55b21463a0154b5ad35465c3e7fc128dbcefc882;
+  the later handoff commit adds only documentation and evidence.
 
 Visible-change ledger
 - Rain streak length is 0.40–0.60 world units (full 3-D line length), formerly
@@ -36,7 +76,7 @@ Visible-change ledger
   No lights were added; particle budget, clear/cloudy weather, lighting, pixel
   pass and HUD code are unchanged.
 
-Conflicts for Look Dev
+Signed-look historical measurements and conflicts
 - The spec's world direction is not the current contact-shadow direction.
   Normalized rain is (+0.94038, 0, -0.34014), while main's key-aligned contact
   shadow is (+0.8, 0, -0.6): a measured 16.98-degree difference in the ground
@@ -68,7 +108,7 @@ Rebase order
   port these values and the world-direction projection into the moved RAIN_LOOK
   and rain system; retain the weather tests and rerun the graphics comparison.
 
-Checks and evidence
+Original 9e8c8c6 verification (retained)
 - Before installation, `grep MemAvailable /proc/meminfo` reported 58,574,640 kB
   available, above the 4 GB pause threshold. `npm ci` completed in this worktree;
   node_modules is ignored and is not part of the commit.
@@ -94,5 +134,5 @@ Checks and evidence
   HUD-only and rain masks, logs and reproducible capture scripts are under
   `evidence/EBR-88/`. Captures used Chromium 153.0.8010.12, SwiftShader, DPR 1,
   seed 0xeb730001 and the standard 320x180 pixel pass.
-- Independent Look Dev approval, physical devices and hardware GPUs remain
-  unverified. See `evidence/EBR-88/README.md` for capture/mask limitations.
+- The above evidence predates Look Dev SIGNED. Physical devices and hardware
+  GPUs remain unverified; see `evidence/EBR-88/README.md` for limitations.
