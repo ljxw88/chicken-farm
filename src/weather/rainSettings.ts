@@ -4,7 +4,7 @@
 // the eventual 1x3–5 px pixel-art treatment is intentionally not implemented here.
 export const RAIN_LOOK = {
   transitionSeconds: 1.75,
-  directionalMultiplier: 0.8,
+  directionalMultiplier: 0.7,
   color: 0xb8cfda,
   opacity: 0.35,
   streakCount: 240,

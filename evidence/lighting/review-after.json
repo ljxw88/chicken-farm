@@ -1,0 +1,354 @@
+{
+  "label": "after",
+  "browser": "153.0.8010.12",
+  "viewport": [
+    1280,
+    720
+  ],
+  "seed": 439041101,
+  "cases": {
+    "morning-clear": {
+      "light": [
+        -9.363759928575702,
+        4,
+        7.022819946431775
+      ],
+      "intensity": 2.35,
+      "color": "ffe8c8",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.38399999999999995,
+        0.040000000000000036,
+        -0.2879999999999999
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "errors": []
+    },
+    "daytime-clear": {
+      "light": [
+        -9.363759928575702,
+        12,
+        7.022819946431775
+      ],
+      "intensity": 1.8,
+      "color": "fff2d6",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.2128,
+        0.040000000000000036,
+        -0.15959999999999996
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "errors": []
+    },
+    "sunset-clear": {
+      "light": [
+        -9.363759928575702,
+        4.000000000000001,
+        7.022819946431775
+      ],
+      "intensity": 1.2,
+      "color": "ffeddb",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.38399999999999995,
+        0.040000000000000036,
+        -0.2879999999999999
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "errors": []
+    },
+    "night-clear": {
+      "light": [
+        -9.363759928575702,
+        9,
+        7.022819946431775
+      ],
+      "intensity": 0.52,
+      "color": "c8d4f0",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.128,
+        0.040000000000000036,
+        -0.09599999999999997
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "errors": []
+    },
+    "night-rain": {
+      "light": [
+        -9.363759928575702,
+        9,
+        7.022819946431775
+      ],
+      "intensity": 0.364,
+      "color": "c8d4f0",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.06272,
+        0.040000000000000036,
+        -0.047039999999999985
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "rain",
+        "rainAmount": 1,
+        "cloudyAmount": 0
+      },
+      "errors": []
+    },
+    "daytime-cloudy": {
+      "light": [
+        -9.363759928575702,
+        12,
+        7.022819946431775
+      ],
+      "intensity": 1.296,
+      "color": "fff2d6",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.1064,
+        0.040000000000000036,
+        -0.07979999999999998
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "cloudy",
+        "rainAmount": 0,
+        "cloudyAmount": 1
+      },
+      "errors": []
+    },
+    "daytime-rain": {
+      "light": [
+        -9.363759928575702,
+        12,
+        7.022819946431775
+      ],
+      "intensity": 1.26,
+      "color": "fff2d6",
+      "character": [
+        0,
+        2.4,
+        0
+      ],
+      "shadow": [
+        0.104272,
+        0.040000000000000036,
+        -0.078204
+      ],
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "rain",
+        "rainAmount": 1,
+        "cloudyAmount": 0
+      },
+      "errors": []
+    }
+  }
+}

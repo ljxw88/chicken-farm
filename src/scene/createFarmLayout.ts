@@ -4,6 +4,7 @@ import { createWaterFeature } from './createWaterFeature';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
 import type { FarmObstacle } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
+import { CONTACT_SHADOW_COLOR } from './contactShadowStyle';
 
 // Positions are shared by the visible props and their collision footprints.
 export const FARM_LAYOUT = {
@@ -53,6 +54,17 @@ function createPath(group: THREE.Group) {
       }
     }
 
+    // Tight bends can fold the inside edge of the ribbon. Keep every
+    // nondegenerate triangle front-facing from above before computing normals.
+    for (let i = 0; i < indices.length; i += 3) {
+      const a = indices[i] * 3;
+      const b = indices[i + 1] * 3;
+      const c = indices[i + 2] * 3;
+      const normalY = (vertices[b + 2] - vertices[a + 2]) * (vertices[c] - vertices[a]) -
+        (vertices[b] - vertices[a]) * (vertices[c + 2] - vertices[a + 2]);
+      if (normalY < 0) [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
+    }
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
@@ -96,7 +108,7 @@ function createTrees(group: THREE.Group) {
   const crowns = [FARM_PALETTE.treeFoliage, FARM_PALETTE.treeFoliageLight, FARM_PALETTE.treeFoliageDark]
     .map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
   const shadowMaterial = new THREE.MeshBasicMaterial({
-    color: FARM_PALETTE.treeFoliageDark, transparent: true, opacity: 0.16, depthWrite: false,
+    color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.16, depthWrite: false,
   });
 
   FARM_LAYOUT.trees.forEach(({ x, z, scale }, index) => {
@@ -107,6 +119,7 @@ function createTrees(group: THREE.Group) {
     group.add(tree);
 
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.8, 16), shadowMaterial);
+    shadow.name = `farm-tree-shadow-${index + 1}`;
     shadow.rotation.x = -Math.PI / 2;
     shadow.scale.y = 0.72;
     shadow.position.y = 0.003;

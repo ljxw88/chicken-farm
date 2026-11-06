@@ -1,0 +1,30 @@
+[
+  {
+    "name": "farm-path-edge",
+    "step": 0.01,
+    "overlappingPoints": 323,
+    "example": {
+      "x": -0.28629999999999994,
+      "z": 0.3931,
+      "triangles": [
+        120,
+        118,
+        119
+      ]
+    }
+  },
+  {
+    "name": "farm-path-surface",
+    "step": 0.01,
+    "overlappingPoints": 163,
+    "example": {
+      "x": -0.14629999999999999,
+      "z": 0.35309999999999997,
+      "triangles": [
+        122,
+        120,
+        121
+      ]
+    }
+  }
+]

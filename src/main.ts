@@ -7,7 +7,9 @@ import { createPlacement } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
 import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
+import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { WATER_FEATURE } from './scene/waterFeatureSpec';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
@@ -40,11 +42,24 @@ character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
 const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
-const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives });
+const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
+const farmShadows = createFarmShadows(scene);
+function shadowSupported(x: number, z: number, radius: number) {
+  // The character's blob must not float off a raised bridge deck onto water.
+  if (bridgeHeight(character.position.x, character.position.z) !== undefined) {
+    const { bridge } = WATER_FEATURE;
+    return x - radius >= bridge.x - bridge.length / 2 && x + radius <= bridge.x + bridge.length / 2 &&
+      z - radius >= bridge.z - bridge.width / 2 && z + radius <= bridge.z + bridge.width / 2;
+  }
+  return stairs.supports(x, z, radius);
+}
+const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
+  shadowSupported, updateFarmShadows: farmShadows.update });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
   setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
+  setShadowWeather: dayNight.setShadowWeather,
 });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase);
@@ -57,7 +72,6 @@ window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
-const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 let cancelClickTarget = () => {};
 const placement = createPlacement({
   scene, camera, canvas, ground, groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT,
@@ -113,6 +127,7 @@ createEngine({
     // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
     controls.update(Math.min(deltaSeconds, 0.1));
     phaseController.update(deltaSeconds);
+    dayNight.updateCharacterShadow();
     farmHud.setPhase(dayNight.getPhase());
     follow(character.position);
     placement.update();

@@ -1,0 +1,63 @@
+case             sun screen R/U    blob offset  measured L(sun half) vs L(away half)  top  ground  contrast
+day-clear      -0.38/+0.85              (0, 0)  sun  131.1 away  111.7 asym +0.160   top  156.0 ground  106.4 contrast 1.13
+      analytic +z(camera-left face)   direct 0.555 ambient+hemi 0.754 lantern 0.000
+      analytic +x(camera-right face)  direct 0.000 ambient+hemi 0.754 lantern 0.000
+      analytic +y(top)                direct 0.888 ambient+hemi 0.822 lantern 0.000
+      analytic -x(hidden back)        direct 0.000 ambient+hemi 0.754 lantern 0.000
+      analytic -z(hidden back)        direct 0.000 ambient+hemi 0.754 lantern 0.000
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [114.9, 121.4, 121.3, 121.4]
+sunset-clear   -0.71/+0.05              (0, 0)  sun   81.0 away   79.7 asym +0.015   top   85.1 ground   60.9 contrast 1.26
+      analytic +z(camera-left face)   direct 0.000 ambient+hemi 0.468 lantern 0.000
+      analytic +x(camera-right face)  direct 0.000 ambient+hemi 0.468 lantern 0.000
+      analytic +y(top)                direct 0.020 ambient+hemi 0.500 lantern 0.000
+      analytic -x(hidden back)        direct 0.404 ambient+hemi 0.468 lantern 0.000
+      analytic -z(hidden back)        direct 0.000 ambient+hemi 0.468 lantern 0.000
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [76.4, 80.4, 80.3, 80.4]
+night-clear    +0.00/+0.75              (0, 0)  sun   36.3 away   37.2 asym -0.027   top   46.8 ground   47.1 contrast 1.21
+      analytic +z(camera-left face)   direct 0.085 ambient+hemi 0.082 lantern 0.240
+      analytic +x(camera-right face)  direct 0.085 ambient+hemi 0.082 lantern 0.345
+      analytic +y(top)                direct 0.137 ambient+hemi 0.085 lantern 0.168
+      analytic -x(hidden back)        direct 0.000 ambient+hemi 0.082 lantern 0.000
+      analytic -z(hidden back)        direct 0.000 ambient+hemi 0.082 lantern 0.000
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [62.1, 36.8, 70.7, 36.7]
+morning-clear  +0.71/+0.05              (0, 0)  sun  128.9 away  107.1 asym +0.185   top  116.4 ground   77.0 contrast 1.46
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [110.7, 118.0, 120.0, 118.0]
+day-cloudy     -0.38/+0.85              (0, 0)  sun  121.3 away  106.0 asym +0.134   top  142.2 ground   97.2 contrast 1.15
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [107.4, 113.6, 113.6, 113.6]
+day-rain       -0.38/+0.85              (0, 0)  sun  125.5 away  109.3 asym +0.137   top  147.5 ground  100.4 contrast 1.15
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [111.5, 117.4, 117.4, 117.4]
+night-rain     +0.00/+0.75              (0, 0)  sun   34.0 away   34.1 asym -0.002   top   42.7 ground   45.3 contrast 1.24
+      body mean luminance across facings ['toward_cam_S', 'away_W', 'left_A', 'right_D']: [60.2, 34.1, 68.7, 33.6]
+
+GRAPHICS GATE — lighting checks
+  [FAIL] day-clear C1 lit side follows sun: sun screen-right -0.38, body asym +0.160 (need >= +0.25 when sun is off-axis)
+  [FAIL] day-clear C2 shadow offset opposite sun: offset 0.00 u, cos(offset, -sun) +0.00; casters in scene 0
+  [PASS] day-clear C3 body never near-black / stable across facings: visible body luminance per facing [115, 121, 121, 121] (need min>=45 and spread<=35%)
+  [FAIL] day-clear C4 character vs ground contrast: 1.13 (need >= 1.30)
+  [FAIL] day-clear C5 static-frame flicker: changed pixels vs first still: [1504, 2624, 2752]
+  [FAIL] sunset-clear C1b backlit => visible faces darker than top rim: visible body 80.4 vs top 85.1 (need <= 0.8x); sun-camera cos -0.55
+  [FAIL] sunset-clear C2 shadow offset opposite sun: offset 0.00 u, cos(offset, -sun) +0.00; casters in scene 0
+  [PASS] sunset-clear C3 body never near-black / stable across facings: visible body luminance per facing [76, 80, 80, 80] (need min>=45 and spread<=35%)
+  [FAIL] sunset-clear C4 character vs ground contrast: 1.26 (need >= 1.30)
+  [FAIL] sunset-clear C5 static-frame flicker: changed pixels vs first still: [1952, 2544, 2544]
+  [FAIL] night-clear C3 body never near-black / stable across facings: visible body luminance per facing [62, 37, 71, 37] (need min>=45 and spread<=35%)
+  [FAIL] night-clear C4 character vs ground contrast: 1.21 (need >= 1.30)
+  [FAIL] night-clear C5 static-frame flicker: changed pixels vs first still: [640, 1056, 1280]
+  [FAIL] morning-clear C1 lit side follows sun: sun screen-right +0.71, body asym +0.185 (need >= +0.25 when sun is off-axis)
+  [FAIL] morning-clear C2 shadow offset opposite sun: offset 0.00 u, cos(offset, -sun) +0.00; casters in scene 0
+  [PASS] morning-clear C3 body never near-black / stable across facings: visible body luminance per facing [111, 118, 120, 118] (need min>=45 and spread<=35%)
+  [PASS] morning-clear C4 character vs ground contrast: 1.46 (need >= 1.30)
+  [FAIL] morning-clear C5 static-frame flicker: changed pixels vs first still: [1328, 1504, 1504]
+  [FAIL] day-cloudy C1 lit side follows sun: sun screen-right -0.38, body asym +0.134 (need >= +0.25 when sun is off-axis)
+  [FAIL] day-cloudy C2 shadow offset opposite sun: offset 0.00 u, cos(offset, -sun) +0.00; casters in scene 0
+  [PASS] day-cloudy C3 body never near-black / stable across facings: visible body luminance per facing [107, 114, 114, 114] (need min>=45 and spread<=35%)
+  [FAIL] day-cloudy C4 character vs ground contrast: 1.15 (need >= 1.30)
+  [FAIL] day-cloudy C5 static-frame flicker: changed pixels vs first still: [1504, 2592, 2736]
+  [FAIL] day-rain C1 lit side follows sun: sun screen-right -0.38, body asym +0.137 (need >= +0.25 when sun is off-axis)
+  [FAIL] day-rain C2 shadow offset opposite sun: offset 0.00 u, cos(offset, -sun) +0.00; casters in scene 0
+  [PASS] day-rain C3 body never near-black / stable across facings: visible body luminance per facing [112, 117, 117, 117] (need min>=45 and spread<=35%)
+  [FAIL] day-rain C4 character vs ground contrast: 1.15 (need >= 1.30)
+  [FAIL] night-rain C3 body never near-black / stable across facings: visible body luminance per facing [60, 34, 69, 34] (need min>=45 and spread<=35%)
+  [FAIL] night-rain C4 character vs ground contrast: 1.24 (need >= 1.30)
+
+FAILED CHECKS: 23

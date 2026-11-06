@@ -1,0 +1,23 @@
+{
+  "mode": "path",
+  "phase": "daytime",
+  "browser": "153.0.8010.12",
+  "viewport": [
+    1280,
+    720
+  ],
+  "path": [
+    {
+      "name": "farm-path-edge",
+      "upward": 389,
+      "downward": 4,
+      "degenerate": 7
+    },
+    {
+      "name": "farm-path-surface",
+      "upward": 388,
+      "downward": 3,
+      "degenerate": 9
+    }
+  ]
+}
