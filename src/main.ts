@@ -2,8 +2,10 @@ import './style.css';
 import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
 import { createInteractionController } from './interactions';
+import { createQaFenceStub } from './interactions/qa/createQaFenceStub';
 import { createQaFlockStubs } from './interactions/qa/createQaFlockStubs';
 import { createQaWorldStubs } from './interactions/qa/createQaWorldStubs';
+import { createEconomy } from './inventory/createEconomy';
 import { createInventory } from './inventory/createInventory';
 import { createSupplies } from './inventory/createSupplies';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
@@ -11,7 +13,7 @@ import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } fro
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
-import { createFarmHud, createInteractionPrompt } from './ui';
+import { createEconomyControls, createFarmHud, createInteractionPrompt } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
@@ -66,8 +68,10 @@ const interactions = createInteractionController({
 });
 const supplies = createSupplies();
 const inventory = createInventory();
+const fence = createQaFenceStub(scene, GROUND_HEIGHT);
+const economy = createEconomy({ inventory, supplies, fence });
 const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT, { inventory, onEggCollected: supplies.addEgg });
-const qaWorld = createQaWorldStubs(scene, GROUND_HEIGHT);
+const qaWorld = createQaWorldStubs(scene, GROUND_HEIGHT, economy);
 for (const interactable of [...qaFlock.interactables, ...qaWorld.interactables]) {
   interactions.register(interactable);
 }
@@ -83,6 +87,11 @@ const controls = createCharacterControls({
   onPointerDown: interactions.handlePointerDown,
 });
 cancelClickTarget = controls.cancelTarget;
+function handleHudAction(message: string) {
+  controls.cancelTarget();
+  interactionView.showMessage(message);
+  interactions.update();
+}
 const farmHud = createFarmHud({
   root: hudRoot,
   supplies,
@@ -90,12 +99,9 @@ const farmHud = createFarmHud({
   initialPhase: dayNight.getPhase(),
   isEggReady: qaFlock.isEggReady,
   collectEgg: qaFlock.collectEgg,
-  onCollected(message) {
-    controls.cancelTarget();
-    interactionView.showMessage(message);
-    interactions.update();
-  },
+  onCollected: handleHudAction,
 });
+createEconomyControls({ root: hudRoot, economy, onAction: handleHudAction });
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
 window.setPixelSize = composer.setPixelSize;

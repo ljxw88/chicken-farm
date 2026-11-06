@@ -65,7 +65,7 @@ body {
 .interaction-feedback {
   position: fixed;
   z-index: 3;
-  bottom: max(5.2rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  bottom: max(8.8rem, calc(env(safe-area-inset-bottom) + 8.2rem));
   left: 50%;
   box-sizing: border-box;
   width: max-content;

@@ -119,7 +119,7 @@ export function createFarmHud({
           <div><span class="farm-eyebrow">COMING SOON</span><h2 id="farm-build-title">Build menu</h2></div>
           <button class="farm-build__close" type="button" data-build-close aria-label="Close build menu">×</button>
         </div>
-        <p>A place for new farm projects. Building is not available in this preview.</p>
+        <p>The full Build menu is not available yet. Use Place Fence for one fixed-spot preview.</p>
       </section>
       <button class="farm-build__fab farm-glass" type="button" data-build-toggle aria-expanded="false" aria-controls="farm-build-sheet">
         <span class="farm-build__plus" aria-hidden="true">+</span><span>Build</span>

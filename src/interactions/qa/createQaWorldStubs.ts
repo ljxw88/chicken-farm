@@ -1,10 +1,10 @@
 import * as THREE from 'three';
+import { ECONOMY_RATES, type Economy } from '../../inventory/createEconomy';
 import type { Interactable } from '../Interactable';
 import { disposeQaGroup } from './disposeQaGroup';
 
-// These props demonstrate context actions only; storage, dialogue and trade
-// belong to later systems and can replace this module independently of flock.
-export function createQaWorldStubs(scene: THREE.Scene, groundHeight: number) {
+// The sign and bin share transactions with the on-screen market controls.
+export function createQaWorldStubs(scene: THREE.Scene, groundHeight: number, economy: Economy) {
   const group = new THREE.Group();
   group.name = 'qa-world-action-stubs';
   scene.add(group);
@@ -46,21 +46,23 @@ export function createQaWorldStubs(scene: THREE.Scene, groundHeight: number) {
 
   const interactables: Interactable[] = [
     {
-      id: 'qa-feed-bin', object: bin, label: () => `${binOpen ? 'Close' : 'Open'} feed bin (stub)`,
+      id: 'qa-feed-bin', object: bin, label: `Buy feed (−${ECONOMY_RATES.buyFeed} Supplies)`,
       range: 1.3, promptHeight: 0.95,
       isAvailable: () => active,
       interact() {
-        binOpen = !binOpen;
-        lidHinge.rotation.x = binOpen ? -1.1 : 0;
-        return `${binOpen ? 'Opened' : 'Closed'} feed bin (stub). Storage and trade are not connected.`;
+        const result = economy.buyFeed();
+        if (result.ok) {
+          binOpen = !binOpen;
+          lidHinge.rotation.x = binOpen ? -1.1 : 0;
+        }
+        return result.message;
       },
     },
     {
-      id: 'qa-sign', object: sign, label: 'Talk to sign (stub)', range: 1.25, promptHeight: 1.4,
+      id: 'qa-sign', object: sign, label: `Market: sell egg (+${ECONOMY_RATES.sellEgg} Supplies)`, range: 1.25, promptHeight: 1.4,
       isAvailable: () => active,
       interact() {
-        // Only the rates supplied for EBR-54 are shown; this is not a transaction.
-        return 'Sign (stub): egg sale +3 coins; feed purchase -1 coin. Trading is not connected.';
+        return economy.sellEgg().message;
       },
     },
   ];
