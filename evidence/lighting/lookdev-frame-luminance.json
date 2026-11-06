@@ -1,0 +1,416 @@
+{
+  "viewport": [
+    1280,
+    720
+  ],
+  "grass_region_xyxy": [
+    300,
+    375,
+    450,
+    415
+  ],
+  "mask": "bf8ac5f daytime non-#101416 pixels at y >= 100 (excludes HUD/void)",
+  "mask_pixels": 267548,
+  "luminance": "0.2126*R + 0.7152*G + 0.0722*B, 0-255 sRGB",
+  "before_bf8ac5f": {
+    "morning": {
+      "grass_region_mean": 75.8559932,
+      "island_mean": 64.12600169838683
+    },
+    "daytime": {
+      "grass_region_mean": 103.74571166666665,
+      "island_mean": 79.94467655000224
+    },
+    "sunset": {
+      "grass_region_mean": 72.81952846666667,
+      "island_mean": 61.64023694738887
+    }
+  },
+  "after": {
+    "morning": {
+      "grass_region_mean": 91.65042853333333,
+      "island_mean": 80.22190149356378
+    },
+    "daytime": {
+      "grass_region_mean": 103.67652053333332,
+      "island_mean": 82.29662958123401
+    },
+    "sunset": {
+      "grass_region_mean": 72.75350559999998,
+      "island_mean": 63.69625975600639
+    }
+  },
+  "unchanged_regions": {
+    "morning-clear": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.4799999999999999,
+      "shadow_length_after": 0.4799999999999999,
+      "shadow_opposite_key_cosine": 1.0000000000000002,
+      "water_samples": {
+        "pond": {
+          "before": [
+            37,
+            55,
+            55
+          ],
+          "after": [
+            44,
+            66,
+            66
+          ]
+        },
+        "stream": {
+          "before": [
+            39,
+            58,
+            58
+          ],
+          "after": [
+            47,
+            70,
+            71
+          ]
+        },
+        "waterfall": {
+          "before": [
+            97,
+            121,
+            118
+          ],
+          "after": [
+            144,
+            172,
+            165
+          ]
+        }
+      }
+    },
+    "daytime-clear": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.266,
+      "shadow_length_after": 0.26599999999999996,
+      "shadow_opposite_key_cosine": 1.0,
+      "water_samples": {
+        "pond": {
+          "before": [
+            41,
+            74,
+            79
+          ],
+          "after": [
+            40,
+            73,
+            79
+          ]
+        },
+        "stream": {
+          "before": [
+            46,
+            80,
+            86
+          ],
+          "after": [
+            46,
+            80,
+            86
+          ]
+        },
+        "waterfall": {
+          "before": [
+            114,
+            156,
+            161
+          ],
+          "after": [
+            151,
+            185,
+            184
+          ]
+        }
+      }
+    },
+    "sunset-clear": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.4799999999999999,
+      "shadow_length_after": 0.4799999999999999,
+      "shadow_opposite_key_cosine": 1.0000000000000002,
+      "water_samples": {
+        "pond": {
+          "before": [
+            41,
+            52,
+            51
+          ],
+          "after": [
+            41,
+            52,
+            55
+          ]
+        },
+        "stream": {
+          "before": [
+            41,
+            54,
+            54
+          ],
+          "after": [
+            41,
+            54,
+            59
+          ]
+        },
+        "waterfall": {
+          "before": [
+            93,
+            114,
+            114
+          ],
+          "after": [
+            111,
+            131,
+            142
+          ]
+        }
+      }
+    },
+    "night-clear": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.16,
+      "shadow_length_after": 0.15999999999999998,
+      "shadow_opposite_key_cosine": 1.0000000000000002,
+      "water_samples": {
+        "pond": {
+          "before": [
+            19,
+            39,
+            53
+          ],
+          "after": [
+            15,
+            33,
+            45
+          ]
+        },
+        "stream": {
+          "before": [
+            22,
+            43,
+            58
+          ],
+          "after": [
+            18,
+            36,
+            50
+          ]
+        },
+        "waterfall": {
+          "before": [
+            61,
+            91,
+            116
+          ],
+          "after": [
+            105,
+            124,
+            148
+          ]
+        }
+      }
+    },
+    "night-rain": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.07839999999999998,
+      "shadow_length_after": 0.07839999999999998,
+      "shadow_opposite_key_cosine": 1.0000000000000002,
+      "water_samples": {
+        "pond": {
+          "before": [
+            16,
+            34,
+            46
+          ],
+          "after": [
+            13,
+            28,
+            39
+          ]
+        },
+        "stream": {
+          "before": [
+            18,
+            37,
+            51
+          ],
+          "after": [
+            15,
+            31,
+            43
+          ]
+        },
+        "waterfall": {
+          "before": [
+            53,
+            79,
+            101
+          ],
+          "after": [
+            89,
+            106,
+            127
+          ]
+        }
+      }
+    },
+    "daytime-cloudy": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.133,
+      "shadow_length_after": 0.13299999999999998,
+      "shadow_opposite_key_cosine": 1.0,
+      "water_samples": {
+        "pond": {
+          "before": [
+            35,
+            65,
+            72
+          ],
+          "after": [
+            34,
+            65,
+            72
+          ]
+        },
+        "stream": {
+          "before": [
+            39,
+            70,
+            78
+          ],
+          "after": [
+            39,
+            70,
+            78
+          ]
+        },
+        "waterfall": {
+          "before": [
+            99,
+            139,
+            147
+          ],
+          "after": [
+            131,
+            163,
+            166
+          ]
+        }
+      }
+    },
+    "daytime-rain": {
+      "hud_changed_pixels": [
+        0,
+        0
+      ],
+      "void": [
+        16,
+        20,
+        22
+      ],
+      "same_color_camera_pixel_weather": true,
+      "shadow_length_before": 0.13034,
+      "shadow_length_after": 0.13034,
+      "shadow_opposite_key_cosine": 0.9999999999999999,
+      "water_samples": {
+        "pond": {
+          "before": [
+            35,
+            64,
+            70
+          ],
+          "after": [
+            34,
+            64,
+            70
+          ]
+        },
+        "stream": {
+          "before": [
+            39,
+            70,
+            77
+          ],
+          "after": [
+            39,
+            70,
+            77
+          ]
+        },
+        "waterfall": {
+          "before": [
+            99,
+            138,
+            144
+          ],
+          "after": [
+            130,
+            161,
+            163
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,118 @@
+/* Reuse the EBR-65 locked default olive glass for the HTML overlay. */
+.farm-hud {
+  --farm-top: max(18px, env(safe-area-inset-top));
+  --farm-left: max(18px, env(safe-area-inset-left));
+  --farm-text: #fffdf2;
+  --farm-muted: rgba(255, 253, 242, 0.72);
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  color: var(--farm-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  image-rendering: auto;
+  pointer-events: none;
+}
+
+.farm-hud * {
+  box-sizing: border-box;
+}
+
+.farm-glass {
+  border: 1px solid rgba(255, 253, 238, 0.24);
+  background: linear-gradient(145deg, rgba(255, 255, 242, 0.1), rgba(255, 255, 242, 0.015)), rgba(40, 55, 36, 0.68);
+  box-shadow: 0 12px 36px rgba(25, 38, 22, 0.2), inset 0 1px 0 rgba(255, 255, 245, 0.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  backdrop-filter: blur(16px) saturate(1.08);
+}
+
+.farm-biome {
+  position: absolute;
+  top: var(--farm-top);
+  left: var(--farm-left);
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px 8px 9px;
+  border-radius: 18px;
+}
+
+.farm-biome__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 13px;
+  color: #e2efca;
+  background: rgba(216, 234, 187, 0.14);
+}
+
+.farm-biome__icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.farm-biome__name,
+.farm-biome__time {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.farm-biome__name {
+  font-size: 15px;
+  font-weight: 720;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.farm-biome__time {
+  margin-top: 3px;
+  color: var(--farm-muted);
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.2;
+}
+
+.farm-biome__time span[aria-hidden] {
+  margin: 0 2px;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .farm-glass {
+    background-color: rgba(40, 55, 36, 0.94);
+  }
+}
+
+@media (max-width: 430px) {
+  .farm-hud {
+    --farm-top: max(12px, env(safe-area-inset-top));
+    --farm-left: max(12px, env(safe-area-inset-left));
+  }
+
+  .farm-biome {
+    min-height: 50px;
+    gap: 8px;
+    padding: 7px 10px 7px 7px;
+    border-radius: 16px;
+  }
+
+  .farm-biome__icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .farm-biome__name {
+    font-size: 13px;
+  }
+
+  .farm-biome__time {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 350px) {
+  .farm-biome__icon {
+    display: none;
+  }
+}

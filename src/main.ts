@@ -1,89 +1,130 @@
 import './style.css';
-import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
-import { createDayNightCycle, DAY_NIGHT_PHASES, type DayNightPhaseName } from './lighting';
-import { createComposer } from './postprocess';
+import './ui/farmHud.css';
+import { CHARACTER_RADIUS, createCharacter, createCharacterController, type CharacterComponents } from './character';
+import { createEngine } from './core/loop';
+import { createDayNightCycle, type DayNightPhaseName } from './lighting';
+import { createPlacement } from './placement';
+import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
+import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
+import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
-import { createPendingWeatherAdapter, createSkyHud } from './ui';
+import { WATER_FEATURE } from './scene/waterFeatureSpec';
+import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
+import { createFarmHud } from './ui';
+import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
   interface Window {
     setDayNightCycleSeconds: (seconds: number) => void;
     setDayNightPhase: (phase: DayNightPhaseName) => void;
+    setPixelRendering: (enabled: boolean) => void;
+    setPixelSize: (cssPixels: number) => void;
+    getPixelRendering: () => PixelRenderingState;
+    setWeather: (mode: WeatherMode) => void;
+    getWeather: () => { mode: WeatherMode; rainAmount: number; cloudyAmount: number };
   }
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scene');
-const hudRoot = document.querySelector<HTMLElement>('#hud');
+const hudRoot = document.querySelector<HTMLElement>('#farm-hud');
 
 if (!canvas) {
   throw new Error('Scene canvas not found');
 }
 if (!hudRoot) {
-  throw new Error('HUD root not found');
+  throw new Error('Farm HUD root not found');
 }
 
-const { scene, camera, renderer, ground, follow, resize } = createScene(canvas);
+const { scene, camera, renderer, ground, stairs, follow, resize } = createScene(canvas);
 const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const { windows, obstacles } = createFarmLayout(scene);
-const dayNight = createDayNightCycle({ scene, character, windows });
-// EBR-36's farm day is 24 minutes; the underlying cycle retains its own default.
-dayNight.setDayNightCycleSeconds(24 * 60);
-export const setDayNightCycleSeconds = dayNight.setDayNightCycleSeconds;
-export const setDayNightPhase = dayNight.setDayNightPhase;
+const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
+const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
+const farmShadows = createFarmShadows(scene);
+function shadowSupported(x: number, z: number, radius: number) {
+  // The character's blob must not float off a raised bridge deck onto water.
+  if (bridgeHeight(character.position.x, character.position.z) !== undefined) {
+    const { bridge } = WATER_FEATURE;
+    return x - radius >= bridge.x - bridge.length / 2 && x + radius <= bridge.x + bridge.length / 2 &&
+      z - radius >= bridge.z - bridge.width / 2 && z + radius <= bridge.z + bridge.width / 2;
+  }
+  return stairs.supports(x, z, radius);
+}
+const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
+  shadowSupported, updateFarmShadows: farmShadows.update });
+const weather = createWeatherSystem({
+  scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
+  splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
+  setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
+  setShadowWeather: dayNight.setShadowWeather,
+});
+const startup = parseStartupOptions(window.location.search);
+const phaseController = createStartupPhaseController(dayNight, startup.phase);
+if (startup.weather) weather.setWeather(startup.weather);
+export const setDayNightCycleSeconds = phaseController.setDayNightCycleSeconds;
+export const setDayNightPhase = phaseController.setDayNightPhase;
+export const setWeather = weather.setWeather;
+export const getWeather = weather.getWeather;
 window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
-const controls = createCharacterControls({
-  character,
-  camera,
-  canvas,
-  ground,
-  groundSize: GROUND_SIZE,
-  groundHeight: GROUND_HEIGHT,
-  characterRadius: CHARACTER_RADIUS,
-  obstacles,
-});
-const composer = createComposer(renderer, scene, camera);
-let previousLightingTime: number | undefined;
-const hud = createSkyHud({
-  root: hudRoot,
-  dayNight: {
-    phases: DAY_NIGHT_PHASES.map((phase) => phase.name),
-    getState: dayNight.getState,
-    setPhase: dayNight.setDayNightPhase,
-    setFollowing: (following) => {
-      const wasFollowing = dayNight.getState().following;
-      dayNight.setFollowing(following);
-      // If rendering was suspended while paused, don't count that time on resume.
-      if (following && !wasFollowing) previousLightingTime = performance.now();
-    },
+window.setWeather = setWeather;
+window.getWeather = getWeather;
+let cancelClickTarget = () => {};
+const placement = createPlacement({
+  scene, camera, canvas, ground, groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT,
+  character, characterRadius: CHARACTER_RADIUS, obstacles,
+  getBlockers: () => decorations,
+  debugGrid: new URLSearchParams(window.location.search).get('grid') === '1',
+  onActiveChange(active) {
+    if (active) cancelClickTarget();
   },
-  weather: createPendingWeatherAdapter(),
 });
+const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
+const composer = createComposer(renderer, scene, camera);
+window.setPixelRendering = composer.setEnabled;
+window.setPixelSize = composer.setPixelSize;
+window.getPixelRendering = composer.getState;
+
+let lastDevicePixelRatio = window.devicePixelRatio;
 
 function handleResize() {
   resize();
-  composer.setPixelRatio(renderer.getPixelRatio());
-  composer.setSize(window.innerWidth, window.innerHeight);
+  composer.resize(window.innerWidth, window.innerHeight, window.devicePixelRatio);
+  lastDevicePixelRatio = window.devicePixelRatio;
 }
 
 handleResize();
+// The default stays on; ?pixel=0 is a console-free native comparison.
+if (!isPixelRenderingEnabled(window.location.search)) composer.setEnabled(false);
 window.addEventListener('resize', handleResize);
 
-let previousTime: number | undefined;
-renderer.setAnimationLoop((time) => {
-  const deltaSeconds = previousTime === undefined ? 0 : Math.max((time - previousTime) / 1000, 0);
-  const lightingDeltaSeconds = previousLightingTime === undefined ? 0 : Math.max((time - previousLightingTime) / 1000, 0);
-  previousTime = time;
-  // A queued animation frame can carry an older timestamp than the resume event.
-  previousLightingTime = previousLightingTime === undefined ? time : Math.max(previousLightingTime, time);
-  // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
-  controls.update(Math.min(deltaSeconds, 0.1));
-  dayNight.update(lightingDeltaSeconds);
-  hud.update();
-  follow(character.position);
-  composer.render();
+const engine = createEngine<CharacterComponents>({
+  setAnimationLoop: (callback) => renderer.setAnimationLoop(callback),
+  input: { target: window, canvas, ownMovement: true, onPointerDown: placement.handlePointerDown,
+    getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
+  frameSystems: [(world, move, deltaSeconds) => controls.system(world, move, Math.min(deltaSeconds, 0.1))],
+  beforeFrame() {
+    // Moving a window between displays can change DPR without a resize event.
+    if (window.devicePixelRatio !== lastDevicePixelRatio) handleResize();
+  },
+  update(deltaSeconds) {
+    phaseController.update(deltaSeconds);
+    dayNight.updateCharacterShadow();
+    farmHud.setPhase(dayNight.getPhase());
+    follow(character.position);
+    placement.update();
+    weather.update(deltaSeconds);
+    updateWaterfall(deltaSeconds);
+  },
+  render: (deltaSeconds) => composer.render(deltaSeconds),
 });
+const controls = createCharacterController({
+  world: engine.world, input: engine.input, character, camera, canvas, ground,
+  groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: CHARACTER_RADIUS,
+  obstacles, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
+});
+cancelClickTarget = controls.cancelTarget;
+engine.start();

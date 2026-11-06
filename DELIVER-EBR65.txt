@@ -1,0 +1,33 @@
+EBR-65 — Growing collect HUD and Supplies capsule
+
+Branch: feat/ebr65-collect
+Base: d31c686b43c82034cc5259d89c0f48c6f582c8bf
+Implementation tip: 233a4b59293c4cf51762e50c4f8faa685dfeb64c
+The READY/DELIVER handoff is a documentation-only commit above the implementation. A commit cannot contain its own SHA; use `git rev-parse HEAD` in this worktree for the documentation-inclusive tip, also reported with the delivery. No merge or push.
+
+Open / restart
+- Worktree: /home/michael/Developer/chicken-farm-ebr65-collect
+- Vite on Tailscale: http://100.88.150.21:5277/ ; local fallback: http://127.0.0.1:5277/ . Available while the server runs. The Tailscale address was checked from this host; remote peer connectivity depends on the tailnet.
+- With Node 20.19+ or 22.12+, run `npm ci` if needed, then `npm run dev -- --host 0.0.0.0 --port 5277 --strictPort` in the worktree.
+- The Nest gate needs only the visible scene, WASD, E and clicks/taps. No browser console, developer tools, query parameters, or time/weather setup is required.
+
+Nest on-screen gate
+1. Refresh: the top-right capsule says Supplies 0 and the open Growing on your farm list shows Hen coop, 1 ready, a checked circle, next-egg timer placeholder, and +5 Supplies. Day 1, Spring and Woodland are stubs; the phase follows the lighting cycle.
+2. From spawn, hold S toward the white chicken and release when Feed chicken (stub) appears. Hold S+D toward the egg and release when Collect egg (stub) appears; if you pass it, step back. On a small screen, collapse Growing to uncover the scene. Ground clicks/taps also walk but never auto-collect.
+3. Press E, click/tap the prompt, or click/tap the egg itself while in range. The egg disappears, Supplies goes 0 -> 5, and the row changes to 0 ready / Collected with a placeholder ring. The same egg cannot be collected again.
+4. Refresh, then use the Growing list's Collect button from spawn. It intentionally works at any distance and removes the very same world egg; Supplies again goes 0 -> 5. Walk to the former egg position: there is no second egg or second Supplies award.
+5. Click + Build: a placeholder sheet opens, with no full Build menu. Close with the X. Spring growth and Bee pollination expose placeholder text; no buff is applied.
+
+Scope / rate
+- One QA egg awards exactly +5 Supplies once, whether collected in-world or from the list. The +5 is not a coin sale and does not implement the EBR-55 sign's informational egg-sale rate. The seed and counter are in memory and reset on refresh.
+- New eggs, real timers, buff simulation, flock/economy transactions, persistent inventory and the full EBR-66 Build menu are not implemented. Day/season/biome are static. EBR-36 sky-panel internals and the world renderer were not changed.
+- The HUD root is an HTML sibling of the canvas, not part of the pixel/nearest pass. The ready ring changes to a no-timer placeholder after collection; the list, capsule and world share the guarded egg action.
+
+Verification and evidence
+- `npm test`: 45 passing checks, including the shared one-shot +5 paths, HUD mount/controls and phase getter. `npm run build`: passed (Vite retains its >500 kB bundle advisory).
+- `npm run test:browser`: 10 Chromium checks passed, including E, prompt click, in-range egg click, list collection before/while near the egg, cross-path no-double-collect, Build, buff tips, and portrait/landscape layout. No happy-path browser errors were observed.
+- A Playwright-driven on-screen walkthrough used the actual Vite Tailscale URL without console/debug setup: `/home/michael/Developer/chicken-farm-evidence/ebr65/nest-vite.json` and `nest-01-spawn.png` through `nest-05-build-stub.png`. Automated browser proof and captures are `hud-proof.json` and `01-hud-ready.png` through `08-short-landscape.png` in the same directory. Independent human Nest QA remains pending.
+
+Look Dev
+- Please sign the olive-dark frost, soft light edge, blur and text/control contrast against the world in both light and dark phases and at small sizes. Current fill `rgba(40,55,36,0.68)` and 16px backdrop blur are provisional tuning, not final locked pixels. `contrast-morning.png`, `contrast-daytime.png`, `contrast-sunset.png` and `contrast-night.png` in the evidence directory show the existing lighting presets; those captures used phase controls only for visual comparison, not for the Nest gate.
+- The supplied Daniil reference-frame directory was not present on this host. Provisional sibling HUD tokens were read for reference only; no feature branch was merged or copied. Independent Look Dev sign-off remains pending.

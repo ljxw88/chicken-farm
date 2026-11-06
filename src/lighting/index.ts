@@ -1,4 +1,3 @@
 export { createDayNightCycle } from './createDayNightCycle';
-export type { DayNightCycleState } from './createDayNightCycle';
-export { DAY_NIGHT_PHASES } from './dayNightPhases';
+export { configureDayNightFromUrl } from './configureDayNightFromUrl';
 export type { DayNightPhaseName } from './dayNightPhases';

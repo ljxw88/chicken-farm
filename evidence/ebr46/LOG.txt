@@ -1,0 +1,40 @@
+EBR-46 on EBR-71 browser evidence — 2026-11-06
+
+Chromium 153.0.8010.12, headless SwiftShader/WebGL2, 1280x720, DPR 1.
+Default pixel pass: 4 CSS pixels; world canvas: 320x180.
+Dev server: http://100.88.150.21:5179/?phase=daytime
+
+The playable build retains only the phase/location HUD; Supplies, inventory,
+Collect/Build/market controls and interaction prompts are absent.
+
+01-daytime-overview.png: unmodified app, island and stair silhouette.
+02-bottom-tread.png: clicked the pad, then pushed S+D to its outer edge.
+03-mid-climb.png: paused during W+A ascent.
+04-returned-to-path.png: returned to the original plateau.
+05-night-overview.png: unmodified app, locked night lighting.
+
+The movement page exposed scene/character state for measurement only; input
+was real mouse and keyboard, with no teleport. Both pad sides and the outer
+edge stopped at the visible boundary. Across 439 sampled frames (289 descent,
+109 ascent), the capsule did not intersect the stone and the sampled footprint
+stayed on the visible surfaces. The 1.5 x 1.6 x 0.16 pad overlaps the last
+tread by 0.45 units; there is no lower terrace. See browser-proof.json for
+positions and geometry. No application errors were recorded (favicon errors
+were excluded).
+
+qa-slide-proof.json records all three side-push/climb sequences on the rebased
+build: 2,355 sampled frames, no capsule/stone intersections or sampled footprint
+over void, and each reached the dirt path. The signed stair and island source
+files are identical to pre-rebase-ebr46-411fd9c.
+
+Source albedo: barn wall rgb(212,165,116), path rgb(166,124,82). Stone is
+derived from those materials. Previous tread/riser albedo: rgb(195,180,155) /
+rgb(159,142,120); the fourth tread/riser is now rgb(206,159,111) /
+rgb(175,133,89). The other treads vary slightly in value.
+
+At the same daytime screen samples (905,598) and (916,611), tread/riser
+changed from rgb(136,131,112) / rgb(62,66,54) to rgb(144,116,80) /
+rgb(69,61,39). At night the fourth edge sample (914,603) is rgb(43,35,30)
+against the void rgb(16,20,22); all stone materials have zero emissive.
+Independent gameplay QA, Look Dev sign-off, touch traversal on the stairs and
+hardware-GPU rendering were not verified.

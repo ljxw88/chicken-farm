@@ -2,18 +2,26 @@ import * as THREE from 'three';
 import { LANTERN_LIGHT, WINDOW_LIGHT } from './dayNightPhases';
 
 export type WindowPane = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+export interface EmissiveAccent {
+  material: THREE.MeshStandardMaterial;
+  strength: number;
+}
 
-export function createPracticalLights(character: THREE.Object3D, windows: readonly WindowPane[]) {
+export function createPracticalLights(character: THREE.Object3D, windows: readonly WindowPane[], accents: readonly EmissiveAccent[] = []) {
   const windowLights = windows.map((window, index) => {
     window.material.emissive.setHex(WINDOW_LIGHT.color);
     window.material.emissiveIntensity = 0;
     const light = new THREE.PointLight(WINDOW_LIGHT.color, 0, WINDOW_LIGHT.distance, WINDOW_LIGHT.decay);
     light.name = `window-light-${index + 1}`;
-    // The pane's local +Z points out of the barn.
+    // The pane's local +Z points out of the cottage.
     light.position.z = 0.7;
     window.add(light);
     return light;
   });
+  for (const { material } of accents) {
+    material.emissive.setHex(WINDOW_LIGHT.color);
+    material.emissiveIntensity = 0;
+  }
 
   const lantern = new THREE.Group();
   lantern.name = 'lantern';
@@ -24,10 +32,14 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
   const wingStart = new THREE.Vector3(-0.4, -0.05, -0.28);
   const wingEnd = new THREE.Vector3(-0.08, -0.05, -0.06);
   const wingDirection = wingEnd.clone().sub(wingStart);
+  // One world pixel at the default view was too thin to reliably connect the
+  // cup to the body. Keep the same endpoints, but make the little wing legible.
+  const wingRadius = 0.08;
   const wing = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.055, wingDirection.length() - 0.11, 4, 8),
+    new THREE.CapsuleGeometry(wingRadius, wingDirection.length() - 2 * wingRadius, 4, 8),
     new THREE.MeshStandardMaterial({ color: 0xffd477, roughness: 0.9 }),
   );
+  wing.name = 'lantern-wing';
   wing.position.copy(wingStart).add(wingEnd).multiplyScalar(0.5);
   wing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), wingDirection.normalize());
   lantern.add(wing);
@@ -65,8 +77,9 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
   function setNightAmount(amount: number) {
     for (const light of windowLights) light.intensity = WINDOW_LIGHT.intensity * amount;
     for (const window of windows) window.material.emissiveIntensity = WINDOW_LIGHT.intensity * amount;
+    for (const { material, strength } of accents) material.emissiveIntensity = WINDOW_LIGHT.intensity * strength * amount;
     lanternLight.intensity = LANTERN_LIGHT.intensity * amount;
-    glassMaterial.emissiveIntensity = LANTERN_LIGHT.intensity * amount;
+    glassMaterial.emissiveIntensity = LANTERN_LIGHT.glassIntensity * amount;
   }
 
   return { setNightAmount };

@@ -1,0 +1,4104 @@
+{
+ "day-clear": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.578,
+     2.4,
+     0.578
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.400000000000091
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       1.44,
+       3.45,
+       0.422
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 1.1,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.384,
+     "up": 0.87,
+     "dirHoriz": [
+      -0.052,
+      0.491
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     -0.165,
+     2.4,
+     -0.165
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -1.027,
+       3.45,
+       -0.009
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 1.1,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.372,
+     "up": 0.841,
+     "dirHoriz": [
+      0.014,
+      0.54
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.784,
+     2.4,
+     0.454
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.400000000000091
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.628,
+       3.45,
+       1.317
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 1.1,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.303,
+     "up": 0.864,
+     "dirHoriz": [
+      0.07,
+      0.499
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     -0.124,
+     2.4,
+     -0.206
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.279,
+       3.45,
+       -1.069
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 1.1,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.376,
+     "up": 0.84,
+     "dirHoriz": [
+      0.011,
+      0.543
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#e8f0e8",
+     "intensity": 0.1,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#a8d4f0",
+     "intensity": 0.55,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#fff2d6",
+     "intensity": 1.1,
+     "pos": [
+      0,
+      12,
+      6
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": -0.375,
+    "up": 0.848,
+    "dirHoriz": [
+     0,
+     0.53
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     0,
+     0.04,
+     -0.35
+    ]
+   }
+  }
+ },
+ "sunset-clear": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.578,
+     2.4,
+     0.578
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       1.44,
+       3.45,
+       0.422
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e89870",
+      "intensity": 0.12,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#f0a878",
+      "intensity": 0.2,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ff8a50",
+      "intensity": 0.65,
+      "pos": [
+       -12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.673,
+     "up": 0.048,
+     "dirHoriz": [
+      -0.998,
+      -0.046
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0.9,
+      0.04,
+      0
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     0,
+     2.4,
+     0
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.862,
+       3.45,
+       0.156
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e89870",
+      "intensity": 0.12,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#f0a878",
+      "intensity": 0.2,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ff8a50",
+      "intensity": 0.65,
+      "pos": [
+       -12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.706,
+     "up": 0.05,
+     "dirHoriz": [
+      -0.999,
+      0
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0.9,
+      0.04,
+      0
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.618,
+     2.4,
+     0.619
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.463,
+       3.45,
+       1.481
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e89870",
+      "intensity": 0.12,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#f0a878",
+      "intensity": 0.2,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ff8a50",
+      "intensity": 0.65,
+      "pos": [
+       -12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.667,
+     "up": 0.053,
+     "dirHoriz": [
+      -0.997,
+      -0.054
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0.9,
+      0.04,
+      0
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     0,
+     2.4,
+     0
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.155,
+       3.45,
+       -0.863
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e89870",
+      "intensity": 0.12,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#f0a878",
+      "intensity": 0.2,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ff8a50",
+      "intensity": 0.65,
+      "pos": [
+       -12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.706,
+     "up": 0.05,
+     "dirHoriz": [
+      -0.999,
+      0
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0.9,
+      0.04,
+      0
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#e89870",
+     "intensity": 0.12,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#f0a878",
+     "intensity": 0.2,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#ff8a50",
+     "intensity": 0.65,
+     "pos": [
+      -12,
+      3,
+      0
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": -0.706,
+    "up": 0.05,
+    "dirHoriz": [
+     -0.999,
+     0
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     0.9,
+     0.04,
+     0
+    ]
+   }
+  }
+ },
+ "night-clear": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.66,
+     2.4,
+     0.66
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       1.523,
+       3.45,
+       0.504
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.22,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0,
+     "up": 0.786,
+     "dirHoriz": [
+      0.437,
+      0.437
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     0,
+     2.4,
+     0
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       -0.863,
+       3.45,
+       0.156
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.22,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0,
+     "up": 0.749,
+     "dirHoriz": [
+      0.468,
+      0.468
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.66,
+     2.4,
+     0.66
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      360
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       -0.504,
+       3.45,
+       1.522
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.22,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0.073,
+     "up": 0.747,
+     "dirHoriz": [
+      0.518,
+      0.416
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     0.041,
+     2.4,
+     -0.041
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       -0.114,
+       3.45,
+       -0.904
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.22,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.005,
+     "up": 0.749,
+     "dirHoriz": [
+      0.465,
+      0.472
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0.08,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0.85,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0.85,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#3a4560",
+     "intensity": 0.18,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#2a2848",
+     "intensity": 0.22,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#c8d4f0",
+     "intensity": 0.22,
+     "pos": [
+      6,
+      12,
+      6
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": 0,
+    "up": 0.749,
+    "dirHoriz": [
+     0.468,
+     0.468
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     -0.35,
+     0.04,
+     -0.35
+    ]
+   }
+  }
+ },
+ "morning-clear": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.619,
+     2.4,
+     0.619
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      360
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       1.481,
+       3.45,
+       0.463
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#f0e0d0",
+      "intensity": 0.16,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#e8d4c8",
+      "intensity": 0.35,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ffe8c8",
+      "intensity": 0.55,
+      "pos": [
+       12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0.743,
+     "up": 0.053,
+     "dirHoriz": [
+      0.997,
+      -0.054
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.9,
+      0.04,
+      0
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     0.042,
+     2.4,
+     0.042
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.821,
+       3.45,
+       0.197
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#f0e0d0",
+      "intensity": 0.16,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#e8d4c8",
+      "intensity": 0.35,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ffe8c8",
+      "intensity": 0.55,
+      "pos": [
+       12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0.709,
+     "up": 0.05,
+     "dirHoriz": [
+      0.999,
+      -0.003
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.9,
+      0.04,
+      0
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.536,
+     2.4,
+     0.619
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.38,
+       3.45,
+       1.482
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#f0e0d0",
+      "intensity": 0.16,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#e8d4c8",
+      "intensity": 0.35,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ffe8c8",
+      "intensity": 0.55,
+      "pos": [
+       12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0.74,
+     "up": 0.048,
+     "dirHoriz": [
+      0.998,
+      -0.049
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.9,
+      0.04,
+      0
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     0.124,
+     2.4,
+     -0.041
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.032,
+       3.45,
+       -0.904
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#f0e0d0",
+      "intensity": 0.16,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#e8d4c8",
+      "intensity": 0.35,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#ffe8c8",
+      "intensity": 0.55,
+      "pos": [
+       12,
+       3,
+       0
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0.704,
+     "up": 0.05,
+     "dirHoriz": [
+      0.999,
+      0.003
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.9,
+      0.04,
+      0
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#f0e0d0",
+     "intensity": 0.16,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#e8d4c8",
+     "intensity": 0.35,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#ffe8c8",
+     "intensity": 0.55,
+     "pos": [
+      12,
+      3,
+      0
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": 0.706,
+    "up": 0.05,
+    "dirHoriz": [
+     0.999,
+     0
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     -0.9,
+     0.04,
+     0
+    ]
+   }
+  }
+ },
+ "day-cloudy": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.619,
+     2.4,
+     0.619
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      360
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       1.481,
+       3.45,
+       0.463
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#d9ecf0",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#9dd0f8",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.792,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.385,
+     "up": 0.871,
+     "dirHoriz": [
+      -0.056,
+      0.488
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     0,
+     2.4,
+     0
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.863,
+       3.45,
+       0.156
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#d9ecf0",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#9dd0f8",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.792,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.375,
+     "up": 0.848,
+     "dirHoriz": [
+      0,
+      0.53
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.577,
+     2.4,
+     0.577
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.422,
+       3.45,
+       1.44
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#d9ecf0",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#9dd0f8",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.792,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.31,
+     "up": 0.87,
+     "dirHoriz": [
+      0.052,
+      0.491
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     0.083,
+     2.4,
+     -0.083
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.073,
+       3.45,
+       -0.945
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#d9ecf0",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#9dd0f8",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.792,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.384,
+     "up": 0.845,
+     "dirHoriz": [
+      -0.007,
+      0.535
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#d9ecf0",
+     "intensity": 0.1,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#9dd0f8",
+     "intensity": 0.55,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#fff2d6",
+     "intensity": 0.792,
+     "pos": [
+      0,
+      12,
+      6
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": -0.375,
+    "up": 0.848,
+    "dirHoriz": [
+     0,
+     0.53
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     0,
+     0.04,
+     -0.35
+    ]
+   }
+  }
+ },
+ "day-rain": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.619,
+     2.4,
+     0.619
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      360
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       1.482,
+       3.45,
+       0.463
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.88,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.385,
+     "up": 0.871,
+     "dirHoriz": [
+      -0.056,
+      0.488
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     -0.041,
+     2.4,
+     -0.041
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.904,
+       3.45,
+       0.114
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.88,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.374,
+     "up": 0.846,
+     "dirHoriz": [
+      0.004,
+      0.533
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.66,
+     2.4,
+     0.578
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.504,
+       3.45,
+       1.44
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.88,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.305,
+     "up": 0.869,
+     "dirHoriz": [
+      0.06,
+      0.491
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     0,
+     2.4,
+     -0.082
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0,
+      "pos": [
+       -0.155,
+       3.45,
+       -0.945
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#e8f0e8",
+      "intensity": 0.1,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#a8d4f0",
+      "intensity": 0.55,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#fff2d6",
+      "intensity": 0.88,
+      "pos": [
+       0,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.378,
+     "up": 0.845,
+     "dirHoriz": [
+      0,
+      0.535
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      0,
+      0.04,
+      -0.35
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#e8f0e8",
+     "intensity": 0.1,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#a8d4f0",
+     "intensity": 0.55,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#fff2d6",
+     "intensity": 0.88,
+     "pos": [
+      0,
+      12,
+      6
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": -0.375,
+    "up": 0.848,
+    "dirHoriz": [
+     0,
+     0.53
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     0,
+     0.04,
+     -0.35
+    ]
+   }
+  }
+ },
+ "night-rain": {
+  "facings": {
+   "toward_cam_S": {
+    "char": [
+     0.618,
+     2.4,
+     0.618
+    ],
+    "rotY": 0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       1.481,
+       3.45,
+       0.463
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.176,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0,
+     "up": 0.784,
+     "dirHoriz": [
+      0.439,
+      0.439
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "away_W": {
+    "char": [
+     -0.041,
+     2.4,
+     -0.041
+    ],
+    "rotY": -2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      360
+     ],
+     "top": [
+      639.9999999999999,
+      330.6061230866018
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.3938769133981
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       -0.904,
+       3.45,
+       0.114
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.176,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0,
+     "up": 0.747,
+     "dirHoriz": [
+      0.47,
+      0.47
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "left_A": {
+    "char": [
+     -0.701,
+     2.4,
+     0.619
+    ],
+    "rotY": -0.785,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       -0.546,
+       3.45,
+       1.481
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.176,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": 0.072,
+     "up": 0.745,
+     "dirHoriz": [
+      0.52,
+      0.418
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   },
+   "right_D": {
+    "char": [
+     0,
+     2.4,
+     -0.082
+    ],
+    "rotY": 2.356,
+    "screen": {
+     "center": [
+      639.9999999999999,
+      359.99999999999994
+     ],
+     "top": [
+      639.9999999999999,
+      330.60612308660177
+     ],
+     "bottom": [
+      639.9999999999999,
+      389.39387691339806
+     ],
+     "radiusPx": 14.399999999999977
+    },
+    "lights": [
+     {
+      "type": "PointLight",
+      "name": "lantern-light",
+      "color": "#ffb060",
+      "intensity": 0.08,
+      "pos": [
+       -0.156,
+       3.45,
+       -0.945
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-1",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -4.6,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "PointLight",
+      "name": "window-light-2",
+      "color": "#ffcc88",
+      "intensity": 0.85,
+      "pos": [
+       -2.2,
+       3.6,
+       -1.2
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "AmbientLight",
+      "name": "day-night-ambient",
+      "color": "#3a4560",
+      "intensity": 0.18,
+      "pos": [
+       0,
+       0,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "HemisphereLight",
+      "name": "day-night-hemisphere",
+      "color": "#2a2848",
+      "intensity": 0.22,
+      "pos": [
+       0,
+       1,
+       0
+      ],
+      "castShadow": false
+     },
+     {
+      "type": "DirectionalLight",
+      "name": "day-night-directional",
+      "color": "#c8d4f0",
+      "intensity": 0.176,
+      "pos": [
+       6,
+       12,
+       6
+      ],
+      "castShadow": false
+     }
+    ],
+    "casters": 0,
+    "receivers": 0,
+    "meshes": 173,
+    "shadowMapEnabled": null,
+    "sunScreen": {
+     "right": -0.005,
+     "up": 0.747,
+     "dirHoriz": [
+      0.467,
+      0.473
+     ]
+    },
+    "blobShadow": {
+     "offsetFromChar": [
+      -0.35,
+      0.04,
+      -0.35
+     ]
+    }
+   }
+  },
+  "errs": [],
+  "hook": true,
+  "base": {
+   "char": [
+    0,
+    2.4,
+    0
+   ],
+   "rotY": 0,
+   "screen": {
+    "center": [
+     639.9999999999999,
+     359.99999999999994
+    ],
+    "top": [
+     639.9999999999999,
+     330.60612308660177
+    ],
+    "bottom": [
+     639.9999999999999,
+     389.39387691339806
+    ],
+    "radiusPx": 14.399999999999977
+   },
+   "lights": [
+    {
+     "type": "PointLight",
+     "name": "lantern-light",
+     "color": "#ffb060",
+     "intensity": 0.08,
+     "pos": [
+      0.72,
+      3.45,
+      0.5
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-1",
+     "color": "#ffcc88",
+     "intensity": 0.85,
+     "pos": [
+      -4.6,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "PointLight",
+     "name": "window-light-2",
+     "color": "#ffcc88",
+     "intensity": 0.85,
+     "pos": [
+      -2.2,
+      3.6,
+      -1.2
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "AmbientLight",
+     "name": "day-night-ambient",
+     "color": "#3a4560",
+     "intensity": 0.18,
+     "pos": [
+      0,
+      0,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "HemisphereLight",
+     "name": "day-night-hemisphere",
+     "color": "#2a2848",
+     "intensity": 0.22,
+     "pos": [
+      0,
+      1,
+      0
+     ],
+     "castShadow": false
+    },
+    {
+     "type": "DirectionalLight",
+     "name": "day-night-directional",
+     "color": "#c8d4f0",
+     "intensity": 0.176,
+     "pos": [
+      6,
+      12,
+      6
+     ],
+     "castShadow": false
+    }
+   ],
+   "casters": 0,
+   "receivers": 0,
+   "meshes": 173,
+   "shadowMapEnabled": null,
+   "sunScreen": {
+    "right": 0,
+    "up": 0.749,
+    "dirHoriz": [
+     0.468,
+     0.468
+    ]
+   },
+   "blobShadow": {
+    "offsetFromChar": [
+     -0.35,
+     0.04,
+     -0.35
+    ]
+   }
+  }
+ }
+}

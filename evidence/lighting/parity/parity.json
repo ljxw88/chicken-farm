@@ -1,0 +1,631 @@
+{
+  "baselineSha": "a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671",
+  "candidateSha": "1b5468baa44a8f87e6eb373d75a8ddf1f27636ef",
+  "candidateUrl": "local Vite (working tree)",
+  "sourceStatus": "",
+  "browser": "153.0.8010.12",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1,
+  "seed": 3950182401,
+  "results": {
+    "spawn": {
+      "changedPixels": 265136,
+      "width": 1280,
+      "height": 720
+    },
+    "stairs-pad": {
+      "changedPixels": 230160,
+      "width": 1280,
+      "height": 720
+    },
+    "placement-ghost": {
+      "changedPixels": 264743,
+      "width": 1280,
+      "height": 720
+    },
+    "day": {
+      "changedPixels": 267648,
+      "width": 1280,
+      "height": 720
+    },
+    "sunset": {
+      "changedPixels": 265136,
+      "width": 1280,
+      "height": 720
+    },
+    "night": {
+      "changedPixels": 265136,
+      "width": 1280,
+      "height": 720
+    },
+    "rain": {
+      "changedPixels": 265136,
+      "width": 1280,
+      "height": 720
+    },
+    "cloudy": {
+      "changedPixels": 265136,
+      "width": 1280,
+      "height": 720
+    },
+    "cottage-coops-day": {
+      "changedPixels": 558016,
+      "width": 1280,
+      "height": 720
+    },
+    "cottage-coops-night": {
+      "changedPixels": 557968,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "stateMismatches": [
+    "stairs-pad: position",
+    "stairs-pad: yaw",
+    "stairs-pad: camera",
+    "day: position",
+    "day: yaw",
+    "day: camera"
+  ],
+  "frames": {
+    "spawn": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Daytime",
+      "sha256": "6fd255ae50bf5c3ce0ae11cb254d3cdfc8959d7bb8226658b76aea5dca48d6b3"
+    },
+    "stairs-pad": {
+      "position": [
+        12.799999446278282,
+        0.34457575896654713,
+        0.749999515293794
+      ],
+      "yaw": 1.570796524526595,
+      "camera": [
+        24.79999944627828,
+        13.044575758966547,
+        12.749999515293794
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Daytime",
+      "sha256": "1634664262fc0a60d78e714a0250011291bc3253e88b1965d8e775e2453f3d66"
+    },
+    "placement-ghost": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Daytime",
+      "sha256": "94543e9c0c92b5d37e21d188e079ee8b833e5f74fe3f7ede58b1928a1e24f097"
+    },
+    "day": {
+      "position": [
+        1.806658046465012,
+        2.4,
+        1.979898987322335
+      ],
+      "yaw": 0.29145761199091264,
+      "camera": [
+        13.806658046465012,
+        15.1,
+        13.979898987322334
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Daytime",
+      "sha256": "903002789eedaf78766624cd4992fb362be78778e093b2286c5b17b8659223c2"
+    },
+    "sunset": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Sunset",
+      "sha256": "f93bd194e24a9cabcbbf61f38d0037cbda1d1eda8072869e4570cb57c3ca5309"
+    },
+    "night": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Night",
+      "sha256": "bc6d531aac3691bc687b0cea7fffd63a116d35d9346391074df9a68c8805f4f6"
+    },
+    "rain": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "rain",
+        "rainAmount": 1,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1467,
+      "phase": "Daytime",
+      "sha256": "5625b65d5990a23ee9885e64cab59d28f87ab4b604cc9371b68e435f73366f1e"
+    },
+    "cloudy": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        12,
+        15.1,
+        12
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1,
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "cloudy",
+        "rainAmount": 0,
+        "cloudyAmount": 1
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Daytime",
+      "sha256": "977e030a708723cdfa7f16eebbcb1e086e6bccb1d9bda758a2375b57dc53af87"
+    },
+    "cottage-coops-day": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        10.55,
+        15.1,
+        8.6
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1.8,
+      "buildings": {
+        "centers": [
+          {
+            "name": "farm-cottage",
+            "visible": true,
+            "x": -0.13960939511051942,
+            "y": 0.1579920884095152
+          },
+          {
+            "name": "farm-ramp-coop-1",
+            "visible": true,
+            "x": 0.10023238623319274,
+            "y": -0.11757550765359226
+          },
+          {
+            "name": "farm-ramp-coop-2",
+            "visible": true,
+            "x": 0.3150160710186065,
+            "y": -0.07348469228349486
+          }
+        ],
+        "accents": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "windowLights": [
+          0,
+          0
+        ]
+      },
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Daytime",
+      "sha256": "9cafa08d0e2e105867cb178ea69f81860acbd7a5740bd13e396efc29c6ab9e75"
+    },
+    "cottage-coops-night": {
+      "position": [
+        0,
+        2.4,
+        0
+      ],
+      "yaw": 0,
+      "camera": [
+        10.55,
+        15.1,
+        8.6
+      ],
+      "cameraQuaternion": [
+        -0.2798481423331213,
+        0.3647051996310008,
+        0.11591689595929511,
+        0.8804762392171493
+      ],
+      "cameraZoom": 1.8,
+      "buildings": {
+        "centers": [
+          {
+            "name": "farm-cottage",
+            "visible": true,
+            "x": -0.13960939511051942,
+            "y": 0.1579920884095152
+          },
+          {
+            "name": "farm-ramp-coop-1",
+            "visible": true,
+            "x": 0.10023238623319274,
+            "y": -0.11757550765359226
+          },
+          {
+            "name": "farm-ramp-coop-2",
+            "visible": true,
+            "x": 0.3150160710186065,
+            "y": -0.07348469228349486
+          }
+        ],
+        "accents": [
+          0.85,
+          0.85,
+          0.85,
+          0.595,
+          0.595
+        ],
+        "windowLights": [
+          0.85,
+          0.85
+        ]
+      },
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "weather": {
+        "mode": "clear",
+        "rainAmount": 0,
+        "cloudyAmount": 0
+      },
+      "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "randomCalls": 1200,
+      "phase": "Night",
+      "sha256": "c4a2a4d10da29a75764e4865ac2c6d51ec257101a60d39dcc4d9fe1d428de0b9"
+    }
+  }
+}

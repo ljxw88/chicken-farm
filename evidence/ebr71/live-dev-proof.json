@@ -1,0 +1,11 @@
+{
+  "url": "http://127.0.0.1:5177/",
+  "browser": "Chromium 153.0.8010.12",
+  "viewport": "1280x720",
+  "startupText": "Woodland\n\nDay 1 · Spring · Morning",
+  "walkedWith": "S and ground click",
+  "ePressed": true,
+  "simUi": "absent",
+  "nightRain": "passed",
+  "errors": []
+}

@@ -1,0 +1,153 @@
+
+> chicken-farm@0.0.0 test:browser
+> npm run build && node --test tests/browser/*.browser.mjs
+
+
+> chicken-farm@0.0.0 build
+> tsc && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 48 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.52 kB │ gzip:   0.33 kB
+dist/assets/index-BdYnIBk0.css    3.74 kB │ gzip:   1.36 kB
+dist/assets/index-Bva0DPZH.js   622.53 kB │ gzip: 161.26 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 476ms
+TAP version 13
+# Subtest: day and night show three placeholders with matching footprints and working practical lights
+ok 1 - day and night show three placeholders with matching footprints and working practical lights
+  ---
+  duration_ms: 4899.684731
+  type: 'test'
+  ...
+# Subtest: real fence and plot previews reject all three buildings, including rotated ghosts
+ok 2 - real fence and plot previews reject all three buildings, including rotated ghosts
+  ---
+  duration_ms: 4847.503933
+  type: 'test'
+  ...
+# Subtest: actual clicks and WASD stop at the front of every visible building
+ok 3 - actual clicks and WASD stop at the front of every visible building
+  ---
+  duration_ms: 6124.310466
+  type: 'test'
+  ...
+# Subtest: production build: a fence is free, undoable, and rendered through the default pixel pass
+ok 4 - production build: a fence is free, undoable, and rendered through the default pixel pass
+  ---
+  duration_ms: 3685.40513
+  type: 'test'
+  ...
+# Subtest: dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal
+ok 5 - dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal
+  ---
+  duration_ms: 4446.606049
+  type: 'test'
+  ...
+# Subtest: a placed plot can be crossed by WASD and removed from its footprint
+ok 6 - a placed plot can be crossed by WASD and removed from its footprint
+  ---
+  duration_ms: 3740.21639
+  type: 'test'
+  ...
+# Subtest: the foot pad and corner slide remain climbable with a fence and plot placed
+ok 7 - the foot pad and corner slide remain climbable with a fence and plot placed
+  ---
+  duration_ms: 8014.390829
+  type: 'test'
+  ...
+# Subtest: the opt-in debug grid is a dirt-coloured hairline, not the default
+ok 8 - the opt-in debug grid is a dirt-coloured hairline, not the default
+  ---
+  duration_ms: 1071.422984
+  type: 'test'
+  ...
+# Subtest: touch emulation previews first, rotates and confirms with the direct controls
+ok 9 - touch emulation previews first, rotates and confirms with the direct controls
+  ---
+  duration_ms: 2526.622223
+  type: 'test'
+  ...
+# Subtest: portrait touch can place and remove without the old HUD
+ok 10 - portrait touch can place and remove without the old HUD
+  ---
+  duration_ms: 2230.064656
+  type: 'test'
+  ...
+# Subtest: direct controls remain visible and clickable without the old HUD on small screens
+ok 11 - direct controls remain visible and clickable without the old HUD on small screens
+  ---
+  duration_ms: 7457.819309
+  type: 'test'
+  ...
+# Subtest: real clicks and WASD traverse the visible stairs and foot pad without clipping
+ok 12 - real clicks and WASD traverse the visible stairs and foot pad without clipping
+  ---
+  duration_ms: 16346.658549
+  type: 'test'
+  ...
+# Subtest: pad-side QA A: S+A then W+A reaches the path without leaving the visible ground
+ok 13 - pad-side QA A: S+A then W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 11981.784315
+  type: 'test'
+  ...
+# Subtest: pad-side QA B: W+D then W+A reaches the path without leaving the visible ground
+ok 14 - pad-side QA B: W+D then W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 14146.281946
+  type: 'test'
+  ...
+# Subtest: pad-side QA S+D, S+A, W+D, W+A reaches the path without leaving the visible ground
+ok 15 - pad-side QA S+D, S+A, W+D, W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 18487.960576
+  type: 'test'
+  ...
+# Subtest: production build walks without sim, interaction, or Build UI
+ok 16 - production build walks without sim, interaction, or Build UI
+  ---
+  duration_ms: 5756.47578
+  type: 'test'
+  ...
+# Subtest: walking and clicking around former interaction targets leaves only static scenery
+ok 17 - walking and clicking around former interaction targets leaves only static scenery
+  ---
+  duration_ms: 5914.442264
+  type: 'test'
+  ...
+# Subtest: fixed WASD and ground-click steps retain main-branch movement and camera
+ok 18 - fixed WASD and ground-click steps retain main-branch movement and camera
+  ---
+  duration_ms: 2588.535688
+  type: 'test'
+  ...
+# Subtest: night lights, weather controls, phase and pixel rendering remain usable
+ok 19 - night lights, weather controls, phase and pixel rendering remain usable
+  ---
+  duration_ms: 7091.885364
+  type: 'test'
+  ...
+# Subtest: small screens keep the phase label and touch-to-walk without sim UI
+ok 20 - small screens keep the phase label and touch-to-walk without sim UI
+  ---
+  duration_ms: 6455.560794
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61889.910797

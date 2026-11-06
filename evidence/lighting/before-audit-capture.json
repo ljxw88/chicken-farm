@@ -1,0 +1,33 @@
+{
+  "browser": "153.0.8010.12",
+  "viewport": [
+    1280,
+    720
+  ],
+  "screenshots": [
+    "before-cloudy.png",
+    "before-rain.png",
+    "before-roof-tree-crop.png",
+    "before-pond-crop.png",
+    "before-motion-a.png",
+    "before-motion-b.png"
+  ],
+  "motion": {
+    "before": [
+      0,
+      2.4,
+      0
+    ],
+    "after": [
+      0.05,
+      2.4,
+      0
+    ],
+    "camera": [
+      12.05,
+      15.1,
+      12
+    ],
+    "description": "Two frozen frames 0.05 world units apart, with the ordinary following camera and 4-CSS-pixel pass."
+  }
+}
