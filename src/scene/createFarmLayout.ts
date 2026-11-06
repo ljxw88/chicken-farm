@@ -1,12 +1,11 @@
 import * as THREE from 'three';
-import type { WindowPane } from '../lighting/createPracticalLights';
+import { createFarmBuildings } from './createFarmBuildings';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
 import type { FarmObstacle } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
 
 // Positions are shared by the visible props and their collision footprints.
 export const FARM_LAYOUT = {
-  barn: { x: -3.4, z: -3.4, width: 4, depth: 2.6, wallHeight: 2, roofRise: 0.9, roofOverhang: 0.2 },
   trees: [
     { x: -2.15, z: 1.55, scale: 0.95 },
     { x: 4.8, z: 1.6, scale: 1 },
@@ -87,110 +86,6 @@ function createPath(group: THREE.Group) {
     dash.position.set(x, GROUND_HEIGHT + 0.027, z);
     path.add(dash);
   }
-}
-
-function createBarn(group: THREE.Group): WindowPane[] {
-  const { x, z, width, depth, wallHeight, roofRise, roofOverhang } = FARM_LAYOUT.barn;
-  const barn = new THREE.Group();
-  barn.name = 'farm-barn';
-  barn.position.set(x, GROUND_HEIGHT, z);
-  group.add(barn);
-
-  const wood = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnWood, roughness: 1 });
-  const plank = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1, transparent: true, opacity: 0.25 });
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnRoof, roughness: 1 });
-  const doorMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnDoor, roughness: 1 });
-  const trim = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1 });
-
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(width, wallHeight, depth), wood);
-  walls.name = 'barn-walls';
-  walls.position.y = wallHeight / 2;
-  barn.add(walls);
-
-  const gableShape = new THREE.Shape();
-  gableShape.moveTo(-width / 2, wallHeight);
-  gableShape.lineTo(0, wallHeight + roofRise);
-  gableShape.lineTo(width / 2, wallHeight);
-  gableShape.closePath();
-  const gable = new THREE.Mesh(new THREE.ExtrudeGeometry(gableShape, { depth, bevelEnabled: false }), wood);
-  gable.name = 'barn-gable';
-  gable.position.z = -depth / 2;
-  barn.add(gable);
-
-  const roofAngle = Math.atan2(roofRise, width / 2);
-  const roofHalfWidth = width / 2 + roofOverhang;
-  const roofLength = roofHalfWidth / Math.cos(roofAngle);
-  const roofGeometry = new THREE.BoxGeometry(roofLength, 0.12, depth + roofOverhang * 2);
-  for (const side of [-1, 1]) {
-    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-    roof.name = 'barn-roof';
-    roof.position.set(side * roofHalfWidth / 2, wallHeight + roofRise - roofHalfWidth * Math.tan(roofAngle) / 2, 0);
-    roof.rotation.z = -side * roofAngle;
-    barn.add(roof);
-  }
-
-  // Thin boards add a little texture without changing the low-poly silhouette.
-  for (const boardX of [-1.45, -0.9, -0.45, 0, 0.45, 0.9, 1.45]) {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.025, wallHeight, 0.02), plank);
-    board.position.set(boardX, wallHeight / 2, depth / 2 + 0.011);
-    barn.add(board);
-  }
-  for (const boardZ of [-0.9, -0.3, 0.3, 0.9]) {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.02, wallHeight, 0.025), plank);
-    board.position.set(width / 2 + 0.011, wallHeight / 2, boardZ);
-    barn.add(board);
-  }
-  for (const side of [-1, 1]) {
-    const corner = new THREE.Mesh(new THREE.BoxGeometry(0.1, wallHeight, 0.08), trim);
-    corner.position.set(side * (width / 2 - 0.05), wallHeight / 2, depth / 2 + 0.04);
-    barn.add(corner);
-  }
-
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.44, 0.06), doorMaterial);
-  door.name = 'barn-door';
-  door.position.set(0, 0.72, depth / 2 + 0.04);
-  barn.add(door);
-  for (const side of [-1, 1]) {
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.5, 0.05), trim);
-    frame.position.set(side * 0.68, 0.75, depth / 2 + 0.08);
-    barn.add(frame);
-
-    const brace = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(1.16, 1.25), 0.07, 0.035), trim);
-    brace.position.set(0, 0.73, depth / 2 + 0.09);
-    brace.rotation.z = side * Math.atan2(1.25, 1.16);
-    barn.add(brace);
-  }
-  const doorTop = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.08, 0.05), trim);
-  doorTop.position.set(0, 1.5, depth / 2 + 0.08);
-  barn.add(doorTop);
-
-  const loft = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12), doorMaterial);
-  loft.position.set(0, wallHeight + 0.43, depth / 2 + 0.02);
-  barn.add(loft);
-
-  const windows: WindowPane[] = [];
-  for (const [index, windowX] of [-1.2, 1.2].entries()) {
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.05), trim);
-    frame.position.set(windowX, 1.32, depth / 2 + 0.04);
-    barn.add(frame);
-
-    const pane: WindowPane = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.57, 0.57),
-      new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnWindow, roughness: 0.7 }),
-    );
-    pane.name = `barn-window-${index + 1}`;
-    pane.position.set(windowX, 1.32, depth / 2 + 0.071);
-    barn.add(pane);
-    windows.push(pane);
-
-    for (const [barWidth, barHeight] of [[0.04, 0.6], [0.6, 0.04]]) {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(barWidth, barHeight, 0.025), trim);
-      bar.position.set(windowX, 1.32, depth / 2 + 0.09);
-      barn.add(bar);
-    }
-  }
-
-  return windows;
 }
 
 function createTrees(group: THREE.Group) {
@@ -309,38 +204,31 @@ export function createFarmLayout(scene: THREE.Scene) {
   group.name = 'farm-layout';
   scene.add(group);
   createPath(group);
-  const windows = createBarn(group);
+  const { windows, extraEmissives, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
   createTrees(group);
   createPond(group);
   createGrassTufts(group);
 
-  const { barn, trees, pond } = FARM_LAYOUT;
+  const { trees, pond } = FARM_LAYOUT;
   const pondObstacle: FarmObstacle = {
     // The 5% margin covers the irregular water outline without blocking its whole oval rim.
     kind: 'box', name: 'pond', minX: pond.x - pond.waterWidth * 0.525, maxX: pond.x + pond.waterWidth * 0.525,
     minZ: pond.z - pond.waterDepth * 0.525, maxZ: pond.z + pond.waterDepth * 0.525,
   };
   const obstacles: FarmObstacle[] = [
-    {
-      kind: 'box', name: 'barn', minX: barn.x - barn.width / 2, maxX: barn.x + barn.width / 2,
-      minZ: barn.z - barn.depth / 2, maxZ: barn.z + barn.depth / 2,
-    },
+    ...buildingObstacles,
     ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
       kind: 'circle', name: `tree-${index + 1}`, x, z, radius: 0.32 * scale,
     })),
     pondObstacle,
   ];
   const splashExclusions: FarmObstacle[] = [
-    {
-      kind: 'box', name: 'barn-roof',
-      minX: barn.x - barn.width / 2 - barn.roofOverhang, maxX: barn.x + barn.width / 2 + barn.roofOverhang,
-      minZ: barn.z - barn.depth / 2 - barn.roofOverhang, maxZ: barn.z + barn.depth / 2 + barn.roofOverhang,
-    },
+    ...buildingShelters,
     // Shelter beneath the tree crowns and keep the pond's existing ripples uncluttered.
     ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
       kind: 'circle', name: `tree-canopy-${index + 1}`, x, z, radius: 1.02 * scale,
     })),
     pondObstacle,
   ];
-  return { windows, obstacles, splashExclusions };
+  return { windows, extraEmissives, obstacles, splashExclusions };
 }

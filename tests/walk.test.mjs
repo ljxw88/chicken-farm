@@ -65,7 +65,7 @@ function fixture(t, farm = false) {
     }));
   }
 
-  return { camera, follow, resize, character, controls, key, click, groundHeight, stairs };
+  return { camera, follow, resize, character, controls, key, click, groundHeight, stairs, obstacles };
 }
 
 function near(actual, expected, tolerance = 1e-6) {
@@ -160,7 +160,7 @@ test('walking stays on the floor and within both ground edges', (t) => {
   near(character.position.z, -15.6);
 });
 
-test('the path can be followed from the barn past the pond to the island rim', (t) => {
+test('the path can be followed from the cottage past the pond to the island rim', (t) => {
   const { character, controls, click, follow, groundHeight } = fixture(t, true);
   const waypoints = [
     [-0.75, -0.65], [-1.6, -1.1], [-3.3, -1.28], [-1.6, -1.1], [-0.75, -0.65], [0, 0],
@@ -235,23 +235,25 @@ test('click-to-walk reaches the foot pad and returns to the original island', (t
   near(character.position.z, 0.75, 0.01);
 });
 
-test('WASD cannot tunnel through the front or side of the barn', (t) => {
-  const { character, controls, key } = fixture(t, true);
-  character.position.set(-3.4, 0, -0.8);
+test('WASD cannot tunnel through the front or side of the replacement buildings', (t) => {
+  const { character, controls, key, groundHeight, obstacles } = fixture(t, true);
+  const cottage = obstacles.find((obstacle) => obstacle.name === 'cottage');
+  const coop = obstacles.find((obstacle) => obstacle.name === 'ramp-coop-2-body');
+  character.position.set((cottage.minX + cottage.maxX) / 2, groundHeight, cottage.maxZ + 1.3);
   key('keydown', 'KeyW');
   key('keydown', 'KeyD'); // Screen up + right is world -Z.
   controls.update(10);
   key('keyup', 'KeyW');
   key('keyup', 'KeyD');
-  assert.ok(character.position.z >= -1.7 - 1e-8 && character.position.z < -1.55);
+  assert.ok(character.position.z >= cottage.maxZ + 0.4 - 1e-8 && character.position.z < cottage.maxZ + 0.55);
 
-  character.position.set(-0.5, 0, -3.4);
+  character.position.set(coop.maxX + 1.3, groundHeight, (coop.minZ + coop.maxZ) / 2);
   key('keydown', 'KeyW');
   key('keydown', 'KeyA'); // Screen up + left is world -X.
   controls.update(10);
   key('keyup', 'KeyW');
   key('keyup', 'KeyA');
-  assert.ok(character.position.x >= -1 - 1e-8 && character.position.x < -0.85);
+  assert.ok(character.position.x >= coop.maxX + 0.4 - 1e-8 && character.position.x < coop.maxX + 0.55);
 });
 
 test('click-to-move stops at a tree trunk, even with a long update', (t) => {
@@ -270,12 +272,14 @@ test('click-to-move stops at a tree trunk, even with a long update', (t) => {
   near(character.position.x, -0.75);
 });
 
-test('clicks also stop at the barn and WASD also stops at trees', (t) => {
-  const { character, controls, click, key } = fixture(t, true);
-  character.position.set(-3.4, 0, -0.8);
-  click(new THREE.Vector3(-3.4, 0, -5.8));
+test('clicks also stop at the cottage and WASD also stops at trees', (t) => {
+  const { character, controls, click, key, groundHeight, obstacles } = fixture(t, true);
+  const cottage = obstacles.find((obstacle) => obstacle.name === 'cottage');
+  const cottageX = (cottage.minX + cottage.maxX) / 2;
+  character.position.set(cottageX, groundHeight, cottage.maxZ + 1.3);
+  click(new THREE.Vector3(cottageX, groundHeight, (cottage.minZ + cottage.maxZ) / 2));
   controls.update(10);
-  assert.ok(character.position.z >= -1.7 - 1e-8 && character.position.z < -1.55);
+  assert.ok(character.position.z >= cottage.maxZ + 0.4 - 1e-8 && character.position.z < cottage.maxZ + 0.55);
 
   character.position.set(-0.75, 0, 1.55);
   key('keydown', 'KeyW');
@@ -289,11 +293,12 @@ test('clicks also stop at the barn and WASD also stops at trees', (t) => {
 
 test('the pond water also blocks movement', (t) => {
   const { character, controls, click } = fixture(t, true);
-  character.position.set(1.3, 0, -3.5);
-  click(new THREE.Vector3(6, 0, -3.5));
+  // The locked coop B ramp now occupies the old western approach.
+  character.position.set(6.5, 0, -3.5);
+  click(new THREE.Vector3(3, 0, -3.5));
   controls.update(10);
-  assert.ok(character.position.x <= 1.9725 + 1e-8);
-  assert.ok(character.position.x > 1.85);
+  assert.ok(character.position.x >= 6.0275 - 1e-8);
+  assert.ok(character.position.x < 6.1775);
 });
 
 test('a glancing movement slides along a solid wall', () => {

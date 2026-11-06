@@ -148,8 +148,9 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   await page.waitForFunction(() => Boolean(window.__ebr46Test));
   await assertNoSimUi(page);
 
-  const geometry = await page.evaluate(() => {
+  const geometry = await page.evaluate(async () => {
     const { scene, camera, stairs } = window.__ebr46Test;
+    const { FARM_PALETTE } = await import('/src/scene/farmPalette.ts');
     const rgb = (hex) => [hex >> 16 & 255, hex >> 8 & 255, hex & 255];
     const describe = (mesh) => {
       const p = mesh.getWorldPosition(mesh.position.clone());
@@ -171,7 +172,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
       boxes: stairs.treads.map(describe),
       pad: describe(stairs.footPad),
       colors: {
-        barnWall: rgb(scene.getObjectByName('barn-walls').material.color.getHex()),
+        stairSourceWood: rgb(FARM_PALETTE.barnWood),
         dirtPath: rgb(scene.getObjectByName('farm-path-surface').material.color.getHex()),
         riser: rgb(stairs.treads[0].material[0].color.getHex()),
         treads: stairs.treads.map((mesh) => rgb(mesh.material[2].color.getHex())),
@@ -200,7 +201,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   assert.equal(geometry.background, 0x101416);
   assert.deepEqual([geometry.ground.width, geometry.ground.height], [16, 16]);
   assert.equal(geometry.boxes.length, 5);
-  assert.deepEqual(geometry.colors.barnWall, [212, 165, 116]);
+  assert.deepEqual(geometry.colors.stairSourceWood, [212, 165, 116]);
   assert.deepEqual(geometry.colors.dirtPath, [166, 124, 82]);
   assert.ok(geometry.colors.emissive.every((value) => value === 0));
   assert.ok(Math.abs(geometry.pad.maxX - geometry.pad.minX - 1.5) < 1e-6);

@@ -1,0 +1,77 @@
+EBR-47 — Phase 2 cottage and dual ramp coops
+
+Branch: feat/ebr47-cottage-coops
+Original base: 323120a44f139ae21e070066cfb103f3fe5f598d
+Tested implementation/evidence tip: 13c1f0776a3dd36fff4c968d04b2ff3786460a9e
+Final branch tip SHA: git rev-parse HEAD
+This handoff is one documentation-only commit above the tested implementation;
+a committed file cannot contain the SHA of the commit containing itself. The
+exact PR head SHA is also reported in the PR and final delivery message.
+
+Look Dev source of truth: /home/michael/OpenBot/Shared/ebr47-look-lock.md,
+Linear EBR-47 comment 4013f658. Main advanced to 1f7379d (a docs-only merge)
+during this work; this branch remains based on 323120a. A merge-tree check was
+clean. No merge or rebase was performed.
+
+What to open
+- From this worktree run `npm run dev -- --host 127.0.0.1 --port 5173` and open:
+  http://127.0.0.1:5173/?phase=daytime&weather=clear
+  http://127.0.0.1:5173/?phase=sunset&weather=clear
+  http://127.0.0.1:5173/?phase=night&weather=clear
+  http://127.0.0.1:5173/?phase=daytime&weather=rain
+- evidence/EBR-47/01-daytime-front.png — cottage, both coops and both ramps.
+  02-sunset.png, 03-night-glow.png and 04-rain.png are 1280x720 frames.
+  05-tree4-coopB-crop.png is an unaltered crop of the daytime frame.
+  06-ramp-plot-rejected.png and 07-ramp-walk-blocked.png show interactions.
+  browser-proof.json records scene measurements and the tree/roof mesh probe.
+
+Implementation
+- src/scene/farmBuildingSpecs.ts has the shared FARM_BUILDINGS table; separate
+  cottage, coop, gable-roof and building-material modules construct the meshes.
+  The cottage has the locked stone base, plaster/timber, two front windows,
+  east window, door, shingled gable roof and cottage-chimney-top anchor.
+  Both coops have raised bodies, four dark stub posts, trim, pop-holes,
+  +Z ramps and 0.25-spaced cleats. Exact locked colors are building-only;
+  the existing fence/stair palette remains unchanged.
+- Five solid boxes are used by both walking and placement: cottage walls,
+  coop A body and ramp, coop B body and ramp. Roof overhangs are not walking
+  obstacles; their exact projected footprints are rain-splash exclusions.
+- Two front panes each retain their original window PointLight. The east pane
+  and two pop-hole panes use emissive-only materials on the same night ramp;
+  coop glows are 70% of window intensity. The carried lantern is unchanged.
+- Path, tree and pond functions match 323120a byte-for-byte. Terrain, stairs,
+  HUD, grid, original farm palette and day/night light settings are unchanged.
+
+Decisions / deviations for Look Dev and PM
+1. User chose the locked positions over the incompatible 1.5-unit path buffer.
+   Shortest X/Z distances to the actual dark path ribbon (world units):
+   A body 0.9893, A roof 0.7772, A ramp 0.3497; B body 1.9477, B roof
+   1.7644, B ramp 1.0654. In particular the real A-ramp gap is 0.3497, not the
+   lock's approximate 0.7. The locked cottage wall overlaps the path's dark
+   border by up to 0.0674 and that overlap extends outside the start circle;
+   the dirt surface itself does not overlap the solid boxes and the original
+   walking route and stairs pass their tests. Neither the path nor the locked
+   building positions were adjusted to create extra clearance.
+2. User chose to preserve all three pre-existing PointLights: two window
+   lights plus the character's lantern. This differs from the lock's literal
+   two-total wording; no additional PointLight was introduced.
+3. User chose the locked 0.2 x 0.25 coop glow panes as an explicit exception
+   to the 0.3 x 0.3 minimum. No optional porch lamp was added.
+4. Tree 4's canopy fuses/intersects coop B's roof. The untouched daytime crop
+   shows the contact; a separate-scene 0.02-unit vertical-ray mesh probe found
+   328 overlapping sample positions (browser-proof.json). Tree 4 remains at
+   X 0.05, Z -5.6; this is reported only, not repaired.
+
+Verification
+- `npm run build`: PASS (TypeScript and Vite, 53 modules). Vite retains the
+  existing >500 kB chunk advisory; evidence/EBR-47/build.log.
+- `npm test`: 81 passed, 0 failed; evidence/EBR-47/unit.log.
+- `EBR47_EVIDENCE_DIR=evidence/EBR-47 npm run test:browser`: 20 passed,
+  0 failed; evidence/EBR-47/browser-suite.log. Chromium 153, headless
+  SwiftShader. Tests cover exact meshes/colors, collision and placement for
+  every wall/body/ramp, roof rain shelter, path/stair clearance, both window
+  lights, emissive-only extras, and real mouse/WASD/touch interactions.
+- `npm ls --depth=0`: PASS. This worktree now has a real local npm ci
+  installation including jsdom and Playwright; node_modules is ignored and
+  not committed. The prior shared symlink target was not modified.
+- `git diff --check`: PASS. No new building mesh or collider has X > 4.5.

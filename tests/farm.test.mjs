@@ -6,10 +6,11 @@ import { createServer } from 'vite';
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
+const { BUILDING_PALETTE } = await vite.ssrLoadModule('/src/scene/farmBuildingMaterials.ts');
 const { GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
-test('the locked palette contains only the specified farm colors', () => {
+test('the original farm palette stays locked alongside the building palette', () => {
   assert.deepEqual(FARM_PALETTE, {
     grass: 0x5fa846, dirt: 0xa67c52, dirtEdge: 0x7a5a3a, dirtHighlight: 0xc4a06a,
     barnWood: 0xd4a574, barnTrim: 0x8b6914, barnRoof: 0xc45a3a, barnDoor: 0x6b4423, barnWindow: 0x8aa0a8,
@@ -18,13 +19,13 @@ test('the locked palette contains only the specified farm colors', () => {
   });
   const scene = new THREE.Scene();
   createFarmLayout(scene);
-  const allowed = new Set(Object.values(FARM_PALETTE));
+  const allowed = new Set([...Object.values(FARM_PALETTE), ...Object.values(BUILDING_PALETTE)]);
   scene.traverse((object) => {
     if (object.isMesh) assert.ok(allowed.has(object.material.color.getHex()), `unexpected color on ${object.name}`);
   });
 });
 
-test('the raised dirt route connects the barn, spawn, pond and island edge', () => {
+test('the raised dirt route connects the cottage, spawn, pond and island edge', () => {
   const scene = new THREE.Scene();
   createFarmLayout(scene);
   scene.updateMatrixWorld(true);
@@ -55,20 +56,10 @@ test('the raised dirt route connects the barn, spawn, pond and island edge', () 
   }
 });
 
-test('the barn and four stacked trees use the locked dimensions', () => {
+test('the four stacked trees use the locked dimensions', () => {
   const scene = new THREE.Scene();
-  const { windows, obstacles } = createFarmLayout(scene);
+  const { obstacles } = createFarmLayout(scene);
   scene.updateMatrixWorld(true);
-  const walls = scene.getObjectByName('barn-walls');
-  assert.deepEqual([walls.geometry.parameters.width, walls.geometry.parameters.depth, walls.geometry.parameters.height], [4, 2.6, 2]);
-  assert.equal(walls.material.color.getHex(), 0xd4a574);
-  const gable = scene.getObjectByName('barn-gable');
-  gable.geometry.computeBoundingBox();
-  assert.ok(Math.abs(gable.geometry.boundingBox.max.y - 2.9) < 0.00001);
-  assert.equal(scene.getObjectByName('barn-roof').material.color.getHex(), 0xc45a3a);
-  assert.equal(scene.getObjectByName('barn-door').material.color.getHex(), 0x6b4423);
-  assert.equal(windows.length, 2);
-  assert.ok(windows.every((window) => window.material.color.getHex() === 0x8aa0a8));
   for (let i = 1; i <= 4; i++) {
     const tree = scene.getObjectByName(`farm-tree-${i}`);
     assert.ok(tree);

@@ -16,10 +16,10 @@ function fixture() {
   scene.background = new THREE.Color(VOID_COLOR);
   const character = createCharacter();
   scene.add(character);
-  const { windows } = createFarmLayout(scene);
-  const cycle = createDayNightCycle({ scene, character, windows });
+  const { windows, extraEmissives } = createFarmLayout(scene);
+  const cycle = createDayNightCycle({ scene, character, windows, extraEmissives });
   return {
-    scene, character, windows, cycle,
+    scene, character, windows, extraEmissives, cycle,
     ambient: scene.getObjectByName('day-night-ambient'),
     hemisphere: scene.getObjectByName('day-night-hemisphere'),
     directional: scene.getObjectByName('day-night-directional'),
@@ -51,7 +51,7 @@ test('all four phases keep the void and use the locked fog and light presets', (
 
   assert.equal(scene.fog.isFogExp2, true);
   assert.equal(windows.length, 2);
-  assert.ok(windows.every((window) => window.parent.name === 'farm-barn'));
+  assert.ok(windows.every((window) => window.parent.name === 'farm-cottage'));
   for (const [phase, values] of Object.entries(expected)) {
     cycle.setDayNightPhase(phase);
     assert.equal(scene.background.getHex(), 0x101416, phase);
@@ -79,6 +79,37 @@ test('all four phases keep the void and use the locked fog and light presets', (
     assert.equal(lanternGlass.material.emissive.getHex(), 0xffb060);
     near(lanternGlass.material.emissiveIntensity, phase === 'night' ? 0.55 : 0);
   }
+});
+
+test('east window and coop glows follow the night ramp without adding point lights', () => {
+  const { scene, cycle, windows, extraEmissives, lanternLight } = fixture();
+  assert.deepEqual(windows.map((pane) => pane.name), ['cottage-window-1', 'cottage-window-2']);
+  const names = ['cottage-east-window', 'ramp-coop-1-pop-hole-glow', 'ramp-coop-2-pop-hole-glow'];
+  const accents = names.map((name) => scene.getObjectByName(name));
+  assert.equal(extraEmissives.length, 3);
+  assert.deepEqual(extraEmissives.map((entry) => entry.material), accents.map((mesh) => mesh.material));
+  assert.deepEqual(extraEmissives.map((entry) => entry.strength), [1, 0.7, 0.7]);
+  const points = [];
+  scene.traverse((object) => { if (object.isPointLight) points.push(object.name); });
+  assert.deepEqual(points.sort(), ['lantern-light', 'window-light-1', 'window-light-2']);
+  assert.ok(accents.every((mesh) => !mesh.children.some((child) => child.isPointLight)));
+  assert.ok(accents.every((mesh) => mesh.material.emissive.getHex() === 0xffcc88));
+  for (const name of ['cottage-door', 'cottage-walls', 'ramp-coop-1-body', 'ramp-coop-2-body']) {
+    assert.equal(scene.getObjectByName(name).material.emissive.getHex(), 0, name);
+  }
+
+  cycle.setDayNightPhase('daytime');
+  assert.ok(accents.every((mesh) => mesh.material.emissiveIntensity === 0));
+  cycle.setDayNightPhase('sunset');
+  cycle.update(9);
+  near(accents[0].material.emissiveIntensity, 0.425);
+  near(accents[1].material.emissiveIntensity, 0.85 * 0.7 / 2);
+  near(accents[2].material.emissiveIntensity, 0.85 * 0.7 / 2);
+  cycle.update(9);
+  near(accents[0].material.emissiveIntensity, 0.85);
+  near(accents[1].material.emissiveIntensity, 0.85 * 0.7);
+  near(accents[2].material.emissiveIntensity, 0.85 * 0.7);
+  near(lanternLight.intensity, 0.55);
 });
 
 test('the default 72-second cycle advances through all four phases and wraps', () => {

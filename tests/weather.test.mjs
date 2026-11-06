@@ -18,11 +18,11 @@ function fixture(t) {
   const character = createCharacter();
   character.position.y = GROUND_HEIGHT;
   scene.add(character);
-  const { windows, splashExclusions } = createFarmLayout(scene);
+  const { windows, extraEmissives, splashExclusions } = createFarmLayout(scene);
   const { camera, follow, resize } = createIsometricCamera();
   resize(1280, 720);
   follow(character.position);
-  const cycle = createDayNightCycle({ scene, character, windows });
+  const cycle = createDayNightCycle({ scene, character, windows, extraEmissives });
   let seed = 0x12345678;
   let suppressSpawns = false;
   function random() {
@@ -366,13 +366,11 @@ test('rain is sparse, short, unblurred and tilted 15 degrees on screen', (t) => 
   assert.ok(before.distanceTo(afterRain) > 0.1);
 });
 
-test('splash rings are occasional, short-lived and avoid roofs, water and ground edges', (t) => {
+test('splash rings are occasional, short-lived and avoid buildings, water and ground edges', (t) => {
   const { scene, character, weather, splashes, stopNewSplashes } = fixture(t);
   scene.updateMatrixWorld(true);
-  const roof = new THREE.Box3();
-  for (const object of scene.getObjectByName('farm-barn').children.filter((child) => child.name === 'barn-roof')) {
-    roof.union(new THREE.Box3().setFromObject(object));
-  }
+  const buildings = ['cottage', 'ramp-coop-1', 'ramp-coop-2']
+    .map((name) => new THREE.Box3().setFromObject(scene.getObjectByName(`${name}-roof`)));
   weather.setWeather('rain');
   weather.update(1.75);
   let sawSplash = false;
@@ -388,9 +386,11 @@ test('splash rings are occasional, short-lived and avoid roofs, water and ground
       assert.ok(splash.material.opacity > 0 && splash.material.opacity <= 0.32);
       assert.ok(Math.abs(splash.position.x) + radius < 8 && Math.abs(splash.position.z) + radius < 8);
       near(splash.position.y, GROUND_HEIGHT + 0.036);
-      const nearestX = THREE.MathUtils.clamp(splash.position.x, roof.min.x, roof.max.x);
-      const nearestZ = THREE.MathUtils.clamp(splash.position.z, roof.min.z, roof.max.z);
-      assert.ok(Math.hypot(splash.position.x - nearestX, splash.position.z - nearestZ) > radius, 'splash crossed a roof');
+      for (const building of buildings) {
+        const nearestX = THREE.MathUtils.clamp(splash.position.x, building.min.x, building.max.x);
+        const nearestZ = THREE.MathUtils.clamp(splash.position.z, building.min.z, building.max.z);
+        assert.ok(Math.hypot(splash.position.x - nearestX, splash.position.z - nearestZ) > radius, 'splash crossed a building');
+      }
       // Pond water's bounding rectangle is kept clear of new ripples.
       const pondX = THREE.MathUtils.clamp(splash.position.x, 2.3725, 5.6275);
       const pondZ = THREE.MathUtils.clamp(splash.position.z, -4.4975, -2.5025);
