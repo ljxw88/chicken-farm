@@ -1,72 +1,46 @@
-EBR-46 — rebased onto EBR-71, ready for post-merge review
+EBR-56 — free farm grid and placement
 
-Branch: feat/ebr46-stairs
-Rebased implementation/evidence tip: f7dc01bc11f128e8be43946a66d71b2ecca9b5b6
-Final branch tip SHA: run `git rev-parse HEAD`; this committed handoff is one
-documentation-only commit above the implementation and cannot contain its
-own SHA. The final tip is also reported in the delivery response.
-Pre-rebase tag: pre-rebase-ebr46-411fd9c -> 411fd9cf497c8b0fd23bccea44382bfe5c615bce
-Rebased onto local feat/ebr71-strip-sim: 615b1f5f15108edc94ae21fec9b370ca074f05cd
-No push, PR or merge. EBR-71 PR #10 still awaits human merge approval.
+Branch: feat/ebr56-grid
+Base: f50c7bc1c9fbdd4de64cec49042411024d380e40
+Implementation tip SHA: f72577928553ebbb43bc5b11c592b45b72405eb2
+Branch tip SHA: run `git rev-parse HEAD`. This handoff-only commit is above the
+implementation and cannot contain its own SHA; the exact tip is also reported
+in the accompanying response. No push or PR.
 
-Open and walk
-- Tailscale: http://100.88.150.21:5179/?phase=daytime
-  Night comparison: http://100.88.150.21:5179/?phase=night
-  Restart from this worktree with
-  `npm run dev -- --host 100.88.150.21 --port 5179 --strictPort`.
-- At 1280x720, click the pad near (947,646); wait for the character to arrive.
-  Hold S+A for 2.2s then W+A for 4s. Repeat with W+D for 2.2s then W+A for
-  6s, or S+D, S+A, W+D then W+A. Each route climbs back to the dirt path.
-- Only the phase/location HUD remains. The chicken, nest, sign and bin are
-  static scenery; there are no Supplies, inventory, Collect/Build/market
-  controls or feed/egg interaction prompts.
+Open / try
+- Vite dev server: http://127.0.0.1:5178/?phase=daytime (while running).
+  To restart: `npm run dev -- --host 127.0.0.1 --port 5173`; open Vite's URL.
+- Collapse Growing if it covers the island. Select FREE Fence or Plot (F / P).
+  Move over grass for the ghost; R rotates, click places, Escape cancels.
+  A touch tap previews; use Rotate if desired and Place to confirm. Placement is free.
+- Z / Undo removes the latest remaining object. To remove a chosen one, hover
+  it and press Delete, or choose Remove and click/tap it; Remove again exits that
+  selection mode. Fences block walking; the dirt plot stays walkable.
+- `?grid=1` shows the optional dirt-coloured debug grid; it is off by default.
+  The existing paid, fixed-spot Place Fence stub is unchanged and separate.
 
-Conflict resolution and signed look
-- In `src/main.ts`, kept EBR-71's static decorations, minimal phase HUD,
-  lighting, weather and rendering; added EBR-46's `stairs` and character-shadow
-  arguments to movement controls. Removed the old interaction, Supplies and
-  economy wiring. README auto-merged; the stair browser test was adjusted for
-  the absent Growing panel and asserts that sim UI remains absent.
-- `git diff --exit-code pre-rebase-ebr46-411fd9c -- src/scene/createStoneStairs.ts src/scene/createIsland.ts`:
-  exit 0, no differences. Colors, five treads and 1.5 x 1.6 x 0.16 foot pad
-  therefore match the signed 411fd9c source exactly.
-- The same tag comparison for `src/scene/farmCollisions.ts`,
-  `src/character/createCharacterControls.ts`, `src/scene/createScene.ts` and
-  `src/character/createCharacter.ts` also returned exit 0: the pad-corner slide,
-  collision boundaries and character shadow are unchanged.
-- EBR-71's decoration, HUD, HUD CSS, UI index and style sources match its local
-  branch exactly. The only `src/main.ts` differences from EBR-71 are the stair
-  return value and its two control arguments.
-
-Evidence (1280x720, 4-CSS-px pass, 320x180 world canvas)
-- evidence/ebr46/01-daytime-overview.png — unmodified stripped daytime view.
-- evidence/ebr46/02-bottom-tread.png — foot pad and edge stop.
-- evidence/ebr46/03-mid-climb.png, 04-returned-to-path.png — ascent/return.
-- evidence/ebr46/05-night-overview.png — unmodified stripped night view.
-- evidence/ebr46/LOG.txt, browser-proof.json and qa-slide-proof.json — source
-  colors, dimensions, real input and path/footprint checks. The QA movement page
-  exposes scene state for measurement only; it never teleports or recenters.
+Scope / evidence
+- 1.5-unit tiles fit the existing 1.47-unit fence; plots occupy two tiles.
+  The centred full-tile grid leaves a 0.5-unit strip at each island edge.
+  Placement is session-only and resets on refresh. No new Build menu or spending.
+- `evidence/EBR-56/browser-log.txt` and `browser-proof.json`: short log and
+  recorded browser details. Screenshots in the same directory:
+  `01-production-valid-fence.png`, `01a-remove-target.png`,
+  `02-invalid-rust.png`, `03-rotated-fence-preview.png`,
+  `04-placed-fence-occupied.png`, `05-rotated-plot-preview.png`,
+  `06-fence-and-plot.png`, `07-walk-blocked.png`, `08-walk-after-removal.png`,
+  `09-debug-grid.png`, `10-touch-preview.png`, `11-touch-placed.png`, and
+  `12-short-landscape-controls.png`.
 
 Checks run
-- `npm ls --depth=0`: passed; package.json and package-lock.json match the
-  pre-rebase tag. `npm ci` was not needed or run.
-- `npm run build`: passed, including TypeScript `tsc`; Vite retained its
-  existing >500 kB bundle-size advisory.
-- `npm test`: 68 passed, 0 failed.
-- `node --test tests/stairs.test.mjs tests/walk.test.mjs`: 21 passed, 0 failed.
-- `EBR46_URL=http://100.88.150.21:5179 EBR46_EVIDENCE_DIR=evidence/ebr46 EBR46_SLIDE_PROOF=evidence/ebr46/qa-slide-proof.json npm run test:browser`:
-  9 passed, 0 failed (four stair checks, including all three side-push routes,
-  and five EBR-71 playable-build checks). Existing frames were refreshed.
-- Chromium 153 / WebGL2 / SwiftShader: 2,355 sampled frames across the three
-  side-push routes; each crossed the dirt path with no capsule/stone
-  intersection or sampled footprint over the void. No application errors
-  observed (favicon errors excluded).
-- `git diff --check`: passed. The restarted Tailscale-bound server returned
-  HTTP 200 locally; `git merge-base --is-ancestor feat/ebr71-strip-sim HEAD`
-  passed. See the source comparisons above.
+- `npm ci`: passed; 0 reported vulnerabilities.
+- `npm run build`: passed, including TypeScript (`tsc`); Vite reports its
+  >500 kB bundle-size advisory.
+- `npm test`: 85 passed, 0 failed.
+- `EBR56_DEV_URL=http://127.0.0.1:5178 EBR56_EVIDENCE_DIR=evidence/EBR-56 npm run test:browser`:
+  passed, 21 Chromium checks; the command also runs the production build.
+- `git diff --cached --check`: passed. The dev URL returned HTTP 200.
 
-Not verified: EBR-71's eventual merge or the resulting origin/main, independent
-QA/Look Dev approval of the rebased combination, remote access from another
-tailnet device, touch traversal on the stairs, hardware-GPU rendering, or
-stair traversal in every weather/phase. The pre-rebase EBR-46 QA PASS and Look
-Dev SIGNED status, and EBR-71's signed/pass status, are as reported in the task.
+Not verified: physical touch hardware, non-Chromium browsers or a hardware GPU
+(touch was emulated; Chromium used SwiftShader); independent Look Dev signoff;
+rebasing onto the future EBR-46 stepped terrain or EBR-71 removal.
