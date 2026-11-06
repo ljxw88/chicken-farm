@@ -22,6 +22,13 @@ test('the original farm palette stays locked alongside the building palette', ()
   const allowed = new Set([...Object.values(FARM_PALETTE), ...Object.values(BUILDING_PALETTE)]);
   scene.traverse((object) => {
     if (!object.isMesh) return;
+    if (object.name.startsWith('farm-tree-shadow-')) {
+      // Unlit black alpha darkens rather than changing any signed tree color.
+      assert.equal(object.material.isMeshBasicMaterial, true);
+      assert.equal(object.material.color.getHex(), 0);
+      assert.equal(object.material.transparent, true);
+      return;
+    }
     // The separately locked water feature has its own palette; keep checking
     // every pre-existing farm mesh rather than expanding that palette.
     let ancestor = object.parent;

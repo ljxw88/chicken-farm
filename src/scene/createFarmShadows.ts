@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { GROUND_HEIGHT } from './createIsland';
+import { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
 import { FARM_BUILDINGS } from './farmBuildingSpecs';
+import { WATER_FEATURE } from './waterFeatureSpec';
 
 // The farm uses intentionally soft, pixel-stable ground blobs rather than
 // shadow maps. The tree/chicken contacts are existing meshes; buildings get
@@ -28,6 +29,20 @@ export function createFarmShadows(scene: THREE.Scene) {
     buildingShadows.add(shadow);
     return { spec, shadow };
   });
+  const bridge = new THREE.Mesh(geometry, material);
+  bridge.name = 'wooden-bridge-shadow';
+  bridge.rotation.x = -Math.PI / 2;
+  bridge.scale.set(WATER_FEATURE.bridge.length * 0.55, WATER_FEATURE.bridge.width * 0.55, 1);
+  bridge.position.set(WATER_FEATURE.bridge.x, GROUND_HEIGHT + 0.034, WATER_FEATURE.bridge.z);
+  buildingShadows.add(bridge);
+
+  const waterfall = new THREE.Mesh(geometry, material);
+  waterfall.name = 'waterfall-lip-shadow';
+  waterfall.rotation.x = -Math.PI / 2;
+  // Keep the entire blob on the island side of the +Z lip, not on the void.
+  waterfall.position.set(WATER_FEATURE.waterfall.x, GROUND_HEIGHT + 0.034, GROUND_SIZE / 2 - 0.25);
+  waterfall.scale.set(WATER_FEATURE.waterfall.width / 2 + 0.05, 0.25, 1);
+  buildingShadows.add(waterfall);
   scene.add(buildingShadows);
 
   function update(awayX: number, awayZ: number, offset: number, strength: number) {
@@ -57,6 +72,16 @@ export function createFarmShadows(scene: THREE.Scene) {
       shadow.position.x = spec.x + awayX * distance;
       shadow.position.z = spec.z + awayZ * distance;
     }
+    const bridgeDistance = offset * 1.8;
+    bridge.position.x = WATER_FEATURE.bridge.x + awayX * bridgeDistance;
+    bridge.position.z = WATER_FEATURE.bridge.z + awayZ * bridgeDistance;
+    const waterfallDistance = offset * 1.8;
+    waterfall.position.x = WATER_FEATURE.waterfall.x + awayX * waterfallDistance;
+    waterfall.position.z = GROUND_SIZE / 2 - 0.25 + awayZ * waterfallDistance;
+    // Expand back toward the lip as the offset grows so the shadow remains
+    // attached, while its +Z edge never projects beyond the island rim.
+    waterfall.scale.x = WATER_FEATURE.waterfall.width / 2 + 0.05 + Math.max(0, awayX * waterfallDistance);
+    waterfall.scale.y = 0.25 + Math.max(0, -awayZ * waterfallDistance);
     material.opacity = 0.12 * strength;
   }
 

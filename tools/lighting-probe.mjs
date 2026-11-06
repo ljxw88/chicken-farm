@@ -142,6 +142,12 @@ try {
             grass: worldRgb(-5.3, 2.405, 3.4),
             grassSamples: [[-6, -6], [6, -6], [-6, 6], [6, 6], [-5.3, 3.4], [-1, 5], [3, 5]]
               .map(([x, z]) => worldRgb(x, 2.405, z)), pond: worldRgb(4.2, 2.431, -3.55),
+            // This point is unobstructed by the foreground tree canopy.
+            stream: scene.getObjectByName('farm-stream-water') ? worldRgb(2.85, 2.431, 2) : null,
+            streamSamples: scene.getObjectByName('farm-stream-water') ?
+              [[3.6, -0.8], [3.1, 0.6], [2.85, 2], [2.9, 3.6], [3.25, 5.3], [3.55, 6.8], [3.6, 7.7]]
+                .map(([x, z]) => worldRgb(x, 2.431, z)) : null,
+            waterfall: scene.getObjectByName('farm-waterfall-face') ? worldRgb(3.6, 1.0, 8.06) : null,
             lightPosition: pos.toArray(), lightIntensity: light.intensity,
             shadowOffset: shadowDelta.toArray(), shadowLength: shadowDelta.length(),
             shadowCosine: shadowDelta.length() > 1e-6 ? shadowDelta.normalize().dot(awayFromKey) : 0,
@@ -157,7 +163,8 @@ try {
       result[name] = { sun, shade, ratio: shade / sun, asymmetry: (sun - shade) / ((sun + shade) / 2),
         top: away.top, bodyToTop: away.body / away.top, ground: away.ground,
         contrast: (Math.max(away.body, away.ground) + 12.75) / (Math.min(away.body, away.ground) + 12.75),
-        bodyRgb: away.bodyRgb, groundRgb: away.groundRgb, grass: away.grass, grassSamples: away.grassSamples, pond: away.pond,
+        bodyRgb: away.bodyRgb, groundRgb: away.groundRgb, grass: away.grass, grassSamples: away.grassSamples,
+        pond: away.pond, stream: away.stream, streamSamples: away.streamSamples, waterfall: away.waterfall,
         lightPosition: away.lightPosition, lightIntensity: away.lightIntensity, shadowOffset: away.shadowOffset,
         shadowLength: away.shadowLength, shadowCosine: away.shadowCosine, shadowOpacity: away.shadowOpacity,
         facings: Object.fromEntries(Object.entries(facings).map(([key, v]) => [key, v.body])),

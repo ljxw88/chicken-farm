@@ -30,10 +30,10 @@ function near(actual, expected, tolerance = 1e-6) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} differs from ${expected}`);
 }
 
-test('tree, cottage, coop and chicken blobs follow the same key and remain attached to their bases', () => {
+test('tree, buildings, bridge, waterfall and chicken blobs follow the key and touch their bases', () => {
   const { scene, character, cycle } = fixture();
   const away = new THREE.Vector3(11, 0, -4).normalize();
-  for (const [phase, offset] of [['morning', 0.48], ['daytime', 0.31], ['sunset', 0.48], ['night', 0.16]]) {
+  for (const [phase, offset] of [['morning', 0.48], ['daytime', 0.266], ['sunset', 0.48], ['night', 0.16]]) {
     cycle.setDayNightPhase(phase);
     scene.updateMatrixWorld(true);
     const playerShadow = character.getObjectByName('character-shadow');
@@ -54,13 +54,18 @@ test('tree, cottage, coop and chicken blobs follow the same key and remain attac
       assert.equal(shadow.material.color.getHex(), 0);
     }
     for (const [name, x, z, scale] of [['cottage', -3.4, -3.4, 2],
-      ['ramp-coop-1', 0.15, -3.2, 1.8], ['ramp-coop-2', 1.35, -5, 1.8]]) {
+      ['ramp-coop-1', 0.15, -3.2, 1.8], ['ramp-coop-2', 1.35, -5, 1.8],
+      ['wooden-bridge', 3.9, -1.95, 1.8], ['waterfall-lip', 3.6, 7.75, 1.8]]) {
       const shadow = scene.getObjectByName(`${name}-shadow`);
       assert.ok(shadow?.isMesh, `${name} ground shadow missing`);
-      const delta = shadow.getWorldPosition(new THREE.Vector3()).sub(new THREE.Vector3(x, 2.43, z)).setY(0);
+      const delta = shadow.getWorldPosition(new THREE.Vector3()).sub(new THREE.Vector3(x, 0, z)).setY(0);
       near(delta.length(), offset * scale);
       assert.ok(delta.normalize().dot(away) > 0.999999);
       assert.equal(shadow.material.color.getHex(), 0);
+      if (name === 'wooden-bridge') {
+        const base = shadow.worldToLocal(new THREE.Vector3(x, 2.4, z));
+        assert.ok(Math.hypot(base.x, base.y) <= 1 + 1e-6, `${phase}: bridge shadow detached`);
+      }
     }
     const chicken = scene.getObjectByName('farm-chicken');
     const chickenShadow = scene.getObjectByName('farm-chicken-shadow');
@@ -68,6 +73,10 @@ test('tree, cottage, coop and chicken blobs follow the same key and remain attac
       .sub(chicken.getWorldPosition(new THREE.Vector3())).setY(0);
     near(delta.length(), offset * 0.9);
     assert.ok(delta.normalize().dot(away) > 0.999999);
+    const lip = scene.getObjectByName('farm-waterfall-lip');
+    const fallShadow = scene.getObjectByName('waterfall-lip-shadow');
+    const lipLocal = fallShadow.worldToLocal(lip.getWorldPosition(new THREE.Vector3()));
+    assert.ok(Math.hypot(lipLocal.x, lipLocal.y) <= 1 + 1e-6, `${phase}: waterfall shadow detached from lip`);
   }
 });
 
@@ -79,17 +88,17 @@ test('static shadows soften with weather, fade at night, and stay within the isl
   const treeOrigin = scene.getObjectByName('farm-tree-1');
   const distance = () => tree.getWorldPosition(new THREE.Vector3()).sub(treeOrigin.getWorldPosition(new THREE.Vector3())).setY(0).length();
   scene.updateMatrixWorld(true);
-  near(distance(), 0.31 * 1.8);
+  near(distance(), 0.266 * 1.8);
   near(tree.material.opacity, 0.16);
   near(building.material.opacity, 0.12);
   cycle.setShadowWeather(0, 1);
   scene.updateMatrixWorld(true);
-  near(distance(), 0.31 * 1.8 * 0.5);
+  near(distance(), 0.266 * 1.8 * 0.5);
   near(tree.material.opacity, 0.08);
   near(building.material.opacity, 0.06);
   cycle.setShadowWeather(1, 0);
   scene.updateMatrixWorld(true);
-  near(distance(), 0.31 * 1.8 * 0.49);
+  near(distance(), 0.266 * 1.8 * 0.49);
   near(tree.material.opacity, 0.032);
   cycle.setShadowWeather(0, 0);
   cycle.setDayNightPhase('night');
@@ -99,12 +108,12 @@ test('static shadows soften with weather, fade at night, and stay within the isl
     cycle.setDayNightPhase(phase);
     scene.updateMatrixWorld(true);
     for (const name of ['farm-tree-shadow-1', 'farm-tree-shadow-2', 'farm-tree-shadow-3', 'farm-tree-shadow-4',
-      'cottage-shadow', 'ramp-coop-1-shadow', 'ramp-coop-2-shadow']) {
+      'cottage-shadow', 'ramp-coop-1-shadow', 'ramp-coop-2-shadow', 'wooden-bridge-shadow', 'waterfall-lip-shadow']) {
       const shadow = scene.getObjectByName(name);
       const vertices = shadow.geometry.getAttribute('position');
       for (let i = 0; i < vertices.count; i++) {
         const point = shadow.localToWorld(new THREE.Vector3().fromBufferAttribute(vertices, i));
-        assert.ok(Math.abs(point.x) <= 8 && Math.abs(point.z) <= 8, `${name} extends over the void in ${phase}`);
+        assert.ok(Math.abs(point.x) <= 8 + 1e-6 && Math.abs(point.z) <= 8 + 1e-6, `${name} extends over the void in ${phase}`);
       }
     }
   }

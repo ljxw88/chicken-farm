@@ -9,6 +9,7 @@ import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { WATER_FEATURE } from './scene/waterFeatureSpec';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
@@ -43,8 +44,17 @@ follow(character.position);
 const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
 const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 const farmShadows = createFarmShadows(scene);
+function shadowSupported(x: number, z: number, radius: number) {
+  // The character's blob must not float off a raised bridge deck onto water.
+  if (bridgeHeight(character.position.x, character.position.z) !== undefined) {
+    const { bridge } = WATER_FEATURE;
+    return x - radius >= bridge.x - bridge.length / 2 && x + radius <= bridge.x + bridge.length / 2 &&
+      z - radius >= bridge.z - bridge.width / 2 && z + radius <= bridge.z + bridge.width / 2;
+  }
+  return stairs.supports(x, z, radius);
+}
 const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
-  shadowSupported: stairs.supports, updateFarmShadows: farmShadows.update });
+  shadowSupported, updateFarmShadows: farmShadows.update });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,

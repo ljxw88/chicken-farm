@@ -29,7 +29,8 @@ export const DAY_NIGHT_PHASES = [
     hemisphereIntensity: 0.35,
     directional: 0xfff2d6,
     directionalIntensity: 1.8,
-    shadowOffset: 0.31,
+    // Approximately (+0.25, -0.09) in world X/Z as specified by Look Dev.
+    shadowOffset: 0.266,
     shadowOpacity: 0.22,
     nightLights: 0,
   },
