@@ -1,0 +1,1329 @@
+[
+  {
+    "file": "daytime-grass-000.png",
+    "sha256": "4d15089f16287324eec27003805661ede6fe88d8dfc81b875d38fbddc0a7a3f4",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-000.png",
+    "sha256": "5988068c3a1f531a0d9da53675ea36ceceacfa3cf5c6c8da0dc06b04a8e8d127",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-000.png",
+    "sha256": "067769717aab6997bb4b79f8289141f2c11b822a84d8c17e0213625c5842421e",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-045.png",
+    "sha256": "cfd0918f3d5dd717c509fbf4c2d28b99fae1d087b775d84eee46c7ffcda3395c",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-045.png",
+    "sha256": "1691c18b150a779d81a5d897887120a4e4da1154143d30f5236fdd37216a1bac",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-045.png",
+    "sha256": "dd3489861109da9090f895fb36956c30be5b486d9c49aff39ffc2103b3a6dc44",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-090.png",
+    "sha256": "afb22a7331fb1da7fb245f4bf6bbe9142dd84b2902e6fcfca4c0830c6fc93013",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-090.png",
+    "sha256": "dd9cad17a3bdb597584a9635b5083c509c4fc8213fd1cf75db6b6d12f5a23707",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-090.png",
+    "sha256": "668d1ebbad8bae59a3bd2e4e2fc9b145eb7b633d764a6a4977be9c978197d617",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-135.png",
+    "sha256": "e595ce178a7cba71b96cbfe819e2c6c400d27d1e81a604eebcb6acd7e288989d",
+    "yaw": 135,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-135.png",
+    "sha256": "7f9d4c14c65842c68079600d5f6b502f29d4f4860cefc660baa36f48fe16d035",
+    "yaw": 135,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-135.png",
+    "sha256": "0f3adc761ba7cb503e514279cece9226b08eb02721861edec8f150af0a082a6e",
+    "yaw": 135,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-180.png",
+    "sha256": "602314551666770568afc2f5837cbe0c44047be7965f2114ccd6b5567f38223a",
+    "yaw": 180,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-180.png",
+    "sha256": "838b4483a4f4274db6ad4e206cf31c159435f64ddf6933308cee73e9ab12dc57",
+    "yaw": 180,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-180.png",
+    "sha256": "b1212eb397c8a255243c2c2339fc6f0ced403fd7235dbd7f228b3e9b51c47294",
+    "yaw": 180,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-225.png",
+    "sha256": "fd505d84e5e25c970f770e8f55b22cab384a9599a2e5173a2c60fcd913f8df01",
+    "yaw": 225,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-225.png",
+    "sha256": "be1d7d597450fb8c0533bbd6eaa34a85db97139f5011d41764b1fb0fede5b570",
+    "yaw": 225,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-225.png",
+    "sha256": "cca6b3740c3949c9ab2789b6bd69907691f85c72ddfab7e2b0d8aff5755eb278",
+    "yaw": 225,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-270.png",
+    "sha256": "ab950ee7875ffef637a1a0a84c7f5f7068419e9aa32beb751341ba9f561dd4c9",
+    "yaw": 270,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-270.png",
+    "sha256": "135ab00643dfd10bb8d881a85e05e24ba904c1d351037debeafa658f9e0d6451",
+    "yaw": 270,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-270.png",
+    "sha256": "f5e156103a4788e6d029d5adf665a9ce0c9a7d057fee8124d1ac05363e9e140c",
+    "yaw": 270,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "daytime-grass-315.png",
+    "sha256": "3e53ffd8abc0d81e331dc78ad3a9bc7554d020e839b8b2265f84cd37aeba2e94",
+    "yaw": 315,
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "daytime-path-315.png",
+    "sha256": "23c823a345247ccf349a7335657f54d4799d2bfdb2467476bc326268fb2bd368",
+    "yaw": 315,
+    "phase": "daytime",
+    "surface": "path"
+  },
+  {
+    "file": "daytime-void-315.png",
+    "sha256": "8c9230a2ee950b0e91d4355db3152fb5f711a6dd3d0daabd1e39756f9189b0e0",
+    "yaw": 315,
+    "phase": "daytime",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-000.png",
+    "sha256": "91ce9684f21ad26470c26e9c0d950b15aa108e31c505cc90851b0c47496bc5ea",
+    "yaw": 0,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-000.png",
+    "sha256": "8e05bf74631e97c93317455ae0333b31fd625a2bd86b36e593c60683f4965866",
+    "yaw": 0,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-000.png",
+    "sha256": "d839b6b05fdd5867b8390dd2abc02b3196f79f90d35a516faea880b49d22d272",
+    "yaw": 0,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-045.png",
+    "sha256": "6e1a01e5390b46ef7dbeaccc9be3a93cccc063433903e86de0dc27af3157b1dd",
+    "yaw": 45,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-045.png",
+    "sha256": "f2332beeb3c4a39c71fe2d8b888b2b0e0073cc4e9a257bbe3e0d23433aaa8256",
+    "yaw": 45,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-045.png",
+    "sha256": "fccf62ad2922f895bf16fd6685ac8c7aedb37196b2c9868692c0ee607964f2db",
+    "yaw": 45,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-090.png",
+    "sha256": "cd56782ece97661e215c96a021ff3460320e0f6816cf953c6465ea0d8431caed",
+    "yaw": 90,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-090.png",
+    "sha256": "a6b5cb4bb72ffb67a874a4288c10e831d3d8ac4c8abab26e9d5459f6416820e3",
+    "yaw": 90,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-090.png",
+    "sha256": "fa6aafbc3684734fb0fb87a1a7e844982a16a205dfd027ee6d3fd52eb8038159",
+    "yaw": 90,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-135.png",
+    "sha256": "b31cd47a3587a9d8882bdc32ce686e58baa34555ac0ae5fde90c9186f3f01ed1",
+    "yaw": 135,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-135.png",
+    "sha256": "203de0a27fdf687afebcc2a6cb43c47b3d695b928fba791dd5fb3ce64779d799",
+    "yaw": 135,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-135.png",
+    "sha256": "9ab752841f54b818c77a05f4bba0c71037d1eeb5e2c558de1db65fa7f42d0e89",
+    "yaw": 135,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-180.png",
+    "sha256": "ca099b07936c4bc47b792ce6387cd1b84b72ffe8daa6ba5e4cddd22053b28017",
+    "yaw": 180,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-180.png",
+    "sha256": "e923252dbadd6caf221b2ae13a3c1843567274ff50e087d5d86ed945f698bfeb",
+    "yaw": 180,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-180.png",
+    "sha256": "cd7dce3fc1606d6156ba05291d966e49c2a85073ade43c76d9583a6de2782a91",
+    "yaw": 180,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-225.png",
+    "sha256": "457246855a8f133ded07f2c34a4035f9d46c4c72074d7e17529855835520812c",
+    "yaw": 225,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-225.png",
+    "sha256": "df770763305c3bade8ea28b2070d5a6e563c14ac8d5ad630a4b8dd3763c8e65e",
+    "yaw": 225,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-225.png",
+    "sha256": "c1676c67f325110255629a6e2f5420f7474e78578737b6313351ab3cd70b3c49",
+    "yaw": 225,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-270.png",
+    "sha256": "895660657f7b5563591da34ca6f40109833c18f0af0f5744fee13711c91ecb4d",
+    "yaw": 270,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-270.png",
+    "sha256": "a8eff92f2e99b3b13e4fbb8ff13c15c36b311857e9f43ddd16cdc74e96ac72e7",
+    "yaw": 270,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-270.png",
+    "sha256": "301363998ef9c04b5a013e79b02d8bde1efb8e24a61735120886f071c86e1241",
+    "yaw": 270,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "sunset-grass-315.png",
+    "sha256": "2b9f5424d02b36b28406ca21396b273d394c7229ae9d0136d88439cb40a3002e",
+    "yaw": 315,
+    "phase": "sunset",
+    "surface": "grass"
+  },
+  {
+    "file": "sunset-path-315.png",
+    "sha256": "441c74d49053d67d4411d1f87e4df032e9faa46632ae0f51c3ce5d4d3442b872",
+    "yaw": 315,
+    "phase": "sunset",
+    "surface": "path"
+  },
+  {
+    "file": "sunset-void-315.png",
+    "sha256": "baa65178cafc0c3c7ec8e11f76ec54443994f9c99cc49507378af24b944dda3a",
+    "yaw": 315,
+    "phase": "sunset",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-000.png",
+    "sha256": "b79dfded950e39d59d491ff79df104c7f53d410cf205c397b7d8da184c1ef489",
+    "yaw": 0,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-000.png",
+    "sha256": "7fa0a812fa45603ff3cbe8a32851f8de19d7e897ebcdf3f189c4d7ab6aabbcef",
+    "yaw": 0,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-000.png",
+    "sha256": "3c9eb4335e62f503148fe82a9aac424ef3ad9c3c3a2e7ab0952b36225aa48932",
+    "yaw": 0,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-045.png",
+    "sha256": "2797eb7c396897b004a025317c94d480652f9b91fc2df4e7916d2241f71b6824",
+    "yaw": 45,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-045.png",
+    "sha256": "b0c0cb8e56578799265a3f78c1c5be0ed9d57c7c947f25785fe350cc87a13b61",
+    "yaw": 45,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-045.png",
+    "sha256": "881fd1d6dcf8c9bb7d00b319dcb34602f43a20fc3322ee49dc3095a2220fcdb7",
+    "yaw": 45,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-090.png",
+    "sha256": "08ab42e9b80a6c77cfd3f5b10e261efcf67c7a72bccdaaf581317d26b6922137",
+    "yaw": 90,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-090.png",
+    "sha256": "7bcb5015f953b657b0a286e591c6124d0c10fe66fe70a18b2b6a463169d86d4e",
+    "yaw": 90,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-090.png",
+    "sha256": "c9444f1dc81d73af57f5a34f9a9d3362ada19e264d20dbffd26d58a50db4d729",
+    "yaw": 90,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-135.png",
+    "sha256": "218f852ffe1fc3982f0c5dd862840583229f2fbc86d4802f3f8c091ef8cdab3e",
+    "yaw": 135,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-135.png",
+    "sha256": "5d5d5d1b8354228447f72e999a56e9d5db65df586a9b1397d958f110c09ff79d",
+    "yaw": 135,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-135.png",
+    "sha256": "0b4fc2fb299130d0e136f1cea3715e186e93999acdcd97f86e4b5d4e01621292",
+    "yaw": 135,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-180.png",
+    "sha256": "6b8ee46a83aa32af5e3e46bf2afc4b37b6a6f706212eee57da91b94f5ddf2c20",
+    "yaw": 180,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-180.png",
+    "sha256": "8feae4edfacec0e9dec44f30ae7d416559ebf8fd45dc519d6982c196a7f4b39f",
+    "yaw": 180,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-180.png",
+    "sha256": "572c0912868d04843898474da5dba13bb71d86f5edf1657936879bd3ff1e5535",
+    "yaw": 180,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-225.png",
+    "sha256": "b57381f0de650b5f64c0be1e819704e54f98a79eb4a3b2cf734e85de7450c0b7",
+    "yaw": 225,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-225.png",
+    "sha256": "c1db1e43d14bd90cc59ff24d880d6b3c1aa70d6fd7c855a94fc59fcd385a64e2",
+    "yaw": 225,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-225.png",
+    "sha256": "2e535b0cf827aa3b06c0e63cb4bc24901ec02c3ced96f0c17042acf5a770bad0",
+    "yaw": 225,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-270.png",
+    "sha256": "7670ede09827cc9a535d3d4a712443a918613ba0eca65a45b446cb1568ab62d3",
+    "yaw": 270,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-270.png",
+    "sha256": "6685ac7c8a7f0d4b8a63270a3d57c10a8d31a5ef17b720e7959085dd0f077ea2",
+    "yaw": 270,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-270.png",
+    "sha256": "9d6cee1f0ed9e0a88bc89e9309f9aa1d46696bb28873751d43632a1fa1c5db12",
+    "yaw": 270,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "night-grass-315.png",
+    "sha256": "2d0a1ec73cb4a5c876e6fd0016a33a26405ccc0dceb29cc9bf254f7c5016161a",
+    "yaw": 315,
+    "phase": "night",
+    "surface": "grass"
+  },
+  {
+    "file": "night-path-315.png",
+    "sha256": "6307f3e963b1f894a5b5321d2029dad0f385c40cdcf1651d80e70275e9ccdc2e",
+    "yaw": 315,
+    "phase": "night",
+    "surface": "path"
+  },
+  {
+    "file": "night-void-315.png",
+    "sha256": "e43f048e032ba7c9f742b7939718a802161042bb494211a6f679e4600c9398b6",
+    "yaw": 315,
+    "phase": "night",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-000.png",
+    "sha256": "3d840d602356a190b73621ea812c940b9d1a7235e26bac8559b08e4e9c641ba6",
+    "yaw": 0,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-000.png",
+    "sha256": "c193a7e9882407609c1c5bd27cccba3a414fd50b03060e3fc85ee02c652fdddf",
+    "yaw": 0,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-000.png",
+    "sha256": "c3ae2429957527d6aeeee30a35e716b9eadee46b53b1d8ccca1802dd973fad8e",
+    "yaw": 0,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-045.png",
+    "sha256": "02a042e32ff02b44f542097d8d877bb2968b11f394fb295fe7e6cc01c0a22024",
+    "yaw": 45,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-045.png",
+    "sha256": "26a574719ce69ff463d811b8c52c97829bd953680f66ce9e50ef4140865d5719",
+    "yaw": 45,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-045.png",
+    "sha256": "812096f421796bdcde74875d2a7afbcef012d7a5ef4730f9d4dde7dcd2227143",
+    "yaw": 45,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-090.png",
+    "sha256": "80c5acca04e41446d3e475fc46a57f2bd79be01907f06fa003e8b90ced313f54",
+    "yaw": 90,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-090.png",
+    "sha256": "aed7841914e0a1fd4b5af9ea62665c9c293687d7017bc0b2391ccbde22eb6087",
+    "yaw": 90,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-090.png",
+    "sha256": "51ba43f9e2e5000a8d65c06e42b57110dc703adbd49a8ccdddd1a2a16d99f792",
+    "yaw": 90,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-135.png",
+    "sha256": "775f481b26f427ef3322c6e7047f36eb2c27a66c1571dfce4127842bddb9c3ca",
+    "yaw": 135,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-135.png",
+    "sha256": "0932a29de167c31604cb6ad03310bff65f22817a57b9509341d4e97076e1365f",
+    "yaw": 135,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-135.png",
+    "sha256": "359a5a6f8a51f08f998c62a845605c1e91a886ab30fb776a4e5e30b39c5b030a",
+    "yaw": 135,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-180.png",
+    "sha256": "1d0ecf25b276edb012e55aeeacfcf37ab160842ac51584bcf538682d624ba1d0",
+    "yaw": 180,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-180.png",
+    "sha256": "55c2bf5be600eed5857a524928a00afe127f5c1f1bc2aa5b8b89ef1b6a59a777",
+    "yaw": 180,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-180.png",
+    "sha256": "d282bf66fa93dfc7324c18dd4734fd834ea738fd66ff89072eafb2108fd63143",
+    "yaw": 180,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-225.png",
+    "sha256": "5aef6191496d7b124d9e90f9cce0fa9e4778d10ef3043366134624953aa9c2ea",
+    "yaw": 225,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-225.png",
+    "sha256": "6a2575825c703c619517f67765e37039ec2120a46a89203ef635668389d10032",
+    "yaw": 225,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-225.png",
+    "sha256": "f19218966ffeaf7853f61bbce04e36ae06163684a153c93d9aea5eeb3e45f608",
+    "yaw": 225,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-270.png",
+    "sha256": "546d206836700a926e2faddb59b2fb2c0eb3aab98facb9febe167ced33c8069f",
+    "yaw": 270,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-270.png",
+    "sha256": "c5b8dc4010be826a24de38ad832f37813f8ccc1495fdc41c6ac1c4a24a75fecb",
+    "yaw": 270,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-270.png",
+    "sha256": "43e488689357d84a53dba5e8057cf40d4412d5acf7ed61f9bb68f9163c321d9d",
+    "yaw": 270,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "morning-grass-315.png",
+    "sha256": "7dd23628f4269121d45be93f5f76614fadb9ab9ebf5debbca0fe405152397ab1",
+    "yaw": 315,
+    "phase": "morning",
+    "surface": "grass"
+  },
+  {
+    "file": "morning-path-315.png",
+    "sha256": "b18aad53bdb84b953796af241a1747ebf7ffaa8f8fa19fe9548036f644ee15d5",
+    "yaw": 315,
+    "phase": "morning",
+    "surface": "path"
+  },
+  {
+    "file": "morning-void-315.png",
+    "sha256": "bec670efcb98d3cf95e462b1242cfd8ab4b11bf6c49f06f12317c16565761098",
+    "yaw": 315,
+    "phase": "morning",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-000.png",
+    "sha256": "ecc4c508e118c0a8e8f240158200b9e02f3924e658c82a42322c3d2615a733fc",
+    "yaw": 0,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-000.png",
+    "sha256": "5016b2a56b889e6df0dd045421d40696d47c5e005264cfc4ca7460c6f567ece5",
+    "yaw": 0,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-000.png",
+    "sha256": "66c929674a4a8170692d96126d8ef341c77fb226be79ed8f0d8259a8c23a1df1",
+    "yaw": 0,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-045.png",
+    "sha256": "67fb1e2cc434bc811cbbc3d3205149b17c12b9bdb71d5c80fa306bb4dd7008f0",
+    "yaw": 45,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-045.png",
+    "sha256": "4744787e667154b77cea099eff2c81ddfa7eeae5b057b18c0e4a4e1f38550dc1",
+    "yaw": 45,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-045.png",
+    "sha256": "dc69f9558f100a38482e81cb687fc9f48359bd8d3e9932ad6fdc192d1b695255",
+    "yaw": 45,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-090.png",
+    "sha256": "7cdf9816e4e9fd867901a6a83eeab4380620adcf4e5e28e77121db900014af75",
+    "yaw": 90,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-090.png",
+    "sha256": "f5c16cc9e36785812dd60654bfe16d7e75d09e6df8afe7e32b50055d3c6336d6",
+    "yaw": 90,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-090.png",
+    "sha256": "fb1db26e1e82dfda4d3e1129849aaa8d11a43e8fd31ef536a85ffb7344d92ef3",
+    "yaw": 90,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-135.png",
+    "sha256": "f7cb0610795784f1111fdc88f79c632a9c20393a9b5ed6833792e523d05ca4fb",
+    "yaw": 135,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-135.png",
+    "sha256": "5c8487f9d77f90daf9bcc06b406b62cfbe368c3e76bdae9f477771bda4db0b11",
+    "yaw": 135,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-135.png",
+    "sha256": "5f623cd16a6ced55fc9677965e295ad7956ef704802bada1da758def417c4ab2",
+    "yaw": 135,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-180.png",
+    "sha256": "6536f8a1925ffb4e248cd405dc1ea92df9fb9ff8ced45eba7ac7e36e202fd894",
+    "yaw": 180,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-180.png",
+    "sha256": "d36df50207977ddaefe02b242bd3e8b653423963ff566b3eb0247f1f8d0c8502",
+    "yaw": 180,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-180.png",
+    "sha256": "d784d25fad793aa2080f631239a7ee3b41025e042ae744a4a65cc62b8c6886a1",
+    "yaw": 180,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-225.png",
+    "sha256": "5ddc3532bb7151949d32f1d281ee499ab702a826b9ee11a5e225304d27effce5",
+    "yaw": 225,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-225.png",
+    "sha256": "5937a2579ce3fe38e576468c5d1d2546b0c3209cd1187e8406877690dd83bb51",
+    "yaw": 225,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-225.png",
+    "sha256": "0e993a8b5f32b03c268cf6f5a7b250dfb388f5a232adeed0862ee20620cfcb8b",
+    "yaw": 225,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-270.png",
+    "sha256": "bbe97d3f9c9d77d370fde48a98c3b59f24ef4054667fe38257bcf4cae272e2eb",
+    "yaw": 270,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-270.png",
+    "sha256": "8ef641539524776cbe985c60b5f43319cc1fdafb94c5adf95e533e9528158e73",
+    "yaw": 270,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-270.png",
+    "sha256": "933b17e51f55baa361b9803b5293df1400f44eb0abb1ce75c8d482358516f06d",
+    "yaw": 270,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "night-rain-grass-315.png",
+    "sha256": "1fdb1be99b60a6686f4d153a8c56ae666ed4e14fd2bfd9a02c4783cb4bc83b2f",
+    "yaw": 315,
+    "phase": "night-rain",
+    "surface": "grass"
+  },
+  {
+    "file": "night-rain-path-315.png",
+    "sha256": "ed921835594d2c575d08c6869f00013dda57052db94c404be022df7ad106d0f8",
+    "yaw": 315,
+    "phase": "night-rain",
+    "surface": "path"
+  },
+  {
+    "file": "night-rain-void-315.png",
+    "sha256": "028b9d47f620274dfe6b18fffde88439f5476382fddb1e3bd3f3a26bea9d3114",
+    "yaw": 315,
+    "phase": "night-rain",
+    "surface": "void"
+  },
+  {
+    "file": "silhouette-grass-000.png",
+    "sha256": "c1f5d51446043f818a43e3ed7509334c6e824499d0923dc3505ab991182b89a1",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "black-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-path-000.png",
+    "sha256": "b3f9e133d545920e29a512b4f5b902e81b0f1574da0ec7651d53f6e8dedd254b",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "path",
+    "kind": "black-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-grass-045.png",
+    "sha256": "da5ce80d98cf5553522292f3f86c6ce108e26fa27eaf876ae4f23d56c33e63bd",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "black-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-path-045.png",
+    "sha256": "cf9ce0ed3a16d522a5de2317ca7c6e935b5ebf2692bcf0addc09f00249e33bd1",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "path",
+    "kind": "black-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-grass-090.png",
+    "sha256": "2069b714d3be61687902fce892e7ec13b21e84e9fbeb252fbe9d016b995e7539",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "black-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-path-090.png",
+    "sha256": "3a8bbbd650de0b7a057c6883ad1ed818eb5a927cf171ce2b89c2c1e4d8146fc6",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "path",
+    "kind": "black-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-front-grass.png",
+    "sha256": "9c1e1a5d107489f4d9cae231159cb8c4e5d03e52b44c269188d9d1787be2536a",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "orthographic-front-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-front-path.png",
+    "sha256": "f944b86d1e284482ebbefc9a2d33a1923035627ca796cce027b04d468d886b95",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "path",
+    "kind": "orthographic-front-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-side-grass.png",
+    "sha256": "f166670f839d4ea30f20ab01e6028ccc621cfad349a99b3b5c3e5540d2a256ee",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "orthographic-side-silhouette-320x180"
+  },
+  {
+    "file": "silhouette-side-path.png",
+    "sha256": "c1c37d133b3f44702b31b9ff2cb55c9f20d055669abeeac8646b7fc257f4853d",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "path",
+    "kind": "orthographic-side-silhouette-320x180"
+  },
+  {
+    "file": "jitter-000-base.png",
+    "sha256": "4d15089f16287324eec27003805661ede6fe88d8dfc81b875d38fbddc0a7a3f4",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-000-offset.png",
+    "sha256": "ca0c5deb69a416ba4492bf8c2b837084ad738a74f0f436f13b0471d6b993620c",
+    "yaw": 0,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-015-base.png",
+    "sha256": "daa3c58f8722742400dd7bfe74ecb6a6cf1bf0b12d6a8347957972952e6678fc",
+    "yaw": 15,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-015-offset.png",
+    "sha256": "8e76ca153db1b8e6d5cb60786f278790f2a99e64dcfd7b859c9ab975cda7c54a",
+    "yaw": 15,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-030-base.png",
+    "sha256": "a1c9b5c7ecd7ab5f3569b09845e4ed1294e77a5706d5658409a88c652073783f",
+    "yaw": 30,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-030-offset.png",
+    "sha256": "1772f61520fa088c5b51f2376b684fdfaad376f2d11a9ede373fdcd445c421fc",
+    "yaw": 30,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-045-base.png",
+    "sha256": "cfd0918f3d5dd717c509fbf4c2d28b99fae1d087b775d84eee46c7ffcda3395c",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-045-offset.png",
+    "sha256": "b380bc212ddf9b083c66dbd1c4681da738762c189103c610b13f5dedb6f77bc9",
+    "yaw": 45,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-060-base.png",
+    "sha256": "6a93fd6860d75a8e45d1a7a6f513580fe8a8949cf73b23ec18191dc4de40018e",
+    "yaw": 60,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-060-offset.png",
+    "sha256": "78936d206bbb23811fc3b67db46500e760183af6835c250146efa054407db84a",
+    "yaw": 60,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-075-base.png",
+    "sha256": "a330ed9b5abb102e4238ecd478c276754caef364f58d0bdc55e83a1526cf83c5",
+    "yaw": 75,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-075-offset.png",
+    "sha256": "21213c1eb4dd9055e3797725e8002167d85e78f862f3cf2583111f4ae6efffd1",
+    "yaw": 75,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-090-base.png",
+    "sha256": "afb22a7331fb1da7fb245f4bf6bbe9142dd84b2902e6fcfca4c0830c6fc93013",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-090-offset.png",
+    "sha256": "76b66496d3c86c54d8f2228a062199f3a6fb2a3d3a63423f6e3b704e220c3268",
+    "yaw": 90,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-105-base.png",
+    "sha256": "b7b498aa4253f80621d848833434e88993cf4d1b08f93103e4763b3ce78ff35e",
+    "yaw": 105,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-105-offset.png",
+    "sha256": "16ad9d863923ae68da1df7588f3ea620f9f20b2b6dc5aa8f2f052abcb9bf2c15",
+    "yaw": 105,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-120-base.png",
+    "sha256": "0ee6a67a2207929fa62288225daae279d2b1460942e97b32efaa9c26c8b90964",
+    "yaw": 120,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-120-offset.png",
+    "sha256": "43e7d71496f36bef9e8c2a573e42ee33b3779750b21f1664ba2b1bddd98ed77b",
+    "yaw": 120,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-135-base.png",
+    "sha256": "e595ce178a7cba71b96cbfe819e2c6c400d27d1e81a604eebcb6acd7e288989d",
+    "yaw": 135,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-135-offset.png",
+    "sha256": "6648e33d89992c6ac762c4507e1f879a37c83553052404d0ce3493d8d10297d4",
+    "yaw": 135,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-150-base.png",
+    "sha256": "d1de1f5e44e2afa734ac120a3e040fc80226e45c4ce10d47e8559debd7b65909",
+    "yaw": 150,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-150-offset.png",
+    "sha256": "731ce3c04ae49b1ef14153d07a60546dc41140bac35fc4360a32b44c9d5ab90b",
+    "yaw": 150,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-165-base.png",
+    "sha256": "cbfe39061b3bab97840ffad7403bcaeb8be496c4cd1c56d8dbc36c97b31f83b6",
+    "yaw": 165,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-165-offset.png",
+    "sha256": "ff5ceb1c136cb298e8e119bfd7170380f1eda52e9ec7cf9119b4703fa7c05865",
+    "yaw": 165,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-180-base.png",
+    "sha256": "602314551666770568afc2f5837cbe0c44047be7965f2114ccd6b5567f38223a",
+    "yaw": 180,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-180-offset.png",
+    "sha256": "40df44797f0fa184ffa7738d5aed08f76d8bc921a716ff42f6a7303c76f194f8",
+    "yaw": 180,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-195-base.png",
+    "sha256": "fd7a89ad2a32b4a878587d29773985aa1c28b7b5bc1699276b0f966c61094eb0",
+    "yaw": 195,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-195-offset.png",
+    "sha256": "fd47423c02c9933620c78ef1db0c2ece6d29ca506bbf097c51da74f18a806f59",
+    "yaw": 195,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-210-base.png",
+    "sha256": "3fcdc33adaaa809009f6d180d469684ee957e84df9cebbaeda3a667d75f5395c",
+    "yaw": 210,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-210-offset.png",
+    "sha256": "a4205d05fdcc98177d36e3980fc410ec9dd223b3ca2ca7ad841de6e69164300d",
+    "yaw": 210,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-225-base.png",
+    "sha256": "fd505d84e5e25c970f770e8f55b22cab384a9599a2e5173a2c60fcd913f8df01",
+    "yaw": 225,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-225-offset.png",
+    "sha256": "232ccafa17020e3f928598ff50f251e6f4d351b5317703ff6d34bc6483a94605",
+    "yaw": 225,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-240-base.png",
+    "sha256": "aacd394b83df7171a1331f4339ea0c2c1c04c9dc9ce9d18e93a7d0fbd933523a",
+    "yaw": 240,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-240-offset.png",
+    "sha256": "62bbf9e267fa6192172dd16e40d6d5826f0d737d8b6e9aaae93d280989c638e6",
+    "yaw": 240,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-255-base.png",
+    "sha256": "aa86f7ee620fe33d6720214cd89119457284ae64e25ff972dbf8d7af84b18da3",
+    "yaw": 255,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-255-offset.png",
+    "sha256": "62395433ed3b40131d4c6cc2e04ae85409cd2c8f05d38c63e760d74d0e5458a7",
+    "yaw": 255,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-270-base.png",
+    "sha256": "ab950ee7875ffef637a1a0a84c7f5f7068419e9aa32beb751341ba9f561dd4c9",
+    "yaw": 270,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-270-offset.png",
+    "sha256": "c70cf1f21a6859632d7aea8b145f71025e0253549199ced8bab9c4c90934b2c2",
+    "yaw": 270,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-285-base.png",
+    "sha256": "32407db247d3292a7bcfc78775798c5868cf3ce04d4a33acfc5279694d42eb06",
+    "yaw": 285,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-285-offset.png",
+    "sha256": "f9874d81b4e6bc509661f1935207c3e230b2c27b06bf0a53408d6410d8a60f1c",
+    "yaw": 285,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-300-base.png",
+    "sha256": "987ea4265e0356d3aa1f2e405adb56351e446d61b8c61d806fcdd9136cb7de18",
+    "yaw": 300,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-300-offset.png",
+    "sha256": "f051a52ee79c50ed161c314b4d681a584b87760db2eaf0566d5bd27ea65867f8",
+    "yaw": 300,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-315-base.png",
+    "sha256": "3e53ffd8abc0d81e331dc78ad3a9bc7554d020e839b8b2265f84cd37aeba2e94",
+    "yaw": 315,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-315-offset.png",
+    "sha256": "ec7ed7009ec45dcd6640cf7b41ab1c97a60feabccb9d27e91a68ff8530ecccab",
+    "yaw": 315,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-330-base.png",
+    "sha256": "8d86c79c056df73c715c49c2ccc852501662572cd5ebc48eb419dbf4ae4a2821",
+    "yaw": 330,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-330-offset.png",
+    "sha256": "b5ed92716401f68d723a652d7ebf66f5b2783523b7cec583f8b2754daf0af3fc",
+    "yaw": 330,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "jitter-345-base.png",
+    "sha256": "b767f1f56996da21fc5b5a3963c3bc264209a8efb6f0b6b754e359f2845076ac",
+    "yaw": 345,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-base"
+  },
+  {
+    "file": "jitter-345-offset.png",
+    "sha256": "2da56d43656b289ab05b840f0ff5caf87ea798f1b46dc00f6037c66b97539622",
+    "yaw": 345,
+    "phase": "daytime",
+    "surface": "grass",
+    "kind": "jitter-offset"
+  },
+  {
+    "file": "composite-daytime.png",
+    "sha256": "d0d66e79b64666609727b99c9cac465357ef1e08831994c948270f73d8b5bb7c",
+    "phase": "daytime",
+    "surface": "signed-farm"
+  },
+  {
+    "file": "composite-night.png",
+    "sha256": "0fc46d64b116cf9017a11092ebb27e374a1a1636feb5be5e85dc522457b96cf9",
+    "phase": "night",
+    "surface": "signed-farm"
+  },
+  {
+    "file": "native-debug.png",
+    "sha256": "c52d067d586f9ff1f07165ce73a4c26373e5c39e2a6f613c2c8b8218a2bbdb35",
+    "phase": "daytime",
+    "surface": "grass"
+  },
+  {
+    "file": "sheet.png",
+    "sha256": "ee5973a0ba4de533eade0b03e8fcdad68456608188304d0e6e5f0189dafe5fed",
+    "surface": "contact-sheet"
+  }
+]

@@ -42,12 +42,16 @@ not shippable assets) were re-rendered with the merged EBR-80 lights:
 
 | Historical candidate | New deterministic status | EBR-80 contact / 320×180 silhouette / scale composite |
 | --- | --- | --- |
-| Barrel | FAIL H1: old 12/16-segment geometry exceeds the new 6–8-segment vocabulary; further geometry checks not run | [Sheet](../evidence/assetgen/ebr83-85/historical/barrel/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical/barrel/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical/barrel/composite-daytime.png) |
-| Hay bale | FAIL: old `bevelBox` is outside the PM vocabulary; a lower-trust custom conversion was used **only for display** | [Sheet](../evidence/assetgen/ebr83-85/historical/hay-bale/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical/hay-bale/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical/hay-bale/composite-daytime.png) |
-| Round oak | Current hard and measured pixel checks clear; prior loop hit five rounds, and its visual critics disagreed, so it remains `needs-human` | [Sheet](../evidence/assetgen/ebr83-85/historical/round-oak/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical/round-oak/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical/round-oak/composite-daytime.png) |
+| Barrel | FAIL H1: old 12/16-segment geometry exceeds the new 6–8-segment vocabulary; further geometry checks not run. Five-phase visual check reports 25 S2 and 3 estimated A9 failures. | [Sheet](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/composite-daytime.png) |
+| Hay bale | FAIL: old `bevelBox` is outside the PM vocabulary; a lower-trust custom conversion was used **only for display**. Five-phase visual check reports 21 S2 and 3 estimated A9 failures. | [Sheet](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/composite-daytime.png) |
+| Round oak | Current hard checks clear; five-phase visual check reports 7 S2 and 3 estimated A9 failures. Its old loop hit five rounds, and visual critics disagreed, so it remains `needs-human`. | [Sheet](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/composite-daytime.png) |
 
 On the fresh renders, minimum daytime changed-pixel counts are barrel 51,
 hay 57 and oak 195; the numeric silhouette test is not semantic recognition.
+The A9 ratio is an albedo-normalised estimate, not QA's exact G2 method; it
+requires independent calibration and is not represented as a QA verdict.
+These final re-renders were made from clean tracked source at
+`6d49d0e9e43ccebf14e038d618719b611cfab2e3`.
 Second oak, bush, three rocks and crate have not been generated. No bundle,
 showcase or runtime registry entries were created. The previous bake-off and
 its evidence are retained below for provenance, not reclassified as current.

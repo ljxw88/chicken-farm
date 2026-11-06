@@ -34,3 +34,16 @@ infer an object's semantic front merely from a +Z string. The recolour-only
 detector compares scale-normalised primitive geometry; sophisticated near-copy
 variants and off-style assets still need independent review. A signoff JSON is
 a separate audit artifact, not a cryptographic proof of the reviewer's identity.
+
+At source commit `6d49d0e9e43ccebf14e038d618719b611cfab2e3`, the explicit
+`asset:verify -- --signed all` run returned PASS for tree, coop, fence and
+stair tread. Each ran 24 jittered yaws; interior sampled pixels were
+2,750 / 5,597 / 435 / 5,214 respectively, with zero unmatched interior
+changes. The corresponding 2,894 / 2,255 / 1,163 / 1,718 excluded edge
+pixels are **not** asserted flicker-free. Analytic overlaps, signed legacy
+materials and signed-fence low-area side silhouettes remain printed warnings.
+The report and fixed frames are under
+[`evidence/assetgen/ebr83-85/signed-head-6d49d0e/`](../evidence/assetgen/ebr83-85/signed-head-6d49d0e/).
+The raw log names its original `/tmp` directory; the corresponding complete
+frame folders were copied unchanged into the evidence directory above.
+Any later commit changes HEAD; independent QA must retest the final tip.
