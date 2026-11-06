@@ -1,6 +1,7 @@
 import './style.css';
 import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
+import { createEngine } from './core/loop';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createPlacement } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
@@ -101,19 +102,22 @@ handleResize();
 if (!isPixelRenderingEnabled(window.location.search)) composer.setEnabled(false);
 window.addEventListener('resize', handleResize);
 
-let previousTime: number | undefined;
-renderer.setAnimationLoop((time) => {
-  // Moving a window between displays can change DPR without a resize event.
-  if (window.devicePixelRatio !== lastDevicePixelRatio) handleResize();
-  const deltaSeconds = previousTime === undefined ? 0 : Math.max((time - previousTime) / 1000, 0);
-  previousTime = time;
-  // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
-  controls.update(Math.min(deltaSeconds, 0.1));
-  phaseController.update(deltaSeconds);
-  farmHud.setPhase(dayNight.getPhase());
-  follow(character.position);
-  placement.update();
-  weather.update(deltaSeconds);
-  updateWaterfall(deltaSeconds);
-  composer.render(deltaSeconds);
-});
+createEngine({
+  setAnimationLoop: (callback) => renderer.setAnimationLoop(callback),
+  input: { target: window, canvas, getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
+  beforeFrame() {
+    // Moving a window between displays can change DPR without a resize event.
+    if (window.devicePixelRatio !== lastDevicePixelRatio) handleResize();
+  },
+  update(deltaSeconds) {
+    // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
+    controls.update(Math.min(deltaSeconds, 0.1));
+    phaseController.update(deltaSeconds);
+    farmHud.setPhase(dayNight.getPhase());
+    follow(character.position);
+    placement.update();
+    weather.update(deltaSeconds);
+    updateWaterfall(deltaSeconds);
+  },
+  render: (deltaSeconds) => composer.render(deltaSeconds),
+}).start();

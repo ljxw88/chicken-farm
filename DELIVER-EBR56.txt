@@ -1,0 +1,67 @@
+EBR-56 — rebased free placement and stairs
+
+Branch: feat/ebr56-grid
+Implementation/evidence SHA: 8e5409e2eff70e0b11ee656709257162e0c269cf
+Branch tip SHA: run `git rev-parse HEAD`. This handoff-only commit is above the
+implementation and cannot contain its own SHA; the exact tip is also reported
+in the accompanying response.
+Pre-rebase tag: pre-rebase-ebr56-f847d68 -> f847d6871e7364616e51140997fefb0413f50940
+Rebased onto: feat/ebr46-stairs d095d560972ac248e86dc8fd8f84a182060356b5
+EBR-71 strip is present; its origin/main merge is a101a9052e4f3cbf3a4605a4cb280c360021a8b2.
+No push or PR.
+
+Open / try
+- Vite dev server: http://100.88.150.21:5180/?phase=daytime (while running).
+  Restart from this worktree: `npm run dev -- --host 100.88.150.21 --port 5180 --strictPort`.
+- Select FREE Fence or Plot (F / P). Move over the island, rotate with R,
+  click to place, and Escape to leave. On touch, tap to preview and Place to
+  confirm. Z undoes the latest remaining placement. Hover an object and press
+  Delete, or choose Remove and click/tap it; Delete with no active tool is unchanged.
+- Fences block walking; plots remain walkable. Click the stairs' foot pad, or
+  walk down with S+D and climb with W+A. `?grid=1` shows the optional hairline grid.
+
+Conflict and look notes
+- `src/main.ts` retains EBR-71's static scenery and phase HUD, and EBR-46's
+  stairs and shadow arguments. Placement uses the same live obstacle array;
+  static decorations are placement blockers but remain nonblocking to walking.
+  No Supplies, inventory, Collect/Build HUD, paid fence stub or feed/egg prompts
+  are wired back in. The prior EBR-46 handoff is preserved as `DELIVER-EBR46.txt`.
+- `createStoneStairs.ts`, `createIsland.ts`, `farmCollisions.ts`, `createScene.ts`,
+  `createCharacter.ts` and `createCharacterControls.ts` match feat/ebr46-stairs
+  exactly. The placement grid, direct controls and CSS match the pre-rebase tag.
+  The generic interaction utility is also unchanged from feat/ebr46-stairs and
+  is not wired into the playable build.
+- Olive rgb(40,55,36) and invalid rust #C45A3A wash only the tile; ghost materials
+  retain their wood/dirt hues at 50% opacity. Placed-plot geometry and colors are
+  unchanged from the pre-rebase tag; the plot color remains deferred to EBR-49.
+
+Evidence
+- `evidence/EBR-56/browser-log.txt` and `browser-proof.json` contain the browser
+  results. The requested 1280x720 frames are `01-production-valid-fence.png`,
+  `02-invalid-rust.png`, `05-rotated-plot-preview.png`, `06-fence-and-plot.png`,
+  `09-debug-grid.png`, and `10-touch-preview.png`. Frame 01 uses a local
+  production preview; the others use the port-5180 dev server.
+- `13-plot-walkable.png`, `14-stairs-after-placement.png` and
+  `15-touch-portrait-preview.png` cover the integrated walk and touch checks.
+  `evidence/EBR-56/stairs/browser-proof.json` and `qa-slide-proof.json` record
+  the tread, foot-pad and three pad-side slide routes on the rebased build.
+
+Checks run
+- `npm run build`: passed, including TypeScript; Vite retains the >500 kB advisory.
+- `npm test`: 74 passed, 0 failed.
+- `node --test tests/placement.test.mjs tests/walk.test.mjs tests/stairs.test.mjs`:
+  27 passed, 0 failed.
+- `EBR56_DEV_URL=http://100.88.150.21:5180 EBR56_EVIDENCE_DIR=evidence/EBR-56 node --test tests/browser/placement.browser.mjs`:
+  8 passed, 0 failed in Chromium 153 / SwiftShader.
+- `EBR56_DEV_URL=http://100.88.150.21:5180 EBR56_EVIDENCE_DIR=evidence/EBR-56 EBR46_URL=http://100.88.150.21:5180 EBR46_EVIDENCE_DIR=evidence/EBR-56/stairs EBR46_SLIDE_PROOF=evidence/EBR-56/stairs/qa-slide-proof.json npm run test:browser`:
+  17 passed, 0 failed (8 placement, 4 stair, 5 stripped-build checks).
+- `git diff --cached --check`: passed; the restarted dev URL returned HTTP 200.
+  The six requested frame dimensions were checked as 1280x720.
+- `git merge-base --is-ancestor d095d560972ac248e86dc8fd8f84a182060356b5 HEAD`:
+  passed. Source comparisons described above and `cmp` of the archived EBR-46
+  handoff against its original all returned exit 0.
+
+Not verified: physical touch hardware, non-Chromium browsers or a hardware GPU;
+remote access from another tailnet device; independent QA or Look Dev signoff
+of this rebased combination. QA PASS and Look Dev SIGNED for the old f847d68
+tip are as reported in the task, not claims about the new tip.
