@@ -83,6 +83,19 @@ test('owned movement resolves actions immediately, preserves placement priority 
   assert.equal(f.key('keydown', 'KeyW', f.document.querySelector('input')).defaultPrevented, false);
 });
 
+test('owned placement pointer actions use the context before synchronous removal', (t) => {
+  let context;
+  const f = fixture(t, { ownMovement: true, onPointerDown: () => { context.removing = false; return true; } });
+  context = f.context;
+  context.active = true;
+  context.removing = true;
+  f.pointer('pointerdown', 'mouse');
+  assert.deepEqual(f.input.consume().actions, [
+    { type: 'placement-preview', point: { x: 123, y: 456, pointerType: 'mouse' } },
+    { type: 'placement-remove', mode: 'hovered' },
+  ]);
+});
+
 test('placement keys are one-shot, ordered, repeat-safe, and consumed exactly once', (t) => {
   const f = fixture(t);
   f.key('keydown', 'KeyF');

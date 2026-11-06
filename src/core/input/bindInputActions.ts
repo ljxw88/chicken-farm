@@ -18,8 +18,11 @@ export function bindInputActions(actions: InputActions, target: Window, canvas: 
   canvas.addEventListener('pointermove', actions.pointerMove, true);
   const handlePointerDown = (event: PointerEvent) => {
     if (!event.isPrimary || event.button !== 0) return;
+    // Record the context from before synchronous placement can remove an item
+    // and leave removal mode, matching the original capture-time action map.
+    const context = { ...actions.placementContext() };
     const handled = options.onPointerDown?.(event) ?? false;
-    actions.pointerDown(event, handled);
+    actions.pointerDown(event, handled, context);
   };
   if (options.ownMovement) {
     // At bubble time this follows the placement key handler, just as the old

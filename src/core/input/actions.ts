@@ -107,9 +107,8 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     if (getPlacement().active) pending.push({ type: 'placement-preview', point: pointer });
   }
 
-  function pointerDown(event: PointerEvent, movementBlocked = false) {
+  function pointerDown(event: PointerEvent, movementBlocked = false, context = getPlacement()) {
     if (!event.isPrimary || event.button !== 0) return;
-    const context = getPlacement();
     if (context.active) {
       // Placement wins over click-to-move. Touch/pen preview without placing.
       pointer = point(event);
@@ -173,7 +172,8 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     if (MOVEMENT_KEYS.has(event.code) && !modified(event) && !editable(event.target)) event.preventDefault();
   }
 
-  return { keyDown, keyUp, blur, pointerMove, pointerDown, activate, movement, onMovement, preventMovementDefault, consume, reset };
+  return { keyDown, keyUp, blur, pointerMove, pointerDown, activate, movement, onMovement, preventMovementDefault,
+    placementContext: getPlacement, consume, reset };
 }
 
 export type InputActions = ReturnType<typeof createInputActions>;
