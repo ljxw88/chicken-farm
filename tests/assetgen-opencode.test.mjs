@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
-import { chmod, mkdtemp, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { chmod, mkdir, mkdtemp, readFile, rmdir, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { runOpenCode } from '../tools/assetgen/opencode.mjs';
+import { root, runDirectory } from '../tools/assetgen/config.mjs';
 
 test('non-interactive generator closes stdin and sets PWD to the scratch location', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'assetgen-cli-test-'));
@@ -18,5 +21,30 @@ test('non-interactive generator closes stdin and sets PWD to the scratch locatio
   } finally {
     if (previous === undefined) delete process.env.OPENCODE_BIN;
     else process.env.OPENCODE_BIN = previous;
+  }
+});
+
+test('work-order fallback does not require a browser or model', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'assetgen-work-order-test-'));
+  const id = `work-order-${randomBytes(6).toString('hex')}`;
+  const run = join(runDirectory, id);
+  await mkdir(run); // Ensure the test owns the exact directory it cleans up.
+  const spec = { id, category: 'prop', brief: 'A chunky test object with clear identity features.', size: { width: 1, depth: 1, height: 1 },
+    paletteHints: ['wood.mid'], referenceAssetIds: ['signed-fence', 'signed-coop'],
+    identityFeatures: [{ id: 'body', description: 'A broad body' }, { id: 'cap', description: 'A clear cap' }, { id: 'base', description: 'A grounded base' }] };
+  const path = join(directory, 'spec.json');
+  await writeFile(path, JSON.stringify(spec));
+  try {
+    execFileSync(process.execPath, ['tools/assetgen/cli.mjs', 'new', path, '--work-order'], {
+      cwd: root, timeout: 15000, env: { ...process.env, OPENCODE_BIN: '/nonexistent/opencode', PLAYWRIGHT_BROWSERS_PATH: '/nonexistent/chromium' },
+    });
+    const order = await readFile(join(run, 'work-order.md'), 'utf8');
+    assert.match(order, /asset:verify/);
+    assert.match(order, new RegExp(id));
+  } finally {
+    await unlink(join(run, 'work-order.md'));
+    await rmdir(run);
+    await unlink(path);
+    await rmdir(directory);
   }
 });

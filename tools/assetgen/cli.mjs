@@ -46,17 +46,18 @@ async function newAsset(input, args) {
       throw new Error(`${spec.id} already has a completed bounded run; existing evidence will not be overwritten`);
     } catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
+  if (args.includes('--work-order')) {
+    const bible = await readBible();
+    const prompt = await makePrompt(spec, bible, 'blockout', null, null, null);
+    const path = join(run, 'work-order.md');
+    await writeFile(path, `${prompt}\n\nSave JSON to ${relative(root, recipePath(spec))}, then run npm run asset:verify -- ${spec.id}.\n`);
+    console.log(`Work order: ${relative(root, path)}`);
+    return;
+  }
   const context = await setup();
   const { bible, runner, environment, probe } = context;
   const sessionDir = await isolatedSessionDirectory();
   try {
-    if (args.includes('--work-order')) {
-      const prompt = await makePrompt(spec, bible, 'blockout', null, null, null);
-      const path = join(run, 'work-order.md');
-      await writeFile(path, `${prompt}\n\nSave JSON to ${relative(root, recipePath(spec))}, then run npm run asset:verify -- ${spec.id}.\n`);
-      console.log(`Work order: ${relative(root, path)}`);
-      return;
-    }
     const first = Date.now();
     let round = 1, corrections = 0, stageIndex = 0;
     let current = null, previous = null, best = null, stopReason = null;
@@ -79,7 +80,11 @@ async function newAsset(input, args) {
         await writeFile(join(stageDir, 'generation-error.txt'), `${message}\n`);
         previous = { failures: [{ code: 'GENERATOR', message }], instruction: 'Retry the JSON generation/build with the exact error.' };
         history.push({ round, stage, action: 'refine-code', failure: message });
-        if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= bible.rules.loop.maxRounds) { stopReason = 'Generation retries exhausted'; break; }
+        if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= bible.rules.loop.maxRounds) {
+          stopReason = 'Generation retries exhausted';
+          await writeFile(join(run, 'work-order.md'), `${prompt}\n\nSave JSON to ${relative(root, recipePath(spec))}, then run npm run asset:verify -- ${spec.id}.\n`);
+          break;
+        }
         corrections++; stageCorrections[stage] = (stageCorrections[stage] || 0) + 1;
         round++; continue;
       }

@@ -45,7 +45,8 @@ globally. Every decision and best-so-far candidate is recorded. Even a candidate
 with all internal gates clear remains `needs-human`, `signedBy: null` and is not
 in the runtime registry. `npm run asset:bundle` deliberately refuses to ship
 before EBR-80 and Look Dev review. A failed OpenCode call is retried with its
-error; `--work-order` emits the first prompt for a Herdr-driven fallback.
+error; exhausting generation retries writes a Herdr work order. `--work-order`
+emits it immediately without requiring Chromium or an OpenCode connection.
 
 The render pack and SHA-256 frame manifest, contact sheet, recipe, hard-check
 report, prompts and separate model transcripts live under
