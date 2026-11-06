@@ -95,4 +95,4 @@ export function createEntityWorld<Components extends object = CoreComponents>() 
   return { create, get, remove, addComponent, removeComponent, with: withComponents, without: withoutComponents };
 }
 
-export type EntityWorld = ReturnType<typeof createEntityWorld>;
+export type EntityWorld<Components extends object = CoreComponents> = ReturnType<typeof createEntityWorld<Components>>;
