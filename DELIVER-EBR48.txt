@@ -4,10 +4,11 @@ Branch: feat/ebr48-stream-bridge
 Base: origin/main a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671
 Look Dev source: /home/michael/OpenBot/Shared/ebr48-look-lock.md, Linear
 EBR-48 comment c6ca07d2. Locked numbers are retained where they conflict.
-Tested implementation/evidence commit: b41f54c27e0289b91a081c7b1ec08f4a9c2d6e7e
-Final local tip: `git rev-parse HEAD`; this handoff is one docs-only commit
-above the tested implementation. A commit cannot contain its own SHA; the
-exact final SHA is reported in the delivery message.
+Stream implementation commit: b41f54c27e0289b91a081c7b1ec08f4a9c2d6e7e
+Nest change, tested implementation/evidence commit: b17d409edba45cbdb6e0b998cbd166dfc493bab9
+Final tip: `git rev-parse HEAD`; this handoff is one docs-only commit above the
+tested implementation. A commit cannot contain its own SHA; the exact final
+SHA is reported in the delivery message.
 
 What to open
 - Dev server: http://100.88.150.21:5183/ (HTTP 200). Add `?phase=daytime`,
@@ -16,14 +17,32 @@ What to open
 - 1280x720 frames in evidence/EBR-48/: 05-day-front.png, 06-sunset.png,
   07-night.png, 08-rain.png, 09-bridge-mid-crossing.png,
   10-waterfall-plus-z-rim.png, 11-water-ghost-rejected.png,
-  12-deck-ghost-rejected.png and 13-stream-walk-blocked.png. The crossing,
-  waterfall, blocked-walk and ghost close-ups use
+  12-deck-ghost-rejected.png, 13-stream-walk-blocked.png and
+  nest-new-spot.png. The crossing, waterfall, blocked-walk and ghost close-ups use
   test-only camera zoom; the character is moved by real clicks/WASD, not
   teleported. The default application camera and pixel pass are unchanged.
+  Engineer: nest-new-spot.png uses a test-only opposite camera angle to show
+  the nest otherwise partly obscured by tree 2; no scenery was moved or hidden.
 - phase2-browser-proof.json contains interaction positions, sampled waterfall
   luminance, lights and pixel state; phase2-measurements.json records the
   actual mesh, pond, roof, path, nest and tuft measurements. The 01-04 images
   and original logs are retained as Phase 1 evidence, not the final look.
+
+Nest relocation
+- Look Dev CHANGES at c7486ae: the decoration nest moved from (3.2, 1.2) to
+  (4.3, 0.7); its earlier stream overlap is resolved. It remains nonblocking
+  for walking.
+  Placement uses the live nest object bounds, now x=4.01..4.59 and
+  z=0.41..0.99; no separate nest collider or fixed placement entry exists.
+- Minimum horizontal clearances from the visible outer straw ring to actual
+  geometry: water 0.2874, stream rim 0.1374, dirt border 1.3464, bridge deck
+  1.6600 and stairs 3.4100. Its maximum x=4.59 is 0.6100 inside the x=5.2
+  keep-out. All are positive; none of the specified features is touched.
+- Engineer: the conservative placement bounding box has clearances 0.2066 to
+  visible water, 0.0566 to rim, 1.2235 to dirt border, 1.6600 to deck and
+  3.4100 to stairs; it is 0.1223 from the nearest water collision box. Tests
+  isolate the live ghost blocker at the new and old-only 1.5-unit tiles; the
+  old-only tile still intersects stream obstacles in the complete farm.
 
 Implementation
 - src/scene/waterFeatureSpec.ts is the single locked data table. The sampled
@@ -69,24 +88,20 @@ Conflicts for Look Dev (measurements in world units; no locked coordinates moved
    ground-flush deck is also below the existing +0.020 border/+0.024 surface.
    Thus the locked deck cannot completely cover the real border, although the
    path and bridge are walkable end to end.
-4. Existing nest at (3.2, 1.2): its center is 0.2356 from the stream
-   centerline, 0.3644 inside the 0.6 water half-width; its X/Z bounds are
-   2.91..3.49 / 0.91..1.49. The nest is unchanged and visibly overlaps water.
-5. Minimum feature size: the locked 0.04 plank gap line is 0.06 below the
+4. Minimum feature size: the locked 0.04 plank gap line is 0.06 below the
    stated 0.1 minimum. The specified gap is retained rather than widened.
-6. Junction observation: at x=3.9 the unchanged pond's inner water ends at
+5. Junction observation: at x=3.9 the unchanged pond's inner water ends at
    z=-2.5921 while the locked stream starts at z=-2.45, leaving 0.1421 between
    water surfaces under the bridge. The first point does meet the pond rim;
    Look Dev can decide whether uninterrupted inner water was also intended.
 
 Verification
 - `npm run build`: PASS; 57 modules. Existing Vite >500 kB chunk advisory is
-  unchanged. evidence/EBR-48/phase2-build.log.
-- `npm test`: 93 passed, 0 failed; evidence/EBR-48/phase2-unit.log. Includes
-  lock dimensions, gap/pond conflict, capsule clearance, full deck/water
-  placement, actual splash rejection, tufts, path, stairs and light counts.
+  unchanged. evidence/EBR-48/nest-build.log.
+- `npm test`: 94 passed, 0 failed; evidence/EBR-48/nest-unit.log. Includes
+  rendered nest clearances, live placement blocker, locked water, path and stairs.
 - `EBR48_EVIDENCE_DIR=evidence/EBR-48 npm run test:browser`: 24 passed, 0
-  failed; evidence/EBR-48/phase2-browser-suite.log. Chromium 153 headless,
+  failed; evidence/EBR-48/nest-browser-suite.log. Chromium 153 headless,
   SwiftShader; includes real bridge crossing, water/side blocking, placement,
   stairs, buildings, night/rain and the unchanged 320x180 pixel pass.
 - `npm ci` was run in this worktree during Phase 1. node_modules and dist are
@@ -101,4 +116,4 @@ Not verified
 - Chromium was headless with SwiftShader; touch checks were emulated, not on a
   physical device. Other browsers and graphics hardware were not verified.
 - EBR-73 integration and rebasing onto a newer main have not been attempted.
-  This branch remains on a61bac9; no push, PR or merge was performed.
+  This branch remains on a61bac9; PR #16 is open and has not been merged.
