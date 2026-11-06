@@ -1,0 +1,18 @@
+EBR-74 — character engine port
+Baseline: origin/main 9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4
+
+Port map
+- Move the player pose, movement target, collision obstacles, and stair surface
+  into plain-data Miniplex components. Ordered character systems use the core
+  input actions, existing collision/sliding math, and stair support/height math.
+- Keep a thin Three.js pointer/pose adapter, the existing bridge height hook, and
+  the live obstacle array shared with placement. Synchronize its additions and
+  removals with obstacle entities before each movement update.
+- Stay: scene geometry, buildings, stream/deck gap, bridge visuals and height,
+  placement, lighting/weather, camera, shadows, HUD, and their frame order.
+- Delete the old character-controls and scene-collision implementation paths
+  after moving their behavior; remove stair gameplay math from the renderer.
+
+Engineer: walking remains a once-per-render-frame system with the original
+0.1-second clamp. Fixed-step movement would change the baseline timing. The
+fixed-step engine and its one-shot input contract remain available unchanged.
