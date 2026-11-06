@@ -9,13 +9,13 @@ test('scripted key, mouse and touch traces match the main worktree frame by fram
   const root = process.cwd();
   let baseline = process.env.EBR74_BASELINE_WORKTREE;
   let owned = false;
-  if (!baseline) {
-    baseline = await mkdtemp(join(tmpdir(), 'ebr74-main-'));
-    execFileSync('git', ['worktree', 'add', '--detach', baseline, '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4'], { cwd: root });
-    owned = true;
-    await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
-  }
   try {
+    if (!baseline) {
+      baseline = await mkdtemp(join(tmpdir(), 'ebr74-main-'));
+      execFileSync('git', ['worktree', 'add', '--detach', baseline, '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4'], { cwd: root });
+      owned = true;
+      await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
+    }
     const report = await compareCharacterParity({ baselineRoot: resolve(baseline), candidateRoot: root,
       evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.frames}`).join(', ')}`);

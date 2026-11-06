@@ -24,6 +24,7 @@ has a memory hold; this changes test scheduling, not game-frame timing.
 
 QA baseline: evidence/EBR-74/gate-g/baseline{.json,/} is the supplied
 9e8c8c6 set; its pre-port self-check returned 0 changed pixels in all 8 frames.
+Look Dev's separate approval of those baseline frames is still pending.
 Additional replay/route evidence uses a separate temporary 9e8c8c6 worktree.
 QA's independent sequence reference is
 /home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-sequences/main-9e8c8c6/sequences.json.
