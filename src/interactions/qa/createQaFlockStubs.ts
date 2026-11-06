@@ -1,20 +1,20 @@
 import * as THREE from 'three';
+import type { Inventory } from '../../inventory/createInventory';
+import { EGG_SUPPLIES_YIELD } from '../../inventory/createSupplies';
 import type { Interactable } from '../Interactable';
 import { disposeQaGroup } from './disposeQaGroup';
 
-// Temporary, static QA stand-ins. They deliberately do not implement flock AI,
-// egg production, persistent inventory, or buying and selling.
+// Temporary, static QA stand-ins. Egg production here is only a feed-action
+// placeholder, not flock AI or a simulated laying interval.
 export function createQaFlockStubs(
   scene: THREE.Scene,
   groundHeight: number,
-  { onEggCollected }: { onEggCollected?: () => void } = {},
+  { inventory, onEggCollected }: { inventory: Inventory; onEggCollected: () => void },
 ) {
   const group = new THREE.Group();
   group.name = 'qa-flock-stubs';
   scene.add(group);
   let active = true;
-  let feed = 1; // A free, in-memory QA seed; feeding does not spend coins.
-  let eggs = 0;
   let collected = false;
 
   const chicken = new THREE.Group();
@@ -94,9 +94,8 @@ export function createQaFlockStubs(
     if (!isEggReady()) return;
     collected = true;
     egg.visible = false;
-    eggs++;
-    onEggCollected?.();
-    return `Collected egg (QA stub). Eggs: ${eggs}.`;
+    onEggCollected();
+    return `Collected world egg (QA stub). +${EGG_SUPPLIES_YIELD} Supplies.`;
   }
 
   const interactables: Interactable[] = [
@@ -104,9 +103,9 @@ export function createQaFlockStubs(
       id: 'qa-chicken', object: chicken, clickTargets: [visual], label: 'Feed chicken (stub)',
       range: 1.35, promptHeight: 1.3, isAvailable: () => active,
       interact() {
-        if (feed === 0) return 'No feed left (QA stub). Refresh to reset.';
-        feed--;
-        return `Fed chicken (QA stub). Feed: ${feed}.`;
+        if (!inventory.consume('feed')) return "Can't feed: no Feed left. Refresh to restock.";
+        inventory.pickup('egg');
+        return 'Fed chicken (QA stub). +1 Egg in inventory.';
       },
     },
     {

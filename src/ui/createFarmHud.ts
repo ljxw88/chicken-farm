@@ -1,9 +1,11 @@
+import type { Inventory } from '../inventory/createInventory';
 import { EGG_SUPPLIES_YIELD, type Supplies } from '../inventory/createSupplies';
 import type { DayNightPhaseName } from '../lighting';
 
 interface FarmHudOptions {
   root: HTMLElement;
   supplies: Supplies;
+  inventory: Inventory;
   initialPhase: DayNightPhaseName;
   isEggReady: () => boolean;
   collectEgg: () => string | undefined;
@@ -24,7 +26,9 @@ function required<T extends Element>(root: HTMLElement, selector: string): T {
 }
 
 /** Mount ordinary HTML next to the scene canvas, not into the renderer. */
-export function createFarmHud({ root, supplies, initialPhase, isEggReady, collectEgg, onCollected }: FarmHudOptions) {
+export function createFarmHud({
+  root, supplies, inventory, initialPhase, isEggReady, collectEgg, onCollected,
+}: FarmHudOptions) {
   root.classList.add('farm-hud');
   root.innerHTML = `
     <div class="farm-biome farm-glass" aria-label="Farm location and time">
@@ -66,7 +70,7 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
             </span>
             <div class="farm-producer__details">
               <h2>Hen coop</h2>
-              <p>Egg <span aria-hidden="true">·</span> +${EGG_SUPPLIES_YIELD} Supplies</p>
+              <p>World egg <span aria-hidden="true">·</span> +${EGG_SUPPLIES_YIELD} Supplies</p>
             </div>
             <span class="farm-producer__progress" data-progress role="img" aria-label="Ready to collect"><span data-progress-symbol aria-hidden="true">✓</span></span>
           </div>
@@ -78,7 +82,7 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
             <button class="farm-collect" type="button" data-collect>Collect</button>
           </div>
         </article>
-        <p class="farm-growing__note" data-collected-note hidden>Collected! New eggs and timers aren’t simulated yet. Refresh to reset.</p>
+        <p class="farm-growing__note" data-collected-note hidden>World egg collected! New world eggs and timers aren’t simulated yet.</p>
 
         <div class="farm-section-heading farm-section-heading--buffs"><span>FARM BUFFS</span><span>PREVIEW</span></div>
         <div class="farm-buffs">
@@ -91,6 +95,21 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
         </div>
         <p class="farm-buff__tip" id="farm-spring-tip" role="tooltip" hidden>Spring growth is a placeholder; no growth bonus is simulated.</p>
         <p class="farm-buff__tip" id="farm-bee-tip" role="tooltip" hidden>Bee pollination is a placeholder; no pollination bonus is simulated.</p>
+      </div>
+    </section>
+
+    <section class="farm-inventory farm-glass" aria-label="Inventory">
+      <div class="farm-inventory__stack">
+        <span class="farm-inventory__icon" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none"><path d="M10 6h8l-1.1 3.3c3.1 2 4.1 5 4.1 8.4 0 3.1-2.3 5.3-7 5.3s-7-2.2-7-5.3c0-3.4 1-6.4 4.1-8.4L10 6Z" fill="currentColor" opacity=".25"/><path d="M10 6h8l-1.1 3.3c3.1 2 4.1 5 4.1 8.4 0 3.1-2.3 5.3-7 5.3s-7-2.2-7-5.3c0-3.4 1-6.4 4.1-8.4L10 6Zm.5 3.4h7M14 13v6m-2.5-4 2.5 1.5 2.5-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="farm-inventory__details"><span>Feed</span><strong data-feed-count aria-live="polite" aria-atomic="true">5</strong></span>
+      </div>
+      <div class="farm-inventory__stack">
+        <span class="farm-inventory__icon" aria-hidden="true">
+          <svg viewBox="0 0 28 28" fill="none"><path d="M14 4.5c-3.9 0-7.5 6.8-7.5 12a7.5 7.5 0 1 0 15 0c0-5.2-3.6-12-7.5-12Z" fill="currentColor" opacity=".3"/><path d="M14 4.5c-3.9 0-7.5 6.8-7.5 12a7.5 7.5 0 1 0 15 0c0-5.2-3.6-12-7.5-12Zm-3.4 11.3c.2-2.5 1.2-5.1 2.5-6.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="farm-inventory__details"><span>Egg</span><strong data-egg-count aria-live="polite" aria-atomic="true">0</strong></span>
       </div>
     </section>
 
@@ -120,6 +139,8 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
   const eggStatus = required<HTMLElement>(root, '[data-egg-status]');
   const collectedNote = required<HTMLElement>(root, '[data-collected-note]');
   const collect = required<HTMLButtonElement>(root, '[data-collect]');
+  const feedCount = required<HTMLElement>(root, '[data-feed-count]');
+  const eggCount = required<HTMLElement>(root, '[data-egg-count]');
   const buildToggle = required<HTMLButtonElement>(root, '[data-build-toggle]');
   const buildClose = required<HTMLButtonElement>(root, '[data-build-close]');
   const buildSheet = required<HTMLElement>(root, '#farm-build-sheet');
@@ -181,7 +202,7 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
   collect.addEventListener('click', handleCollect);
   root.addEventListener('keydown', handleKeyDown);
 
-  const unsubscribe = supplies.subscribe((total) => {
+  const unsubscribeSupplies = supplies.subscribe((total) => {
     const ready = isEggReady();
     count.textContent = String(total);
     count.setAttribute('aria-label', `${total} supplies`);
@@ -195,6 +216,12 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
     collect.disabled = !ready;
     collect.textContent = ready ? 'Collect' : 'Collected';
   });
+  const unsubscribeInventory = inventory.subscribe(({ feed, egg }) => {
+    feedCount.textContent = String(feed);
+    feedCount.setAttribute('aria-label', `${feed} Feed`);
+    eggCount.textContent = String(egg);
+    eggCount.setAttribute('aria-label', `${egg} Eggs`);
+  });
 
   let currentPhase: DayNightPhaseName | undefined;
   function setPhase(name: DayNightPhaseName) {
@@ -205,7 +232,8 @@ export function createFarmHud({ root, supplies, initialPhase, isEggReady, collec
   setPhase(initialPhase);
 
   function dispose() {
-    unsubscribe();
+    unsubscribeSupplies();
+    unsubscribeInventory();
     growingToggle.removeEventListener('click', toggleGrowing);
     buildToggle.removeEventListener('click', toggleBuild);
     buildClose.removeEventListener('click', closeBuild);

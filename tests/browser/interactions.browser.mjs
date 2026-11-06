@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
 
-const evidenceDir = process.env.EBR55_EVIDENCE_DIR;
+const evidenceDir = process.env.EBR57_EVIDENCE_DIR ?? process.env.EBR55_EVIDENCE_DIR;
 const proof = {};
 let devServer;
 let previewServer;
@@ -127,7 +127,10 @@ test('production: approach chicken, press E once, then click the egg prompt to c
   await waitForMessage(page, 'Fed chicken');
   await page.keyboard.down('e'); // OS key repeat cannot use a second feed.
   await page.waitForTimeout(150);
-  assert.match(await status.textContent(), /Fed chicken \(QA stub\)\. Feed: 0/);
+  assert.match(await status.textContent(), /Fed chicken \(QA stub\).*\+1 Egg/);
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
   await page.keyboard.up('e');
   await capture(page, '02-fed.png');
 
@@ -139,8 +142,10 @@ test('production: approach chicken, press E once, then click the egg prompt to c
   await page.keyboard.up('d');
   await capture(page, '03-egg-prompt.png');
   await egg.click();
-  await waitForMessage(page, 'Collected egg');
-  assert.match(await status.textContent(), /Eggs: 1/);
+  await waitForMessage(page, 'Collected world egg');
+  assert.match(await status.textContent(), /\+5 Supplies/);
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '5');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
   assert.equal(await egg.isVisible(), false);
   await capture(page, '04-egg-collected.png');
   assert.deepEqual(errors, []);
@@ -194,13 +199,27 @@ test('clicking an out-of-range chicken only walks; an in-range object click feed
   proof.objectClick = { outOfRangeOnlyWalked: true, inRangeFed: true, stopped, later, errors };
 });
 
-test('sign and bin expose their stub actions and only the supplied signed rates', { timeout: 60000 }, async (t) => {
+test('sign and bin retain informational stub actions without trading inventory or Supplies', { timeout: 60000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, devUrl, true);
   const sign = page.locator('.interaction-prompt[data-interactable="qa-sign"]');
   const bin = page.locator('.interaction-prompt[data-interactable="qa-feed-bin"]');
   const status = page.locator('[role="status"]');
+  await page.keyboard.down('s');
+  await page.locator('.interaction-prompt[data-interactable="qa-chicken"]').waitFor({ state: 'visible', timeout: 10000 });
+  await page.keyboard.up('s');
+  await page.keyboard.press('e');
+  await waitForMessage(page, 'Fed chicken');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
+  // On the raised island the chicken prompt can cover the sign's ground target.
+  await page.keyboard.down('w');
+  try {
+    await page.locator('.interaction-prompt[data-interactable="qa-chicken"]').waitFor({ state: 'hidden', timeout: 10000 });
+  } finally {
+    await page.keyboard.up('w');
+  }
   const signDestination = await worldPoint(page, 0.4, -1.5);
   await page.mouse.click(signDestination.x, signDestination.y);
   await sign.waitFor({ state: 'visible', timeout: 10000 });
@@ -208,6 +227,8 @@ test('sign and bin expose their stub actions and only the supplied signed rates'
   await waitForMessage(page, 'egg sale +3 coins');
   assert.match(await status.textContent(), /feed purchase -1 coin/);
   assert.match(await status.textContent(), /Trading is not connected/);
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
   await capture(page, '07-sign.png');
 
   const destination = await worldPoint(page, -2.3, -0.85);
@@ -217,12 +238,16 @@ test('sign and bin expose their stub actions and only the supplied signed rates'
   await page.keyboard.press('e');
   await waitForMessage(page, 'Opened feed bin');
   assert.match(await bin.textContent(), /Close feed bin/);
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
   await capture(page, '08-open-bin.png');
   await page.keyboard.press('e');
   await waitForMessage(page, 'Closed feed bin');
   assert.match(await bin.textContent(), /Open feed bin/);
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '4');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '1');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
   assert.deepEqual(errors, []);
-  proof.contextActions = { sign: 'egg sale +3; feed purchase -1; no transaction', bin: 'opened and closed; no storage or trade', errors };
+  proof.contextActions = { sign: 'informational; no trade', bin: 'opened and closed; no trade', inventoryUnchanged: true, errors };
 });
 
 test('portrait touch can approach and use the prompt without sending a ground click', { timeout: 60000 }, async (t) => {

@@ -1,4 +1,4 @@
-/* Provisional olive glass for EBR-65; final contrast is for Look Dev to sign. */
+/* Reuse the EBR-65 locked default olive glass for the HTML overlays. */
 .farm-hud {
   --farm-top: max(18px, env(safe-area-inset-top));
   --farm-left: max(18px, env(safe-area-inset-left));
@@ -440,6 +440,68 @@
   padding: 8px 10px;
   border-radius: 9px;
   background: rgba(255, 255, 245, 0.07);
+}
+
+.farm-inventory {
+  position: absolute;
+  right: var(--farm-right);
+  bottom: var(--farm-bottom);
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 17px;
+}
+
+.farm-inventory__stack {
+  display: flex;
+  min-width: 72px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 5px;
+}
+
+.farm-inventory__stack + .farm-inventory__stack {
+  margin-left: 5px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 245, 0.16);
+}
+
+.farm-inventory__icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  place-items: center;
+  border-radius: 10px;
+  color: #e2efca;
+  background: rgba(216, 234, 187, 0.14);
+}
+
+.farm-inventory__icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.farm-inventory__details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--farm-muted);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.farm-inventory__details strong {
+  color: var(--farm-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.farm-inventory__details strong::before {
+  content: "×";
 }
 
 .farm-build {

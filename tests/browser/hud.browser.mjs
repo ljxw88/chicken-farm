@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
 
-const evidenceDir = process.env.EBR65_EVIDENCE_DIR;
+const evidenceDir = process.env.EBR57_EVIDENCE_DIR ?? process.env.EBR65_EVIDENCE_DIR;
 const proof = {};
 let devServer;
 let previewServer;
@@ -73,14 +73,18 @@ async function waitForPrompt(page, id) {
   }, id, { timeout: 15000 });
 }
 
-async function approachEgg(page) {
-  const egg = page.locator('.interaction-prompt[data-interactable="qa-egg"]');
+async function approachChicken(page) {
   await page.keyboard.down('s');
   try {
     await waitForPrompt(page, 'qa-chicken');
   } finally {
     await page.keyboard.up('s');
   }
+}
+
+async function approachEgg(page) {
+  const egg = page.locator('.interaction-prompt[data-interactable="qa-egg"]');
+  await approachChicken(page);
   await page.keyboard.down('s');
   await page.keyboard.down('d');
   try {
@@ -112,14 +116,22 @@ test('production HTML HUD: list Collect, buff disclosures, Build stub and refres
       siblings: root.parentElement === canvas.parentElement && canvas.nextElementSibling === root,
       imageRendering: getComputedStyle(root).imageRendering,
       blur: getComputedStyle(document.querySelector('.farm-growing')).backdropFilter,
+      inventoryBlur: getComputedStyle(document.querySelector('.farm-inventory')).backdropFilter,
+      inventoryColor: getComputedStyle(document.querySelector('.farm-inventory')).backgroundColor,
+      inventoryInHud: root.contains(document.querySelector('.farm-inventory')),
       canvasAtCenter: document.elementFromPoint(innerWidth / 2, innerHeight / 2) === canvas,
     };
   });
   assert.deepEqual(layout.siblings, true);
   assert.equal(layout.imageRendering, 'auto');
   assert.match(layout.blur, /blur\(16px\)/);
+  assert.match(layout.inventoryBlur, /blur\(16px\)/);
+  assert.equal(layout.inventoryColor, 'rgba(40, 55, 36, 0.68)');
+  assert.equal(layout.inventoryInHud, true);
   assert.equal(layout.canvasAtCenter, true);
   assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '5');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
   assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
   await capture(page, '01-hud-ready.png');
 
@@ -139,12 +151,15 @@ test('production HTML HUD: list Collect, buff disclosures, Build stub and refres
 
   await page.locator('[data-collect]').click();
   await assertCollected(page);
-  assert.match(await page.locator('.interaction-feedback').textContent(), /Collected egg/);
+  assert.match(await page.locator('.interaction-feedback').textContent(), /Collected world egg/);
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
   await capture(page, '03-list-collected.png');
   await page.keyboard.press('e');
   assert.equal(await page.locator('[data-supplies-count]').textContent(), '5');
   await page.reload({ waitUntil: 'networkidle' });
   assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '5');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
   assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
   assert.deepEqual(errors, []);
   proof.list = { browser: `Chromium ${browser.version()}`, layout, supplies: '0 → 5', reset: '0', errors };
@@ -234,9 +249,109 @@ test('an in-range egg click and the remote list use the same one-shot world obje
   proof.oneShot = { worldObjectClick: point, remoteListAlsoHidesEgg: true, walkedToFormerEgg: true, suppliesEach: '0 → 5', errors };
 });
 
+test('Nest path: feed inventory and collect the distinct world egg', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, previewUrl);
+  const supply = page.locator('[data-supplies-count]');
+  const feed = page.locator('[data-feed-count]');
+  const egg = page.locator('[data-egg-count]');
+  const status = page.locator('.interaction-feedback');
+  assert.equal(await supply.textContent(), '0');
+  assert.equal(await feed.textContent(), '5');
+  assert.equal(await egg.textContent(), '0');
+  assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
+  await capture(page, '09-nest-start.png');
+
+  await approachChicken(page);
+  await page.keyboard.press('e');
+  assert.match(await status.textContent(), /Fed chicken.*\+1 Egg/);
+  assert.equal(await feed.textContent(), '4');
+  assert.equal(await egg.textContent(), '1');
+  assert.equal(await supply.textContent(), '0');
+  await capture(page, '10-nest-fed.png');
+
+  await page.locator('[data-collect]').click();
+  await assertCollected(page);
+  assert.equal(await egg.textContent(), '1'); // The world egg is not an inventory pickup.
+  assert.equal(await feed.textContent(), '4');
+  assert.equal(await page.locator('[data-collect]').isDisabled(), true);
+  assert.equal(await supply.textContent(), '5');
+  await capture(page, '11-nest-collected.png');
+  assert.deepEqual(errors, []);
+  proof.nest = { supplies: '0 → 5 once', feed: '5 → 4', egg: '0 → 1; world collect does not add another', errors };
+});
+
+test('empty Feed produces on-screen feedback without adding Eggs or Supplies', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, previewUrl);
+  const supply = page.locator('[data-supplies-count]');
+  const feed = page.locator('[data-feed-count]');
+  const egg = page.locator('[data-egg-count]');
+  const status = page.locator('.interaction-feedback');
+  await approachChicken(page);
+  for (let i = 0; i < 5; i++) await page.keyboard.press('e');
+  assert.equal(await feed.textContent(), '0');
+  assert.equal(await egg.textContent(), '5');
+  assert.equal(await supply.textContent(), '0');
+  await page.keyboard.press('e');
+  assert.match(await status.textContent(), /Can't feed.*no Feed/);
+  assert.equal(await feed.textContent(), '0');
+  assert.equal(await egg.textContent(), '5');
+  assert.equal(await supply.textContent(), '0');
+  await capture(page, '12-no-feed.png');
+
+  await page.locator('[data-collect]').click();
+  await assertCollected(page);
+  assert.equal(await egg.textContent(), '5');
+  assert.equal(await feed.textContent(), '0');
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await supply.textContent(), '0');
+  assert.equal(await feed.textContent(), '5');
+  assert.equal(await egg.textContent(), '0');
+  assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
+  assert.deepEqual(errors, []);
+  proof.noFeed = { countsUnchangedOnFailure: true, worldEggAddsNoInventory: true, refreshResets: true, errors };
+});
+
+test('inventory survives phase and weather changes until refresh', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, previewUrl);
+  await approachChicken(page);
+  await page.keyboard.press('e');
+  await page.keyboard.press('e');
+  await page.locator('[data-collect]').click();
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '3');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '2');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '5');
+
+  await page.evaluate(() => { window.setDayNightPhase('night'); window.setWeather('rain'); });
+  await page.waitForFunction(() => document.querySelector('[data-phase]')?.textContent === 'Night');
+  await page.waitForFunction(() => window.getWeather().rainAmount > 0.1, null, { timeout: 15000 });
+  assert.equal(await page.evaluate(() => window.getWeather().mode), 'rain');
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '3');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '2');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '5');
+  await capture(page, '13-night-rain.png');
+  await page.evaluate(() => { window.setDayNightPhase('morning'); window.setWeather('clear'); });
+  await page.waitForFunction(() => window.getWeather().rainAmount < 0.1, null, { timeout: 15000 });
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '3');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '2');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '5');
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.locator('[data-feed-count]').textContent(), '5');
+  assert.equal(await page.locator('[data-egg-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  assert.equal(await page.locator('[data-ready-count]').textContent(), '1 ready');
+  assert.deepEqual(errors, []);
+  proof.session = { persistsAcrossNightRainAndClear: true, refreshResets: true, errors };
+});
+
 test('small portrait and landscape keep chrome separated, accessible and on screen', { timeout: 60000 }, async () => {
   const sizes = [];
-  for (const [width, height, mobile] of [[320, 568, true], [390, 844, true], [844, 390, false]]) {
+  for (const [width, height, mobile] of [[320, 568, true], [390, 844, true], [844, 390, false], [568, 320, false]]) {
     const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile });
     try {
       const { page, errors } = await openPage(context, previewUrl);
@@ -244,10 +359,14 @@ test('small portrait and landscape keep chrome separated, accessible and on scre
       const supplies = await page.locator('.farm-supplies').boundingBox();
       const growing = await page.locator('.farm-growing').boundingBox();
       const build = await page.locator('[data-build-toggle]').boundingBox();
+      const inventory = await page.locator('.farm-inventory').boundingBox();
+      const overlaps = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
       assert.ok(biome.x + biome.width < supplies.x, `${width}x${height}: top chrome overlaps`);
       assert.ok(growing.x >= 0 && growing.x + growing.width <= width);
       assert.ok(growing.y + growing.height < build.y, `${width}x${height}: panel overlaps Build`);
       assert.ok(build.y + build.height <= height);
+      assert.ok(inventory.x >= 0 && inventory.x + inventory.width <= width && inventory.y + inventory.height <= height);
+      assert.equal(overlaps(inventory, build), false, `${width}x${height}: inventory overlaps Build`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
       if (width === 320) await capture(page, '07-small-portrait.png');
       if (height === 390) await capture(page, '08-short-landscape.png');
