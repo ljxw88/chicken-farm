@@ -241,6 +241,12 @@ test('the lantern stays attached to the moving and turning character', () => {
   const expected = character.localToWorld(lantern.position.clone());
   assert.ok(before.distanceTo(after) > 1);
   near(after.distanceTo(expected), 0);
+  const wing = lantern.getObjectByName('lantern-wing');
+  const glass = lantern.getObjectByName('lantern-glass');
+  const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+  const wingBounds = new THREE.Box3().setFromObject(wing);
+  assert.ok(wingBounds.intersectsBox(new THREE.Box3().setFromObject(body)), 'wing does not meet the body');
+  assert.ok(wingBounds.intersectsBox(new THREE.Box3().setFromObject(glass)), 'wing does not meet the lantern');
 });
 
 test('the character shadow follows the key, not the character rotation, throughout the cycle', () => {
