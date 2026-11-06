@@ -75,7 +75,7 @@ export function intersectsFootprint(area: Footprint, obstacle: FarmObstacle) {
 }
 
 /** Only the fence is solid; the plot is a walkable ground surface. */
-export function fenceCollision(area: Footprint, rotation: number, name: string): FarmObstacle {
+export function fenceCollision(area: Pick<Footprint, 'centerX' | 'centerZ'>, rotation: number, name: string): FarmObstacle {
   const halfX = rotation % 2 === 0 ? 0.735 : 0.13;
   const halfZ = rotation % 2 === 0 ? 0.13 : 0.735;
   return {

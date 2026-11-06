@@ -9,8 +9,9 @@ import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { createSheepfold } from './scene/sheepfold/createSheepfold';
 import { WATER_FEATURE } from './scene/waterFeatureSpec';
-import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
+import { createStartupPhaseController, parseStartupOptions, parseVisualSeed } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
@@ -42,6 +43,8 @@ character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
 const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
+const sheepfold = createSheepfold(scene, parseVisualSeed(window.location.search));
+obstacles.push(...sheepfold.obstacles);
 const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 const farmShadows = createFarmShadows(scene);
 function shadowSupported(x: number, z: number, radius: number) {
@@ -53,8 +56,13 @@ function shadowSupported(x: number, z: number, radius: number) {
   }
   return stairs.supports(x, z, radius);
 }
-const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
-  shadowSupported, updateFarmShadows: farmShadows.update });
+const dayNight = createDayNightCycle({
+  scene, character, windows, extraEmissives, shadowSupported,
+  updateFarmShadows(awayX, awayZ, offset, strength) {
+    farmShadows.update(awayX, awayZ, offset, strength);
+    sheepfold.updateShadows(awayX, awayZ, offset, strength);
+  },
+});
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
@@ -118,6 +126,7 @@ const engine = createEngine<CharacterComponents>({
     placement.update();
     weather.update(deltaSeconds);
     updateWaterfall(deltaSeconds);
+    sheepfold.update(deltaSeconds);
   },
   render: (deltaSeconds) => composer.render(deltaSeconds),
 });

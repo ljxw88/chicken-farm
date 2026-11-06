@@ -2,6 +2,14 @@ import { DAY_NIGHT_PHASES } from './lighting/dayNightPhases';
 import type { DayNightPhaseName } from './lighting';
 import { isWeatherMode } from './weather';
 
+// An optional 32-bit visual seed leaves the existing weather RNG unchanged.
+export function parseVisualSeed(search: string) {
+  const value = new URLSearchParams(search).get('seed');
+  if (value === null || !/^[+-]?\d+$/.test(value)) return undefined;
+  const seed = Number(value);
+  return Number.isSafeInteger(seed) ? seed >>> 0 : undefined;
+}
+
 export function parseStartupOptions(search: string) {
   const params = new URLSearchParams(search);
   const weather = params.get('weather');

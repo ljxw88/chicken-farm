@@ -13,6 +13,8 @@ export const FARM_PALETTE = {
   treeFoliageDark: 0x3d7a3a,
   treeFoliage: 0x5fa846,
   treeFoliageLight: 0x7cbc5a,
+  // Look Dev approved wool in the EBR-70 ruling, comment 29964dd6.
+  wool: 0xf3ead6,
   pondWater: 0x5b8fa8,
   pondRim: 0x7aadb8,
   pondDepth: 0x3a6a7a,
