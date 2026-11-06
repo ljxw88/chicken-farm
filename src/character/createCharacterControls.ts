@@ -36,6 +36,8 @@ export function createCharacterControls({
   const pointer = new THREE.Vector2();
   const raycaster = new THREE.Raycaster();
   const limit = groundSize / 2 - characterRadius;
+  const halfSize = groundSize / 2;
+  const bounds = { minX: -halfSize, maxX: halfSize, minZ: -halfSize, maxZ: halfSize };
   let hasTarget = false;
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -116,11 +118,11 @@ export function createCharacterControls({
     }
 
     const next = moveWithFarmCollisions(
-      startX, startZ, direction.x * step, direction.z * step, characterRadius, obstacles,
+      startX, startZ, direction.x * step, direction.z * step, characterRadius, obstacles, bounds,
     );
-    character.position.x = THREE.MathUtils.clamp(next.x, -limit, limit);
+    character.position.x = next.x;
     character.position.y = groundHeight;
-    character.position.z = THREE.MathUtils.clamp(next.z, -limit, limit);
+    character.position.z = next.z;
     const movedX = character.position.x - startX;
     const movedZ = character.position.z - startZ;
     const moving = Math.hypot(movedX, movedZ) > 0.000001;

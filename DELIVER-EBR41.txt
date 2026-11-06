@@ -1,0 +1,30 @@
+EBR-41 — Floating diorama island: NEST READY
+
+Base: 9c95f35438ac5ac4fb4ed786ed8516997d89ff6e
+Branch: feat/ebr41-diorama
+Implementation tip SHA: 134f1ccd893307f19f49e5f45b2aa07716510521 (includes the island, phase URLs and Nest-ready steps).
+Current branch/handoff tip: run `git rev-parse HEAD` in this worktree. A committed handoff cannot contain its own SHA.
+Look Dev: GREENLIT by the user. No merge.
+
+Locked look and scope
+- A 16 x 16 raised, walkable island with a grass lip and soil/rock cross-section is visible by default; no infinite grass fill remains. The renderer background, clear color and fallback are #101416, the locked EBR-45-family void.
+- Existing barn, four trees and pond remain on the top; the path ends at the rim. WASD and click/tap respect the rim and existing prop collisions.
+- The 12 -> 20 framing is accepted for this tip. Rain settings are unchanged; thinner on-screen rain is known. Framing polish belongs to EBR-43.
+- Stairs, plots/gardens, waterfall/stream/bridge, cottage/coops, Cloudy, HUD, pixel postFX and fireflies remain out of scope.
+
+Nest steps — no console
+1. In this worktree run `npm ci`, then `npm run build`, then `npm run preview -- --host 127.0.0.1 --port 15342 --strictPort` (choose another free port if necessary).
+2. Open http://127.0.0.1:15342/ at 1280 x 720. The island, rim and void are visible immediately.
+3. Open http://127.0.0.1:15342/?phase=morning and http://127.0.0.1:15342/?phase=sunset. `?phase=daytime` and `?phase=night` are also available. A valid value holds that phase; absent/invalid values retain the normal cycling behavior.
+4. From spawn hold S toward the foreground corner, keep holding to verify the rim stops the character, then use W+A or W+D to move along it. Clicking the void does not start a walk; barn, tree trunks and pond water remain blocked.
+
+Verification and evidence
+- `npm run build` passed; the existing Vite >500 kB advisory remains. `npm test`: 36 passed, including URL pinning, invalid/default cycle behavior, geometry, rim/prop collisions and weather.
+- Production preview checked in Chromium 153/WebGL at 1280 x 720: all four phase URLs selected and held their phase, #101416 remained fixed, and real WASD stopped at (7.6, 2.4, 7.6). No application JavaScript errors; the existing favicon 404 was ignored.
+- Previous full rim/prop/touch and morning/sunset evidence: /home/michael/Developer/chicken-farm-evidence/ebr41/ (morning.png, sunset.png, rim-corner-wasd.png, rim-slide.png, browser-proof.json). URL-specific capture/proof from this worktree: node_modules/.cache/ebr41/nest-{morning,daytime,sunset,night,rim}.png and nest-proof.json; npm ci removes this ignored cache.
+- Production asset dist/assets/index-Da39S73L.js SHA-256: 96d6fbf0d23800b4ec07ba582602a39e2c3e7dbfda80218850a2e6ce01eda872.
+
+Token usage
+- Previous implementation-session snapshot (2026-11-05T23:08:07Z): input 857, output 24,572, reasoning 31,526, cache read 6,499,062, cache write 178,954 tokens; cost $0.8293221. This excludes subsequent Nest handoff work.
+
+Blockers: none. Independent gameplay QA is not claimed.

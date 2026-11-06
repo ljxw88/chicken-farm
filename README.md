@@ -1,6 +1,6 @@
 # Chicken Farm
 
-A minimal 3D scene built with Vite, vanilla TypeScript, and Three.js. A small character walks around a grassy farm while an isometric camera follows and the lighting cycles from morning through night.
+A minimal 3D scene built with Vite, vanilla TypeScript, and Three.js. A small character walks around a raised farm island while an isometric camera follows and the lighting cycles from morning through night.
 
 Meadow look reference: https://x.com/daniildesigns/status/2117571497665663044
 
@@ -15,22 +15,51 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173). If that port is already in use, Vite will print another local URL.
 
-Use **WASD** to walk relative to the screen, or click/tap the ground to walk there. From spawn, follow the curved dirt path left toward the barn, or follow it right past the pond and toward the ground edge. The barn, tree trunks, and pond water block movement; the character slides along them and stops when fully blocked. Click-to-move does not plan a route around obstacles. Keyboard input cancels a click-to-move destination, and the character stays within the grassy ground.
+For a console-free weather and lighting check, open a URL such as `http://localhost:5173/?weather=cloudy&phase=night`. Weather accepts `clear`, `cloudy` or `rain`; phase accepts `morning`, `daytime`, `sunset` or `night`. The requested weather fades in over 1.75 seconds. A valid URL phase stays fixed for repeatable review; without one, the normal day/night cycle runs. Invalid parameters are ignored independently. Calling either day/night console setter resumes the cycle after a URL-pinned phase.
+
+Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the barn, or right past the pond to the island rim. The barn, tree trunks, pond water and the rim block movement; the character can slide along them. Clicking the void does not start a walk. Click-to-move does not plan a route around obstacles, and keyboard input cancels a clicked destination.
 
 When near an object, press **E**, click/tap its prompt, or click/tap the object itself to use its primary action. The prompt selects the nearest available object; clicking an object selects that specific object. Walking into range does not interact, and clicking an out-of-range object only sets a normal ground destination. Release E before pressing it again.
 
 For interaction QA, a static **chicken and egg are stubs** below spawn. Walk toward the chicken (screen-down / S), then feed it; move right toward the egg (S+D from there) and collect it. The stub starts with one free feed, tracks one collected egg in memory, and resets on reload. Feeding does not buy feed and collecting does not sell an egg. The nearby feed bin and sign are also stubs: the lid opens/closes, and the sign shows the supplied egg sale +3 / feed purchase -1 coin rates without making transactions. Flock AI, persistent inventory, storage, dialogue and trading are not implemented here.
 
-The full day/night cycle takes 72 seconds by default. To inspect a phase immediately, use the browser console:
+The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
+
+```text
+http://localhost:5173/?phase=morning
+http://localhost:5173/?phase=daytime
+http://localhost:5173/?phase=sunset
+http://localhost:5173/?phase=night
+```
+
+A valid phase URL holds that phase until you navigate away or use a day/night console setter; a missing or invalid phase keeps the normal cycle running. You can also use the browser console:
 
 ```js
 setDayNightPhase('morning') // also: 'daytime', 'sunset', 'night'
 setDayNightCycleSeconds(12) // complete cycle in 12 seconds
 ```
 
-The cycle keeps running after selecting a phase. Walk toward a ground edge to see the changing sky; the ground fills the initial isometric view. Its `setDayNightCycleSeconds(seconds)` method is also available on the object returned by `createDayNightCycle` in `src/lighting/` for a future HUD. It accepts finite positive seconds and preserves the current phase when changed. All lighting presets are Look Dev LOCKED; only the transitions are interpolated.
+The cycle keeps running after selecting a phase in the console. The island is surrounded by a fixed #101416 void; the existing phase fog and lighting still change over time. The `setDayNightCycleSeconds(seconds)` method is also available on the object returned by `createDayNightCycle` in `src/lighting/` for a future HUD. It accepts finite positive seconds and preserves the current phase when changed. The day/night phase presets are Look Dev LOCKED; intermediate phases are interpolated. Weather adjustments are separate from those presets.
 
-Weather starts clear. In the browser console, call `setWeather('rain')` for gentle rain or `setWeather('clear')` to return to clear weather; `getWeather()` reports the requested mode and current `rainAmount` (0–1). A full transition takes about 1.75 seconds and follows the current day/night phase. Rain settings in `src/weather/rainSettings.ts` use Look Dev's visually approved starting targets; they are not explicitly LOCKED.
+Weather starts clear unless selected by URL. In the browser console, call `setWeather('cloudy')` for overcast, `setWeather('rain')` for gentle rain, or `setWeather('clear')` to return to clear weather. `getWeather()` reports the requested `mode` and current `rainAmount` and `cloudyAmount` (each 0–1). A full transition takes 1.75 seconds and follows the current day/night phase. Rain fades smoothly when switching to or from Cloudy. Rain settings in `src/weather/rainSettings.ts` use Look Dev's visually approved starting targets; apart from the shared transition, they are not explicitly LOCKED. Look Dev LOCKED the relative Cloudy settings in `src/weather/cloudySettings.ts`: they reduce directional light and cool the phase's ambient and hemisphere colors without adding locked hex colors. The void, fog and warm night practical lights are unchanged.
+
+## Pixel rendering inspection
+
+Look Dev locked the default to **4 CSS pixels**, with nearest-neighbor world rendering on by default. A 1280×720 view renders at approximately 320×180; height remains responsive rather than being fixed to 240. HTML stays crisp. Posterization and outlines are reserved for EBR-53.
+
+For a console-free comparison, open `?pixel=0` for the original native-resolution view or `?pixel=1` to restore the pixel view. The default without a parameter is on. Optional browser-console inspection:
+
+```js
+getPixelRendering()       // canvas size, device DPR, integer block size and edge crop
+setPixelRendering(false)  // compare with the original native-resolution render
+setPixelRendering(true)   // restore the pixel pass
+setPixelSize(3)           // temporary comparison in CSS pixels; finite values from 1 to 16
+setPixelSize(4)           // restore the locked default
+```
+
+The device-pixel block size is rounded to an integer. Odd dimensions use centered partial blocks at the edges, rather than stretching the grid; fractional DPR may make the effective CSS size slightly different from the requested value. The camera projection and existing antialiasing remain unchanged, and the camera is not snapped to the pixel grid. `getPixelRendering().viewport` describes the planned pixel grid even in native comparison mode; `canvasWidth` and `canvasHeight` are the actual drawing buffer size.
+
+Only `#scene` is scaled. Future HTML UI should be a separate, positioned sibling above the canvas, not a child of a transformed/pixelated container. For weather and HUD integration notes, see `DELIVER-EBR37.txt`.
 
 ## Production build
 
@@ -38,6 +67,6 @@ Weather starts clear. In the browser console, call `setWeather('rain')` for gent
 npm run build
 ```
 
-The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check interaction, farm, collisions, camera, weather and lighting. For the Chromium interaction checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
+The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check interaction, pixel sizing, the farm, collisions, camera, weather and lighting. For the Chromium interaction checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
 
-The entry point is `src/main.ts`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller are in `src/interactions/`; replaceable QA props are isolated in `src/interactions/qa/`.
+The entry point is `src/main.ts`, the pixel presentation is in `src/postprocess/`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller are in `src/interactions/`; replaceable QA props are isolated in `src/interactions/qa/`.

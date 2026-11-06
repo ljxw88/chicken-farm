@@ -1,6 +1,7 @@
 import { OrthographicCamera, Vector3 } from 'three';
 
-const VIEW_HEIGHT = 12;
+// The initial view includes the island's raised cross-section and the void.
+const VIEW_HEIGHT = 20;
 const FOCUS_HEIGHT = 0.7;
 // Equal offsets give a 45° azimuth and a 35.26° elevation.
 const CAMERA_OFFSET = new Vector3(12, 12, 12);

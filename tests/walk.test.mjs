@@ -9,6 +9,7 @@ const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIso
 const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { createIsland, GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 class FakeElement extends EventTarget {
@@ -27,14 +28,23 @@ function fixture(t, farm = false) {
   const { camera, follow, resize } = createIsometricCamera();
   resize(800, 600);
   const scene = new THREE.Scene();
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(32, 32), new THREE.MeshBasicMaterial());
-  ground.rotation.x = -Math.PI / 2;
-  scene.add(ground);
+  const groundHeight = farm ? GROUND_HEIGHT : 0;
+  const groundSize = farm ? GROUND_SIZE : 32;
+  let ground;
+  if (farm) {
+    ground = createIsland(scene).ground;
+  } else {
+    ground = new THREE.Mesh(new THREE.PlaneGeometry(groundSize, groundSize), new THREE.MeshBasicMaterial());
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+  }
   const character = new THREE.Group();
+  character.position.y = groundHeight;
+  follow(character.position);
   const canvas = new FakeElement();
   const obstacles = farm ? createFarmLayout(scene).obstacles : [];
   const controls = createCharacterControls({
-    character, camera, canvas, ground, groundSize: 32, groundHeight: 0, characterRadius: 0.4, obstacles,
+    character, camera, canvas, ground, groundSize, groundHeight, characterRadius: 0.4, obstacles,
   });
   t.after(controls.dispose);
 
@@ -44,7 +54,7 @@ function fixture(t, farm = false) {
 
   function click(point) {
     camera.updateMatrixWorld();
-    const projected = point.clone().project(camera);
+    const projected = point.clone().setY(groundHeight).project(camera);
     const rect = canvas.getBoundingClientRect();
     canvas.dispatchEvent(Object.assign(new Event('pointerdown'), {
       isPrimary: true,
@@ -54,7 +64,7 @@ function fixture(t, farm = false) {
     }));
   }
 
-  return { camera, follow, resize, character, controls, key, click };
+  return { camera, follow, resize, character, controls, key, click, groundHeight };
 }
 
 function near(actual, expected, tolerance = 1e-6) {
@@ -149,20 +159,61 @@ test('walking stays on the floor and within both ground edges', (t) => {
   near(character.position.z, -15.6);
 });
 
-test('the path can be followed from the barn past the pond to the ground edge', (t) => {
-  const { character, controls, click, follow } = fixture(t, true);
+test('the path can be followed from the barn past the pond to the island rim', (t) => {
+  const { character, controls, click, follow, groundHeight } = fixture(t, true);
   const waypoints = [
     [-0.75, -0.65], [-1.6, -1.1], [-3.3, -1.28], [-1.6, -1.1], [-0.75, -0.65], [0, 0],
     [0.85, -0.2], [1.6, -0.9], [2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65],
-    [6, -0.9], [7.6, 0.4], [9.5, 2], [12, 4.4], [14, 7.7], [15.5, 7.7],
+    [6, -0.9], [7.5, 0.4],
   ];
   for (const [x, z] of waypoints) {
-    const destination = new THREE.Vector3(x, 0, z);
+    const destination = new THREE.Vector3(x, groundHeight, z);
     click(destination);
     controls.update(10);
     assert.ok(character.position.distanceTo(destination) < 0.001, `could not reach path point ${x}, ${z}`);
     follow(character.position);
   }
+});
+
+test('all four island edges stop WASD at the character radius and allow sliding', (t) => {
+  const { character, controls, key, groundHeight } = fixture(t, true);
+  const cases = [
+    { start: [7.45, 5], keys: ['KeyS', 'KeyD'], axis: 'x', expected: 7.6 },
+    { start: [-7.45, 5], keys: ['KeyW', 'KeyA'], axis: 'x', expected: -7.6 },
+    { start: [6, 7.45], keys: ['KeyS', 'KeyA'], axis: 'z', expected: 7.6 },
+    { start: [6, -7.45], keys: ['KeyW', 'KeyD'], axis: 'z', expected: -7.6 },
+  ];
+  for (const { start, keys, axis, expected } of cases) {
+    character.position.set(start[0], groundHeight, start[1]);
+    keys.forEach((code) => key('keydown', code));
+    controls.update(3);
+    controls.update(3);
+    keys.forEach((code) => key('keyup', code));
+    near(character.position[axis], expected);
+    near(character.position.y, groundHeight);
+    assert.ok(Math.abs(character.position.x) <= 7.6 && Math.abs(character.position.z) <= 7.6);
+  }
+
+  character.position.set(7.55, groundHeight, 0);
+  key('keydown', 'KeyS'); // World +X/+Z: push into the rim while moving along it.
+  controls.update(1);
+  key('keyup', 'KeyS');
+  near(character.position.x, 7.6);
+  assert.ok(character.position.z > 2.4);
+});
+
+test('clicking the void does nothing and clicking the rim stays on the top', (t) => {
+  const { character, controls, click, groundHeight } = fixture(t, true);
+  click(new THREE.Vector3(9.5, groundHeight, 0));
+  controls.update(10);
+  near(character.position.x, 0);
+  near(character.position.z, 0);
+
+  click(new THREE.Vector3(7.95, groundHeight, 0));
+  controls.update(10);
+  near(character.position.x, 7.6);
+  near(character.position.z, 0);
+  near(character.position.y, groundHeight);
 });
 
 test('WASD cannot tunnel through the front or side of the barn', (t) => {
@@ -232,4 +283,12 @@ test('a glancing movement slides along a solid wall', () => {
   assert.ok(result.x <= -0.4 + 1e-8);
   assert.ok(result.x > -0.55);
   assert.ok(result.z > 1.25);
+});
+
+test('a diagonal step cannot bypass a prop by travelling outside the island', () => {
+  const bounds = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 };
+  const wall = { kind: 'box', name: 'rim-wall', minX: 7.2, maxX: 8, minZ: 0, maxZ: 1 };
+  const result = moveWithFarmCollisions(7.6, -1, 5, 4, 0.4, [wall], bounds);
+  near(result.x, 7.6);
+  assert.ok(result.z <= -0.4 && result.z > -0.5);
 });

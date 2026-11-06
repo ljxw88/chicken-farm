@@ -1,2 +1,2 @@
-export { createWeatherSystem } from './createWeatherSystem';
+export { createWeatherSystem, isWeatherMode } from './createWeatherSystem';
 export type { WeatherMode } from './createWeatherSystem';
