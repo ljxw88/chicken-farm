@@ -86,7 +86,7 @@ test('engine weather reverses and crossfades continuously and drives the existin
   f.weather.render(0.875);
   assert.deepEqual(f.weather.getWeather(), { mode: 'rain', rainAmount: 0.5, cloudyAmount: 0 });
   assert.equal(state.rainProgress, 0.5);
-  assert.equal(f.scene.getObjectByName('rain-streaks').material.opacity, 0.175);
+  assert.equal(f.scene.getObjectByName('rain-streaks').material.opacity, 0.275); // EBR-88: 0.55 at full rain.
   f.weather.setWeather('cloudy');
   updateWeatherSystem(f.world, 0.4375);
   f.weather.render(0.4375);

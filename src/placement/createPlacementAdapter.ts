@@ -188,16 +188,19 @@ export function createPlacementAdapter({
 
   function update() {
     if (disposed) return;
-    syncSceneInputs();
-    system.update(hit(state.pointer));
+    // The legacy path did no raycast or decorative bounds work when idle.
+    if (state.kind && state.pointer) syncSceneInputs();
+    system.update(state.kind && state.pointer ? hit(state.pointer) : null);
     render();
   }
 
   const unsubscribe = input.onPlacement((action: PlacementAction) => {
     if (disposed) return;
     const wasActive = Boolean(state.kind);
-    syncSceneInputs();
-    system.dispatch(action, hit(action.type === 'placement-preview' ? action.point : state.pointer));
+    const point = action.type === 'placement-preview' ? action.point : state.pointer;
+    const previewing = Boolean(point) && (wasActive || action.type === 'placement-select') && action.type !== 'placement-cancel';
+    if (previewing) syncSceneInputs();
+    system.dispatch(action, previewing ? hit(point) : null);
     if (wasActive !== Boolean(state.kind)) onActiveChange?.(Boolean(state.kind));
     render();
   });
