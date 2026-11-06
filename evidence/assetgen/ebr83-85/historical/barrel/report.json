@@ -1,0 +1,1685 @@
+{
+  "id": "barrel",
+  "status": "needs-human",
+  "signedBy": null,
+  "origin": "pre-EBR-80 generated candidate, not a new run",
+  "displayConversion": "none",
+  "hard": {
+    "failures": [
+      {
+        "code": "H1",
+        "message": "Part body has invalid lathe profile"
+      },
+      {
+        "code": "H1",
+        "message": "Part hoop-bottom has invalid lathe profile"
+      },
+      {
+        "code": "H1",
+        "message": "Part hoop-middle has invalid lathe profile"
+      },
+      {
+        "code": "H1",
+        "message": "Part hoop-top has invalid lathe profile"
+      },
+      {
+        "code": "H1",
+        "message": "Part lid needs positive cylinder radii/height and 6–8 segments"
+      }
+    ],
+    "metrics": {
+      "checks": {},
+      "lowerTrust": false
+    }
+  },
+  "visual": {
+    "failures": [],
+    "metrics": {
+      "browser": "153.0.8010.12",
+      "loadAttempts": 1,
+      "renderer": "game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1",
+      "lightingStatus": "merged EBR-80; preliminary",
+      "pixel": {
+        "enabled": true,
+        "cssPixelSize": 4,
+        "devicePixelRatio": 1,
+        "rendererPixelRatio": 1,
+        "canvasWidth": 320,
+        "canvasHeight": 180,
+        "viewport": {
+          "displayWidth": 1280,
+          "displayHeight": 720,
+          "targetWidth": 320,
+          "targetHeight": 180,
+          "pixelSize": 4,
+          "cropLeft": 0,
+          "cropRight": 0,
+          "cropBottom": 0,
+          "cropTop": 0
+        }
+      },
+      "references": {
+        "cottage": 3.6000000007947293,
+        "coop": 1.9500000476837163,
+        "tree": 2.8000000000000003,
+        "fence": 0.949999988079071,
+        "character": 1.399999976158142
+      },
+      "keyDirection": [
+        -0.5585950856845142,
+        0.7158599835262722,
+        0.4189463142633856
+      ],
+      "referenceScale": {
+        "actual": 0.7142857254919959,
+        "target": 0.7142857264499277
+      },
+      "samples": [
+        {
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 73,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.463992165948936,
+          "meanHueDifference": 57.28237886116579
+        },
+        {
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 59,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.4471177624659324,
+          "meanHueDifference": 2.7290430475944865
+        },
+        {
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 72,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.3805911021762354,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.7648086412434785,
+          "meanHueDifference": 55.60779735344228
+        },
+        {
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 63,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.6504130969136706,
+          "meanHueDifference": 3.6105809562603604
+        },
+        {
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.016135679967129,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 73,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.9312617583678677,
+          "meanHueDifference": 52.47939555039418
+        },
+        {
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 68,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.7542847017307706,
+          "meanHueDifference": 4.716287304679301
+        },
+        {
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 72,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.8107249620263528,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 135,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.0009206730264775,
+          "meanHueDifference": 52.877391436803855
+        },
+        {
+          "yaw": 135,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 67,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.8057334878674862,
+          "meanHueDifference": 4.683777511829136
+        },
+        {
+          "yaw": 135,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.788381921262512,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 180,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 73,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.8697574725011086,
+          "meanHueDifference": 53.525103359361154
+        },
+        {
+          "yaw": 180,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 67,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.7120293613950026,
+          "meanHueDifference": 4.218849213870665
+        },
+        {
+          "yaw": 180,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 73,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.8604918498032765,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 225,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.6561879380362667,
+          "meanHueDifference": 57.05284129296935
+        },
+        {
+          "yaw": 225,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 62,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.5711451860855439,
+          "meanHueDifference": 3.1003819537587862
+        },
+        {
+          "yaw": 225,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.1455666669153675,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 270,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 73,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.368223995781558,
+          "meanHueDifference": 58.25575293291682
+        },
+        {
+          "yaw": 270,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 58,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.382536725535261,
+          "meanHueDifference": 2.1114644285479853
+        },
+        {
+          "yaw": 270,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 73,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.5191776808964703,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 315,
+          "phase": "daytime",
+          "surface": "grass",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2690366530602004,
+          "meanHueDifference": 60.272884312839096
+        },
+        {
+          "yaw": 315,
+          "phase": "daytime",
+          "surface": "path",
+          "pixels": 51,
+          "widthPixels": 8,
+          "heightPixels": 10,
+          "meanContrastRatio": 1.3141525358683204,
+          "meanHueDifference": 1.9461916482610881
+        },
+        {
+          "yaw": 315,
+          "phase": "daytime",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.670308212809583,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 0,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.219802824694578,
+          "meanHueDifference": 50.45548718376514
+        },
+        {
+          "yaw": 0,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 51,
+          "widthPixels": 7,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3210769740346302,
+          "meanHueDifference": 1.041070222264496
+        },
+        {
+          "yaw": 0,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 75,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.9938913831227032,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 45,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 67,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2771877449044766,
+          "meanHueDifference": 52.210820889971814
+        },
+        {
+          "yaw": 45,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 52,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2988472951766323,
+          "meanHueDifference": 1.3878025362104514
+        },
+        {
+          "yaw": 45,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.711880139133609,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 90,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 69,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3290127594957137,
+          "meanHueDifference": 50.15073008744111
+        },
+        {
+          "yaw": 90,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 59,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3020333466698795,
+          "meanHueDifference": 1.3228621586277667
+        },
+        {
+          "yaw": 90,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 75,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.5261508956677436,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 135,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 66,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3706460919677852,
+          "meanHueDifference": 51.40996959337391
+        },
+        {
+          "yaw": 135,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 57,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.340726144331788,
+          "meanHueDifference": 1.4221648225067645
+        },
+        {
+          "yaw": 135,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.5236588721797661,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 180,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 70,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2995929011536491,
+          "meanHueDifference": 50.26489907501942
+        },
+        {
+          "yaw": 180,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 57,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.288372944279652,
+          "meanHueDifference": 1.4643406666765326
+        },
+        {
+          "yaw": 180,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 75,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.570217994751189,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 225,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 68,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2505248121364165,
+          "meanHueDifference": 51.73861893611142
+        },
+        {
+          "yaw": 225,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 54,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2870767445301274,
+          "meanHueDifference": 1.0781501158888298
+        },
+        {
+          "yaw": 225,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.82458467065205,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 270,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2275895010051963,
+          "meanHueDifference": 50.89792617633474
+        },
+        {
+          "yaw": 270,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 59,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3256624977099,
+          "meanHueDifference": 1.2097657649202125
+        },
+        {
+          "yaw": 270,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 75,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.1208911984373047,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 315,
+          "phase": "sunset",
+          "surface": "grass",
+          "pixels": 69,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.21226811362936,
+          "meanHueDifference": 51.930879214023435
+        },
+        {
+          "yaw": 315,
+          "phase": "sunset",
+          "surface": "path",
+          "pixels": 51,
+          "widthPixels": 6,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.369702955108504,
+          "meanHueDifference": 1.1153578666782151
+        },
+        {
+          "yaw": 315,
+          "phase": "sunset",
+          "surface": "void",
+          "pixels": 71,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 2.2800345321551116,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 0,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 70,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.112795491013656,
+          "meanHueDifference": 96.59340659340654
+        },
+        {
+          "yaw": 0,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 38,
+          "widthPixels": 7,
+          "heightPixels": 10,
+          "meanContrastRatio": 1.1522712917956135,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 0,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 68,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2785525955232155,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 45,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 66,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.161269894334108,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 45,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 46,
+          "widthPixels": 7,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.157318791041063,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 45,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 67,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2083587354681131,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 90,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 69,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1846412528191443,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 90,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 52,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.156181786852279,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 90,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 66,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1756917662094064,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 135,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 66,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1990240136096677,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 135,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 54,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1641422110461475,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 135,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 64,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1727787207728726,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 180,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 68,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1754202773194775,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 180,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 51,
+          "widthPixels": 7,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1539711807499193,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 180,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 65,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1895958344862476,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 225,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 67,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.141455664705239,
+          "meanHueDifference": 13.736263736263709
+        },
+        {
+          "yaw": 225,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 43,
+          "widthPixels": 7,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1536054356617291,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 225,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 67,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.2340084697965483,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 270,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 68,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.1017538221224796,
+          "meanHueDifference": 94.45054945054942
+        },
+        {
+          "yaw": 270,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 40,
+          "widthPixels": 7,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.15434437674941,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 270,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 66,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3171766357089902,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 315,
+          "phase": "night",
+          "surface": "grass",
+          "pixels": 68,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.0822909676767798,
+          "meanHueDifference": 74.77522477522474
+        },
+        {
+          "yaw": 315,
+          "phase": "night",
+          "surface": "path",
+          "pixels": 39,
+          "widthPixels": 6,
+          "heightPixels": 10,
+          "meanContrastRatio": 1.146380530276499,
+          "meanHueDifference": 0
+        },
+        {
+          "yaw": 315,
+          "phase": "night",
+          "surface": "void",
+          "pixels": 70,
+          "widthPixels": 8,
+          "heightPixels": 11,
+          "meanContrastRatio": 1.3189021349403602,
+          "meanHueDifference": 0
+        }
+      ],
+      "identityVisibility": {
+        "body": [
+          {
+            "yaw": 0,
+            "pixels": 33
+          },
+          {
+            "yaw": 45,
+            "pixels": 33
+          },
+          {
+            "yaw": 90,
+            "pixels": 35
+          },
+          {
+            "yaw": 135,
+            "pixels": 34
+          },
+          {
+            "yaw": 180,
+            "pixels": 36
+          },
+          {
+            "yaw": 225,
+            "pixels": 34
+          },
+          {
+            "yaw": 270,
+            "pixels": 34
+          },
+          {
+            "yaw": 315,
+            "pixels": 32
+          }
+        ],
+        "hoops": [
+          {
+            "yaw": 0,
+            "pixels": 36
+          },
+          {
+            "yaw": 45,
+            "pixels": 33
+          },
+          {
+            "yaw": 90,
+            "pixels": 29
+          },
+          {
+            "yaw": 135,
+            "pixels": 29
+          },
+          {
+            "yaw": 180,
+            "pixels": 30
+          },
+          {
+            "yaw": 225,
+            "pixels": 29
+          },
+          {
+            "yaw": 270,
+            "pixels": 41
+          },
+          {
+            "yaw": 315,
+            "pixels": 40
+          }
+        ],
+        "lid": [
+          {
+            "yaw": 0,
+            "pixels": 23
+          },
+          {
+            "yaw": 45,
+            "pixels": 23
+          },
+          {
+            "yaw": 90,
+            "pixels": 23
+          },
+          {
+            "yaw": 135,
+            "pixels": 23
+          },
+          {
+            "yaw": 180,
+            "pixels": 24
+          },
+          {
+            "yaw": 225,
+            "pixels": 24
+          },
+          {
+            "yaw": 270,
+            "pixels": 24
+          },
+          {
+            "yaw": 315,
+            "pixels": 23
+          }
+        ]
+      },
+      "identityPartVisibility": {
+        "body": {
+          "feature": "body",
+          "views": [
+            {
+              "yaw": 0,
+              "pixels": 33
+            },
+            {
+              "yaw": 45,
+              "pixels": 33
+            },
+            {
+              "yaw": 90,
+              "pixels": 35
+            },
+            {
+              "yaw": 135,
+              "pixels": 34
+            },
+            {
+              "yaw": 180,
+              "pixels": 36
+            },
+            {
+              "yaw": 225,
+              "pixels": 34
+            },
+            {
+              "yaw": 270,
+              "pixels": 34
+            },
+            {
+              "yaw": 315,
+              "pixels": 32
+            }
+          ]
+        },
+        "hoop-bottom": {
+          "feature": "hoops",
+          "views": [
+            {
+              "yaw": 0,
+              "pixels": 9
+            },
+            {
+              "yaw": 45,
+              "pixels": 7
+            },
+            {
+              "yaw": 90,
+              "pixels": 7
+            },
+            {
+              "yaw": 135,
+              "pixels": 6
+            },
+            {
+              "yaw": 180,
+              "pixels": 7
+            },
+            {
+              "yaw": 225,
+              "pixels": 6
+            },
+            {
+              "yaw": 270,
+              "pixels": 10
+            },
+            {
+              "yaw": 315,
+              "pixels": 10
+            }
+          ]
+        },
+        "hoop-middle": {
+          "feature": "hoops",
+          "views": [
+            {
+              "yaw": 0,
+              "pixels": 15
+            },
+            {
+              "yaw": 45,
+              "pixels": 15
+            },
+            {
+              "yaw": 90,
+              "pixels": 11
+            },
+            {
+              "yaw": 135,
+              "pixels": 14
+            },
+            {
+              "yaw": 180,
+              "pixels": 13
+            },
+            {
+              "yaw": 225,
+              "pixels": 14
+            },
+            {
+              "yaw": 270,
+              "pixels": 18
+            },
+            {
+              "yaw": 315,
+              "pixels": 18
+            }
+          ]
+        },
+        "hoop-top": {
+          "feature": "hoops",
+          "views": [
+            {
+              "yaw": 0,
+              "pixels": 12
+            },
+            {
+              "yaw": 45,
+              "pixels": 11
+            },
+            {
+              "yaw": 90,
+              "pixels": 11
+            },
+            {
+              "yaw": 135,
+              "pixels": 9
+            },
+            {
+              "yaw": 180,
+              "pixels": 10
+            },
+            {
+              "yaw": 225,
+              "pixels": 9
+            },
+            {
+              "yaw": 270,
+              "pixels": 13
+            },
+            {
+              "yaw": 315,
+              "pixels": 12
+            }
+          ]
+        },
+        "lid": {
+          "feature": "lid",
+          "views": [
+            {
+              "yaw": 0,
+              "pixels": 23
+            },
+            {
+              "yaw": 45,
+              "pixels": 23
+            },
+            {
+              "yaw": 90,
+              "pixels": 23
+            },
+            {
+              "yaw": 135,
+              "pixels": 23
+            },
+            {
+              "yaw": 180,
+              "pixels": 24
+            },
+            {
+              "yaw": 225,
+              "pixels": 24
+            },
+            {
+              "yaw": 270,
+              "pixels": 24
+            },
+            {
+              "yaw": 315,
+              "pixels": 23
+            }
+          ]
+        }
+      },
+      "jitter": [],
+      "keyLight": {
+        "status": "pass",
+        "code": "S4",
+        "litMean": 0.462798592089151,
+        "shadeMean": 0.13945908301060855,
+        "message": "Key-facing samples are brighter",
+        "sampleCount": 496
+      },
+      "unmeasured": [
+        "S1 rendered palette-cluster distance after lighting",
+        "S3 three-step value structure",
+        "S5 night glow/highlight analysis",
+        "S7 style-reference distance"
+      ],
+      "frameIndex": [
+        {
+          "file": "daytime-grass-000.png",
+          "sha256": "b5d75dc89c0ceda8a4e2ba90540efed041d0f7c634f602212c60ff903f38101e",
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-000.png",
+          "sha256": "2c9e0cc975d7050cf15bcfa188cee6e4563eff18f90f076120cd04df0839e898",
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-000.png",
+          "sha256": "fe320688dcad2d4a5fd5f84ba5f496cbea18c82d1bdff74494e9c8b4ac420623",
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-045.png",
+          "sha256": "66888bce09057bed5c044220ca0b109dc1a84153774308f9cad7cfee0f4a8414",
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-045.png",
+          "sha256": "3beb62c37b99961343ba6c7152a43542af5f24b1aca890f4a00963f3c922fb91",
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-045.png",
+          "sha256": "9141b4476f6035510cfbce57b25f2626db8dca0fe50ebbad5635f89f28eaa771",
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-090.png",
+          "sha256": "3297dbf9f41b77817dcfd38e5dc10521a5a3ce0881830c1bf858a45be63c1b00",
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-090.png",
+          "sha256": "edbda77c904c177e8ebefdca3ce116a7009c7c9b8dd69648419bea03eb772b85",
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-090.png",
+          "sha256": "1fe281ee89ae86284c5a992cd5e6f30b35a800bcb06988227fa8c8d2a65db9b8",
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-135.png",
+          "sha256": "13875d9a19752c95c2f9f4abfbe2491bb87d768842e068427b3386ce91702968",
+          "yaw": 135,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-135.png",
+          "sha256": "3e078ec8eefba8ec08b340e5fae0ca682b4297470fbf0f123b59d8b58fb8b7bf",
+          "yaw": 135,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-135.png",
+          "sha256": "fd006aa2068e0b7a84c592daea979d9af18e70f246c17ae79e25963d8f143a6a",
+          "yaw": 135,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-180.png",
+          "sha256": "9c823d9c76255a706a474f4bbf6b6c3a9e46546a2c4deb250105d39cfdab8805",
+          "yaw": 180,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-180.png",
+          "sha256": "57623ad40e5bd9573bf64852a43aa07c59b021984eb8a5bab773cdc0e8f5d55c",
+          "yaw": 180,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-180.png",
+          "sha256": "1fa118263acc561778ebfdf2e5f581904d9ac48f2e4b4e9d646ee9d04038f048",
+          "yaw": 180,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-225.png",
+          "sha256": "660ce03006999ee76efea79cb53c169816702e49381ef4acc761dcb67450f06b",
+          "yaw": 225,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-225.png",
+          "sha256": "d026d1c7f2e2daf46c218788c8b84bfbeabc807ea7726a68f4d64563d7f3bbe1",
+          "yaw": 225,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-225.png",
+          "sha256": "cc7208d322722b14cbc6d1b49ea41062e2b603ab286602ee515b287df71c998e",
+          "yaw": 225,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-270.png",
+          "sha256": "7a21e1b1bc150e147b7d10dd281f1badbbbb333c4f5a8986ed07e4d82cf5cbd5",
+          "yaw": 270,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-270.png",
+          "sha256": "edf8ae04e10542801d4c8f84ae800b5e21faa1bc10c5054e9791ec7331b8d81b",
+          "yaw": 270,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-270.png",
+          "sha256": "33b3cef8a25956bbcff78bae9d6824d312d6c0bc44c52451a2ba56c552ca5e96",
+          "yaw": 270,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "daytime-grass-315.png",
+          "sha256": "60f9fdc9eb9de9b5a4b6f03d6551bf12a4f587dee5348d2c2e720b8da64be534",
+          "yaw": 315,
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "daytime-path-315.png",
+          "sha256": "86cb31cf398be27048dcaed2f22951eabfe3346b81567f45654e43270c4f074f",
+          "yaw": 315,
+          "phase": "daytime",
+          "surface": "path"
+        },
+        {
+          "file": "daytime-void-315.png",
+          "sha256": "43583a7021c32b05cf27e32556fd34691f12ba513a419d6d887673be97e5717f",
+          "yaw": 315,
+          "phase": "daytime",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-000.png",
+          "sha256": "090d5557f8881aafbee78422d48bebadfdbb0c980aff662162f373ec789f0256",
+          "yaw": 0,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-000.png",
+          "sha256": "8895efb71a99feccbbda7ad6a02badb741ce17dc97e21051118b15a69cd25e33",
+          "yaw": 0,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-000.png",
+          "sha256": "08ab3fe4234ff64dd57f062bd00333d22f60ff01fbe4840401c4a25793e776aa",
+          "yaw": 0,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-045.png",
+          "sha256": "11a4842c0089b2f51bbb666b6b29feb49b4e89ab17a9280e31c3d97c3057e465",
+          "yaw": 45,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-045.png",
+          "sha256": "590ba02d24c87339898abf5656351e67bc7785501bef3ef68dca7a4652340df5",
+          "yaw": 45,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-045.png",
+          "sha256": "7a75df09150f03a96356abb566ea5e9bb861c6ebd367c877df84e079b3a10a44",
+          "yaw": 45,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-090.png",
+          "sha256": "b630398ac1ab6a61898ae77b097681d29e34646d73a89eb632d9ae172462d14a",
+          "yaw": 90,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-090.png",
+          "sha256": "33e30666cf6a2b25767e3ca6e0b7ee9db7c75cfacacf7fca857bc2ced4e7f72d",
+          "yaw": 90,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-090.png",
+          "sha256": "df36c4fa51f34badb2f0e495cb7715517f55e402deeb39e762ba1fc965bbcbe1",
+          "yaw": 90,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-135.png",
+          "sha256": "f8ba649261f2ffbe98f6210b85305374f7747faf115e2fd7942ae006347adfab",
+          "yaw": 135,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-135.png",
+          "sha256": "97bcc0b9ecf9fa7a6b3847b15cd7dc2067011cda3fe1f9d9824a65b69dae6b6d",
+          "yaw": 135,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-135.png",
+          "sha256": "96372bc5aca0b5f1df7fcfdee918f214e10d34d7bea488e4999e828b13c4a32a",
+          "yaw": 135,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-180.png",
+          "sha256": "f75bc6930a162f42b4caa948b2c518ae7ad0042775072f9a785f1131b85f766d",
+          "yaw": 180,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-180.png",
+          "sha256": "d452cd27fbf408475d6d27d1e0f6877ea7adf56f96cd18a805f19e8bd4bcf620",
+          "yaw": 180,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-180.png",
+          "sha256": "51b5763a541d9a71dd86aa1df4d6baea060bc78135b4a31fb44d3a2b93ce18b4",
+          "yaw": 180,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-225.png",
+          "sha256": "d21134d23244da5b250149d2500a693521df642f31553652615d3b975cd0ddf1",
+          "yaw": 225,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-225.png",
+          "sha256": "3a245e70aae93189fa5788cb0fe4d528d202539c08e98b2424e884daa3d1f4b8",
+          "yaw": 225,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-225.png",
+          "sha256": "7022ee2be2d549df95041a0b6e248d65bccd53b5f83fdebb704fd28d62028715",
+          "yaw": 225,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-270.png",
+          "sha256": "26fb41361dc4100428500fb2c3889f16a13d1710c087fa6c9027b3a9db3bbde5",
+          "yaw": 270,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-270.png",
+          "sha256": "f0f8010496ff8e2e041e39430a4107196661467a1c13b31025b8a5ffbc6bfa2d",
+          "yaw": 270,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-270.png",
+          "sha256": "f82ae40f6f4c34392a3a2f74dbd65881db8f51a3b6a00828fba5409f7d6327ae",
+          "yaw": 270,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "sunset-grass-315.png",
+          "sha256": "3ea7b0c5acbcc0ac70c3c8cb4e91ee69fa9dd187d74b0a47cd3b98496bcc89ed",
+          "yaw": 315,
+          "phase": "sunset",
+          "surface": "grass"
+        },
+        {
+          "file": "sunset-path-315.png",
+          "sha256": "1b944ee2ea3a75f411f52391e45c96b65e30699c911cbcafc2aee9eb0b0e4ae0",
+          "yaw": 315,
+          "phase": "sunset",
+          "surface": "path"
+        },
+        {
+          "file": "sunset-void-315.png",
+          "sha256": "a20fb9b19b68029099faf4b1aedbaff5542846d5e88a089b7b7dca24e9e07d3b",
+          "yaw": 315,
+          "phase": "sunset",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-000.png",
+          "sha256": "0ef8063bfceca031ab8c2074b306cb72bf01b6a9065c1ec93abbfb04ac02f4b4",
+          "yaw": 0,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-000.png",
+          "sha256": "eaac7a5f60bc4dc780cf3e15221da5ad1fe9809a1025dc40a59f4dec0cf86666",
+          "yaw": 0,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-000.png",
+          "sha256": "a15f89d7e4b65b83735e0a0ab1ea870e699fea522dffd86b6d4396771b0b4e72",
+          "yaw": 0,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-045.png",
+          "sha256": "7e1816abc456b8ce2e2763887c384721e8f4995ff5dc5ea6f51bcd31a7a19440",
+          "yaw": 45,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-045.png",
+          "sha256": "190cee81d1825c769fdd5be4805ae5d1defdb8594e3b57cf092378a5f8828747",
+          "yaw": 45,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-045.png",
+          "sha256": "672b0cce4b47bdb4b1e3330b9ab906f76f25210077ea5e0071b25d81a71ba3af",
+          "yaw": 45,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-090.png",
+          "sha256": "26a6950f5967ec936485bf1287c9afdc40960968b8a629cce4062a76d09a772b",
+          "yaw": 90,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-090.png",
+          "sha256": "f5e2e9415aa0f74d2123eb3ebeeda25d1895c975fa35d2cc4bce3c4f17a25eff",
+          "yaw": 90,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-090.png",
+          "sha256": "a147087239225dad98dc910be5311e7d3f55ae531de94b8246b35447852090cf",
+          "yaw": 90,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-135.png",
+          "sha256": "e56ae079073011fb98e312705b6477197d23a9e2596456ac9dfc3cb613cc8413",
+          "yaw": 135,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-135.png",
+          "sha256": "3ddda9220f09f1922e99d3ca14ba54cefd52a7f89ad74405554ad25f63068227",
+          "yaw": 135,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-135.png",
+          "sha256": "6c18d3caff6f7e237412de9e5ae431ff09bf6ecfcbda8b6bb256b874bca91ff1",
+          "yaw": 135,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-180.png",
+          "sha256": "2322cd1197351ce6dc25c0d5a896657d515c6a4e1536575a59b128759cf2b677",
+          "yaw": 180,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-180.png",
+          "sha256": "6f9a9d47b5e29bc6e0ee2bc707583b1ddfdb60730a72ff04a6123cea78eeac1a",
+          "yaw": 180,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-180.png",
+          "sha256": "930f6ac80cf90f27cb46858c14bf912e458504af42b2aadcd0ef1233e7865edf",
+          "yaw": 180,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-225.png",
+          "sha256": "abc7806f4a8b7e23a7ef42ddad25d1b202be9b6fccbc4d7e46869db784768b21",
+          "yaw": 225,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-225.png",
+          "sha256": "b06bdf87c1b537261d43a975eb60fdb1bdcee0c077f8df05df440208ca95ddff",
+          "yaw": 225,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-225.png",
+          "sha256": "f38beab9f49b6eaaf65d8e08cce1dc97ff2f8a0a1e95659b68010dac50812da8",
+          "yaw": 225,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-270.png",
+          "sha256": "86c354531d0440c74b08ac6645cf78ef0f7467b297ce74246dad1298f149d956",
+          "yaw": 270,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-270.png",
+          "sha256": "c47b732d6efaef95986b406037b1fd9a6dcd34a42f344b2aa134b835fa4c2f02",
+          "yaw": 270,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-270.png",
+          "sha256": "d9aa492d999a0f381fd5c618ae944b87e527bf149827f6d154b7ea96a9cac6a7",
+          "yaw": 270,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "night-grass-315.png",
+          "sha256": "926fe7cb766335667f39f925e793eb4eb2685e7951ecfe2a4fbcd8e9e5febea7",
+          "yaw": 315,
+          "phase": "night",
+          "surface": "grass"
+        },
+        {
+          "file": "night-path-315.png",
+          "sha256": "c7f7a3c47f6868157d178423575933055d06f4fa28dd59bfd1bfb7def499e43a",
+          "yaw": 315,
+          "phase": "night",
+          "surface": "path"
+        },
+        {
+          "file": "night-void-315.png",
+          "sha256": "b417ca6d4469df550134b7cb7a76dc4583018aa62b7c058f01027a4f51d489ab",
+          "yaw": 315,
+          "phase": "night",
+          "surface": "void"
+        },
+        {
+          "file": "silhouette-grass-000.png",
+          "sha256": "fd3db13041499ccefbf0b3d1d0d968db0a1a9e8276cb21f82515d32ba854e930",
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "grass",
+          "kind": "black-silhouette-320x180"
+        },
+        {
+          "file": "silhouette-path-000.png",
+          "sha256": "ee0961a258e0d24d06b9626bfe72c961e46cbfa25ecd5ee8d77782315294ded9",
+          "yaw": 0,
+          "phase": "daytime",
+          "surface": "path",
+          "kind": "black-silhouette-320x180"
+        },
+        {
+          "file": "silhouette-grass-045.png",
+          "sha256": "1f2a1417434203043832af54371f0de1c58575196da1a1fd3a539589b66cd725",
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "grass",
+          "kind": "black-silhouette-320x180"
+        },
+        {
+          "file": "silhouette-path-045.png",
+          "sha256": "6cf5a74b398323718e3923ddd8eb33691afb342319504274ca410b96af61a90d",
+          "yaw": 45,
+          "phase": "daytime",
+          "surface": "path",
+          "kind": "black-silhouette-320x180"
+        },
+        {
+          "file": "silhouette-grass-090.png",
+          "sha256": "acc0dbffb8f7b919f149894a68f28e84b8666712d0a8dbab366837696732ac27",
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "grass",
+          "kind": "black-silhouette-320x180"
+        },
+        {
+          "file": "silhouette-path-090.png",
+          "sha256": "3f54c5688d00d72d397d5d57ee59e68cf36bfaefeb9175a99ce05433e5998238",
+          "yaw": 90,
+          "phase": "daytime",
+          "surface": "path",
+          "kind": "black-silhouette-320x180"
+        },
+        {
+          "file": "composite-daytime.png",
+          "sha256": "1d5998636f22e21d348a93702c65616812e6c7e25977979dbdbbc30989ce0409",
+          "phase": "daytime",
+          "surface": "signed-farm"
+        },
+        {
+          "file": "composite-night.png",
+          "sha256": "ecca5133ca128348e01af478bcda6e4b8dfdeb107bc68094471ae369ce5b232d",
+          "phase": "night",
+          "surface": "signed-farm"
+        },
+        {
+          "file": "native-debug.png",
+          "sha256": "1e0dd9864c706d39fabc715bff01f035b2bc55f225f900a05703548c0b7370fa",
+          "phase": "daytime",
+          "surface": "grass"
+        },
+        {
+          "file": "sheet.png",
+          "sha256": "beb88c747cdccc661513c3958f0d4d2b8d14f9bdd5f9670bfeab82368a604c3e",
+          "surface": "contact-sheet"
+        }
+      ]
+    }
+  },
+  "warning": "Diagnostic render of historical candidate; no current critic or bundle eligibility."
+}

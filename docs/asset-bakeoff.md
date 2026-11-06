@@ -1,5 +1,51 @@
 # Asset Forge bake-off — preliminary, incomplete
 
+## EBR-83–85 continuation on main 5d9ba48
+
+**Still blocked; no winner can be chosen.** After EBR-80 was merged, the
+free OpenCode provider returned HTTP 429 `provider.free-limit` for both the
+configured `opencode/crouton-alpha-free` and the alternative
+`opencode/nemotron-3.5-super-vl-free` (retry window approximately 3h20m).
+No paid key or paid model was used. The image probe immediately beforehand
+passed 3/3 on `opencode/crouton-alpha-free`; subsequent generation could not
+proceed. The tool emits work orders and marks the visual critique **not run**.
+No new B sessions were started because the same free provider was unavailable;
+the installed Apache-2.0 skill remains outside this repository. The per-asset
+30-minute B limit was not consumed on this continuation.
+
+| Brief | A loop on | A loop off | B img2threejs | New quality/cost comparison |
+| --- | --- | --- | --- | --- |
+| Barrel | Blocked: 429, no recipe | Blocked: 429, no recipe | Blocked by same provider quota; no session | No score / unavailable |
+| Hay bale | Blocked: 429, no recipe | Blocked: 429, no recipe | Blocked by same provider quota; no session | No score / unavailable |
+| Round oak | Blocked: 429, no recipe | Blocked: 429, no recipe | Blocked by same provider quota; no session | No score / unavailable |
+
+The six attempts are preserved under `tools/assetgen/runs-ebr83-85/` and
+`runs-ebr83-85-off/`; `final.json` records rounds, time, status, and
+`visual critique not run`. The first four attempts did not preserve the 429
+stdout; the OpenCode server reported the quota error and the runner was fixed
+to retain it. The oak attempts include the actual 429 events. No output token
+cost is available for failed requests. The approach-B inputs, where prepared,
+are A-derived rather than independent references and remain a bias even after
+quota recovery. Without independent B models, comparable scores, and human
+review, recommending a winner would be misleading.
+
+For Look Dev's P0-only review, **historical** loop outputs (not new runs and
+not shippable assets) were re-rendered with the merged EBR-80 lights:
+
+| Historical candidate | New deterministic status | EBR-80 contact / 320×180 silhouette / scale composite |
+| --- | --- | --- |
+| Barrel | FAIL H1: old 12/16-segment geometry exceeds the new 6–8-segment vocabulary; further geometry checks not run | [Sheet](../evidence/assetgen/ebr83-85/historical/barrel/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical/barrel/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical/barrel/composite-daytime.png) |
+| Hay bale | FAIL: old `bevelBox` is outside the PM vocabulary; a lower-trust custom conversion was used **only for display** | [Sheet](../evidence/assetgen/ebr83-85/historical/hay-bale/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical/hay-bale/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical/hay-bale/composite-daytime.png) |
+| Round oak | Current hard and measured pixel checks clear; prior loop hit five rounds, and its visual critics disagreed, so it remains `needs-human` | [Sheet](../evidence/assetgen/ebr83-85/historical/round-oak/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical/round-oak/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical/round-oak/composite-daytime.png) |
+
+On the fresh renders, minimum daytime changed-pixel counts are barrel 51,
+hay 57 and oak 195; the numeric silhouette test is not semantic recognition.
+Second oak, bush, three rocks and crate have not been generated. No bundle,
+showcase or runtime registry entries were created. The previous bake-off and
+its evidence are retained below for provenance, not reclassified as current.
+
+## Historical pre-EBR-80 attempt
+
 2026-11-06 · `feat/assetgen` · **No winner selected.** Jiaxu/Look Dev must
 decide after EBR-80 lands and a comparable independent B result exists. All
 current candidates are `needs-human`, not signed or registered.

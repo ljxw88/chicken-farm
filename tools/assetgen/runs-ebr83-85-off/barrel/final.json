@@ -1,0 +1,29 @@
+{
+  "id": "barrel",
+  "category": "prop",
+  "status": "needs-human",
+  "signedBy": null,
+  "roundsUsed": 1,
+  "loopMode": "off-one-generation",
+  "completedStages": [],
+  "corrections": 0,
+  "stageCorrections": {},
+  "stopReason": "Generation retries exhausted",
+  "best": null,
+  "imageProbe": "three colour probes passed",
+  "criticModelIds": [],
+  "visualCritiqueStatus": "visual critique not run",
+  "diagnosis": "OpenCode server reported provider.free-limit (HTTP 429); the initial runner did not preserve stdout. Error reporting has been fixed.",
+  "lighting": "merged EBR-80, human review still required",
+  "wallTimeMs": 856,
+  "usage": null,
+  "tokenCostNote": "Usage/cost are OpenCode session-reported values when available; missing sessions are not estimated.",
+  "history": [
+    {
+      "round": 1,
+      "stage": "blockout",
+      "action": "refine-code",
+      "failure": "Error: OpenCode exited 1: "
+    }
+  ]
+}
