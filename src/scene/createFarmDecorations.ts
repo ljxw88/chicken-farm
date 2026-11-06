@@ -43,8 +43,9 @@ export function createFarmDecorations(scene: THREE.Scene, groundHeight: number) 
 
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.43, 20),
-    new THREE.MeshBasicMaterial({ color: 0x263b20, transparent: true, opacity: 0.18, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }),
   );
+  shadow.name = 'farm-chicken-shadow';
   shadow.rotation.x = -Math.PI / 2;
   shadow.scale.y = 0.7;
   shadow.position.set(1.75, groundHeight + 0.04, 1.75);

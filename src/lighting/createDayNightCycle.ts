@@ -18,9 +18,10 @@ interface DayNightCycleOptions {
   windows: readonly WindowPane[];
   extraEmissives?: readonly EmissiveAccent[];
   shadowSupported?: (x: number, z: number, radius: number) => boolean;
+  updateFarmShadows?: (awayX: number, awayZ: number, offset: number, strength: number) => void;
 }
 
-export function createDayNightCycle({ scene, character, windows, extraEmissives, shadowSupported }: DayNightCycleOptions) {
+export function createDayNightCycle({ scene, character, windows, extraEmissives, shadowSupported, updateFarmShadows }: DayNightCycleOptions) {
   const morning = DAY_NIGHT_PHASES[0];
   // The scene owns the fixed diorama void; phases still drive fog and lights.
   const fog = new THREE.FogExp2(morning.fog, morning.fogDensity);
@@ -85,6 +86,8 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     let offset = shadowOffset * (1 - 0.5 * cloudyAmount - 0.45 * rainAmount);
     const awayX = -lightDirection.x / horizontal;
     const awayZ = -lightDirection.z / horizontal;
+    const opacity = shadowOpacity * (1 - 0.5 * cloudyAmount - 0.8 * rainAmount);
+    updateFarmShadows?.(awayX, awayZ, offset, opacity / 0.22);
     if (shadowSupported) {
       character.getWorldPosition(characterWorldPosition);
       // The entire ellipse fits inside this conservative enclosing circle.
@@ -115,7 +118,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     characterShadow.rotation.z = Math.atan2(-localShadowDirection.z, localShadowDirection.x);
     characterShadow.scale.x = 1 + offset / CHARACTER_RADIUS;
     if (characterShadow instanceof THREE.Mesh && characterShadow.material instanceof THREE.MeshBasicMaterial) {
-      characterShadow.material.opacity = shadowOpacity * (1 - 0.5 * cloudyAmount - 0.8 * rainAmount);
+      characterShadow.material.opacity = opacity;
     }
   }
 

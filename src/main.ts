@@ -7,6 +7,7 @@ import { createPlacement } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
 import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
+import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
 import { createFarmHud } from './ui';
@@ -40,7 +41,10 @@ character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
 const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
-const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives, shadowSupported: stairs.supports });
+const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
+const farmShadows = createFarmShadows(scene);
+const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
+  shadowSupported: stairs.supports, updateFarmShadows: farmShadows.update });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
@@ -58,7 +62,6 @@ window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
-const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 let cancelClickTarget = () => {};
 const placement = createPlacement({
   scene, camera, canvas, ground, groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT,

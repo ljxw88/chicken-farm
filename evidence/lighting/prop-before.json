@@ -7,9 +7,9 @@
     720
   ],
   "tree": {
-    "brightenedPixels": 441,
+    "brightenedPixels": 438,
     "darkenedPixels": 0,
-    "totalLuminanceChange": 3809.624000000003,
+    "totalLuminanceChange": 2386.383600000002,
     "shadowColor": 4028986,
     "focus": [
       -2.15,
@@ -23,9 +23,9 @@
     ]
   },
   "chicken": {
-    "brightenedPixels": 85,
-    "darkenedPixels": 0,
-    "totalLuminanceChange": 308.4079999999998,
+    "brightenedPixels": 0,
+    "darkenedPixels": 61,
+    "totalLuminanceChange": -103.69479999999984,
     "shadowColor": 2505504,
     "focus": [
       1.75,

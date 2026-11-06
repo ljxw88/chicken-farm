@@ -96,7 +96,8 @@ function createTrees(group: THREE.Group) {
   const crowns = [FARM_PALETTE.treeFoliage, FARM_PALETTE.treeFoliageLight, FARM_PALETTE.treeFoliageDark]
     .map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
   const shadowMaterial = new THREE.MeshBasicMaterial({
-    color: FARM_PALETTE.treeFoliageDark, transparent: true, opacity: 0.16, depthWrite: false,
+    // A shadow must darken even when the surrounding night ground is dark.
+    color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false,
   });
 
   FARM_LAYOUT.trees.forEach(({ x, z, scale }, index) => {
@@ -107,6 +108,7 @@ function createTrees(group: THREE.Group) {
     group.add(tree);
 
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.8, 16), shadowMaterial);
+    shadow.name = `farm-tree-shadow-${index + 1}`;
     shadow.rotation.x = -Math.PI / 2;
     shadow.scale.y = 0.72;
     shadow.position.y = 0.003;
