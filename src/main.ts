@@ -1,19 +1,13 @@
 import './style.css';
 import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
-import { createInteractionController } from './interactions';
-import { createQaFenceStub } from './interactions/qa/createQaFenceStub';
-import { createQaFlockStubs } from './interactions/qa/createQaFlockStubs';
-import { createQaWorldStubs } from './interactions/qa/createQaWorldStubs';
-import { createEconomy } from './inventory/createEconomy';
-import { createInventory } from './inventory/createInventory';
-import { createSupplies } from './inventory/createSupplies';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
+import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
-import { createEconomyControls, createFarmHud, createInteractionPrompt } from './ui';
+import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
 declare global {
@@ -61,20 +55,7 @@ window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
-const interactionView = createInteractionPrompt();
-let cancelClickTarget = () => {};
-const interactions = createInteractionController({
-  character, camera, canvas, view: interactionView, onInteract: () => cancelClickTarget(),
-});
-const supplies = createSupplies();
-const inventory = createInventory();
-const fence = createQaFenceStub(scene, GROUND_HEIGHT);
-const economy = createEconomy({ inventory, supplies, fence });
-const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT, { inventory, onEggCollected: supplies.addEgg });
-const qaWorld = createQaWorldStubs(scene, GROUND_HEIGHT, economy);
-for (const interactable of [...qaFlock.interactables, ...qaWorld.interactables]) {
-  interactions.register(interactable);
-}
+createFarmDecorations(scene, GROUND_HEIGHT);
 const controls = createCharacterControls({
   character,
   camera,
@@ -84,24 +65,8 @@ const controls = createCharacterControls({
   groundHeight: GROUND_HEIGHT,
   characterRadius: CHARACTER_RADIUS,
   obstacles,
-  onPointerDown: interactions.handlePointerDown,
 });
-cancelClickTarget = controls.cancelTarget;
-function handleHudAction(message: string) {
-  controls.cancelTarget();
-  interactionView.showMessage(message);
-  interactions.update();
-}
-const farmHud = createFarmHud({
-  root: hudRoot,
-  supplies,
-  inventory,
-  initialPhase: dayNight.getPhase(),
-  isEggReady: qaFlock.isEggReady,
-  collectEgg: qaFlock.collectEgg,
-  onCollected: handleHudAction,
-});
-createEconomyControls({ root: hudRoot, economy, onAction: handleHudAction });
+const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
 window.setPixelSize = composer.setPixelSize;
@@ -131,7 +96,6 @@ renderer.setAnimationLoop((time) => {
   phaseController.update(deltaSeconds);
   farmHud.setPhase(dayNight.getPhase());
   follow(character.position);
-  interactions.update();
   weather.update(deltaSeconds);
   composer.render(deltaSeconds);
 });

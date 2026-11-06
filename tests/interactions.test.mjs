@@ -8,12 +8,6 @@ const { createCharacterControls } = await vite.ssrLoadModule('/src/character/cre
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createInteractionRegistry } = await vite.ssrLoadModule('/src/interactions/createInteractionRegistry.ts');
 const { createInteractionController } = await vite.ssrLoadModule('/src/interactions/createInteractionController.ts');
-const { createEconomy } = await vite.ssrLoadModule('/src/inventory/createEconomy.ts');
-const { createInventory } = await vite.ssrLoadModule('/src/inventory/createInventory.ts');
-const { createSupplies } = await vite.ssrLoadModule('/src/inventory/createSupplies.ts');
-const { createQaFenceStub } = await vite.ssrLoadModule('/src/interactions/qa/createQaFenceStub.ts');
-const { createQaFlockStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaFlockStubs.ts');
-const { createQaWorldStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaWorldStubs.ts');
 after(() => vite.close());
 
 class FakeElement extends EventTarget {
@@ -292,67 +286,4 @@ test('disposing interaction controls removes both keyboard and prompt activation
   view.click();
   assert.equal(view.shown, undefined);
   assert.deepEqual(chicken.calls, []);
-});
-
-test('QA chicken spends inventory Feed, grants inventory Eggs, and the world egg pays separately once', (t) => {
-  const scene = new THREE.Scene();
-  const character = new THREE.Group();
-  scene.add(character);
-  const registry = createInteractionRegistry(character);
-  const inventory = createInventory();
-  const supplies = createSupplies();
-  const flock = createQaFlockStubs(scene, 0, { inventory, onEggCollected: supplies.addEgg });
-  t.after(flock.dispose);
-  flock.interactables.forEach(registry.register);
-  const chicken = flock.interactables.find((item) => item.id === 'qa-chicken');
-  const egg = flock.interactables.find((item) => item.id === 'qa-egg');
-  character.position.copy(chicken.object.position);
-  for (let i = 0; i < 5; i++) assert.match(registry.interact(chicken).message, /Fed chicken.*\+1 Egg/);
-  assert.match(registry.interact(chicken).message, /Can't feed.*no Feed/);
-  assert.deepEqual(inventory.getCounts(), { feed: 0, egg: 5 });
-  assert.equal(supplies.getCount(), 0);
-  character.position.copy(egg.object.position);
-  assert.match(registry.interact(egg).message, /Collected world egg.*\+5 Supplies/);
-  assert.equal(supplies.getCount(), 5);
-  assert.deepEqual(inventory.getCounts(), { feed: 0, egg: 5 });
-  assert.equal(egg.object.visible, false);
-  assert.equal(registry.interact(egg).performed, false);
-  flock.dispose();
-  character.position.copy(chicken.object.position);
-  assert.equal(registry.interact(chicken).performed, false);
-});
-
-test('market sign and feed bin perform the shared Supplies transactions', (t) => {
-  const scene = new THREE.Scene();
-  const character = new THREE.Group();
-  scene.add(character);
-  const registry = createInteractionRegistry(character);
-  const inventory = createInventory();
-  const supplies = createSupplies();
-  const fence = createQaFenceStub(scene, 0);
-  const economy = createEconomy({ inventory, supplies, fence });
-  const world = createQaWorldStubs(scene, 0, economy);
-  t.after(() => { world.dispose(); fence.dispose(); });
-  world.interactables.forEach(registry.register);
-  const bin = world.interactables.find((item) => item.id === 'qa-feed-bin');
-  const sign = world.interactables.find((item) => item.id === 'qa-sign');
-  character.position.copy(sign.object.position);
-  assert.match(sign.label, /Market.*sell egg.*\+3 Supplies/i);
-  assert.match(registry.interact(sign).message, /Can't sell/);
-  inventory.pickup('egg', 2);
-  assert.match(registry.interact(sign).message, /Sold 1 Egg.*\+3 Supplies/);
-  assert.deepEqual(inventory.getCounts(), { feed: 5, egg: 1 });
-  assert.equal(supplies.getCount(), 3);
-  assert.equal(economy.sellEgg().ok, true);
-  assert.match(registry.interact(sign).message, /Can't sell/);
-  assert.equal(supplies.getCount(), 6);
-
-  character.position.copy(bin.object.position);
-  assert.match(bin.label, /Buy feed.*1 Supplies/i);
-  assert.match(registry.interact(bin).message, /Bought 1 Feed.*1 Supplies/);
-  assert.deepEqual(inventory.getCounts(), { feed: 6, egg: 0 });
-  assert.equal(supplies.getCount(), 5);
-  assert.equal(supplies.spend(5), true);
-  assert.match(registry.interact(bin).message, /Can't buy Feed/);
-  assert.deepEqual(inventory.getCounts(), { feed: 6, egg: 0 });
 });

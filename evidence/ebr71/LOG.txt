@@ -1,0 +1,24 @@
+EBR-71 verification, 2026-11-06
+
+Base: origin/main f50c7bc1c9fbdd4de64cec49042411024d380e40.
+Browser: Playwright 1.63.0, headless Chromium 153.0.8010.12, WebGL 2.0 via SwiftShader.
+Direct live Vite check: http://127.0.0.1:5177/; S, E and a ground click,
+then night/rain. No sim UI or browser errors. See live-dev-proof.json and
+live-dev-{start,walk,night-rain}.png. The production preview was also tested.
+
+At 1280x720 and DPR 1, main's sim overlays were hidden only for the comparison;
+the game world and remaining phase label were not changed. Fixed clear daytime,
+clear night, and a 0.75-second S walk were captured before and after stripping.
+python3 evidence/ebr71/compare-screenshots.py (Pillow): PASS, 0 differing pixels
+out of 921600 for each of the three pairs. See main-baseline.json,
+stripped-comparison.json and the main-*-without-sim-ui.png / stripped-*.png pairs.
+The fixed WASD and ground-click positions, camera and night lights matched main.
+
+Checks: npm run build PASS (Vite >500 kB chunk advisory); npx tsc --noEmit PASS;
+npm test PASS (61 tests); EBR71_EVIDENCE_DIR=evidence/ebr71 npm run test:browser
+PASS (5 tests, includes production build). browser-proof.json and the production,
+dev, night-cloudy, night-rain and mobile screenshots record the browser checks.
+
+Limits: pixel equality was checked only for the three clear fixed frames, not
+random rain frames or every possible position. Mobile touch was emulated; other
+browsers, physical touchscreens and hardware GPUs were not checked.

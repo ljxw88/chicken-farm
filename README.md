@@ -19,11 +19,7 @@ For a console-free weather and lighting check, open a URL such as `http://localh
 
 Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the barn, or right past the pond to the island rim. The barn, tree trunks, pond water and the rim block movement; the character can slide along them. Clicking the void does not start a walk. Click-to-move does not plan a route around obstacles, and keyboard input cancels a clicked destination.
 
-When near an object, press **E**, click/tap its prompt, or click/tap the object itself to use its primary action. The prompt selects the nearest available object; clicking an object selects that specific object. Walking into range does not interact, and clicking an out-of-range object only sets a normal ground destination. Release E before pressing it again.
-
-For interaction QA, a static **chicken and world egg are stubs** below spawn. The session starts with **0 Supplies, 5 Feed and 0 Eggs**. Walk toward the chicken (screen-down / S); feeding spends 1 Feed and stub-grants 1 inventory Egg without adding Supplies. With no Feed, the action shows a message and does nothing. Move right toward the world egg (S+D from the chicken) and collect it for **+5 Supplies**. The **Growing on your farm** list can collect that same world egg from anywhere; it cannot be collected twice or added to inventory.
-
-Use **Sell Egg** (or the nearby market sign) to exchange 1 inventory Egg for **3 Supplies**, and **Buy Feed** (or the feed bin) to spend **1 Supply** for 1 Feed. **Place Fence** spends **5 Supplies** to place one decorative, nonblocking segment at a fixed spot beside the chicken. Failed actions show an on-screen message; repeated placement cannot charge again. The list can be collapsed to uncover the scene, and **+ Build** still opens a placeholder sheet. Buffs and the next-egg timer are visual stubs. Feed-to-egg production is a placeholder, not flock AI or a laying timer; inventory, Supplies, the world egg and fence reset on reload. There is no grid editor, full Build menu or persistence.
+The chicken, nest, sign and bin are static, nonblocking scenery. There are no feeding, collection, market, inventory or building actions in the playable build.
 
 The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
 
@@ -69,6 +65,6 @@ Only `#scene` is scaled. The HTML HUD is a separate, positioned sibling above th
 npm run build
 ```
 
-The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the HUD, supplies, interactions, pixel sizing, farm, collisions, camera, weather and lighting. For the Chromium HUD and interaction checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
+The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the phase HUD, generic interaction utilities, pixel sizing, farm, collisions, camera, weather and lighting. For the Chromium playable-build checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
 
-The entry point is `src/main.ts`, session-only inventory and Supplies are in `src/inventory/`, the pixel presentation is in `src/postprocess/`, the farm layout and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller are in `src/interactions/`; replaceable QA props are isolated in `src/interactions/qa/`.
+The entry point is `src/main.ts`, the pixel presentation is in `src/postprocess/`, the farm layout, static decorations and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.
