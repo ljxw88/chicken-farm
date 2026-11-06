@@ -1,72 +1,93 @@
-EBR-73 — engine core rebased over EBR-47
+ASSET FORGE — THREE-ASSET BAKE-OFF (INCOMPLETE)
 
-Branch: feat/ebr73-engine-core
-Rebased onto origin/main: a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671
-Pre-rebase tag: pre-rebase-ebr73-8218e10 -> 8218e10b818f689465788c821eebd6e504261301
-Tested source SHA: 682b621eee1c75d466bcc7267eabbdd797313540
-Implementation/evidence SHA: 1c8789d62a25e24e725e0439d232134c5c8d789d
-Branch tip SHA: run `git rev-parse HEAD`; this handoff-only commit cannot
-contain its own SHA. The exact tip is also reported in the final response.
-No push or PR. The old EBR-73 handoff is available from the pre-rebase tag;
-DELIVER-EBR47.txt and DELIVER-EBR56.txt are preserved.
+Branch: feat/assetgen, based on main 4ea8249. No push, PR or merge.
+Tested implementation: 1cccd8e1463c9f9e3d0f7f8411928a8693d40a4c.
+Evidence commit: c3358685fad2c21fbd61b8c9e7b4c85141e33609.
+Tip SHA: run `git rev-parse HEAD`; this handoff commit cannot contain its own
+hash. The exact tip is also in the final response. origin/main moved to
+c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa during this work; no rebase was made.
+The preceding EBR-73 handoff is preserved as DELIVER-EBR73.txt.
 
-Open / try
-- http://100.88.150.21:5181/?phase=daytime&weather=clear (while the server runs).
-- Night: http://100.88.150.21:5181/?phase=night&weather=clear
-- Restart in this worktree: `npm run dev -- --host 100.88.150.21 --port 5181 --strictPort`.
-- WASD or click to walk; F/P selects a placement tool, R rotates, click places,
-  Z undoes, Delete removes the hovered item, Escape cancels. Touch previews on
-  tap and confirms with Place. The stairs' foot pad is reachable by click.
-- See src/core/README.md and tools/PARITY.md for the bridge and capture tool.
+OPEN
+- docs/asset-bakeoff.md — results, token use, limitations and why no winner
+  can yet be selected.
+- evidence/assetgen/{barrel,hay-bale,round-oak}-verified-sheet.png — corrected
+  fixed-camera contact sheets; *-recipe-sheet.png preserves the actual earlier
+  critic input. Renders use pre-EBR-80 lighting, not final Look Dev lighting.
+- tools/assetgen/bakeoff-manifest.json and runs/<id>/ — best recipes, per-stage
+  reports, prompts, separate critic sessions, 72 frame renders and hashes.
+- evidence/assetgen/img2threejs/summary.json and signed-fixtures.json — B-arm
+  partial evidence and the unresolved signed-golden compatibility findings.
+- No assets.html, showcase server, 24-asset bundle or runtime registry entries
+  were created. Do not use a gallery for Jiaxu's review before EBR-80 lands.
 
-Rebase and behavior
-- The rebase applied without textual conflicts. src/main.ts retains EBR-47's
-  windows, extraEmissives, obstacle and rain-shelter paths and only adds the
-  engine boot bridge. README now describes the cottage and coops instead of
-  the old barn; EBR-47's delivery and evidence were not overwritten.
-- src/scene, src/lighting and EBR-47's building tests are identical to main;
-  src/core is identical to the pre-rebase tag. farmBuildingSpecs, the cottage,
-  two ramp coops, window/pop-hole lights, five shared walking/placement boxes
-  and roof rain exclusions remain unchanged. The EBR-47 tree/coop overlap and
-  other approved tradeoffs are retained; see DELIVER-EBR47.txt.
-- Miniplex 2.0.0 is pinned. The fixed 1/60 s simulation runs ordered systems
-  with 0.1 s maximum catch-up; input one-shots fire once. Gameplay is not yet
-  ported: character, collision/stairs, placement, lights, weather, HUD and
-  rendering continue through their original paths and frame order. Walking gets
-  min(frame delta, 0.1); lighting/weather/render get the full delta. Input
-  listeners observe without consuming legacy events.
+ADD A NEW RECIPE FROM NOTHING (three commands; replace my-asset)
+  ${EDITOR:-vi} tools/assetgen/specs/my-asset.json
+  npm run asset:new -- my-asset
+  npm run asset:verify -- my-asset
+The first command creates a spec; use the documented fields, 3–5 identity
+features and 2–3 signed references, as in specs/barrel.json. The bounded loop
+requires configured OpenCode, Playwright Chromium and the installed deps.
+Candidates remain needs-human; `npm run asset:bundle` intentionally refuses
+to ship until EBR-80 and Look Dev signoff. `asset:new -- <id> --work-order`
+emits an agent work order when non-interactive generation is unavailable.
 
-Checks and evidence
-- `npm run build`: passed; Vite retains the >500 kB chunk advisory.
-- `npm test`: 95 passed, 0 failed, including EBR-47 building, collision,
-  placement and lighting unit tests.
-- `EBR46_SLIDE_PROOF=evidence/EBR-73/stairs-pad-sequences.json EBR47_EVIDENCE_DIR=evidence/EBR-73/buildings npm run test:browser`:
-  20 passed, 0 failed. This includes placement/touch, the three pad-side
-  sequences (S+A→W+A; W+D→W+A; S+D→S+A→W+D→W+A), and real EBR-47
-  cottage/coops collision, placement, lights and weather checks. The recorded
-  stair routes have zero clipped or unsupported frames.
-- `npm ls --depth=0`: passed; `git diff origin/main --check`: passed.
-- `npm run parity -- --record-baseline --baseline-sha a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671`:
-  passed. The baseline is a clean git archive of that commit, not this worktree.
-- `npm run parity` and `npm run parity -- --url http://100.88.150.21:5181`:
-  passed. Changed pixels versus the new main:
-  spawn 0; stairs-pad 0; placement-ghost 0; day 0; night 0; rain 0;
-  cottage-coops-day 0; cottage-coops-night 0.
-- The eight baseline, candidate and diff PNGs are 1280x720 under
-  evidence/EBR-73/{baseline,candidate,diff}/; parity.json records counts,
-  exact source SHA, camera/pose and renderer. Chromium 153.0.8010.12,
-  SwiftShader, DPR 1, 4-CSS-pixel world pass, seed 0xEB730001. Seeded rain
-  RNG is supplied at initialization; ordinary Math.random behavior is unchanged.
-  The two cottage/coops frames use a test-only front focus/zoom and check the
-  window lights and window/pop-hole emissives without changing gameplay.
-- evidence/EBR-73/buildings/browser-proof.json records the actual building
-  blockers, placement rejections, lights and walking stops; associated PNGs
-  show the cottage/coops, rain and ramp interactions. The three stair sequences
-  are in evidence/EBR-73/stairs-pad-sequences.json.
-- The restarted Vite server is bound to 100.88.150.21:5181 with --strictPort
-  from this worktree; the URL returned HTTP 200 and passed the parity run.
+EXACT CHECKS AND RESULTS
+- `npm run build`: PASS (Vite's existing >500 kB chunk advisory remains).
+- `npm test`: PASS, 122 tests, 0 failures. Includes H1–H10 negatives, a
+  5,000-triangle blob, thin plank, origin, floating part, near-coplanar quads,
+  NaN/below-ground, 10x scale, deterministic-build and collision failures;
+  a real browser catches a hidden identity feature and reversed key light.
+- `npm run asset:verify -- all`: PASS for the three best candidates' H1–H10
+  and implemented daytime pixel/identity/key-light floors. This is NOT a
+  complete visual pass: S1, S3, S5 and S7 remain unmeasured. Two earlier runs
+  hit Chromium ERR_NETWORK_CHANGED; bounded page-load retries were added and
+  the final run passed. Evidence: evidence/assetgen/verification-summary.json.
+- Signed tree, coop, fence and stair tread regression tests pass for finite,
+  nondegenerate, in-budget geometry. They do NOT all pass strict new-asset
+  rules: old small parts, transparent shadow, coplanar joins and interpolated
+  stair colours conflict with the requested golden gates. QA/Look Dev must
+  resolve this; the checker does not silently waive new assets.
+- Image capability probe: 3/3 blind dominant-colour PNGs correct. Critic and
+  generator use separate OpenCode sessions, but the same configured model;
+  repeated visual critiques disagree and are not human art-direction signoff.
+- `git diff 4ea8249 --check`: PASS. No src/main.ts or other existing game source
+  was changed. npm dependencies were installed from the local cache.
 
-Not verified: physical touch devices, hardware GPUs, non-Chromium browsers,
-access from a separate tailnet device, or independent QA/Look Dev signoff.
-Gate G instruments the Vite source URL, not a minified production preview;
-production behavior is covered by test:browser, not a production pixel diff.
+THREE APPROACH-A CANDIDATES (all needs-human; no signed assets)
+Asset       Rounds  Stages  Tris/budget  Colours  Min day px  Notes
+barrel      3       0/6     400/600      3        58          critic disagrees on hoops/lid
+hay-bale    3       0/6      76/600      3        59          critic disagrees on bands/ends
+round-oak   5       3/6      88/900      4       188          critic disagrees on foliage tiers
+Each tagged part contributes at least two pixels in a fixed daytime view;
+this numeric check does not prove the labelled feature is recognisable.
+Barrel's original score used an older scoring rule and is not comparable to
+the others. The original oak sheet cropped its crown; it was re-rendered and
+re-critiqued, with old evidence retained. At equal scores the best candidate
+now prefers the later equally clean stage; oak's selection was corrected.
+
+APPROACH B AND TIME/COST
+img2threejs installer 0.2.0 / skill 2.0.1 (Apache-2.0) was installed only in
+/tmp/assetgen-img2threejs.REij4K. Local tools ran in an isolated network
+namespace; no downloaded art or tool code was committed. B's reference images
+were rendered from A, so the comparison is biased. Barrel's image admission
+was rejected and its local search cache was blocked by the read-only tool
+checkout; hay stopped in intake; neither produced a B model/contact sheet.
+Oak B did not start. Setup plus B stopped at about 31.5 minutes: an unintended
+~1.5-minute overrun of the requested 30-minute time box. No winner is claimed.
+API-reported B usage: barrel 3,541,382 input / 3,537 output tokens; hay
+564,463 / 1,919; both reported $0 (not a billing guarantee). Full A timings,
+tokens and separate re-critique usage are in docs/asset-bakeoff.md.
+
+NOT VERIFIED / KNOWN LIMITS
+- No EBR-80 lighting, Look Dev or Jiaxu signoff; no hardware GPU, real mobile
+  device or non-Chromium validation. No complete img2threejs comparison.
+- S1 rendered palette-cluster distance, S3 three-step value, S5 night
+  glow/highlights and S7 style distance are unmeasured; the loop blocks at
+  lighting rather than pretending they pass. H4 only checks declared +Z
+  facing; H8 may need more scrutiny for malformed custom meshes. Pixel masks
+  cannot prove semantic identity.
+- The first three A runs inherited the worktree PWD instead of the intended
+  locked scratch location. Their transcripts contain no tool calls. PWD and
+  stdin handling were fixed and tested; subsequent re-critiques were isolated.
+- The selected best recipes are review artifacts, not a shipped asset bundle.
