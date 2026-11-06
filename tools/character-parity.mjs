@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
@@ -13,7 +14,7 @@ const search = '?phase=daytime&weather=clear';
 
 async function serverAt(root) {
   const server = await createServer({ root, configFile: false, logLevel: 'error',
-    server: { host: '127.0.0.1', port: 0, hmr: false } });
+    server: { host: '127.0.0.1', port: 0, hmr: false, fs: { allow: [root, process.cwd()] } } });
   await server.listen();
   const address = server.httpServer.address();
   assert.ok(address && typeof address !== 'string');
@@ -83,8 +84,40 @@ async function capture(context, page) {
   }
 }
 
+// Preserve the visible frame, then render the exact same state without the
+// ticket's visual-only effects. This keeps the full-frame character gate
+// strict without mistaking the deliberately animated smoke/motes for drift.
+async function captureWithEffects(fixture) {
+  const { context, page } = fixture;
+  const image = await capture(context, page);
+  const flags = await page.evaluate(() => {
+    const { scene, composer } = window.__ebr74;
+    const smoke = scene.getObjectByName('chimney-smoke');
+    const fireflies = scene.getObjectByName('night-fireflies');
+    if (!smoke && !fireflies) return null;
+    const state = { smoke: smoke?.visible ?? null, fireflies: fireflies?.visible ?? null };
+    if (smoke) smoke.visible = false;
+    if (fireflies) fireflies.visible = false;
+    composer.render(0);
+    return state;
+  });
+  if (!flags) return { image, withoutEffects: image };
+  try {
+    return { image, withoutEffects: await capture(context, page) };
+  } finally {
+    await page.evaluate((state) => {
+      const { scene, composer } = window.__ebr74;
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const fireflies = scene.getObjectByName('night-fireflies');
+      if (smoke && state.smoke !== null) smoke.visible = state.smoke;
+      if (fireflies && state.fireflies !== null) fireflies.visible = state.fireflies;
+      composer.render(0);
+    }, flags);
+  }
+}
+
 async function perform(fixture, action, trace, frames, marks) {
-  const { page, context } = fixture;
+  const { page } = fixture;
   if (action.type === 'frames') {
     const states = await page.evaluate((times) => times.map((time) => {
       window.__ebr74Step(time);
@@ -107,7 +140,7 @@ async function perform(fixture, action, trace, frames, marks) {
   } else if (action.type === 'blur') {
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   } else if (action.type === 'capture') {
-    frames[action.name] = await capture(context, page);
+    frames[action.name] = await captureWithEffects(fixture);
   } else if (action.type === 'mark') {
     marks[action.name] = await page.evaluate(() => {
       const { scene, character, obstacles } = window.__ebr74;
@@ -327,23 +360,34 @@ async function pixelDiff(page, reference, candidate) {
   }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
 }
 
-/** Record main in a temporary worktree, then replay the same events and frame times on the candidate. */
-export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir }) {
+/** Replay a clean archived main against the same candidate events and frame times. */
+export async function compareCharacterParity({ candidateRoot, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
-  assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-    'The reference worktree must contain the unmodified baseline source');
+  assert.equal(git(candidateRoot, 'rev-parse', '--verify', `${baselineSha}^{commit}`), baselineSha);
+  let baselineRoot;
+  try { baselineRoot = await mkdtemp('/tmp/opencode/ebr74-main-'); }
+  catch (error) {
+    if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
+    baselineRoot = await mkdtemp(join(tmpdir(), 'ebr74-archive-'));
+  }
   let baseline;
   let candidate;
   let browser;
   try {
+    // A git archive is guaranteed to use the signed commit without creating,
+    // changing or force-removing any worktree on the shared host.
+    const archive = join(baselineRoot, 'baseline.tar');
+    execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
+      baselineSha, 'src', 'index.html', 'package.json', 'package-lock.json']);
+    execFileSync('tar', ['-xf', archive, '-C', baselineRoot]);
+    await symlink(join(candidateRoot, 'node_modules'), join(baselineRoot, 'node_modules'), 'dir');
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
     const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
-    // The reference is generated from the clean main worktree and stays there, never in the branch.
+    // The reference is generated from the clean archive and stays outside the branch.
     const traceDir = await mkdtemp(join(baselineRoot, '.ebr74-reference-'));
     const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed,
@@ -356,6 +400,8 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     candidate = await serverAt(candidateRoot);
     const results = {};
     const frameResults = {};
+    const unaffectedFrameResults = {};
+    const effectMaskResults = {};
     const traceMismatches = [];
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
@@ -373,16 +419,24 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
         traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
       }
       results[name] = { frames: current.trace.length, identical };
-      for (const [frameName, bytes] of Object.entries(current.frames)) {
+      for (const [frameName, frame] of Object.entries(current.frames)) {
         const original = reference[name].frames[frameName];
         assert.ok(original, `Missing baseline frame ${frameName}`);
-        const diff = await pixelDiff(diffPage, original, bytes);
+        const diff = await pixelDiff(diffPage, original.image, frame.image);
+        const unaffected = await pixelDiff(diffPage, original.image, frame.withoutEffects);
+        const effectMask = await pixelDiff(diffPage, frame.image, frame.withoutEffects);
         frameResults[frameName] = diff.changedPixels;
+        unaffectedFrameResults[frameName] = unaffected.changedPixels;
+        effectMaskResults[frameName] = effectMask.changedPixels;
         if (evidenceDir) {
-          for (const directory of ['baseline', 'candidate', 'diff']) await mkdir(join(evidenceDir, directory), { recursive: true });
-          await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original);
-          await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), bytes);
+          for (const directory of ['baseline', 'candidate', 'diff', 'no-effects', 'effect-mask']) {
+            await mkdir(join(evidenceDir, directory), { recursive: true });
+          }
+          await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original.image);
+          await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), frame.image);
           await writeFile(join(evidenceDir, 'diff', `${frameName}.png`), Buffer.from(diff.png, 'base64'));
+          await writeFile(join(evidenceDir, 'no-effects', `${frameName}.png`), frame.withoutEffects);
+          await writeFile(join(evidenceDir, 'effect-mask', `${frameName}.png`), Buffer.from(effectMask.png, 'base64'));
         }
       }
     }
@@ -424,14 +478,18 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      tracePath, results, traceMismatches, frameResults, marks };
+      baselineSource: 'git archive', tracePath, results, traceMismatches, frameResults,
+      unaffectedFrameResults, effectMaskResults, marks };
     if (evidenceDir) await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
     assert.deepEqual(traceMismatches, [], 'Character position / pose replay differs from main');
-    assert.ok(Object.values(frameResults).every((count) => count === 0), 'Route frames contain changed pixels');
+    assert.ok(Object.values(unaffectedFrameResults).every((count) => count === 0),
+      `Route frames differ with effects hidden: ${JSON.stringify(unaffectedFrameResults)}`);
+    assert.deepEqual(frameResults, effectMaskResults, 'Route differences extend beyond the rendered effects');
     return report;
   } finally {
     await browser?.close();
     await baseline?.server.close();
     await candidate?.server.close();
+    await rm(baselineRoot, { recursive: true });
   }
 }
