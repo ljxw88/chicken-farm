@@ -32,8 +32,33 @@ Its fixed endpoints and bridge height are additional replay assertions. The
 real-time QA sequence comparison checks positions, heights, placement and
 weather states, with only the documented +/-0.08 bridge-Z allowance; its
 screenshots, sample counts and per-sample height jumps are not pixel baselines.
-Status: implementation and tests are written; verification is pending the
-shared-host memory hold. No PR has been opened yet.
+Verification so far (source cf55581c2b008a0e6b2e999a430ed7cbca806336):
+- Build passed (76 modules); npm test passed 130/130; npm run test:browser
+  passed 33/33, including all three pad-side routes with zero clipped or
+  unsupported frames (evidence/EBR-74/stairs-pad-sequences.json).
+- The supplied eight Gate G frames each have 0 changed pixels. Six additional
+  controlled frames (spawn, walking, bridge gap/midpoint, mid-climb and stream
+  stop) also have 0 changed pixels; 710 scripted frames have identical position,
+  yaw, camera and shadow traces to main in the temporary worktree.
+- QA's unmodified real-time sequence tool returned zero browser errors, but the
+  strict comparison is 143/147: run 1 walkSA x 2.227 vs 2.186 and z -0.174 vs
+  -0.106; run 1 bridge end z -2.020 vs -1.915 (outside +/-0.08); run 2 stair
+  descent z 0.802 vs 0.760. All three pad-side endpoints, bridge peak, placement
+  states and seven phase/weather states matched. See qa-sequences/diff.json.
+- Engineer: the QA script dispatches multi-key chords in separate awaited
+  keydowns while real animation frames continue. In the first mismatch, walkSA
+  starts at (2.227, 2.4, -2.108), +0.041 on X and Z from the previous sample;
+  in the stair mismatch, descent starts at z=0.802, +0.042 from the climb end.
+  A single 60 Hz S-only frame moves about 0.041 per axis. A controlled replay
+  covering frames between keydowns has been added and awaits the all-clear.
+- Untouched main was rerun with the same QA tool: its bridge z was -2.027,
+  outside the supplied -1.915 reference by 0.112, demonstrating that the
+  real-time bridge approach can exceed the proposed tolerance on main too.
+  That independent control remains uncommitted at /tmp/ebr74-qa-main-fPVspM/.
+  Engineer: retain main's timing and report this QA comparator conflict rather
+  than coalescing key events or changing the tolerance.
+- Graphics matrix/analyzer and the updated transition replay remain unchecked
+  under the renewed host memory hold. No PR has been opened yet.
 
 Inherited conflicts for Look Dev / QA (not changed in this slice):
 - EBR-47 tree 4 canopy intersects coop B roof; locked positions remain.

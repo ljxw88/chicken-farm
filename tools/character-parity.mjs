@@ -190,6 +190,18 @@ async function recordScenario(browser, url, name, replayScript) {
         await advance(20, 100);
         await emit({ type: 'mark', name: 'walkD2s' });
         await key('d', false);
+      } else if (name === 'key-transitions') {
+        await key('d', true);
+        await advance(20, 100);
+        await key('d', false);
+        await emit({ type: 'mark', name: 'before-single-s' });
+        await key('s', true);
+        await advance(1, 1000 / 60); // A real frame may occur before the second keydown.
+        await emit({ type: 'mark', name: 'after-single-s' });
+        await key('a', true);
+        await advance(15, 100);
+        await key('s', false);
+        await key('a', false);
       } else if (name === 'bridge') {
         await click(2.5, -1.7);
         await advance(10, 100);
@@ -256,6 +268,14 @@ async function recordScenario(browser, url, name, replayScript) {
           }
           await emit({ type: 'mark', name: mark });
         }
+        await emit({ type: 'mark', name: 'before-interleaved-descent' });
+        await key('s', true);
+        await advance(1, 1000 / 60);
+        await emit({ type: 'mark', name: 'single-key-descent' });
+        await key('d', true);
+        await advance(1, 1000 / 60);
+        await key('s', false);
+        await key('d', false);
       } else if (name === 'stream') {
         await click(1.2, 3.6);
         await advance(15, 100);
@@ -320,7 +340,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
-    const names = ['walking', 'qa-walk', 'bridge', 'stairs', 'stream'];
+    const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
     // The reference is generated from the clean main worktree and stays there, never in the branch.
@@ -395,6 +415,11 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     checkpoint(marks.stairs['pad-SA'].position, [5.11, 2.4, 0.95]);
     checkpoint(marks.stairs['pad-WD'].position, [4.257, 2.4, 0.55]);
     checkpoint(marks.stairs['pad-both'].position, [4.257, 2.4, 0.55]);
+    const before = marks['key-transitions']['before-single-s'].position;
+    const after = marks['key-transitions']['after-single-s'].position;
+    const singleKeyStep = 3.5 / 60 / Math.sqrt(2);
+    assert.ok(Math.abs(after[0] - before[0] - singleKeyStep) < 1e-6 &&
+      Math.abs(after[2] - before[2] - singleKeyStep) < 1e-6, 'the interleaved single-key frame must actually move');
     const report = { baselineSha, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
