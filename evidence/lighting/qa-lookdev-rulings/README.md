@@ -9,6 +9,6 @@ C4_STRICT=1 ANIM_MASKS='500,540,550,668' python3 /home/michael/OpenBot/Shared/qa
 python3 tools/summarize-qa-matrix.py <output-dir>
 ```
 
-The default report is **92 PASS, 4 INFO, 1 FAIL / 97**. The FAIL is G5's pad origin-gap check; three INFO rows are night C4 values below the newly requested threshold. Strict C4 produces **4 FAIL / 97**. `metrics.json` records the exact QA sampling values; see `docs/lighting-audit.md` for the pad receiver evidence and the distinction between QA C4 and shade-versus-grass ΔE.
+The default report is **92 PASS, 4 INFO, 1 FAIL / 97**. The FAIL is G5's pad origin-gap check; three INFO rows are night body/path C4 values, accepted by Look Dev for EBR-80. Optional legacy strict C4 produces **4 FAIL / 97**, but is not the ruled gate. `metrics.json` records the QA sampling values; see `docs/lighting-audit.md` for the pad receiver evidence and the distinction between QA C4 and shade-versus-grass ΔE. This capture predates the test-only ruling follow-up; scene inputs are unchanged.
 
 QA tool SHA-256: `gfx-matrix.mjs` `358fd300e9cc3b739e1f263ce71813b6494012ad898b12f8e4b1a325818847a1`; `analyze-gate.py` `4b02fad560b85c48dce083a51d6ba81d132169878f2389ea5bbb9d875d2d0103`.

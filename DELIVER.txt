@@ -1,11 +1,11 @@
-EBR-80 — local lighting retune; NOT PUSHED
+EBR-80 — lighting review handoff
 
 Branch: fix/lighting-direction
 Tip: current HEAD, resolved with `git rev-parse HEAD` (the exact SHA is also in
 the handoff response; a commit cannot contain its own SHA).
 Comparison: PR #17's prior tip bf8ac5f5702277f1d55aefbffe130e56e7ef8540;
 main c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa.
-No push, PR edit, merge, auto-merge or `gh pr ready` was performed.
+No merge, auto-merge or `gh pr ready` was performed.
 
 Review the fixed frames at http://100.88.150.21:5184/?phase=daytime&weather=clear
 and the corresponding morning, sunset, night, night/rain, daytime/cloudy and
@@ -28,10 +28,13 @@ Look Dev rulings and Engineer implementation
 - East-gable glow, tree 4, rain over the void and shimmer remain audit items.
   The EBR-48 waterfall step is retained with QA mask 500,540,550,668.
 
-Outstanding checks — do not confuse these with a green result
-- QA-style night character-versus-local-ground C4 does not meet the latest
-  1.15 luminance-or-25-dE requirement at the recorded away-facing pose; the
-  shade-versus-grass dE does pass, but it is a different measurement.
+QA status and Look Dev rulings
+- Look Dev cde29baf / PM note 624878a1: shade-front versus grass dE >=25 is
+  the ruled comparison. Night body/path contrast below 1.15 is accepted and
+  is INFO, not a separate EBR-80 gate; palette follow-up is EBR-82 item 3.
+- QA's gamma-2.2 approximation gives shade/grass dE >=26.1. Standard IEC sRGB
+  decoding of the same samples gives 22.83 cloudy-night / 24.20 rain-night;
+  this method difference is documented rather than silently treated as green.
 - QA's stair origin-gap check flags the x=12.8 capsule-edge pose. The shadow is
   actually on the pad: pad y=0.16, shadow y=0.20; the capsule origin is raised
   to y=0.3446 to clear the preceding tread. The test and screenshot are in
@@ -59,8 +62,8 @@ Measurements (0-255 sRGB unless noted)
 Checks
 - npm run build: PASS (existing Vite chunk-size advisory).
 - npm test: 118/118 PASS.
-- npm run test:browser: 31/32 PASS; night C4 assertion FAIL.
-- node --test tests/browser/lighting.browser.mjs: 7/8 PASS; same C4 FAIL.
+- npm run test:browser: 32/32 PASS.
+- node --test tests/browser/lighting.browser.mjs: 8/8 PASS.
 - QA v2.3: 92 PASS, 4 INFO, 1 FAIL / 97 with the waterfall mask. The FAIL is
   G5's pad origin-gap check; three night C4 results are INFO, not threshold
   passes. C4_STRICT=1 reports 4 failures including that G5 check.

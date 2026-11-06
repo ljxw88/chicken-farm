@@ -71,16 +71,9 @@ test('fixed upper-left key follows the specified phase, weather and facing rules
       assert.ok(Object.values(sample.faceToTopByFacing).every((ratio) => ratio <= 1), `${name}: face brighter than moon-lit top`);
       assert.ok(sample.spawn.faceToTop <= 1, `${name}: spawn face brighter than moon-lit top`);
     }
+    // Look Dev's C4 ruling is shade-front vs grass, not body vs path/ground.
     assert.ok(sample.shadeGrassDeltaE >= 25, `${name}: shade and grass are too similar (ΔE ${sample.shadeGrassDeltaE})`);
   }
-  // QA's C4 samples the away pose after W from spawn, unlike the S-then-W
-  // sequence above. Check the requested night contrast at that same pose.
-  const { stdout: nightOutput } = await runFile(process.execPath, ['tools/lighting-probe.mjs'], {
-    timeout: 45000, env: { ...process.env, LIGHTING_URL: url, LIGHTING_TUNE: '{}', LIGHTING_PROBE_CAPTURE: '',
-      LIGHTING_PROBE_ONLY: 'night-clear,night-cloudy,night-rain', LIGHTING_QA_POSE: '1', LIGHTING_QA_STEP: '0.27' },
-  });
-  const nightMetrics = JSON.parse(nightOutput);
-  if (evidenceDir) await writeFile(join(evidenceDir, `${label}-night-qa-pose.json`), `${JSON.stringify(nightMetrics, null, 2)}\n`);
   const nightGrass = metrics['night-clear'].grass.rgb;
   assert.ok(nightGrass.every((channel, i) => Math.abs(channel - [26, 52, 28][i]) <= 5),
     `night grass should be about 1.5× main: ${nightGrass}`);
@@ -126,11 +119,9 @@ test('fixed upper-left key follows the specified phase, weather and facing rules
     }
   }
   const summary = Object.fromEntries(Object.entries(metrics).map(([name, m]) => [name,
-    { asymmetry: m.asymmetry, ratio: m.ratio, bodyToTop: m.bodyToTop, contrast: m.contrast, facings: m.facings }]));
+    { asymmetry: m.asymmetry, ratio: m.ratio, bodyToTop: m.bodyToTop, contrast: m.contrast,
+      shadeGrassDeltaE: m.shadeGrassDeltaE, facings: m.facings }]));
   console.log('PHASE_GRAPHICS', JSON.stringify(summary));
-  const nightFailures = Object.entries(nightMetrics).filter(([, { qa }]) => qa.contrast < 1.15 && qa.deltaE < 25)
-    .map(([name, { qa }]) => `${name}: contrast ${qa.contrast.toFixed(3)}, ΔE ${qa.deltaE.toFixed(1)}`);
-  assert.equal(nightFailures.length, 0, `QA night character/ground contrast: ${nightFailures.join('; ')}`);
 });
 
 after(async () => {
