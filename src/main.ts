@@ -4,6 +4,7 @@ import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './ch
 import { createInteractionController } from './interactions';
 import { createQaFlockStubs } from './interactions/qa/createQaFlockStubs';
 import { createQaWorldStubs } from './interactions/qa/createQaWorldStubs';
+import { createInventory } from './inventory/createInventory';
 import { createSupplies } from './inventory/createSupplies';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
@@ -64,7 +65,8 @@ const interactions = createInteractionController({
   character, camera, canvas, view: interactionView, onInteract: () => cancelClickTarget(),
 });
 const supplies = createSupplies();
-const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT, { onEggCollected: supplies.addEgg });
+const inventory = createInventory();
+const qaFlock = createQaFlockStubs(scene, GROUND_HEIGHT, { inventory, onEggCollected: supplies.addEgg });
 const qaWorld = createQaWorldStubs(scene, GROUND_HEIGHT);
 for (const interactable of [...qaFlock.interactables, ...qaWorld.interactables]) {
   interactions.register(interactable);
@@ -84,6 +86,7 @@ cancelClickTarget = controls.cancelTarget;
 const farmHud = createFarmHud({
   root: hudRoot,
   supplies,
+  inventory,
   initialPhase: dayNight.getPhase(),
   isEggReady: qaFlock.isEggReady,
   collectEgg: qaFlock.collectEgg,

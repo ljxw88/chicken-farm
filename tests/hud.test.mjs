@@ -7,6 +7,7 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmHud } = await vite.ssrLoadModule('/src/ui/createFarmHud.ts');
+const { createInventory } = await vite.ssrLoadModule('/src/inventory/createInventory.ts');
 const { createSupplies } = await vite.ssrLoadModule('/src/inventory/createSupplies.ts');
 const { createQaFlockStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaFlockStubs.ts');
 const { createInteractionRegistry } = await vite.ssrLoadModule('/src/interactions/createInteractionRegistry.ts');
@@ -22,12 +23,13 @@ function fixture(t) {
   const character = new THREE.Group();
   scene.add(character);
   const supplies = createSupplies();
-  const flock = createQaFlockStubs(scene, 0, { onEggCollected: supplies.addEgg });
+  const inventory = createInventory();
+  const flock = createQaFlockStubs(scene, 0, { inventory, onEggCollected: supplies.addEgg });
   const registry = createInteractionRegistry(character);
   flock.interactables.forEach(registry.register);
   const messages = [];
   const hud = createFarmHud({
-    root, supplies, initialPhase: 'morning', isEggReady: flock.isEggReady,
+    root, supplies, inventory, initialPhase: 'morning', isEggReady: flock.isEggReady,
     collectEgg: flock.collectEgg, onCollected: (message) => messages.push(message),
   });
   t.after(() => { hud.dispose(); flock.dispose(); dom.window.close(); });
@@ -36,11 +38,11 @@ function fixture(t) {
     assert.ok(element, selector);
     return element;
   };
-  return { dom, canvas, root, character, supplies, flock, registry, messages, hud, find };
+  return { dom, canvas, root, scene, character, supplies, inventory, flock, registry, messages, hud, find };
 }
 
 test('the mounted HTML HUD is a canvas sibling and list Collect updates the shared egg and supplies', (t) => {
-  const { canvas, root, supplies, flock, messages, find } = fixture(t);
+  const { canvas, root, supplies, inventory, flock, messages, find } = fixture(t);
   const egg = flock.interactables.find((item) => item.id === 'qa-egg');
   const collect = find('[data-collect]');
   assert.equal(root.parentElement, canvas.parentElement);
@@ -48,6 +50,8 @@ test('the mounted HTML HUD is a canvas sibling and list Collect updates the shar
   assert.match(find('#farm-growing-title').textContent, /Growing on your farm/);
   assert.match(find('.farm-biome').textContent, /Woodland.*Day 1.*Spring.*Morning/s);
   assert.equal(find('[data-supplies-count]').textContent, '0');
+  assert.equal(find('[data-feed-count]').textContent, '5');
+  assert.equal(find('[data-egg-count]').textContent, '0');
   assert.equal(find('[data-ready-count]').textContent, '1 ready');
   assert.equal(find('[data-progress]').getAttribute('aria-label'), 'Ready to collect');
   assert.match(find('[data-producer]').textContent, /Hen coop.*\+5 Supplies.*Next egg: —/s);
@@ -56,6 +60,7 @@ test('the mounted HTML HUD is a canvas sibling and list Collect updates the shar
   collect.click();
   assert.equal(supplies.getCount(), 5);
   assert.equal(find('[data-supplies-count]').textContent, '5');
+  assert.deepEqual(inventory.getCounts(), { feed: 5, egg: 0 });
   assert.equal(find('[data-ready-count]').textContent, '0 ready');
   assert.equal(find('[data-producer]').dataset.state, 'collected');
   assert.equal(find('[data-progress]').getAttribute('aria-label'), 'Timer unavailable');
@@ -64,7 +69,7 @@ test('the mounted HTML HUD is a canvas sibling and list Collect updates the shar
   assert.equal(collect.disabled, true);
   assert.equal(egg.object.visible, false);
   assert.equal(flock.isEggReady(), false);
-  assert.match(messages[0], /Collected egg/);
+  assert.match(messages[0], /Collected world egg/);
   collect.click();
   assert.equal(flock.collectEgg(), undefined);
   assert.equal(supplies.getCount(), 5);
@@ -81,6 +86,29 @@ test('world Collect synchronously updates the mounted list and capsule', (t) => 
   assert.equal(find('[data-collect]').disabled, true);
   find('[data-collect]').click();
   assert.equal(supplies.getCount(), 5);
+});
+
+test('HTML inventory tracks feeding and pickup without changing Supplies', (t) => {
+  const { root, character, supplies, inventory, flock, registry, find } = fixture(t);
+  const chicken = flock.interactables.find((item) => item.id === 'qa-chicken');
+  character.position.copy(chicken.object.position);
+  assert.match(registry.interact(chicken).message, /Fed chicken/);
+  assert.equal(find('[data-feed-count]').textContent, '4');
+  assert.equal(find('[data-egg-count]').textContent, '1');
+  assert.equal(find('[data-feed-count]').getAttribute('aria-label'), '4 Feed');
+  assert.equal(find('[data-supplies-count]').textContent, '0');
+  for (let i = 0; i < 4; i++) assert.match(registry.interact(chicken).message, /Fed chicken/);
+  assert.equal(find('[data-feed-count]').textContent, '0');
+  assert.equal(find('[data-egg-count]').textContent, '5');
+  assert.match(registry.interact(chicken).message, /Can't feed.*no Feed/);
+  assert.deepEqual(inventory.getCounts(), { feed: 0, egg: 5 });
+  assert.equal(supplies.getCount(), 0);
+  inventory.pickup('feed', 2);
+  assert.equal(find('[data-feed-count]').textContent, '2');
+  assert.match(registry.interact(chicken).message, /Fed chicken/);
+  assert.deepEqual(inventory.getCounts(), { feed: 1, egg: 6 });
+  assert.equal(find('[data-egg-count]').textContent, '6');
+  assert.equal(root.querySelector('.farm-market'), null);
 });
 
 test('Growing, placeholder buff tips, Build sheet and phase label are usable without the canvas', (t) => {

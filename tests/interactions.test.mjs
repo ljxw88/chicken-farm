@@ -8,6 +8,8 @@ const { createCharacterControls } = await vite.ssrLoadModule('/src/character/cre
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createInteractionRegistry } = await vite.ssrLoadModule('/src/interactions/createInteractionRegistry.ts');
 const { createInteractionController } = await vite.ssrLoadModule('/src/interactions/createInteractionController.ts');
+const { createInventory } = await vite.ssrLoadModule('/src/inventory/createInventory.ts');
+const { createSupplies } = await vite.ssrLoadModule('/src/inventory/createSupplies.ts');
 const { createQaFlockStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaFlockStubs.ts');
 const { createQaWorldStubs } = await vite.ssrLoadModule('/src/interactions/qa/createQaWorldStubs.ts');
 after(() => vite.close());
@@ -290,21 +292,27 @@ test('disposing interaction controls removes both keyboard and prompt activation
   assert.deepEqual(chicken.calls, []);
 });
 
-test('QA chicken and egg use a one-feed seed, collect once, and do not require a trading system', (t) => {
+test('QA chicken spends inventory Feed, grants inventory Eggs, and the world egg pays separately once', (t) => {
   const scene = new THREE.Scene();
   const character = new THREE.Group();
   scene.add(character);
   const registry = createInteractionRegistry(character);
-  const flock = createQaFlockStubs(scene, 0);
+  const inventory = createInventory();
+  const supplies = createSupplies();
+  const flock = createQaFlockStubs(scene, 0, { inventory, onEggCollected: supplies.addEgg });
   t.after(flock.dispose);
   flock.interactables.forEach(registry.register);
   const chicken = flock.interactables.find((item) => item.id === 'qa-chicken');
   const egg = flock.interactables.find((item) => item.id === 'qa-egg');
   character.position.copy(chicken.object.position);
-  assert.match(registry.interact(chicken).message, /Fed chicken.*Feed: 0/);
-  assert.match(registry.interact(chicken).message, /No feed left/);
+  for (let i = 0; i < 5; i++) assert.match(registry.interact(chicken).message, /Fed chicken.*\+1 Egg/);
+  assert.match(registry.interact(chicken).message, /Can't feed.*no Feed/);
+  assert.deepEqual(inventory.getCounts(), { feed: 0, egg: 5 });
+  assert.equal(supplies.getCount(), 0);
   character.position.copy(egg.object.position);
-  assert.match(registry.interact(egg).message, /Collected egg.*Eggs: 1/);
+  assert.match(registry.interact(egg).message, /Collected world egg.*\+5 Supplies/);
+  assert.equal(supplies.getCount(), 5);
+  assert.deepEqual(inventory.getCounts(), { feed: 0, egg: 5 });
   assert.equal(egg.object.visible, false);
   assert.equal(registry.interact(egg).performed, false);
   flock.dispose();
@@ -312,7 +320,7 @@ test('QA chicken and egg use a one-feed seed, collect once, and do not require a
   assert.equal(registry.interact(chicken).performed, false);
 });
 
-test('bin and sign are explicitly stubbed; the sign states the supplied rates without trading', (t) => {
+test('bin and sign remain informational stubs without inventory or Supplies transactions', (t) => {
   const scene = new THREE.Scene();
   const character = new THREE.Group();
   scene.add(character);
