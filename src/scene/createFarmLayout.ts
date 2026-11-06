@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createFarmBuildings } from './createFarmBuildings';
+import { createWaterFeature } from './createWaterFeature';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
 import type { FarmObstacle } from './farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
@@ -220,7 +221,7 @@ export function createFarmLayout(scene: THREE.Scene) {
     ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
       kind: 'circle', name: `tree-${index + 1}`, x, z, radius: 0.32 * scale,
     })),
-    pondObstacle,
+    ...createWaterFeature(group, pondObstacle),
   ];
   const splashExclusions: FarmObstacle[] = [
     ...buildingShelters,

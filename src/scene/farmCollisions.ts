@@ -1,6 +1,10 @@
-export type FarmObstacle =
+import { circleTouchesPolygon, type FarmPoint } from './farmFootprints';
+
+export type FarmObstacle = (
   | { kind: 'box'; name: string; minX: number; maxX: number; minZ: number; maxZ: number }
-  | { kind: 'circle'; name: string; x: number; z: number; radius: number };
+  | { kind: 'circle'; name: string; x: number; z: number; radius: number }
+  | { kind: 'polygon'; name: string; points: readonly FarmPoint[]; minX: number; maxX: number; minZ: number; maxZ: number }
+) & { blocksWalking?: boolean };
 
 export interface FarmBounds {
   minX: number;
@@ -13,10 +17,18 @@ export type FarmBoundarySlide = (x: number, z: number, radius: number, distance:
 
 function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
   return obstacles.some((obstacle) => {
+    // A walkable bridge still reserves placement tiles in this shared array.
+    if (obstacle.blocksWalking === false) return false;
     if (obstacle.kind === 'circle') {
       const dx = x - obstacle.x;
       const dz = z - obstacle.z;
       return dx * dx + dz * dz <= (radius + obstacle.radius) ** 2;
+    }
+
+    if (obstacle.kind === 'polygon') {
+      if (x + radius < obstacle.minX || x - radius > obstacle.maxX ||
+          z + radius < obstacle.minZ || z - radius > obstacle.maxZ) return false;
+      return circleTouchesPolygon(x, z, radius, obstacle.points);
     }
 
     const closestX = Math.max(obstacle.minX, Math.min(x, obstacle.maxX));

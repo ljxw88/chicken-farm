@@ -1,0 +1,80 @@
+EBR-48 — Phase 1 stream, bridge and waterfall edge
+
+Branch: feat/ebr48-stream-bridge
+Base: origin/main a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671
+Tip: `git rev-parse HEAD` (a commit cannot contain its own SHA).
+
+Status
+- The route, proportions, walk rule, colors and meshes are engineering
+  placeholders, NOT Look Dev decisions or a final appearance. The provisional
+  stream runs from the pond to the +X edge; a shallow wooden slab crosses it.
+- Walking is blocked by stream and waterfall-lip water. The deck is temporarily
+  `walkable`; changing the flag to `blocked` also blocks the deck and its
+  overhang. Placement always rejects any overlapping 1.5-unit water or bridge
+  tile, including the dry overhang of a walkable bridge.
+- Convex footprints follow angled segments and a rotated bridge. A walkable
+  deck removes only underlying water collision (including pond water if it
+  overlaps); it does not erase a building, tree or fence collision. The player
+  radius is respected. Water meshes, collision and placement use the same data.
+- The bridge is a ground-level placeholder overlay, not new terrain or a new
+  elevated walking surface. Existing island/stair support still limits walking.
+  A future walkable deck must span the water and be wide enough for the
+  character's 0.8-unit diameter, including clearance at both banks.
+
+Existing code locations
+- src/scene/createFarmLayout.ts: FARM_LAYOUT.pond, createPond's rim/water/depth
+  meshes, and the original pond box with its 5% water-outline margin. The
+  layout assembles building, tree, pond and new water/bridge obstacles.
+- src/scene/createIsland.ts: 16 x 16 top, height 2.4, four cliff faces and
+  underside. src/scene/createStoneStairs.ts supplies the existing stair opening
+  and walkable support; neither terrain nor stairs was changed.
+- src/placement/createPlacement.ts checks the shared obstacles and decoration
+  bounds. src/placement/grid.ts defines TILE_SIZE = 1.5 and tests whole snapped
+  fence/plot footprints; its only change adds polygon keep-out intersection.
+- The cottage/coop collision definitions, dirt path, stairs, HUD, day/night,
+  weather and pixel pass were not changed. In particular, the old rain-splash
+  exclusion list remains unchanged; it does not yet exclude the new stream.
+
+ONE table to edit
+- src/scene/waterFeatureSpec.ts: WATER_FEATURE. All values in it are provisional.
+  Positions and sizes are world units; Y lifts are relative to the island top.
+  `bridge.length` runs along its local X axis, `bridge.width` across it, and
+  `rotationDegrees` is a Three.js rotation about Y.
+- `stream.points` can contain diagonal segments; the last point must lie on
+  the selected waterfall side (east/west X = +/-8, north/south Z = -/+8).
+  Adjacent points must differ and the waterfall width must fit on that side.
+  `waterfall.width: null` inherits `stream.width`.
+- src/scene/createWaterFeature.ts derives the placeholder meshes and named
+  stream, waterfall-edge and wooden-bridge zones from that table;
+  src/scene/farmFootprints.ts handles the convex footprint operations.
+
+Exact outstanding Look Dev inputs
+1. Stream route: each X/Z point, including pond junction and edge outlet;
+   stream width and surface lift above the island.
+2. Bridge: centre X/Z, length, width, Y rotation in degrees, deck thickness and
+   top lift; choose `walkable` or `blocked`.
+3. Waterfall: island side, width (or confirmation it equals the stream width),
+   lip depth on the top and vertical drop height.
+4. Hex colors for stream water, waterfall face and bridge wood. The current
+   references to the existing farm palette only make the placeholders visible.
+Check finalized values against the unchanged path, stairs, buildings and
+island bounds; none of the provisional settings are a visual lock.
+
+Verification and evidence
+- `npm ci`: installed 68 packages locally; audit reported 0 vulnerabilities.
+  `npm ls --depth=0`: PASS; evidence/EBR-48/dependencies.log. node_modules and
+  dist are ignored and are not committed.
+- `npm run build`: PASS, 56 Vite modules; evidence/EBR-48/build.log. Vite still
+  emits the existing >500 kB chunk advisory.
+- `npm test`: 91 passed, 0 failed; evidence/EBR-48/unit.log. Includes both walk
+  rules, water/bridge/pond overlap, radius and diagonal cases, four waterfall
+  sides, 1.5-unit partial-tile ghosts, and existing path/stair/building tests.
+- `EBR48_EVIDENCE_DIR=evidence/EBR-48 npm run test:browser`: 22 passed, 0
+  failed; evidence/EBR-48/browser-suite.log. Chromium 153 headless/SwiftShader;
+  existing day/night, weather, pixel, stairs, buildings and placement checks
+  also passed. No page/console errors in the new water interaction checks.
+- evidence/EBR-48/01-placeholder-daytime.png shows the temporary scene;
+  02-crossed-placeholder-bridge.png and 03-stream-stops-walking.png show
+  real movement; 04-bridge-tile-rejected.png shows the rejected plot preview.
+  browser-proof.json records positions, pixel state and rejected previews.
+- `git diff --check`: PASS. Local commit only; no push or PR.
