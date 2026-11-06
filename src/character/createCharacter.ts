@@ -3,6 +3,36 @@ import { CONTACT_SHADOW_COLOR } from '../scene/contactShadowStyle';
 
 export const CHARACTER_RADIUS = 0.4;
 const BODY_LENGTH = 0.6;
+const CROWN_LIFT = 0.15;
+const DAY_CROWN_LIFT = 0.28;
+const DAY_BASE_GAIN = 1.08;
+
+function applyCrownLift(geometry: THREE.BufferGeometry, lift: number, baseGain: number) {
+  const positions = geometry.getAttribute('position');
+  const colors = geometry.getAttribute('color');
+  for (let i = 0; i < positions.count; i++) {
+    // A rotation-independent lighter crown helps the sun/moon read from
+    // above without adding an emissive or camera-facing light.
+    const t = THREE.MathUtils.clamp((positions.getY(i) + 0.05) / 0.7, 0, 1);
+    const value = baseGain * (1 + lift * THREE.MathUtils.smoothstep(t, 0, 1));
+    colors.setXYZ(i, value, value, value);
+  }
+  colors.needsUpdate = true;
+}
+
+export function createCharacterCrownController(character: THREE.Object3D) {
+  const body = character.children.find((child) => child instanceof THREE.Mesh && child.geometry.type === 'CapsuleGeometry');
+  let currentDaytimeAmount = 0;
+  return (daytimeAmount: number) => {
+    if (!(body instanceof THREE.Mesh) || daytimeAmount === currentDaytimeAmount) return;
+    const lift = THREE.MathUtils.lerp(CROWN_LIFT, DAY_CROWN_LIFT, daytimeAmount);
+    // Uniform linear RGB preserves the signed yellow hue; only daylight gets
+    // the permitted maximum 8% albedo luminance lift, never emission.
+    const baseGain = THREE.MathUtils.lerp(1, DAY_BASE_GAIN, daytimeAmount);
+    applyCrownLift(body.geometry, lift, baseGain);
+    currentDaytimeAmount = daytimeAmount;
+  };
+}
 
 export function createCharacter() {
   // The group's origin is at the character's feet on the ground plane.
@@ -11,15 +41,8 @@ export function createCharacter() {
 
   const bodyGeometry = new THREE.CapsuleGeometry(CHARACTER_RADIUS, BODY_LENGTH, 6, 12);
   const positions = bodyGeometry.getAttribute('position');
-  const colors = new Float32Array(positions.count * 3);
-  for (let i = 0; i < positions.count; i++) {
-    // A subtle, rotation-independent lighter crown helps the sun/moon read
-    // from above without adding an emissive or camera-facing light.
-    const t = THREE.MathUtils.clamp((positions.getY(i) + 0.05) / 0.7, 0, 1);
-    const value = 1 + 0.15 * THREE.MathUtils.smoothstep(t, 0, 1);
-    colors.set([value, value, value], i * 3);
-  }
-  bodyGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  bodyGeometry.setAttribute('color', new THREE.Float32BufferAttribute(positions.count * 3, 3));
+  applyCrownLift(bodyGeometry, CROWN_LIFT, 1);
   const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xffd477, roughness: 0.9, vertexColors: true });
   // Engineer: keep the signed base/crown and retune only key-away shading.
   // Warmer indirect bounce preserves directional contrast after the azimuth
