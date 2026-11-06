@@ -127,14 +127,17 @@ test('nondeterministic geometry fails H6 and an oversized collision box fails H1
 });
 
 test('declared emissive materials start dark, ramp explicitly, and add no lights', () => {
-  const recipe = clone(); recipe.emissive = [{ part: 'top', mat: 'lantern.glow', strength: 0.7 }];
+  const recipe = clone(); recipe.id = 'lantern-post'; recipe.parts[2].name = 'lantern-glass';
+  recipe.emissive = [{ part: 'lantern-glass', mat: 'lantern.glow', strength: 0.7 }];
   const group = buildRecipe(recipe);
-  const top = group.getObjectByName('top');
+  const top = group.getObjectByName('lantern-glass');
   assert.equal(top.material.emissiveIntensity, 0);
   setRecipeNightAmount(group, 0.5);
   assert.equal(top.material.emissiveIntensity, 0.35);
   let lights = 0; group.traverse((object) => { if (object.isLight) lights++; });
   assert.equal(lights, 0);
+  recipe.id = 'fixture';
+  assert.throws(() => buildRecipe(recipe), /Only declared lantern-post glass/);
 });
 
 test('closed primitive builders produce finite nondegenerate geometry', () => {

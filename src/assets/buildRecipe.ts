@@ -136,6 +136,9 @@ export function buildRecipe(recipe: AssetRecipe): THREE.Group {
     const mesh = group.getObjectByName(accent.part) as THREE.Mesh | undefined;
     const token = recipe.slots[accent.mat] ?? accent.mat;
     const color = (ASSET_PALETTE as Record<string, number>)[token];
+    if (recipe.id !== 'lantern-post' || token !== 'lantern.glow' || !/lantern.*glass|glass.*lantern/.test(accent.part)) {
+      throw new Error('Only declared lantern-post glass may be emissive');
+    }
     if (!mesh || color === undefined) throw new Error(`Invalid emissive accent: ${accent.part}/${token}`);
     // A per-mesh material avoids changing other parts that share a token.
     mesh.material = (mesh.material as THREE.MeshStandardMaterial).clone();
