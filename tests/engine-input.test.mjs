@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { getEventListeners } from 'node:events';
 import { after, test } from 'node:test';
 import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
@@ -8,7 +9,7 @@ const { createInputActions } = await vite.ssrLoadModule('/src/core/input/actions
 const { bindInputActions } = await vite.ssrLoadModule('/src/core/input/bindInputActions.ts');
 after(() => vite.close());
 
-function fixture(t) {
+function fixture(t, bindingOptions) {
   const dom = new JSDOM(`<!doctype html><body><canvas></canvas><input><textarea></textarea><select></select>
     <div contenteditable><span>edit</span></div><a href="#">link</a>
     <aside class="placement-controls"><button data-fence><span>Fence</span></button><button data-plot>Plot</button>
@@ -19,7 +20,7 @@ function fixture(t) {
   const canvas = document.querySelector('canvas');
   const context = { active: false, removing: false };
   const input = createInputActions(() => context);
-  const detach = bindInputActions(input, window, canvas);
+  const detach = bindInputActions(input, window, canvas, bindingOptions);
   t.after(() => { detach(); window.close(); });
   const key = (type, code, target = document.body, options = {}) => {
     const event = new window.KeyboardEvent(type, { bubbles: true, cancelable: true, code, ...options });
@@ -56,6 +57,59 @@ test('WASD is a held action; a new key cancels click-to-move and blur releases i
   assert.deepEqual(blurred.move, { type: 'move', right: 0, forward: 0, active: false });
   assert.deepEqual(blurred.actions, [{ type: 'cancel-move-to' }]);
   assert.deepEqual(f.input.consume().actions, []);
+});
+
+test('owned movement resolves actions immediately, preserves placement priority and prevents WASD defaults', (t) => {
+  let handled = false;
+  const f = fixture(t, { ownMovement: true, onPointerDown: () => handled });
+  const movements = [];
+  f.input.onMovement((action) => movements.push(action));
+  f.pointer('pointerdown');
+  assert.deepEqual(movements, [{ type: 'move-to', point: { x: 123, y: 456, pointerType: 'mouse' } }]);
+  f.pointer('pointerdown', 'mouse', { button: 2 });
+  f.pointer('pointerdown', 'touch', { isPrimary: false });
+  assert.equal(movements.length, 1, 'non-primary pointers must not start walking');
+  assert.equal(f.key('keydown', 'KeyW').defaultPrevented, true);
+  f.key('keydown', 'KeyW', f.document.body, { repeat: true });
+  assert.deepEqual(movements.slice(1), [{ type: 'cancel-move-to' }, { type: 'cancel-move-to' }]);
+  f.pointer('pointerdown'); // Held keys take priority, even if opposite keys cancel.
+  assert.equal(movements.length, 3);
+  f.key('keyup', 'KeyW', f.document.querySelector('input'));
+  handled = true;
+  f.pointer('pointerdown');
+  assert.equal(movements.length, 3, 'a synchronous handler consumed the pointer');
+  handled = false;
+  f.context.active = true;
+  f.pointer('pointerdown', 'touch');
+  assert.equal(movements.length, 3, 'placement has priority over touch walking');
+  f.window.dispatchEvent(new f.window.Event('blur'));
+  assert.equal(movements.at(-1).type, 'cancel-move-to');
+  assert.equal(f.key('keydown', 'KeyW', f.document.querySelector('input')).defaultPrevented, false);
+});
+
+test('owned placement pointer actions use the context before synchronous removal', (t) => {
+  let context;
+  const f = fixture(t, { ownMovement: true, onPointerDown: () => { context.removing = false; return true; } });
+  context = f.context;
+  context.active = true;
+  context.removing = true;
+  f.pointer('pointerdown', 'mouse');
+  assert.deepEqual(f.input.consume().actions, [
+    { type: 'placement-preview', point: { x: 123, y: 456, pointerType: 'mouse' } },
+    { type: 'placement-remove', mode: 'hovered' },
+  ]);
+});
+
+test('detaching owned and observing bindings removes every listener', () => {
+  for (const ownMovement of [false, true]) {
+    const target = new EventTarget();
+    const canvas = new EventTarget();
+    const detach = bindInputActions(createInputActions(), target, canvas, { ownMovement });
+    assert.equal(getEventListeners(target, 'keydown').length, ownMovement ? 2 : 1);
+    detach();
+    for (const type of ['keydown', 'keyup', 'click', 'blur']) assert.equal(getEventListeners(target, type).length, 0, type);
+    for (const type of ['pointermove', 'pointerdown']) assert.equal(getEventListeners(canvas, type).length, 0, type);
+  }
 });
 
 test('placement keys are one-shot, ordered, repeat-safe, and consumed exactly once', (t) => {

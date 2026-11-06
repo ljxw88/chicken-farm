@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
-import type { FarmObstacle } from './farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 import { createWaterfall } from './createWaterfall';
 import { bridgeHeight, createWoodenBridge } from './createWoodenBridge';
 import { WATER_FEATURE } from './waterFeatureSpec';

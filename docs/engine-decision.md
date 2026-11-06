@@ -3,17 +3,20 @@
 **Decision:** keep Three.js and build a thin game layer using Miniplex. Jiaxu confirmed this direction.
 This is a proposal, not an implementation or a performance result.
 
+The baseline description below is historical. For the EBR-74 character port
+and current module locations, see [src/core/README.md](../src/core/README.md).
+
 ## Where we are
 
 - [package.json](../package.json) uses Three.js, Vite and Playwright; [README.md](../README.md) describes the playable build.
 - [src/main.ts](../src/main.ts) wires the scene and isometric camera, character controls, collisions and stairs,
   placement, day/night lights, weather, pixel presentation and the HTML HUD. Its Three.js animation loop updates them all.
   [src/scene/createScene.ts](../src/scene/createScene.ts) builds the scene and island;
-  [src/scene/farmCollisions.ts](../src/scene/farmCollisions.ts) and
+  [src/scene/farmCollisions.ts](https://github.com/ljxw88/chicken-farm/blob/9e8c8c6/src/scene/farmCollisions.ts) and
   [src/scene/createStoneStairs.ts](../src/scene/createStoneStairs.ts) implement walking boundaries and stair support.
   [src/scene/createFarmLayout.ts](../src/scene/createFarmLayout.ts) hard-codes much of the layout and its obstacles.
 - There is no central game state: the player position is a Three.js object; keys and click target live in
-  [src/character/createCharacterControls.ts](../src/character/createCharacterControls.ts); placement keeps arrays/maps
+  [src/character/createCharacterControls.ts](https://github.com/ljxw88/chicken-farm/blob/9e8c8c6/src/character/createCharacterControls.ts); placement keeps arrays/maps
   and shares the obstacle array with walking in [src/placement/createPlacement.ts](../src/placement/createPlacement.ts).
   Day/night and weather keep their own state in [src/lighting/createDayNightCycle.ts](../src/lighting/createDayNightCycle.ts)
   and [src/weather/createWeatherSystem.ts](../src/weather/createWeatherSystem.ts). Placed objects reset on reload.

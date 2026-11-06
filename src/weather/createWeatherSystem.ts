@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { FarmObstacle } from '../scene/farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 import { CLOUDY_LOOK } from './cloudySettings';
 import { createRainEffect } from './createRainEffect';
 import { RAIN_LOOK } from './rainSettings';

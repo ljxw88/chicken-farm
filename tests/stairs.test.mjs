@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import * as THREE from 'three';
 import { createServer } from 'vite';
+import { loadCharacterFixture } from './characterFixture.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createIsland, GROUND_HEIGHT, GROUND_SIZE, ISLAND_BOTTOM } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createCharacter, CHARACTER_RADIUS } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
-const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const createCharacterControls = await loadCharacterFixture(vite);
 const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
 after(() => vite.close());
 

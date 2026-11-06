@@ -112,3 +112,26 @@ test('engine ticks once per fixed step, shares one-shots across systems, and pre
   assert.deepEqual(order, ['before', ['legacy', 0, 0], ['render', 0]]);
   engine.stop();
 });
+
+test('frame systems run once before environment and render without stealing fixed-tick actions', () => {
+  let animation;
+  const order = [];
+  const engine = createEngine({
+    setAnimationLoop: (callback) => { animation = callback; },
+    systems: [(_world, input) => order.push(['fixed', input.actions.map((action) => action.type)])],
+    frameSystems: [(_world, move, dt) => order.push(['character', dt, move.active])],
+    update: (dt) => order.push(['environment', dt]),
+    render: (dt) => order.push(['render', dt]),
+  });
+  engine.start();
+  engine.input.keyDown({ code: 'KeyW', target: null });
+  animation(1000);
+  animation(1005);
+  animation(1020);
+  assert.deepEqual(order, [
+    ['character', 0, true], ['environment', 0], ['render', 0],
+    ['character', 0.005, true], ['environment', 0.005], ['render', 0.005],
+    ['fixed', ['cancel-move-to']], ['character', 0.015, true], ['environment', 0.015], ['render', 0.015],
+  ]);
+  engine.stop();
+});

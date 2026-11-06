@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createFarmBuildings } from './createFarmBuildings';
 import { createWaterFeature } from './createWaterFeature';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createScene';
-import type { FarmObstacle } from './farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 import { FARM_PALETTE } from './farmPalette';
 import { CONTACT_SHADOW_COLOR } from './contactShadowStyle';
 

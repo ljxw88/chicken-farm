@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import * as THREE from 'three';
 import { createServer } from 'vite';
+import { loadCharacterFixture } from './characterFixture.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
-const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const createCharacterControls = await loadCharacterFixture(vite);
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createInteractionRegistry } = await vite.ssrLoadModule('/src/interactions/createInteractionRegistry.ts');
 const { createInteractionController } = await vite.ssrLoadModule('/src/interactions/createInteractionController.ts');

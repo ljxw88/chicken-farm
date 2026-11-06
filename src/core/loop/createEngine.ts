@@ -1,25 +1,31 @@
 import { createEntityWorld, type CoreComponents, type EntityWorld } from '../ecs';
-import { bindInputActions, createInputActions, type InputFrame, type PlacementInputContext } from '../input';
+import {
+  bindInputActions, createInputActions, type InputBindingOptions, type InputFrame, type MoveAction, type PlacementInputContext,
+} from '../input';
 import { createFixedStepAccumulator } from './fixedStep';
 
 export type EngineSystem<Components extends object = CoreComponents> =
   (world: EntityWorld<Components>, input: InputFrame, stepSeconds: number) => void;
+export type EngineFrameSystem<Components extends object = CoreComponents> =
+  (world: EntityWorld<Components>, move: MoveAction, elapsedSeconds: number) => void;
 
 interface EngineOptions<Components extends object> {
   setAnimationLoop: (callback: ((time: number) => void) | null) => void;
   beforeFrame?: () => void;
-  // Until the gameplay ports, this runs the existing variable-step paths once
-  // per render frame with their original full elapsed delta.
+  // Unported environment paths retain their original full elapsed delta.
   update: (deltaSeconds: number) => void;
   render: (deltaSeconds: number) => void;
   systems?: readonly EngineSystem<Components>[];
-  input?: { target: Window; canvas: HTMLCanvasElement; getPlacement: () => PlacementInputContext };
+  // Movement stays frame-timed until fixed-step gameplay can pass parity.
+  frameSystems?: readonly EngineFrameSystem<Components>[];
+  input?: { target: Window; canvas: HTMLCanvasElement; getPlacement: () => PlacementInputContext } & InputBindingOptions;
 }
 
 export function createEngine<Components extends object = CoreComponents>(options: EngineOptions<Components>) {
   const world = createEntityWorld<Components>();
   const input = createInputActions(options.input?.getPlacement);
   const systems = [...(options.systems ?? [])];
+  const frameSystems = [...(options.frameSystems ?? [])];
   const fixed = createFixedStepAccumulator({
     systems: [(stepSeconds) => {
       // Every system sees the same input for this tick. Subsequent catch-up
@@ -37,6 +43,8 @@ export function createEngine<Components extends object = CoreComponents>(options
     const deltaSeconds = previousTime === undefined ? 0 : Math.max((time - previousTime) / 1000, 0);
     previousTime = time;
     fixed.advance(deltaSeconds);
+    const move = input.movement();
+    for (const system of frameSystems) system(world, move, deltaSeconds);
     options.update(deltaSeconds);
     options.render(deltaSeconds);
   }
@@ -46,7 +54,7 @@ export function createEngine<Components extends object = CoreComponents>(options
     running = true;
     previousTime = undefined;
     fixed.reset();
-    if (options.input) unbind = bindInputActions(input, options.input.target, options.input.canvas);
+    if (options.input) unbind = bindInputActions(input, options.input.target, options.input.canvas, options.input);
     options.setAnimationLoop(frame);
   }
 

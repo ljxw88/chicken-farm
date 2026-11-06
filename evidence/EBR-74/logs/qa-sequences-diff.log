@@ -1,0 +1,31 @@
+143/147 QA sequence checks pass
+[
+  {
+    "name": "run1.walkSA.x",
+    "expected": 2.186,
+    "actual": 2.227,
+    "tolerance": 0,
+    "ok": false
+  },
+  {
+    "name": "run1.walkSA.z",
+    "expected": -0.106,
+    "actual": -0.174,
+    "tolerance": 0,
+    "ok": false
+  },
+  {
+    "name": "run1.bridge.end.z",
+    "expected": -1.915,
+    "actual": -2.02,
+    "tolerance": 0.08,
+    "ok": false
+  },
+  {
+    "name": "run2.stairsDescend.z",
+    "expected": 0.76,
+    "actual": 0.802,
+    "tolerance": 0,
+    "ok": false
+  }
+]

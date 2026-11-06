@@ -1,2 +1,3 @@
 export { CHARACTER_RADIUS, createCharacter } from './createCharacter';
-export { createCharacterControls } from './createCharacterControls';
+export { createCharacterController } from './createCharacterController';
+export type { CharacterComponents } from './movementSystem';

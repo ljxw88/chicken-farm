@@ -1,23 +1,19 @@
 import * as THREE from 'three';
-import type { FarmBoundarySlide, FarmBounds } from './farmCollisions';
+import type { FarmBoundarySlide, FarmBounds } from '../character/farmCollisions';
+import {
+  createStairSurface, stairSupports, slideStairPadCorner, stairFloorHeight, stairCharacterHeight, stairTarget,
+  STAIR_CENTER_Z, STAIR_WIDTH, TREAD_DEPTH, TREAD_COUNT, PAD_LENGTH, PAD_WIDTH, PAD_HEIGHT,
+  type StairSurface,
+} from '../character/stairSurface';
 import { FARM_PALETTE } from './farmPalette';
 
-// The path meets the +X rim at z ~= 0.75. These dimensions describe both the
-// visible blocks and the small extension of the island's walkable surface.
-const STAIR_CENTER_Z = 0.75;
-const STAIR_WIDTH = 1.2;
-const TREAD_DEPTH = 0.9;
-const TREAD_COUNT = 5;
-const PAD_LENGTH = 1.5;
-const PAD_WIDTH = 1.6;
-const PAD_HEIGHT = 0.16;
-const PAD_OVERLAP = 0.45;
 const EDGE_DEPTH = 0.18;
 const TREAD_MIXES = [0.76, 0.82, 0.78, 0.84, 0.8];
 
 export interface StoneStairs {
   treads: THREE.Mesh[];
   footPad: THREE.Mesh;
+  surface: StairSurface;
   bounds: FarmBounds;
   supports(x: number, z: number, radius: number): boolean;
   slidePadCorner: FarmBoundarySlide;
@@ -27,15 +23,8 @@ export interface StoneStairs {
 }
 
 export function createStoneStairs(island: THREE.Group, size: number, top: number, bottom: number): StoneStairs {
-  const edge = size / 2;
-  const stairEnd = edge + TREAD_COUNT * TREAD_DEPTH;
-  const padStart = stairEnd - PAD_OVERLAP;
-  const padEnd = padStart + PAD_LENGTH;
-  const minZ = STAIR_CENTER_Z - STAIR_WIDTH / 2;
-  const maxZ = STAIR_CENTER_Z + STAIR_WIDTH / 2;
-  const padMinZ = STAIR_CENTER_Z - PAD_WIDTH / 2;
-  const padMaxZ = STAIR_CENTER_Z + PAD_WIDTH / 2;
-  const rise = (top - bottom) / TREAD_COUNT;
+  const surface = createStairSurface(size, top, bottom);
+  const { edge, padStart, padEnd, rise } = surface;
   const stairs = new THREE.Group();
   stairs.name = 'island-stone-stairs';
   island.add(stairs);
@@ -82,78 +71,14 @@ export function createStoneStairs(island: THREE.Group, size: number, top: number
   footPad.position.set((padStart + padEnd) / 2, bottom + PAD_HEIGHT / 2, STAIR_CENTER_Z);
   stairs.add(footPad);
 
-  const bounds = { minX: -edge, maxX: padEnd, minZ: -edge, maxZ: edge };
-
-  function lateralLimits(x: number, radius: number) {
-    if (x <= padStart) return { min: minZ + radius, max: maxZ - radius };
-    // Round the inside corners where the wider pad meets the narrower run.
-    const inset = Math.sqrt(Math.max(0, radius * radius - (x - padStart) ** 2));
-    return { min: Math.max(padMinZ + radius, minZ + inset), max: Math.min(padMaxZ - radius, maxZ - inset) };
-  }
-
-  function supports(x: number, z: number, radius: number) {
-    if (x < -edge + radius || x > padEnd - radius || z < -edge + radius || z > edge - radius) return false;
-    if (x <= edge - radius) return true;
-    if (x >= edge) {
-      const limits = lateralLimits(x, radius);
-      return z >= limits.min && z <= limits.max;
-    }
-
-    // At the two inside corners, the circular footprint can straddle the
-    // island and stair tops as long as it does not overlap the void.
-    const cornerInset = Math.sqrt(Math.max(0, radius * radius - (edge - x) ** 2));
-    return z >= minZ + cornerInset && z <= maxZ - cornerInset;
-  }
-
-  const slidePadCorner: FarmBoundarySlide = (x, z, radius, distance) => {
-    if (x < padStart || x > padStart + radius || distance <= 0) return undefined;
-    const openingZ = THREE.MathUtils.clamp(z, minZ + radius, maxZ - radius);
-    const offset = openingZ - z;
-    if (offset === 0) return undefined;
-    return { x, z: z + Math.sign(offset) * Math.min(Math.abs(offset), distance) };
+  // The scene and shadow adapters delegate to the same plain-data surface used
+  // by the character systems; the meshes themselves remain render-only.
+  return {
+    treads, footPad, surface, bounds: surface.bounds,
+    supports: (x, z, radius) => stairSupports(surface, x, z, radius),
+    slidePadCorner: (x, z, radius, distance) => slideStairPadCorner(surface, x, z, radius, distance),
+    floorHeight: (x) => stairFloorHeight(surface, x),
+    characterHeight: (x, radius) => stairCharacterHeight(surface, x, radius),
+    target: (x, z, radius) => stairTarget(surface, x, z, radius),
   };
-
-  function treadIndex(x: number) {
-    return Math.min(TREAD_COUNT - 1, Math.max(0, Math.floor((x - edge) / TREAD_DEPTH)));
-  }
-
-  function floorHeight(x: number) {
-    if (x <= edge) return top;
-    return x >= stairEnd ? bottom + PAD_HEIGHT : top - treadIndex(x) * rise;
-  }
-
-  function characterHeight(x: number, radius: number) {
-    const index = x <= edge ? 0 : treadIndex(x);
-    const onPad = x >= stairEnd;
-    const floor = floorHeight(x);
-    if ((!onPad && index === 0) || radius <= 0) return floor;
-
-    const distance = x - (onPad ? stairEnd : edge + index * TREAD_DEPTH);
-    const higher = onPad ? top - (TREAD_COUNT - 1) * rise : floor + rise;
-    if (distance < radius) {
-      // The character's lower capsule touches the upper tread's edge before
-      // its center reaches it, rather than clipping through the riser.
-      return Math.max(floor, higher - radius + Math.sqrt(Math.max(0, radius * radius - distance * distance)));
-    }
-
-    // A rise slightly taller than the capsule radius needs a brief settling
-    // interval after it clears the edge. It is still above the visible stone.
-    const settleDistance = Math.min(0.08, Math.max(0, TREAD_DEPTH - radius * 2));
-    const heightDifference = higher - floor;
-    if (heightDifference > radius && settleDistance > 0 && distance < radius + settleDistance) {
-      return floor + (heightDifference - radius) * (1 - (distance - radius) / settleDistance);
-    }
-    return floor;
-  }
-
-  function target(x: number, z: number, radius: number) {
-    const targetX = THREE.MathUtils.clamp(x, edge, padEnd - radius);
-    const limits = lateralLimits(targetX, radius);
-    return {
-      x: targetX,
-      z: THREE.MathUtils.clamp(z, limits.min, limits.max),
-    };
-  }
-
-  return { treads, footPad, bounds, supports, slidePadCorner, floorHeight, characterHeight, target };
 }
