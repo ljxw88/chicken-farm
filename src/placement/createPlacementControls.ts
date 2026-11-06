@@ -10,17 +10,8 @@ interface PlacementViewState {
   canUndo: boolean;
 }
 
-interface PlacementActions {
-  select: (kind: PlacementKind) => void;
-  rotate: () => void;
-  confirm: () => void;
-  remove: () => void;
-  undo: () => void;
-  cancel: () => void;
-}
-
 // Direct, temporary controls rather than a Build menu.
-export function createPlacementControls(actions: PlacementActions) {
+export function createPlacementControls() {
   const root = document.createElement('aside');
   root.className = 'placement-controls';
   root.setAttribute('aria-label', 'Free placement controls');
@@ -59,14 +50,6 @@ export function createPlacementControls(actions: PlacementActions) {
   const remove = required<HTMLButtonElement>('[data-remove]');
   const undo = required<HTMLButtonElement>('[data-undo]');
 
-  fence.addEventListener('click', () => actions.select('fence'));
-  plot.addEventListener('click', () => actions.select('plot'));
-  rotate.addEventListener('click', actions.rotate);
-  confirm.addEventListener('click', actions.confirm);
-  remove.addEventListener('click', actions.remove);
-  undo.addEventListener('click', actions.undo);
-  required<HTMLButtonElement>('[data-cancel]').addEventListener('click', actions.cancel);
-
   function update(state: PlacementViewState) {
     root.classList.toggle('is-active', Boolean(state.kind));
     detail.hidden = !state.kind;
@@ -82,5 +65,5 @@ export function createPlacementControls(actions: PlacementActions) {
     undo.disabled = !state.canUndo;
   }
 
-  return { update, dispose: () => root.remove(), contains: (element: EventTarget | null) => element instanceof Node && root.contains(element) };
+  return { update, dispose: () => root.remove() };
 }
