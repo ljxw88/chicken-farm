@@ -5,10 +5,14 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
+const { createCharacterController } = await vite.ssrLoadModule('/src/character/createCharacterController.ts');
+const { createEngine } = await vite.ssrLoadModule('/src/core/loop/createEngine.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
+const { createRainEffect } = await vite.ssrLoadModule('/src/weather/createRainEffect.ts');
 const { createWeatherSystem } = await vite.ssrLoadModule('/src/weather/createWeatherSystem.ts');
+const { RAIN_LOOK } = await vite.ssrLoadModule('/src/weather/rainSettings.ts');
 const { GROUND_HEIGHT, GROUND_SIZE, VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
@@ -53,6 +57,14 @@ function near(actual, expected, tolerance = 1e-9) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} is not close to ${expected}`);
 }
 
+function streakLength(positions, index) {
+  return Math.hypot(
+    positions.getX(index + 1) - positions.getX(index),
+    positions.getY(index + 1) - positions.getY(index),
+    positions.getZ(index + 1) - positions.getZ(index),
+  );
+}
+
 function lightingSnapshot({ scene, ambient, hemisphere, directional, windows, lantern, character }) {
   return {
     sky: scene.background.toArray(),
@@ -88,7 +100,7 @@ test('clear and rain blend smoothly and reverse without a jump', (t) => {
   weather.setWeather('rain');
   weather.update(0.875);
   near(weather.getWeather().rainAmount, 0.5);
-  near(streaks.material.opacity, 0.175);
+  near(streaks.material.opacity, 0.275);
   near(directional.intensity, 1.8 * 0.85);
   weather.setWeather('clear');
   weather.update(0);
@@ -103,7 +115,7 @@ test('clear and rain blend smoothly and reverse without a jump', (t) => {
   weather.setWeather('rain');
   weather.update(1.75);
   near(weather.getWeather().rainAmount, 1);
-  near(streaks.material.opacity, 0.35);
+  near(streaks.material.opacity, 0.55);
   near(directional.intensity, 1.8 * 0.7);
   weather.setWeather('clear');
   weather.update(1.75);
@@ -295,7 +307,7 @@ test('rain and cloudy crossfade continuously, preserve particles and reverse mid
   assert.equal(splash.visible, true, 'an existing splash should not be discarded on mode change');
   assert.ok(weather.getWeather().rainAmount < 1 && weather.getWeather().rainAmount > 0);
   assert.ok(weather.getWeather().cloudyAmount > 0);
-  near(streaks.material.opacity, 0.35 * weather.getWeather().rainAmount);
+  near(streaks.material.opacity, 0.55 * weather.getWeather().rainAmount);
   const midway = weather.getWeather();
   const midwayLighting = lightingSnapshot(farm);
   weather.setWeather('rain');
@@ -373,16 +385,68 @@ test('disposing cloudy restores current-phase colors and intensity', (t) => {
   assert.deepEqual(lightingSnapshot(farm), clear);
 });
 
-test('rain is sparse, short, unblurred and tilted 15 degrees on screen', (t) => {
+test('rain look keeps the specified field, tint, budget and fall speeds', () => {
+  assert.deepEqual({
+    count: RAIN_LOOK.streakCount,
+    length: [RAIN_LOOK.streakLengthMin, RAIN_LOOK.streakLengthMax],
+    tilt: RAIN_LOOK.streakTiltDegrees,
+    direction: [RAIN_LOOK.streakDirectionX, RAIN_LOOK.streakDirectionZ],
+    field: [RAIN_LOOK.fieldWidth, RAIN_LOOK.fieldWidth, RAIN_LOOK.fieldHeight],
+    color: RAIN_LOOK.color,
+    opacity: RAIN_LOOK.opacity,
+    speed: [RAIN_LOOK.fallSpeedMin, RAIN_LOOK.fallSpeedMax],
+  }, {
+    count: 240, length: [0.4, 0.6], tilt: 15, direction: [0.94, -0.34],
+    field: [19, 19, 8], color: 0xd6e8f2, opacity: 0.55, speed: [4, 5],
+  });
+});
+
+test('rain actually fills both horizontal axes and the height with unchanged fall speeds', (t) => {
+  const scene = new THREE.Scene();
+  const anchor = new THREE.Object3D();
+  scene.add(anchor);
+  const { camera } = createIsometricCamera();
+  let calls = 0;
+  const first = [0, 0.5, 0, 0, 0];
+  const random = () => {
+    const index = calls++;
+    return index < 5 ? first[index] : index < 10 ? 0.9999 : 0.5;
+  };
+  const rain = createRainEffect({ scene, camera, anchor, groundHeight: 0, groundSize: 16, splashExclusions: [], random });
+  t.after(rain.dispose);
+  rain.update(0, 1);
+  const positions = scene.getObjectByName('rain-streaks').geometry.attributes.position;
+  near(positions.getX(0), -9.5, 1e-5);
+  near(positions.getZ(0), -9.5, 1e-5);
+  near(positions.getY(0), 4, 1e-5);
+  near(positions.getX(2), 9.4981, 1e-5);
+  near(positions.getZ(2), 9.4981, 1e-5);
+  near(positions.getY(2), 7.9992, 1e-5);
+  near(streakLength(positions, 0), 0.4, 1e-5);
+  near(streakLength(positions, 2), 0.59998, 1e-5);
+  const tops = [positions.getY(0), positions.getY(2), positions.getY(4)];
+  const center = [positions.getX(4), positions.getZ(4)];
+  rain.update(0.1, 1);
+  near((tops[0] - positions.getY(0)) / 0.1, 4, 1e-5);
+  near((tops[1] - positions.getY(2)) / 0.1, 4.9999, 1e-5);
+  near((tops[2] - positions.getY(4)) / 0.1, 4.5, 1e-5);
+  const dx = positions.getX(4) - center[0];
+  const dz = positions.getZ(4) - center[1];
+  assert.ok(dx > 0 && dz < 0, 'fall moves toward +X and -Z');
+  near(dx / Math.hypot(dx, dz), 0.94 / Math.hypot(0.94, 0.34), 1e-5);
+  near(dz / Math.hypot(dx, dz), -0.34 / Math.hypot(0.94, 0.34), 1e-5);
+});
+
+test('rain is readable, one pixel wide and tilts lower-right toward the specified world direction', (t) => {
   const { scene, camera, character, follow, weather, streaks } = fixture(t);
   weather.setWeather('rain');
   weather.update(1.75);
   assert.equal(streaks.isLineSegments, true);
-  assert.equal(streaks.material.color.getHex(), 0xb8cfda);
-  assert.ok(streaks.material.opacity >= 0.3 && streaks.material.opacity <= 0.4);
+  assert.equal(streaks.material.color.getHex(), 0xd6e8f2);
+  near(streaks.material.opacity, 0.55);
   assert.equal(streaks.material.linewidth, 1);
   const positions = streaks.geometry.attributes.position;
-  assert.ok(positions.count > 0 && positions.count <= 600);
+  assert.equal(positions.count, 480);
   scene.updateMatrixWorld(true);
   camera.updateMatrixWorld();
   for (let i = 0; i < positions.count; i += 2) {
@@ -390,22 +454,86 @@ test('rain is sparse, short, unblurred and tilted 15 degrees on screen', (t) => 
     const bottom = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, i + 1)).project(camera);
     const dx = (bottom.x - top.x) * 1280 / 2;
     const dy = (top.y - bottom.y) * 720 / 2;
-    near(Math.atan2(Math.abs(dx), Math.abs(dy)) * 180 / Math.PI, 15, 0.01);
-    // The wider island framing makes the unchanged world-space streaks smaller on screen.
-    assert.ok(Math.hypot(dx, dy) >= 2.2 && Math.hypot(dx, dy) <= 3.0);
-    assert.ok(positions.getY(i) - positions.getY(i + 1) >= 0.075 - 1e-6);
-    assert.ok(positions.getY(i) - positions.getY(i + 1) <= 0.095 + 1e-6);
+    assert.ok(dx > 0 && dy > 0, 'each streak leans down and right on screen');
+    near(Math.atan2(dx, dy) * 180 / Math.PI, 15, 0.01);
+    assert.ok(Math.hypot(dx, dy) >= 12.6 && Math.hypot(dx, dy) <= 19.2);
+    assert.ok(streakLength(positions, i) >= 0.4 - 1e-6);
+    assert.ok(streakLength(positions, i) <= 0.6 + 1e-6);
+    assert.ok(Math.abs(positions.getX(i)) <= 9.5 && Math.abs(positions.getZ(i)) <= 9.5);
+    assert.ok(positions.getY(i) >= 0 && positions.getY(i) <= 8);
+    const worldX = positions.getX(i + 1) - positions.getX(i);
+    const worldZ = positions.getZ(i + 1) - positions.getZ(i);
+    near(worldX / Math.hypot(worldX, worldZ), 0.94 / Math.hypot(0.94, 0.34), 2e-5);
+    near(worldZ / Math.hypot(worldX, worldZ), -0.34 / Math.hypot(0.94, 0.34), 2e-5);
   }
-  const before = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, 0));
+  const beforeMove = Array.from({ length: positions.count / 2 }, (_, index) =>
+    streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, index * 2)));
+  const before = beforeMove[0];
   character.position.x += 1;
   follow(character.position);
   weather.update(0);
   scene.updateMatrixWorld(true);
+  for (let index = 0; index < beforeMove.length; index++) {
+    const after = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, index * 2));
+    const dx = after.x - beforeMove[index].x;
+    // The field wraps only at its edge; the other drops stay in world space.
+    near(dx, Math.round(dx / 19) * 19, 1e-5);
+    near(after.y, beforeMove[index].y, 1e-5);
+    near(after.z, beforeMove[index].z, 1e-5);
+  }
   const afterMove = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, 0));
   near(before.distanceTo(afterMove), 0, 1e-5);
   weather.update(0.1);
   const afterRain = streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, 0));
   assert.ok(before.distanceTo(afterRain) > 0.1);
+});
+
+test('rain follows engine-controlled movement without dragging world-space streaks', (t) => {
+  function running() {
+    const farm = fixture(t);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE), new THREE.MeshBasicMaterial());
+    const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280, height: 720 }) };
+    let frame;
+    const engine = createEngine({
+      setAnimationLoop: (callback) => { frame = callback; },
+      frameSystems: [(world, move, delta) => controller.system(world, move, Math.min(delta, 0.1))],
+      update(delta) { farm.follow(farm.character.position); farm.weather.update(delta); },
+      render() {},
+    });
+    const controller = createCharacterController({
+      world: engine.world, input: engine.input, character: farm.character, camera: farm.camera, canvas, ground,
+      groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: 0.4,
+    });
+    t.after(() => { engine.stop(); controller.dispose(); ground.geometry.dispose(); ground.material.dispose(); });
+    farm.weather.setWeather('rain');
+    engine.start();
+    return { ...farm, engine, tick: (time) => frame(time) };
+  }
+
+  const moving = running();
+  const stationary = running();
+  for (const farm of [moving, stationary]) { farm.tick(0); farm.tick(1750); }
+  moving.engine.input.keyDown({ code: 'KeyS', target: null });
+  for (let frame = 1; frame <= 8; frame++) {
+    moving.tick(1750 + frame * 100);
+    stationary.tick(1750 + frame * 100);
+    near(moving.streaks.parent.position.x, moving.character.position.x, 1e-8);
+    near(moving.streaks.parent.position.z, moving.character.position.z, 1e-8);
+    const movingPositions = moving.streaks.geometry.attributes.position;
+    const stationaryPositions = stationary.streaks.geometry.attributes.position;
+    for (let i = 0; i < movingPositions.count; i++) {
+      const a = moving.streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(movingPositions, i));
+      const b = stationary.streaks.localToWorld(new THREE.Vector3().fromBufferAttribute(stationaryPositions, i));
+      const dx = a.x - b.x;
+      const dz = a.z - b.z;
+      near(dx, Math.round(dx / 19) * 19, 1e-5);
+      near(dz, Math.round(dz / 19) * 19, 1e-5);
+      near(a.y, b.y, 1e-5);
+    }
+  }
+  assert.ok(Math.hypot(moving.character.position.x, moving.character.position.z) > 1);
+  near(stationary.character.position.x, 0);
+  near(stationary.character.position.z, 0);
 });
 
 test('splash rings are occasional, short-lived and avoid buildings, water and ground edges', (t) => {

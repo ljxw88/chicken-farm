@@ -1,0 +1,138 @@
+EBR-88 — rain readable over grass and roofs
+
+Branch: feat/ebr88-rain-readable
+Original base: 9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4
+Merged main: dcbaf70b8f2c1038afe5c0b70f506ec7de931214 (EBR-74, PR #18)
+Merge commit: d6e60649778766cd17896dbafeaa41a1e39edff3
+Look Dev SIGNED tip: 6c3c03a6c5bfe12ad98de019f7abc757897680c4
+Engine rain-follow test: 55b21463a0154b5ad35465c3e7fc128dbcefc882
+Tested rain implementation: b24e2189b5b06fe766ad2eca5b25f4da4ceee9f4
+Lighting-probe test adjustment: 8854215eea171c4c5f4332a4b6e2cea33b8c4320
+Spec: /home/michael/OpenBot/Shared/ebr88-look-spec.md, Linear EBR-88 comment 2a0aa692.
+The handoff/evidence commit cannot contain its own SHA; use `git rev-parse HEAD` for the tip.
+
+Open / try
+- `npm ci`, then `npm run dev -- --host 127.0.0.1 --port 5173 --strictPort` in this worktree.
+- At 1280x720 open `http://127.0.0.1:5173/?phase=daytime&weather=rain`
+  and `http://127.0.0.1:5173/?phase=night&weather=rain`.
+- Compare the main and candidate full frames and the 4x nearest-neighbour grass
+  and roof crops under `evidence/EBR-88/`. See its README and comparison.json
+  for capture and masking methods. Look Dev SIGNED the 6c3c03a look; merge
+  comparisons against new main and the signed tip are under
+  `evidence/EBR-88/merge-dcbaf70/`.
+
+EBR-74 merge / conflicts
+- No textual conflicts occurred. Git combined EBR-74's moved FarmObstacle type
+  imports with the signed rain implementation; `src/main.ts`, `src/core/` and
+  `src/character/` are unchanged from new main. The entire signed rainSettings
+  file is byte-for-byte identical, including its historical pending-signoff
+  comment; Look Dev has since SIGNED the 6c3c03a look.
+- The engine moves the character before camera/weather updates, and the signed
+  rain field continues to follow that character. A new regression test compares
+  all endpoints while the ECS-controlled character moves. Engineer kept the
+  signed player-following field and did not introduce island-centre clipping.
+
+Merge verification against dcbaf70 and signed 6c3c03a
+- `grep MemAvailable /proc/meminfo`: 47,516,892 kB before work, above 4 GB.
+  The lockfile was unchanged and `npm ls --depth=0` passed; `npm ci` was not
+  needed. Build passed, `npm test` passed 134/134 and `npm run test:browser`
+  passed 33/33 (27 top-level), with test files run serially.
+- At 1280x720, seed 0xeb730001, Chromium 153.0.8010.12 / SwiftShader / DPR 1:
+  versus new main, clear and cloudy each changed 0 pixels. Day rain changed
+  31,407 and night rain 31,442 raw pixels; 0 lie outside the rendered-streak
+  masks, and hiding streaks leaves 0 changed pixels in both frames.
+- Versus the SIGNED tip, day rain and night rain each changed 0 full-frame and
+  streak pixels; streak masks and geometry hashes are identical. The recaptured
+  signed frames match the previously committed signed PNG hashes exactly.
+  An extra real-keyboard walking-rain frame also changed 0 versus signed, with
+  identical geometry and the field centred at the engine character position.
+- A new-main walking-rain frame changed 31,968 raw pixels, all within the
+  streak mask. HUD state matched and browser console warnings/errors were 0.
+- Gate G re-recorded `dcbaf70`: all seven non-rain scenarios changed 0 pixels;
+  the unmodified all-zero checker exits nonzero for the intended 31,407 day-rain
+  pixels, with no state mismatches. The separate streak-mask check above passes.
+  Logs, full frames, diffs and the reproducible three-worktree capture are in
+  `evidence/EBR-88/merge-dcbaf70/`. Capture source is 55b21463a0154b5ad35465c3e7fc128dbcefc882;
+  the later handoff commit adds only documentation and evidence.
+
+Visible-change ledger
+- Rain streak length is 0.40–0.60 world units (full 3-D line length), formerly
+  0.075–0.095 vertical units. They remain unblurred, one low-resolution pixel
+  wide, and use the existing line primitive.
+- The 15-degree screen tilt now leans down-right toward world (+0.94, 0, -0.34),
+  and the moving drops drift in that same world direction.
+- Rain tint is 0xd6e8f2, formerly 0xb8cfda; full opacity is 0.55, formerly
+  0.35. Splash materials share the rain tint, so existing rings are also tinted.
+- The player-following rain field is 19 x 19 x 8, formerly 24 x 24 x 10.
+  One shared width controls both horizontal axes; no separate depth setting was
+  needed. At spawn the 16 x 16 plateau has a 1.5-unit margin on each side.
+  Horizontal density increases by about 1.60x at the same 240-streak budget;
+  impact locations and timing also change as the field and drift change.
+- Engineer decision: no optional void clipping/fade or ring-size retune was
+  added. Existing 0.08–0.18 splash radii, capacity 6, chance, lifetime and
+  roof/pond/stream/deck exclusions remain as before. Rain can still be visible
+  over the void, especially as the field follows the player.
+- Vertical fall speeds remain 4–5 units/s and the transition remains 1.75 seconds.
+  No lights were added; particle budget, clear/cloudy weather, lighting, pixel
+  pass and HUD code are unchanged.
+
+Signed-look historical measurements and conflicts
+- The spec's world direction is not the current contact-shadow direction.
+  Normalized rain is (+0.94038, 0, -0.34014), while main's key-aligned contact
+  shadow is (+0.8, 0, -0.6): a measured 16.98-degree difference in the ground
+  plane. Engineer kept the specified rain vector and did not change lighting.
+- The spec references grass around RGB (70,119,49). Main at pixel (320,360)
+  measures (71,119,50) in clear and (61,105,44) in rain: the existing rain
+  lighting darkens it. Engineer retained the specified tint and lighting.
+- With the actual isometric camera and exact 3-D lengths, projected streak
+  heights are approximately 3.07–4.60 low-resolution pixels before rasterizing,
+  versus the spec's approximate 3–4.5 pixels. The stated lengths are retained.
+- The unchanged 4–5 units/s setting is vertical speed. Including horizontal
+  drift, actual 3-D speed is 4.13–5.17 units/s, versus 4.09–5.12 on main.
+  Engineer retained the existing vertical speeds rather than retuning them.
+- A full browser run sampled sunset rain at shade/lit 0.7375 against the 0.75
+  lighting threshold. A same-frame native-resolution diagnostic found 15 of
+  120 unmasked frames below 0.75, worst 0.7213; with rain weather still active
+  and particles hidden, every paired frame measured 0.77236. Engineer kept the
+  prescribed rain and all lighting thresholds, adding an opt-in, test-only rain
+  mask to the lighting probe. Actual rain remains in the visual evidence; the
+  unmasked test failure and diagnostic are retained for Look Dev review.
+- HUD DOM, layout, styling and isolated pixels are identical. Its existing
+  translucent backdrop reflects rain behind it, so the raw rain frames have
+  1,291 changed pixels inside HUD bounds by day and 1,326 by night. Engineer
+  left the HUD untouched; exact composited HUD pixels cannot remain identical
+  while those background rain pixels change.
+
+Rebase order
+- EBR-88 is separate from the EBR-75 weather port. If EBR-75 lands first,
+  port these values and the world-direction projection into the moved RAIN_LOOK
+  and rain system; retain the weather tests and rerun the graphics comparison.
+
+Original 9e8c8c6 verification (retained)
+- Before installation, `grep MemAvailable /proc/meminfo` reported 58,574,640 kB
+  available, above the 4 GB pause threshold. `npm ci` completed in this worktree;
+  node_modules is ignored and is not part of the commit.
+- `npm run build`: passed (the existing >500 kB chunk advisory remains).
+  `npm test`: 120 passed, 0 failed. `npm run test:browser`: 32 passed, 0 failed
+  (26 top-level tests); test files were run serially.
+- `npm run parity` against the supplied 9e8c8c6 baseline: spawn, stairs-pad,
+  placement-ghost, day, night and both building frames each 0 changed pixels;
+  daytime rain 31,407. The unmodified checker exits nonzero because it requires
+  rain to be identical too. It reported no pose/environment mismatches.
+- Independent exact-RGBA capture against a clean detached main worktree: clear
+  0, cloudy 0; day rain 31,407 raw / 0 outside the streak mask, night rain
+  31,442 raw / 0 outside the streak mask. Hiding streaks or the complete rain
+  effect yields 0 changed pixels in both rain frames. No splashes happen to be
+  visible in these seeded frames. HUD-only comparisons are 0, with identical
+  DOM and layout. Console warnings/errors: 0.
+- Camera follow: both endpoints of all 240 streaks remain world-stable across
+  20 zero-time anchor moves except normal field-edge wraps; maximum candidate
+  error is 0.00000138 world units. A one-low-res-pixel camera shift has 0
+  changed pixels in the 1,276x720 overlap after translating the rain-only
+  reference by four CSS pixels.
+- Full 1280x720 day/night rain frames, 4x nearest-neighbour grass/roof crops,
+  HUD-only and rain masks, logs and reproducible capture scripts are under
+  `evidence/EBR-88/`. Captures used Chromium 153.0.8010.12, SwiftShader, DPR 1,
+  seed 0xeb730001 and the standard 320x180 pixel pass.
+- The above evidence predates Look Dev SIGNED. Physical devices and hardware
+  GPUs remain unverified; see `evidence/EBR-88/README.md` for limitations.
