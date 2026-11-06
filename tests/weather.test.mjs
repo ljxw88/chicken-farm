@@ -158,8 +158,10 @@ test('rain tracks all current phases without accumulating or changing practical 
     assert.equal(scene.background.getHex(), sky);
     assert.equal(directional.color.getHex(), color);
     assert.equal(ambient.color.getHex(), ambientColor);
-    assert.deepEqual([scene.fog.color.getHex(), scene.fog.density, ambient.intensity,
-      hemisphere.color.getHex(), hemisphere.groundColor.getHex(), hemisphere.intensity], environment);
+    assert.deepEqual([scene.fog.color.getHex(), scene.fog.density, hemisphere.color.getHex(), hemisphere.groundColor.getHex()],
+      [environment[0], environment[1], environment[3], environment[4]]);
+    near(ambient.intensity, environment[2] * (phase === 'night' ? 0.8 : 1));
+    near(hemisphere.intensity, environment[5] * (phase === 'night' ? 0.8 : 1));
     for (const pane of windows) {
       const light = pane.children.find((child) => child.isPointLight);
       assert.equal(light.color.getHex(), 0xffcc88);
@@ -203,10 +205,11 @@ test('cloudy softens and cools every phase while preserving the environment and 
     for (const key of ['ambient', 'hemisphereSky', 'hemisphereGround']) {
       cloudy[key].forEach((value, i) => near(value, clear[key][i] * [0.86, 0.96, 1.08][i]));
     }
-    for (const key of ['sky', 'fog', 'fogDensity', 'ambientIntensity', 'hemisphereIntensity',
-      'directional', 'windows', 'lantern']) {
+    for (const key of ['sky', 'fog', 'fogDensity', 'directional', 'windows', 'lantern']) {
       assert.deepEqual(cloudy[key], clear[key], `${key} changed in ${phase}`);
     }
+    near(cloudy.ambientIntensity, clear.ambientIntensity * (phase === 'night' ? 0.82 : 1));
+    near(cloudy.hemisphereIntensity, clear.hemisphereIntensity * (phase === 'night' ? 0.82 : 1));
     assert.equal(streaks.visible, false);
     assert.ok(splashes.every((splash) => !splash.visible));
     for (let i = 0; i < 20; i++) weather.update(1 / 60);
@@ -214,6 +217,18 @@ test('cloudy softens and cools every phase while preserving the environment and 
     weather.setWeather('clear');
     weather.update(1.75);
     assert.deepEqual(lightingSnapshot(farm), clear, `clear did not exactly restore ${phase}`);
+  }
+});
+
+test('the sun or moon remains stronger than the flat fill in every phase and weather', (t) => {
+  const { cycle, weather, ambient, hemisphere, directional } = fixture(t);
+  for (const mode of ['clear', 'cloudy', 'rain']) {
+    weather.setWeather(mode);
+    weather.update(1.75);
+    for (const phase of ['morning', 'daytime', 'sunset', 'night']) {
+      cycle.setDayNightPhase(phase);
+      assert.ok(ambient.intensity + hemisphere.intensity < directional.intensity, `${phase}/${mode}: fill overpowered key`);
+    }
   }
 });
 

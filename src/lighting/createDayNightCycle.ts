@@ -50,6 +50,9 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
   let progress = 0;
   let directionalMultiplier = 1;
   let directionalBaseIntensity: number = morning.directionalIntensity;
+  let ambientBaseIntensity: number = morning.ambientIntensity;
+  let hemisphereBaseIntensity: number = morning.hemisphereIntensity;
+  let nightAmount: number = morning.nightLights;
   let shadowOffset: number = morning.shadowOffset;
   let shadowOpacity: number = morning.shadowOpacity;
   let rainAmount = 0;
@@ -63,6 +66,14 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     ambient.color.copy(ambientBaseColor).multiply(ambientHemisphereColorMultiplier);
     hemisphere.color.copy(hemisphereSkyBaseColor).multiply(ambientHemisphereColorMultiplier);
     hemisphere.groundColor.copy(hemisphereGroundBaseColor).multiply(ambientHemisphereColorMultiplier);
+  }
+
+  function applyFillIntensities() {
+    // At night the weather also softens the fill, so the dimmed moon remains
+    // the key in rain/cloud rather than an omnidirectional front light.
+    const scale = 1 - nightAmount * (0.2 * rainAmount + 0.18 * cloudyAmount);
+    ambient.intensity = ambientBaseIntensity * scale;
+    hemisphere.intensity = hemisphereBaseIntensity * scale;
   }
 
   function updateCharacterShadow() {
@@ -128,6 +139,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     }
     rainAmount = rain;
     cloudyAmount = cloudy;
+    applyFillIntensities();
     updateCharacterShadow();
   }
 
@@ -145,17 +157,19 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);
     ambientBaseColor.copy(fromColors.ambient).lerp(toColors.ambient, blend);
-    ambient.intensity = lerp(from.ambientIntensity, to.ambientIntensity, blend);
+    ambientBaseIntensity = lerp(from.ambientIntensity, to.ambientIntensity, blend);
     hemisphereSkyBaseColor.copy(fromColors.hemisphereSky).lerp(toColors.hemisphereSky, blend);
     hemisphereGroundBaseColor.copy(fromColors.hemisphereGround).lerp(toColors.hemisphereGround, blend);
     applyAmbientHemisphereColors();
-    hemisphere.intensity = lerp(from.hemisphereIntensity, to.hemisphereIntensity, blend);
+    hemisphereBaseIntensity = lerp(from.hemisphereIntensity, to.hemisphereIntensity, blend);
     directional.color.copy(fromColors.directional).lerp(toColors.directional, blend);
     directionalBaseIntensity = lerp(from.directionalIntensity, to.directionalIntensity, blend);
     directional.intensity = directionalBaseIntensity * directionalMultiplier;
     shadowOffset = lerp(from.shadowOffset, to.shadowOffset, blend);
     shadowOpacity = lerp(from.shadowOpacity, to.shadowOpacity, blend);
-    practicalLights.setNightAmount(lerp(from.nightLights, to.nightLights, blend));
+    nightAmount = lerp(from.nightLights, to.nightLights, blend);
+    applyFillIntensities();
+    practicalLights.setNightAmount(nightAmount);
 
     // All phases use the same upper-left azimuth. Only the elevation changes:
     // low morning/sunset sun, higher daytime sun, and a cool moon at night.
