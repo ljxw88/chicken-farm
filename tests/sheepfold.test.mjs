@@ -27,7 +27,12 @@ test('two distinct low-poly sheep have the approved palette, proportions and gro
   const layouts = [];
   for (const variant of [0, 1]) {
     const { group } = createSheep(variant, 0);
+    assert.ok(Math.abs(group.rotation.y) <= Math.PI / 6, 'the sheep must face within 30 degrees of +Z');
+    // Measure the asset in its own +Z-forward coordinate system.
+    group.rotation.y = 0;
     group.updateMatrixWorld(true);
+    assert.equal(descendants(group, (object) => object.isLight).length, 0);
+    assert.ok(descendants(group, (object) => object.isMesh).every((mesh) => mesh.material.emissive.getHex() === 0));
     const wool = descendants(group, (mesh) => mesh.name.includes('-wool-'));
     assert.equal(wool.length, 3);
     assert.deepEqual(new Set(wool.map((mesh) => mesh.material.color.getHex())), new Set(Object.values(SHEEP_WOOL)));
@@ -36,17 +41,18 @@ test('two distinct low-poly sheep have the approved palette, proportions and gro
     const woolBounds = new THREE.Box3();
     for (const mesh of wool) woolBounds.union(new THREE.Box3().setFromObject(mesh));
     const woolSize = woolBounds.getSize(new THREE.Vector3());
-    assert.ok(woolSize.x >= 0.5 && woolSize.x <= 0.65, `wool width ${woolSize.x}`);
-    assert.ok(woolSize.y >= 0.5 && woolSize.y <= 0.65, `wool height ${woolSize.y}`);
-    assert.ok(woolSize.z >= 0.85 && woolSize.z <= 1.0, `wool length ${woolSize.z}`);
+    assert.ok(woolSize.x >= 0.55 - 1e-6 && woolSize.x <= 0.6 + 1e-6, `wool width ${woolSize.x}`);
+    assert.ok(woolSize.y >= 0.5 - 1e-6 && woolSize.y <= 0.55 + 1e-6, `wool height ${woolSize.y}`);
+    assert.ok(woolSize.z >= 0.85 - 1e-6 && woolSize.z <= 0.9 + 1e-6, `wool length ${woolSize.z}`);
     layouts.push(wool.map((mesh) => [mesh.position.toArray(), mesh.scale.toArray()]));
 
     const legs = descendants(group, (mesh) => mesh.name.endsWith('-leg'));
     assert.equal(legs.length, 4);
     for (const leg of legs) {
-      assert.deepEqual([leg.geometry.parameters.width, leg.geometry.parameters.height, leg.geometry.parameters.depth], [0.12, 0.2, 0.12]);
+      assert.deepEqual([leg.geometry.parameters.width, leg.geometry.parameters.height, leg.geometry.parameters.depth], [0.24, 0.32, 0.24]);
       assert.equal(leg.material.color.getHex(), 0x6b4a2e);
       near(new THREE.Box3().setFromObject(leg).min.y, 0);
+      assert.ok(woolBounds.min.y >= 0.2 - 1e-6, `less than 0.2 of the legs is exposed: ${woolBounds.min.y}`);
       const ray = new THREE.Raycaster();
       const intersections = [];
       for (const dx of [-0.04, 0, 0.04]) for (const dz of [-0.04, 0, 0.04]) {
@@ -54,12 +60,22 @@ test('two distinct low-poly sheep have the approved palette, proportions and gro
         const hit = ray.intersectObjects(wool)[0];
         if (hit) intersections.push(hit.point.y);
       }
-      assert.ok(Math.min(...intersections) <= 0.2 + 1e-6, `leg is detached from wool: ${intersections}`);
+      assert.ok(Math.min(...intersections) <= 0.32 + 1e-6, `leg is detached from wool: ${intersections}`);
     }
     const face = group.getObjectByName(`sheep-${variant + 1}-face`);
-    assert.deepEqual([face.geometry.parameters.width, face.geometry.parameters.height, face.geometry.parameters.depth], [0.3, 0.3, 0.32]);
+    assert.deepEqual([face.geometry.parameters.width, face.geometry.parameters.height, face.geometry.parameters.depth], [0.36, 0.32, 0.36]);
     assert.equal(face.material.color.getHex(), 0x6b4a2e);
     assert.ok(face.getWorldPosition(new THREE.Vector3()).z > 0.4, '+Z is the face/front');
+    const pivot = group.getObjectByName(`sheep-${variant + 1}-head-pivot`);
+    for (let degrees = -12; degrees <= 12; degrees++) {
+      const angle = THREE.MathUtils.degToRad(degrees);
+      pivot.rotation.x = angle;
+      group.updateMatrixWorld(true);
+      const protrusion = new THREE.Box3().setFromObject(face).max.z - woolBounds.max.z;
+      assert.ok(protrusion >= 0.25 - 1e-6, `face protrusion at ${angle}: ${protrusion}`);
+    }
+    pivot.rotation.x = 0;
+    group.updateMatrixWorld(true);
     const ears = descendants(group, (mesh) => mesh.name.endsWith('-ear'));
     assert.equal(ears.length, 2);
     assert.ok(ears.every((ear) => ear.geometry.parameters.width >= 0.1 && ear.geometry.parameters.height >= 0.1 &&
@@ -73,7 +89,7 @@ test('two distinct low-poly sheep have the approved palette, proportions and gro
     assert.ok(box.min.y >= -0.01 && box.max.y >= 0.75 && box.max.y <= 0.82, `sheep height ${box.min.y}..${box.max.y}`);
     if (variant === 1) {
       assert.equal(face.material.vertexColors, true);
-      assert.ok(face.geometry.getAttribute('color').getX(0) < 1, 'second head must actually be darker');
+      near(face.geometry.getAttribute('color').getX(0), 0.86);
     }
   }
   assert.notDeepEqual(layouts[0], layouts[1]);
@@ -170,6 +186,13 @@ test('signed fence segments, shelter and sheep fit with the required surrounding
     const sheep = fold.obstacles.find((obstacle) => obstacle.name === `sheep-${index}`);
     assert.equal(sheep.kind, 'circle');
     assert.equal(sheep.radius, 0.4);
+    near(sheep.x, index === 1 ? -6.1 : -3.3);
+    near(sheep.z, 4.35);
+    const visual = new THREE.Box3().setFromObject(scene.getObjectByName(`sheep-${index}`));
+    const visualFootprint = { minX: visual.min.x, maxX: visual.max.x, minZ: visual.min.z, maxZ: visual.max.z };
+    for (const obstacle of [...fences, shelter]) {
+      assert.ok(distanceFromBox(visualFootprint, obstacle) > 0, `sheep ${index} overlaps ${obstacle.name}`);
+    }
   }
 });
 

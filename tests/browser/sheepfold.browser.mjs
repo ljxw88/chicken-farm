@@ -29,7 +29,7 @@ after(async () => {
   await server?.close();
 });
 
-async function open(context, seed = 123) {
+async function open(context, seed = 123, phase = 'daytime') {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -61,7 +61,7 @@ async function open(context, seed = 123) {
     await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr70RainRandom,')}
 window.__ebr70 = { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather };\n` });
   });
-  await page.goto(`${url}/?phase=daytime&weather=clear&seed=${seed}`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/?phase=${phase}&weather=clear&seed=${seed}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr70)));
   await page.evaluate(() => window.__ebr70Step(0));
   return { page, errors };
@@ -178,6 +178,164 @@ test('visual seed reproduces both independent nod phases in the running app', { 
   assert.deepEqual(first, await angles(123));
   assert.notDeepEqual(first, await angles(124));
   assert.notEqual(first[0], first[1]);
+});
+
+test('each sheep has separately readable wool, face and legs at the actual game pixel scale', { timeout: 120000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  t.after(() => context.close());
+  const proof = { viewport: [1280, 720], buffer: [320, 180], seed: 123, phases: {} };
+  for (const phase of ['daytime', 'sunset', 'night']) {
+    const { page, errors } = await open(context, 123, phase);
+    const samples = [];
+    for (const time of [0, 1000, 2000, 3000]) {
+      if (time) await page.evaluate((frameTime) => window.__ebr70Step(frameTime), time);
+      const measurement = await page.evaluate(() => {
+        const { scene, renderer, composer } = window.__ebr70;
+        const canvas = document.createElement('canvas');
+        canvas.width = renderer.domElement.width;
+        canvas.height = renderer.domElement.height;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        const width = canvas.width;
+        const height = canvas.height;
+        if (width !== 320 || height !== 180) throw new Error(`Wrong pixel buffer: ${width}x${height}`);
+        function pixels() {
+          composer.render(0);
+          context.clearRect(0, 0, width, height);
+          context.drawImage(renderer.domElement, 0, 0);
+          return context.getImageData(0, 0, width, height).data;
+        }
+        const normal = pixels();
+        const results = [];
+        for (const index of [1, 2]) {
+          const animal = scene.getObjectByName(`sheep-${index}`);
+          const wool = animal.children.filter((mesh) => mesh.name.includes('-wool-'));
+          const face = animal.getObjectByName(`sheep-${index}-face`);
+          const legs = animal.children.filter((mesh) => mesh.name.endsWith('-leg'));
+          if (wool.length !== 3 || legs.length !== 4 || !face) throw new Error(`Incomplete sheep ${index}`);
+          function measure(objects) {
+            objects.forEach((object) => { object.visible = false; });
+            const without = pixels();
+            objects.forEach((object) => { object.visible = true; });
+            const mask = new Uint8Array(width * height);
+            let count = 0; let coolPixels = 0; let minX = width; let minY = height; let maxX = -1; let maxY = -1;
+            const rgb = [[], [], []];
+            for (let p = 0; p < mask.length; p++) {
+              const i = p * 4;
+              const change = Math.max(Math.abs(normal[i] - without[i]), Math.abs(normal[i + 1] - without[i + 1]),
+                Math.abs(normal[i + 2] - without[i + 2]));
+              if (change < 3) continue;
+              mask[p] = 1;
+              count++;
+              if (normal[i + 2] > normal[i] + 2) coolPixels++;
+              const x = p % width;
+              const y = Math.floor(p / width);
+              minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+              minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+              for (let channel = 0; channel < 3; channel++) rgb[channel].push(normal[i + channel]);
+            }
+            let maxRun = 0;
+            for (let y = 0; y < height; y++) {
+              let run = 0;
+              for (let x = 0; x < width; x++) {
+                run = mask[y * width + x] ? run + 1 : 0;
+                maxRun = Math.max(maxRun, run);
+              }
+            }
+            const median = rgb.map((channel) => channel.length
+              ? channel.sort((a, b) => a - b)[Math.floor(channel.length / 2)] : null);
+            return { count, coolPixels, width: count ? maxX - minX + 1 : 0, height: count ? maxY - minY + 1 : 0,
+              maxRun, bounds: count ? [minX, minY, maxX, maxY] : null, median, mask };
+          }
+          const body = measure(wool);
+          const head = measure([face]);
+          const allLegs = measure(legs);
+          const separateLegs = legs.map((leg) => measure([leg]));
+          const exclusive = (part, other) => part.mask.reduce((count, present, i) => count + Number(present && !other.mask[i]), 0);
+          head.distinctPixels = exclusive(head, allLegs);
+          allLegs.distinctPixels = exclusive(allLegs, head);
+          const partCanvas = document.createElement('canvas');
+          partCanvas.width = width;
+          partCanvas.height = height;
+          const partContext = partCanvas.getContext('2d');
+          const partImage = partContext.createImageData(width, height);
+          for (let p = 0; p < width * height; p++) {
+            const i = p * 4;
+            // White = wool, red = brown face, cyan = brown legs.
+            if (body.mask[p]) partImage.data.set([255, 255, 255], i);
+            if (head.mask[p]) partImage.data.set([255, 0, 0], i);
+            if (allLegs.mask[p]) partImage.data.set([0, 255, 255], i);
+            partImage.data[i + 3] = 255;
+          }
+          partContext.putImageData(partImage, 0, 0);
+          const strip = ({ mask, ...summary }) => summary;
+          results.push({ index, yaw: animal.rotation.y, body: strip(body), head: strip(head), legs: strip(allLegs),
+            separateLegs: separateLegs.map(strip), partMask: partCanvas.toDataURL('image/png').split(',')[1] });
+        }
+        composer.render(0);
+        return results;
+      });
+      if (time === 0 && evidence) {
+        const cdp = await context.newCDPSession(page);
+        const shot = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
+        const png = Buffer.from(shot.data, 'base64');
+        await writeFile(join(evidence, `visibility-${phase}-full.png`), png);
+        await cdp.detach();
+        for (const animal of measurement) {
+          await writeFile(join(evidence, `visibility-${phase}-sheep-${animal.index}-parts.png`), Buffer.from(animal.partMask, 'base64'));
+          const rectangles = [animal.body.bounds, animal.head.bounds, animal.legs.bounds].filter(Boolean);
+          const left = Math.max(0, Math.min(...rectangles.map((rect) => rect[0])) - 3);
+          const top = Math.max(0, Math.min(...rectangles.map((rect) => rect[1])) - 3);
+          const right = Math.min(319, Math.max(...rectangles.map((rect) => rect[2])) + 3);
+          const bottom = Math.min(179, Math.max(...rectangles.map((rect) => rect[3])) + 3);
+          const rect = [left * 4, top * 4, (right - left + 1) * 4, (bottom - top + 1) * 4];
+          animal.crop = { sourceCssPixels: rect, scale: 4 };
+          const cropped = await page.evaluate(async ({ base64, rect }) => {
+            const image = new Image();
+            image.src = `data:image/png;base64,${base64}`;
+            await image.decode();
+            const canvas = document.createElement('canvas');
+            canvas.width = rect[2] * 4;
+            canvas.height = rect[3] * 4;
+            const context = canvas.getContext('2d');
+            context.imageSmoothingEnabled = false;
+            context.drawImage(image, ...rect, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/png').split(',')[1];
+          }, { base64: png.toString('base64'), rect });
+          await writeFile(join(evidence, `visibility-${phase}-sheep-${animal.index}-4x.png`), Buffer.from(cropped, 'base64'));
+        }
+      }
+      const animals = measurement.map(({ partMask, ...summary }) => summary);
+      console.log('SHEEP_VISIBILITY', phase, time, JSON.stringify(animals.map(({ index, body, head, legs, separateLegs }) => ({
+        index, body: [body.count, body.width, body.height, body.median], head: [head.count, head.maxRun],
+        legs: [legs.count, legs.maxRun], individualLegRuns: separateLegs.map((leg) => leg.maxRun),
+      }))));
+      for (const animal of animals) {
+        const label = `${phase} t=${time} sheep ${animal.index}`;
+        assert.ok(Math.abs(animal.yaw) <= Math.PI / 6 + 1e-6, `${label}: faces away from +Z`);
+        assert.ok(animal.body.maxRun >= 3, `${label}: wool not visible: ${JSON.stringify(animal.body)}`);
+        assert.ok(animal.body.width > animal.body.height, `${label}: wool does not read as elongated: ${JSON.stringify(animal.body)}`);
+        assert.ok(animal.head.maxRun >= 2, `${label}: head narrower than two pixels: ${JSON.stringify(animal.head)}`);
+        assert.ok(animal.legs.maxRun >= 2, `${label}: legs narrower than two pixels: ${JSON.stringify(animal.legs)}`);
+        assert.ok(animal.separateLegs.filter((leg) => leg.maxRun >= 2).length >= 2,
+          `${label}: fewer than two individual legs are two pixels wide: ${JSON.stringify(animal.separateLegs)}`);
+        assert.ok(animal.head.distinctPixels >= 2 && animal.legs.distinctPixels >= 2,
+          `${label}: head and legs are not separately visible`);
+        const luminance = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        assert.ok(luminance(animal.head.median) < luminance(animal.body.median) * 0.8,
+          `${label}: brown head is not distinct from wool`);
+        if (phase === 'night') assert.ok(animal.body.median[0] >= animal.body.median[1] + 2 &&
+          animal.body.median[0] >= animal.body.median[2] + 6,
+          `${label}: night wool is not warm: ${animal.body.median}`);
+        if (phase === 'night') assert.ok(animal.body.coolPixels <= Math.max(1, Math.floor(animal.body.count * 0.1)),
+          `${label}: too many blue-dominant wool pixels: ${animal.body.coolPixels}/${animal.body.count}`);
+      }
+      samples.push({ time, animals });
+    }
+    assert.deepEqual(errors, []);
+    proof.phases[phase] = { samples, errors };
+    await page.close();
+  }
+  if (evidence) await writeFile(join(evidence, 'visibility.json'), `${JSON.stringify(proof, null, 2)}\n`);
 });
 
 test('rendered wool remains below all-channel 250 across the day/night and weather matrix', { timeout: 120000 }, async (t) => {

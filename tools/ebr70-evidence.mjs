@@ -8,12 +8,16 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
 
-// Compare the live candidate with an archive of the exact signed main. There
-// is no checkout/worktree or mutation of another branch. A second candidate
-// render with only the new group hidden yields the declared per-frame mask.
-const baseSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+// Compare archived main, or the accepted pen at 8ce0cbe, without creating a
+// worktree. Sheep-only comparisons hide the animals in both renders, preserving
+// their existing shadows and every accepted pen/shelter pixel.
+const mainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+const acceptedPenSha = '8ce0cbe19d7c63e5c2608b28725ccb8e9b4700aa';
+const sheepDelta = process.env.EBR70_SHEEP_DELTA === '1';
+const baseSha = sheepDelta ? acceptedPenSha : mainSha;
 const candidateUrl = (process.env.EBR70_URL || 'http://100.88.150.21:5213').replace(/\/$/, '');
 const output = resolve(process.env.EBR70_GATE_DIR || 'evidence/EBR-70');
+const maskDirectory = resolve(process.env.EBR70_MASK_DIR || join(output, 'mask'));
 const viewport = { width: 1280, height: 720 };
 const visualSeed = 123;
 const rainSeed = 0xeb730001;
@@ -62,7 +66,8 @@ try {
   browser = await chromium.launch({
     headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'],
   });
-  for (const directory of ['baseline', 'candidate', 'diff', 'mask', 'crops']) await mkdir(join(output, directory), { recursive: true });
+  for (const directory of ['baseline', 'candidate', 'diff', 'crops']) await mkdir(join(output, directory), { recursive: true });
+  await mkdir(maskDirectory, { recursive: true });
   const comparePage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
   const results = {};
   let failures = 0;
@@ -73,7 +78,7 @@ try {
     const name = scenario.name;
     await writeFile(join(output, 'baseline', `${name}.png`), baseline.png);
     await writeFile(join(output, 'candidate', `${name}.png`), candidate.png);
-    const diff = await comparePage.evaluate(async ({ baseline, candidate, hiddenFold, hidden, hudRects }) => {
+    const diff = await comparePage.evaluate(async ({ baseline, baselineHidden, candidate, hiddenFold, hidden, hudRects, sheepDelta }) => {
       async function pixels(data) {
         const image = new Image();
         image.src = `data:image/png;base64,${data}`;
@@ -85,8 +90,8 @@ try {
         ctx.drawImage(image, 0, 0);
         return ctx.getImageData(0, 0, canvas.width, canvas.height);
       }
-      const [original, visible, withoutFold, withoutFeature] = await Promise.all([
-        pixels(baseline), pixels(candidate), pixels(hiddenFold), pixels(hidden),
+      const [original, originalHidden, visible, withoutFold, withoutFeature] = await Promise.all([
+        pixels(baseline), pixels(baselineHidden), pixels(candidate), pixels(hiddenFold), pixels(hidden),
       ]);
       if (original.width !== 1280 || original.height !== 720 || visible.width !== 1280 || visible.height !== 720) {
         throw new Error('Unexpected frame dimensions');
@@ -112,11 +117,12 @@ try {
       let minX = 1280; let minY = 720; let maxX = -1; let maxY = -1;
       const differs = (a, b, i) => a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3];
       for (let i = 0; i < original.data.length; i += 4) {
-        const inFold = differs(visible.data, withoutFold.data, i);
+        const inFold = differs(visible.data, withoutFold.data, i) ||
+          (sheepDelta && differs(original.data, originalHidden.data, i));
         const inFeedback = differs(withoutFold.data, withoutFeature.data, i);
         const inMask = inFold || inFeedback;
         const isChanged = differs(original.data, visible.data, i);
-        if (differs(original.data, withoutFeature.data, i)) hiddenMismatch++;
+        if (differs(sheepDelta ? originalHidden.data : original.data, withoutFeature.data, i)) hiddenMismatch++;
         if (inFold) foldPixels++;
         if (inFeedback) {
           feedbackPixels++;
@@ -152,11 +158,12 @@ try {
         bounds: masked ? [minX, minY, maxX, maxY] : null,
         mask: maskCanvas.toDataURL('image/png').split(',')[1], diff: diffCanvas.toDataURL('image/png').split(',')[1],
         feedback: feedbackCanvas.toDataURL('image/png').split(',')[1] };
-    }, { baseline: baseline.png.toString('base64'), candidate: candidate.png.toString('base64'),
-      hiddenFold: candidate.hiddenFold.toString('base64'), hidden: candidate.hidden.toString('base64'), hudRects: candidate.hudRects });
-    await writeFile(join(output, 'mask', `${name}.png`), Buffer.from(diff.mask, 'base64'));
+    }, { baseline: baseline.png.toString('base64'), baselineHidden: (baseline.hiddenFold || baseline.png).toString('base64'),
+      candidate: candidate.png.toString('base64'), hiddenFold: candidate.hiddenFold.toString('base64'),
+      hidden: candidate.hidden.toString('base64'), hudRects: candidate.hudRects, sheepDelta });
+    await writeFile(join(maskDirectory, `${name}.png`), Buffer.from(diff.mask, 'base64'));
     await writeFile(join(output, 'diff', `${name}.png`), Buffer.from(diff.diff, 'base64'));
-    if (diff.feedbackPixels) await writeFile(join(output, 'mask', `${name}-feedback.png`), Buffer.from(diff.feedback, 'base64'));
+    if (diff.feedbackPixels) await writeFile(join(maskDirectory, `${name}-feedback.png`), Buffer.from(diff.feedback, 'base64'));
     const { mask, diff: diffPng, feedback, ...counts } = diff;
     void mask; void diffPng; void feedback;
     const stateMatches = isDeepStrictEqual(baseline.state, candidate.state);
@@ -177,7 +184,8 @@ try {
   const sourceStatus = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all', '--', 'src', 'index.html',
     'package.json', 'package-lock.json', 'tests', 'tools/ebr70-evidence.mjs', 'tools/character-parity.mjs',
     'tools/lighting-probe.mjs'], { encoding: 'utf8' }).trim();
-  const report = { baseSha, sourceSha, sourceStatus, candidateUrl, chromium: browser.version(), viewport,
+  const report = { baseSha, scope: sheepDelta ? 'sheep-only' : 'new-fold-and-placement', maskDirectory,
+    sourceSha, sourceStatus, candidateUrl, chromium: browser.version(), viewport,
     deviceScaleFactor: 1, visualSeed, rainSeed, scenarios: selected.map(({ name }) => name),
     complete: selected.length === scenarios.length, results, failures };
   await writeFile(join(output, 'gate-g.json'), `${JSON.stringify(report, null, 2)}\n`);
@@ -243,7 +251,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
       // this clear tile exercises the same valid-ghost behavior on both builds.
       await page.mouse.move(449, scenario.setup === 'placement' ? 340 : 381);
       assert.match(await page.locator('.placement-status').textContent(),
-        scenario.setup === 'placement-rejected' && candidate ? /Blocked by a farm object/ : /Ready to place/);
+        scenario.setup === 'placement-rejected' && (candidate || sheepDelta) ? /Blocked by a farm object/ : /Ready to place/);
       await page.evaluate(() => window.__ebr70Step(100));
     } else if (scenario.setup === 'walk') {
       await page.keyboard.down('s');
@@ -301,8 +309,8 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
     let geometry;
     let hidden;
     let hiddenFold;
-    if (candidate) {
-      if (scenario.setup === 'pen') {
+    if (candidate || sheepDelta) {
+      if (candidate && scenario.setup === 'pen') {
         const cropResult = await page.evaluate(async (png) => {
           const THREE = await import('/node_modules/three/build/three.module.js');
           const { scene, camera } = window.__ebr70Gate;
@@ -366,12 +374,22 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
           const sheep = [1, 2].map((index) => {
             const animal = scene.getObjectByName(`sheep-${index}`);
             const lobes = [1, 2, 3].map((lobe) => scene.getObjectByName(`sheep-${index}-wool-${lobe}`));
-            const body = lobes.reduce((box, lobe) => box.union(new THREE.Box3().setFromObject(lobe)), new THREE.Box3());
+            const inverse = animal.matrixWorld.clone().invert();
+            const localBounds = (mesh) => {
+              mesh.geometry.computeBoundingBox();
+              return mesh.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld));
+            };
+            const body = lobes.reduce((box, lobe) => box.union(localBounds(lobe)), new THREE.Box3());
+            const bodyWorld = lobes.reduce((box, lobe) => box.union(new THREE.Box3().setFromObject(lobe)), new THREE.Box3());
             const entire = new THREE.Box3().setFromObject(animal);
             const shadow = scene.getObjectByName(`sheep-${index}-shadow`);
             const delta = shadow.getWorldPosition(new THREE.Vector3()).sub(animal.getWorldPosition(new THREE.Vector3()));
             const face = scene.getObjectByName(`sheep-${index}-face`);
+            const leg = animal.children.find((child) => child.name.endsWith('-leg'));
             return { total: size(entire), woolBody: size(body), baseY: entire.min.y - 2.4,
+              woolBodyWorldAabb: size(bodyWorld), yawDegrees: THREE.MathUtils.radToDeg(animal.rotation.y),
+              headProtrusion: localBounds(face).max.z - body.max.z, exposedLegHeight: body.min.y,
+              legSize: [leg.geometry.parameters.width, leg.geometry.parameters.height, leg.geometry.parameters.depth],
               wool: lobes.map((lobe) => lobe.material.color.getHexString()),
               face: face.material.color.getHexString(), faceVertexMultiplier: face.geometry.getAttribute('color')?.getX(0) ?? 1,
               shadowOffsetXZ: [delta.x, delta.z], shadowColor: shadow.material.color.getHexString() };
@@ -385,16 +403,22 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
               roofSize: size(roof), top: roof.max.y - 2.4 }, sheep };
         });
       }
-      await page.evaluate(() => {
+      await page.evaluate((sheepDelta) => {
         const { scene, composer } = window.__ebr70Gate;
         const fold = scene.getObjectByName('farm-sheepfold');
         if (!fold) throw new Error('Candidate is missing the sheepfold');
-        fold.visible = false;
+        if (sheepDelta) {
+          for (const index of [1, 2]) {
+            const sheep = scene.getObjectByName(`sheep-${index}`);
+            if (!sheep) throw new Error(`Missing sheep ${index}`);
+            sheep.visible = false;
+          }
+        } else fold.visible = false;
         composer.render(0);
-      });
+      }, sheepDelta);
       hiddenFold = await screenshot();
       hidden = hiddenFold;
-      if (scenario.setup === 'placement-rejected') {
+      if (!sheepDelta && scenario.setup === 'placement-rejected') {
         await page.evaluate(() => {
           const { obstacles, placement, composer } = window.__ebr70Gate;
           // Isolate the required feedback: only the new placement keep-out and

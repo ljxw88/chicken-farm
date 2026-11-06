@@ -12,6 +12,13 @@ function woolMaterial(color: number) {
   // overexposed highlights before output conversion. 0.9 linear is ~243 sRGB.
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
+      #if NUM_DIR_LIGHTS > 0
+        // The moon is the only blue-biased key. Counter its cool cast on wool
+        // without changing the approved albedo, daytime light, or any lights.
+        vec3 woolKey = directionalLights[0].color;
+        float moonWool = smoothstep(0.0, 0.12, woolKey.b - woolKey.r);
+        outgoingLight *= mix(vec3(1.0), vec3(1.60, 1.00, 0.70), moonWool);
+      #endif
       float woolPeak = max(outgoingLight.r, max(outgoingLight.g, outgoingLight.b));
       outgoingLight *= min(1.0, 0.9 / max(woolPeak, 0.0001));
       #include <opaque_fragment>
@@ -24,16 +31,19 @@ function woolMaterial(color: number) {
 export function createSheep(variant: 0 | 1, phase: number) {
   const group = new THREE.Group();
   group.name = `sheep-${variant + 1}`;
+  // Slightly turn the local +Z front so the elongated profile survives the
+  // isometric pixel pass while remaining within the approved facing range.
+  group.rotation.y = THREE.MathUtils.degToRad(variant === 0 ? -20 : -25);
 
   const wool = [woolMaterial(SHEEP_WOOL.shade), woolMaterial(SHEEP_WOOL.base), woolMaterial(SHEEP_WOOL.top)];
   const lobeGeometry = new THREE.IcosahedronGeometry(1, 1);
-  // Distinct silhouettes, not merely a colour change. Feet overlap the lower
-  // lobes; the raised middle lobe gives the wool a soft, chunky outline.
+  // Three low-poly lobes form a long, shallow fleece above the visible legs.
+  // Their offsets differ between the animals without recolouring the wool.
   const layouts = [
-    [[0, 0.43, -0.20, 0.28, 0.275, 0.28], [-0.02, 0.51, 0, 0.29, 0.28, 0.28],
-      [0, 0.43, 0.20, 0.28, 0.275, 0.28]],
-    [[0.025, 0.44, -0.21, 0.27, 0.275, 0.28], [0.035, 0.50, -0.025, 0.285, 0.28, 0.28],
-      [-0.025, 0.44, 0.20, 0.28, 0.27, 0.28]],
+    [[0, 0.48, -0.165, 0.28, 0.27, 0.28], [-0.005, 0.49, 0, 0.29, 0.27, 0.28],
+      [0, 0.48, 0.165, 0.28, 0.27, 0.28]],
+    [[-0.015, 0.48, -0.17, 0.275, 0.27, 0.275], [0.01, 0.49, -0.02, 0.285, 0.27, 0.28],
+      [0.005, 0.48, 0.17, 0.28, 0.27, 0.275]],
   ];
   layouts[variant].forEach(([x, y, z, sx, sy, sz], index) => {
     const lobe = new THREE.Mesh(lobeGeometry, wool[index]);
@@ -45,19 +55,21 @@ export function createSheep(variant: 0 | 1, phase: number) {
 
   const brown = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.treeTrunk, roughness: 1 });
   const detail = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.dirtEdge, roughness: 1 });
-  const legGeometry = new THREE.BoxGeometry(0.12, 0.2, 0.12);
-  for (const x of [-0.11, 0.11]) for (const z of [-0.2, 0.2]) {
+  const legGeometry = new THREE.BoxGeometry(0.24, 0.32, 0.24);
+  for (const x of [-0.16, 0.16]) for (const z of [-0.22, 0.22]) {
     const leg = new THREE.Mesh(legGeometry, brown);
     leg.name = `sheep-${variant + 1}-leg`;
-    leg.position.set(x, 0.1, z);
+    // Stagger the second sheep's near rear leg slightly so it remains visible
+    // behind the unchanged fence at the 320×180 game resolution.
+    leg.position.set(x, 0.16, variant === 1 && x > 0 && z < 0 ? -0.14 : z);
     group.add(leg);
   }
 
   const head = new THREE.Group();
   head.name = `sheep-${variant + 1}-head-pivot`;
-  head.position.set(0, 0.42, 0.34);
+  head.position.set(0, 0.54, 0.4);
   group.add(head);
-  const faceGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.32);
+  const faceGeometry = new THREE.BoxGeometry(0.36, 0.32, 0.36);
   let faceMaterial = brown;
   if (variant === 1) {
     // Retain the trunk-brown token while shading the second face slightly darker.
@@ -67,18 +79,18 @@ export function createSheep(variant: 0 | 1, phase: number) {
   }
   const face = new THREE.Mesh(faceGeometry, faceMaterial);
   face.name = `sheep-${variant + 1}-face`;
-  face.position.set(0, -0.08, 0.14);
+  face.position.set(0, -0.055, 0.2);
   head.add(face);
-  const earGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.12);
-  for (const x of [-0.2, 0.2]) {
+  const earGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.14);
+  for (const x of [-0.23, 0.23]) {
     const ear = new THREE.Mesh(earGeometry, detail);
     ear.name = `sheep-${variant + 1}-ear`;
-    ear.position.set(x, 0.01, 0.1);
+    ear.position.set(x, 0.015, 0.15);
     head.add(ear);
   }
   const nose = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.1), detail);
   nose.name = `sheep-${variant + 1}-nose`;
-  nose.position.set(0, -0.15, 0.34);
+  nose.position.set(0, -0.13, 0.43);
   head.add(nose);
 
   let elapsed = 0;
