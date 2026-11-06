@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
 
 const evidenceDir = process.env.EBR71_EVIDENCE_DIR;
+const nestEvidenceDir = process.env.EBR48_EVIDENCE_DIR;
 const proof = {};
 let devServer;
 let previewServer;
@@ -21,6 +22,7 @@ function serverUrl(server) {
 
 before(async () => {
   if (evidenceDir) await mkdir(evidenceDir, { recursive: true });
+  if (nestEvidenceDir) await mkdir(nestEvidenceDir, { recursive: true });
   devServer = await createServer({
     configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false },
   });
@@ -175,32 +177,46 @@ test('walking and clicking around former interaction targets leaves only static 
   }, beforeClick, { timeout: 10000 });
   await assertNoSimUi(page);
 
-  await page.keyboard.down('s');
-  await page.keyboard.down('d');
-  try {
-    await page.waitForFunction(() => {
-      const { character } = window.__ebr71Test;
-      return character.position.x > 1.7;
-    }, null, { timeout: 15000 });
-    await page.waitForTimeout(500);
-  } finally {
-    await page.keyboard.up('s');
-    await page.keyboard.up('d');
+  // The relocated nest is on the far bank; use the walkable bridge to reach it.
+  for (const [x, z] of [[0, 0], [2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [4.8, 0]]) {
+    await walkTo(page, x, z);
   }
-  // The locked stream overlaps the existing nest; the water blocks the old
-  // closer approach. It remains static and non-interactive from the bank.
   const nestDistance = await page.evaluate(() => {
     const { scene, character } = window.__ebr71Test;
     const nest = scene.getObjectByName('farm-nest-decoration');
     return Math.hypot(character.position.x - nest.position.x, character.position.z - nest.position.z);
   });
-  assert.ok(nestDistance > 1.25 && nestDistance < 2);
+  assert.ok(nestDistance < 1.1, `could not approach the relocated nest: ${nestDistance}`);
+  if (nestEvidenceDir) {
+    // A second, test-only camera angle exposes the nest behind tree 2 without
+    // moving or hiding any scenery and leaves the actual walking test alone.
+    const detail = await openPage(context, `${devUrl}/?phase=daytime&weather=clear`, true);
+    await detail.page.evaluate(() => {
+      const { scene, camera, character, renderer, composer } = window.__ebr71Test;
+      renderer.setAnimationLoop(null);
+      const target = scene.getObjectByName('farm-nest-decoration').getWorldPosition(character.position.clone());
+      target.y += 0.3;
+      camera.position.copy(target).add(character.position.clone().set(12, 12, -12));
+      camera.lookAt(target);
+      camera.zoom = 2.3;
+      camera.updateProjectionMatrix();
+      camera.updateMatrixWorld();
+      composer.render(0);
+    });
+    await detail.page.screenshot({ path: join(nestEvidenceDir, 'nest-new-spot.png') });
+    assert.deepEqual(detail.errors, []);
+    await detail.page.close();
+  }
   await page.keyboard.press('e');
   const nestPoint = await objectPoint(page, 'farm-nest-decoration', 0.24);
   await page.mouse.click(nestPoint.x, nestPoint.y);
   await page.waitForTimeout(200);
   await assertNoSimUi(page);
   assert.equal(await page.evaluate(() => window.__ebr71Test.scene.getObjectByName('farm-nest-decoration').visible), true);
+
+  for (const [x, z] of [[5.15, -1.65], [4.3, -1.95], [3.4, -1.93], [2.5, -1.7]]) {
+    await walkTo(page, x, z);
+  }
 
   // The sign itself is now close to the locked coop A; approach from the
   // walkable side rather than demanding a destination inside its collider.

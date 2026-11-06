@@ -52,7 +52,7 @@ export function createFarmDecorations(scene: THREE.Scene, groundHeight: number) 
 
   const nest = new THREE.Group();
   nest.name = 'farm-nest-decoration';
-  nest.position.set(3.2, groundHeight, 1.2);
+  nest.position.set(4.3, groundHeight, 0.7);
   flock.add(nest);
   const straw = new THREE.Mesh(
     new THREE.RingGeometry(0.17, 0.29, 20),

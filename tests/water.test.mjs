@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
+import { JSDOM } from 'jsdom';
 import * as THREE from 'three';
 import { createServer } from 'vite';
 
@@ -9,6 +10,7 @@ const { createFarmDecorations } = await vite.ssrLoadModule('/src/scene/createFar
 const { WATER_FEATURE } = await vite.ssrLoadModule('/src/scene/waterFeatureSpec.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
 const { createGrid, intersectsFootprint, TILE_SIZE } = await vite.ssrLoadModule('/src/placement/grid.ts');
+const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlacement.ts');
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
@@ -31,6 +33,54 @@ function box(scene, name) {
   const object = scene.getObjectByName(name);
   assert.ok(object, name);
   return new THREE.Box3().setFromObject(object);
+}
+
+// Horizontal distance between convex projected footprints, including triangles
+// from the actual ribbon meshes rather than centreline approximations.
+function footprintDistance(a, b) {
+  const separated = [a, b].some((polygon) => polygon.some((point, index) => {
+    const next = polygon[(index + 1) % polygon.length];
+    const nx = next.z - point.z;
+    const nz = point.x - next.x;
+    if (nx * nx + nz * nz < 1e-16) return false;
+    const pa = a.map((p) => p.x * nx + p.z * nz);
+    const pb = b.map((p) => p.x * nx + p.z * nz);
+    return Math.max(...pa) < Math.min(...pb) - 1e-9 || Math.max(...pb) < Math.min(...pa) - 1e-9;
+  }));
+  if (!separated) return 0;
+  function pointToSegment(point, start, end) {
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const length = dx * dx + dz * dz;
+    const t = length ? THREE.MathUtils.clamp(((point.x - start.x) * dx + (point.z - start.z) * dz) / length, 0, 1) : 0;
+    return Math.hypot(point.x - start.x - t * dx, point.z - start.z - t * dz);
+  }
+  let distance = Infinity;
+  for (const [points, edges] of [[a, b], [b, a]]) for (const point of points) {
+    for (let i = 0; i < edges.length; i++) distance = Math.min(distance, pointToSegment(point, edges[i], edges[(i + 1) % edges.length]));
+  }
+  return distance;
+}
+
+function boxFootprint(bounds) {
+  return [
+    { x: bounds.min.x, z: bounds.min.z }, { x: bounds.max.x, z: bounds.min.z },
+    { x: bounds.max.x, z: bounds.max.z }, { x: bounds.min.x, z: bounds.max.z },
+  ];
+}
+
+function ribbonDistance(mesh, footprint) {
+  const positions = mesh.geometry.attributes.position;
+  const indices = mesh.geometry.index;
+  let distance = Infinity;
+  for (let i = 0; i < indices.count; i += 3) {
+    const triangle = [0, 1, 2].map((offset) => {
+      const point = mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(positions, indices.getX(i + offset)));
+      return { x: point.x, z: point.z };
+    });
+    distance = Math.min(distance, footprintDistance(footprint, triangle));
+  }
+  return distance;
 }
 
 test('the locked Catmull-Rom route, widths, layered elevations and water palette are exact', () => {
@@ -327,9 +377,10 @@ test('only the two locked grass tufts are hidden; all other instance transforms 
   assert.deepEqual(hidden, [[3.42, 1.5], [3.57, 1.53], [3.5, 1.42], [2.92, 0.85], [3.07, 0.88], [3, 0.77]]);
 });
 
-test('measure keep-out conflicts without moving the locked scene or changing the pond', () => {
+test('measure locked keep-out conflicts and relocated nest clearances', () => {
   const { scene, obstacles } = fixture();
-  createFarmDecorations(scene, GROUND_HEIGHT);
+  const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
+  const { stairs } = createIsland(scene);
   scene.updateMatrixWorld(true);
   const feature = scene.getObjectByName('farm-water-feature');
   const bounds = new THREE.Box3().setFromObject(feature);
@@ -363,11 +414,52 @@ test('measure keep-out conflicts without moving the locked scene or changing the
   assert.ok(Math.max(...pathOutside) - (-1.25) > 0.18);
   near(WATER_FEATURE.bridge.gapWidth, 0.04); // Conflicts with the 0.1 minimum feature size.
   const nest = scene.getObjectByName('farm-nest-decoration');
-  near(nest.position.x, 3.2);
-  near(nest.position.z, 1.2);
-  const curve = new THREE.CatmullRomCurve3(WATER_FEATURE.stream.points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
-  const nearest = Math.min(...curve.getSpacedPoints(1000).map((point) => Math.hypot(point.x - 3.2, point.z - 1.2)));
-  near(nearest, 0.2356, 0.002); // The original nest is inside the 0.6-unit water half-width.
+  assert.ok(decorations.includes(nest)); // Placement reads this live object, not a fixed old-position entry.
+  near(nest.position.x, 4.3);
+  near(nest.position.z, 0.7);
+  const nestBounds = new THREE.Box3().setFromObject(nest);
+  const placementFootprint = boxFootprint(nestBounds);
+  const straw = nest.children.find((child) => child.geometry.type === 'RingGeometry');
+  const ring = [];
+  const ringPositions = straw.geometry.attributes.position;
+  for (let i = 0; i < ringPositions.count; i++) {
+    const point = new THREE.Vector3().fromBufferAttribute(ringPositions, i);
+    if (Math.abs(Math.hypot(point.x, point.y) - straw.geometry.parameters.outerRadius) > 1e-6) continue;
+    straw.localToWorld(point);
+    if (!ring.some((other) => Math.hypot(point.x - other.x, point.z - other.z) < 1e-6)) ring.push({ x: point.x, z: point.z });
+  }
+  ring.sort((a, b) => Math.atan2(a.z - 0.7, a.x - 4.3) - Math.atan2(b.z - 0.7, b.x - 4.3));
+  assert.equal(ring.length, 20);
+  for (const [name, expectedRing, expectedBox] of [
+    ['farm-stream-water', 0.2874, 0.2066], ['farm-stream-rim', 0.1374, 0.0566],
+    ['farm-path-edge', 1.3464, 1.2235], ['farm-path-surface', 1.4164, 1.2935],
+  ]) {
+    const mesh = scene.getObjectByName(name);
+    const ringGap = ribbonDistance(mesh, ring);
+    const boxGap = ribbonDistance(mesh, placementFootprint);
+    assert.ok(ringGap > 0 && boxGap > 0, `${name} touches the relocated nest`);
+    near(ringGap, expectedRing, 0.002);
+    near(boxGap, expectedBox, 0.002);
+  }
+  const bridge = obstacles.find((entry) => entry.name === 'wooden-bridge');
+  const bridgeFootprint = boxFootprint(new THREE.Box3(
+    new THREE.Vector3(bridge.minX, 0, bridge.minZ), new THREE.Vector3(bridge.maxX, 0, bridge.maxZ),
+  ));
+  near(footprintDistance(ring, bridgeFootprint), 1.66, 0.001);
+  near(footprintDistance(placementFootprint, bridgeFootprint), 1.66, 0.001);
+  const waterFootprints = obstacles.filter((entry) => entry.name.startsWith('stream-water-')).map((entry) =>
+    boxFootprint(new THREE.Box3(new THREE.Vector3(entry.minX, 0, entry.minZ), new THREE.Vector3(entry.maxX, 0, entry.maxZ))));
+  near(Math.min(...waterFootprints.map((footprint) => footprintDistance(ring, footprint))), 0.2027, 0.002);
+  near(Math.min(...waterFootprints.map((footprint) => footprintDistance(placementFootprint, footprint))), 0.1223, 0.002);
+  const stairFootprints = [...stairs.treads, stairs.footPad].map((step) => boxFootprint(new THREE.Box3().setFromObject(step)));
+  near(Math.min(...stairFootprints.map((footprint) => footprintDistance(ring, footprint))), 3.41, 0.001);
+  near(Math.min(...stairFootprints.map((footprint) => footprintDistance(placementFootprint, footprint))), 3.41, 0.001);
+  near(5.2 - nestBounds.max.x, 0.61, 0.001);
+  const nestBlocker = { kind: 'box', name: 'nest', minX: nestBounds.min.x, maxX: nestBounds.max.x,
+    minZ: nestBounds.min.z, maxZ: nestBounds.max.z };
+  const grid = createGrid(16);
+  assert.equal(intersectsFootprint(grid.footprint(grid.cellAt(2.25, 0.75), 'fence', 0), nestBlocker), false);
+  assert.equal(intersectsFootprint(grid.footprint(grid.cellAt(5.25, 0.75), 'fence', 0), nestBlocker), true);
 
   // The locked start meets the rim, but the pond's unchanged inner water
   // ends farther back; record the separation without inventing a new route.
@@ -400,4 +492,62 @@ test('water adds no lights or emissive materials in day, sunset, night or rain',
       if (object.isMesh) assert.equal(object.material.emissive.getHex(), 0, object.name);
     });
   }
+});
+
+test('the placement ghost follows the relocated nest bounds instead of a stale old-position blocker', (t) => {
+  const dom = new JSDOM('<!doctype html><body><canvas id="scene"></canvas></body>', { url: 'http://localhost/' });
+  const previous = { window: globalThis.window, document: globalThis.document, HTMLElement: globalThis.HTMLElement, Node: globalThis.Node };
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  globalThis.HTMLElement = dom.window.HTMLElement;
+  globalThis.Node = dom.window.Node;
+  const canvas = document.querySelector('#scene');
+  canvas.getBoundingClientRect = () => ({ left: 10, top: 20, width: 800, height: 600 });
+  const scene = new THREE.Scene();
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), new THREE.MeshBasicMaterial());
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = GROUND_HEIGHT;
+  scene.add(ground);
+  const character = new THREE.Group();
+  character.position.y = GROUND_HEIGHT;
+  scene.add(character);
+  const nest = createFarmDecorations(scene, GROUND_HEIGHT).find((object) => object.name === 'farm-nest-decoration');
+  const { camera, follow, resize } = createIsometricCamera();
+  resize(800, 600);
+  follow(character.position);
+  const placement = createPlacement({
+    scene, camera, canvas, ground, groundSize: 16, groundHeight: GROUND_HEIGHT,
+    character, characterRadius: 0.4, obstacles: [], getBlockers: () => [nest],
+  });
+  t.after(() => {
+    placement.dispose();
+    dom.window.close();
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[name];
+      else globalThis[name] = value;
+    }
+  });
+
+  function hover(x, z) {
+    camera.updateMatrixWorld();
+    const point = new THREE.Vector3(x, GROUND_HEIGHT, z).project(camera);
+    const rect = canvas.getBoundingClientRect();
+    const event = new dom.window.MouseEvent('pointermove', {
+      bubbles: true, clientX: rect.left + (point.x + 1) * rect.width / 2, clientY: rect.top + (1 - point.y) * rect.height / 2,
+    });
+    Object.defineProperty(event, 'isPrimary', { value: true });
+    canvas.dispatchEvent(event);
+    return document.querySelector('.placement-status').textContent;
+  }
+  window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, code: 'KeyF' }));
+  assert.match(hover(2.25, 0.75), /Ready to place/); // The tile touched only by the old nest.
+  assert.match(hover(5.25, 0.75), /Blocked by a farm object/); // Partial overlap with the new bounds.
+  assert.equal(document.querySelector('[data-confirm]').disabled, true);
+  window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, code: 'Enter' }));
+  assert.equal(scene.getObjectsByProperty('name', 'placed-fence').length, 0);
+  nest.position.set(3.2, GROUND_HEIGHT, 1.2); // Test the existing live-bounds wiring in isolation.
+  assert.match(hover(2.25, 0.75), /Blocked by a farm object/);
+  assert.match(hover(5.25, 0.75), /Ready to place/);
+  nest.position.set(4.3, GROUND_HEIGHT, 0.7);
+  assert.match(hover(5.25, 0.75), /Blocked by a farm object/);
 });
