@@ -2,6 +2,8 @@ import './style.css';
 import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterController, type CharacterComponents } from './character';
 import { createEngine } from './core/loop';
+import { createChimneySmoke } from './effects/createChimneySmoke';
+import { createVisualRandom } from './effects/createVisualRandom';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createPlacement } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
@@ -10,7 +12,7 @@ import { createFarmLayout } from './scene/createFarmLayout';
 import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { WATER_FEATURE } from './scene/waterFeatureSpec';
-import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
+import { createStartupPhaseController, parseStartupOptions, parseVisualSeed } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
@@ -55,12 +57,16 @@ function shadowSupported(x: number, z: number, radius: number) {
 }
 const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
   shadowSupported, updateFarmShadows: farmShadows.update });
+const visualSeed = parseVisualSeed(window.location.search);
 const weather = createWeatherSystem({
+  ...(visualSeed === undefined ? {} : { random: createVisualRandom(visualSeed) }),
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
   setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
   setShadowWeather: dayNight.setShadowWeather,
 });
+const smoke = createChimneySmoke({ scene,
+  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x534d4f4b) });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase);
 if (startup.weather) weather.setWeather(startup.weather);
@@ -117,6 +123,7 @@ const engine = createEngine<CharacterComponents>({
     follow(character.position);
     placement.update();
     weather.update(deltaSeconds);
+    smoke.update(deltaSeconds, weather.getWeather().rainAmount);
     updateWaterfall(deltaSeconds);
   },
   render: (deltaSeconds) => composer.render(deltaSeconds),
