@@ -19,8 +19,6 @@ export function createScene(canvas: HTMLCanvasElement) {
     const width = window.innerWidth;
     const height = window.innerHeight;
     resizeCamera(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width, height);
   }
 
   return { scene, camera, renderer, ground, follow, resize };
