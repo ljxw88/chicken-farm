@@ -1,60 +1,72 @@
-EBR-73 — engine core, slice 1
+EBR-73 — engine core rebased over EBR-47
 
 Branch: feat/ebr73-engine-core
-Baseline origin/main at slice start: 1f7379daca98ce683f4493e59bacb6a291c106a2
-Tested source SHA: ef66f41e37330bc3fcb63b792d09ec7631d27854
-Implementation/evidence SHA: bd8a3578361ac80f987322b361308b2880e6b0a5
-Branch tip SHA: run `git rev-parse HEAD`. The handoff-only commit above the
-implementation cannot contain its own SHA; its exact SHA is in the response.
-No push or PR. The previous handoff is preserved as DELIVER-EBR56.txt.
+Rebased onto origin/main: a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671
+Pre-rebase tag: pre-rebase-ebr73-8218e10 -> 8218e10b818f689465788c821eebd6e504261301
+Tested source SHA: 682b621eee1c75d466bcc7267eabbdd797313540
+Implementation/evidence SHA: 1c8789d62a25e24e725e0439d232134c5c8d789d
+Branch tip SHA: run `git rev-parse HEAD`; this handoff-only commit cannot
+contain its own SHA. The exact tip is also reported in the final response.
+No push or PR. The old EBR-73 handoff is available from the pre-rebase tag;
+DELIVER-EBR47.txt and DELIVER-EBR56.txt are preserved.
 
 Open / try
 - http://100.88.150.21:5181/?phase=daytime&weather=clear (while the server runs).
-- Restart here: `npm run dev -- --host 100.88.150.21 --port 5181 --strictPort`.
+- Night: http://100.88.150.21:5181/?phase=night&weather=clear
+- Restart in this worktree: `npm run dev -- --host 100.88.150.21 --port 5181 --strictPort`.
 - WASD or click to walk; F/P selects a placement tool, R rotates, click places,
   Z undoes, Delete removes the hovered item, Escape cancels. Touch previews on
   tap and confirms with Place. The stairs' foot pad is reachable by click.
-- Read src/core/README.md for the bridge, src/core/{loop,ecs,input}/ for the
-  core, and tools/PARITY.md for capture and comparison instructions.
+- See src/core/README.md and tools/PARITY.md for the bridge and capture tool.
 
-Scope and timing
-- Miniplex 2.0.0 is pinned; project IDs are stable and components are plain data.
-  The fixed 1/60 s simulation runs ordered systems with 0.1 s maximum catch-up;
-  one-shot actions are consumed once per tick and held movement persists.
-- No gameplay system has been ported. Character, collision/stairs, placement,
-  lighting, weather, HUD and rendering remain in their existing paths and order.
-  Walking still gets min(frame delta, 0.1); lighting/weather/render get the
-  full frame delta. Action listeners observe without consuming legacy events.
-- Rain already accepted an optional RNG. The parity harness supplies its seeded
-  RNG when constructing weather, before the initial particles; the default stays
-  Math.random. It drives real click/WASD/placement paths at controlled frame
-  times and checks the camera/pose and pinned phase/weather.
+Rebase and behavior
+- The rebase applied without textual conflicts. src/main.ts retains EBR-47's
+  windows, extraEmissives, obstacle and rain-shelter paths and only adds the
+  engine boot bridge. README now describes the cottage and coops instead of
+  the old barn; EBR-47's delivery and evidence were not overwritten.
+- src/scene, src/lighting and EBR-47's building tests are identical to main;
+  src/core is identical to the pre-rebase tag. farmBuildingSpecs, the cottage,
+  two ramp coops, window/pop-hole lights, five shared walking/placement boxes
+  and roof rain exclusions remain unchanged. The EBR-47 tree/coop overlap and
+  other approved tradeoffs are retained; see DELIVER-EBR47.txt.
+- Miniplex 2.0.0 is pinned. The fixed 1/60 s simulation runs ordered systems
+  with 0.1 s maximum catch-up; input one-shots fire once. Gameplay is not yet
+  ported: character, collision/stairs, placement, lights, weather, HUD and
+  rendering continue through their original paths and frame order. Walking gets
+  min(frame delta, 0.1); lighting/weather/render get the full delta. Input
+  listeners observe without consuming legacy events.
 
 Checks and evidence
-- `npm run build`: passed; Vite reports the existing >500 kB chunk advisory.
-- `npm test`: 88 passed, 0 failed.
-- `EBR46_SLIDE_PROOF=evidence/EBR-73/stairs-pad-sequences.json npm run test:browser`:
-  17 passed, 0 failed. This includes production preview, placement/touch and all
-  three pad-side sequences (S+A→W+A; W+D→W+A; S+D→S+A→W+D→W+A), with zero
-  clipped or unsupported frames in the recorded stair proof.
-- `npm run parity -- --url http://100.88.150.21:5181`: passed.
-- `npm run parity`: passed; six exact-RGBA diffs versus the archived main:
-  spawn 0; stairs-pad 0; placement-ghost 0; day 0; night 0; rain 0 pixels.
-  The six baseline, candidate and diff PNGs are 1280x720 under
-  evidence/EBR-73/{baseline,candidate,diff}/; parity.json has counts, seed,
-  SHA, camera/pose and renderer. Chromium 153.0.8010.12, SwiftShader, DPR 1,
-  4-CSS-pixel world pass, seed 0xEB730001. A deliberate magenta-text negative
-  control changed 521 pixels per frame and correctly failed before restoring
-  the clean captures.
-- Live URL: HTTP 200; headless Chromium verified pixel rendering, WASD and a
-  placement preview without page/console errors. The Vite process is bound to
-  100.88.150.21:5181 with --strictPort from this worktree.
-- `git diff origin/main --check`: passed. The archived EBR-56 handoff compares
-  byte-for-byte with origin/main's prior DELIVER.txt.
+- `npm run build`: passed; Vite retains the >500 kB chunk advisory.
+- `npm test`: 95 passed, 0 failed, including EBR-47 building, collision,
+  placement and lighting unit tests.
+- `EBR46_SLIDE_PROOF=evidence/EBR-73/stairs-pad-sequences.json EBR47_EVIDENCE_DIR=evidence/EBR-73/buildings npm run test:browser`:
+  20 passed, 0 failed. This includes placement/touch, the three pad-side
+  sequences (S+A→W+A; W+D→W+A; S+D→S+A→W+D→W+A), and real EBR-47
+  cottage/coops collision, placement, lights and weather checks. The recorded
+  stair routes have zero clipped or unsupported frames.
+- `npm ls --depth=0`: passed; `git diff origin/main --check`: passed.
+- `npm run parity -- --record-baseline --baseline-sha a61bac91e950ed3b03b3a3a6d3e1b3a57afe2671`:
+  passed. The baseline is a clean git archive of that commit, not this worktree.
+- `npm run parity` and `npm run parity -- --url http://100.88.150.21:5181`:
+  passed. Changed pixels versus the new main:
+  spawn 0; stairs-pad 0; placement-ghost 0; day 0; night 0; rain 0;
+  cottage-coops-day 0; cottage-coops-night 0.
+- The eight baseline, candidate and diff PNGs are 1280x720 under
+  evidence/EBR-73/{baseline,candidate,diff}/; parity.json records counts,
+  exact source SHA, camera/pose and renderer. Chromium 153.0.8010.12,
+  SwiftShader, DPR 1, 4-CSS-pixel world pass, seed 0xEB730001. Seeded rain
+  RNG is supplied at initialization; ordinary Math.random behavior is unchanged.
+  The two cottage/coops frames use a test-only front focus/zoom and check the
+  window lights and window/pop-hole emissives without changing gameplay.
+- evidence/EBR-73/buildings/browser-proof.json records the actual building
+  blockers, placement rejections, lights and walking stops; associated PNGs
+  show the cottage/coops, rain and ramp interactions. The three stair sequences
+  are in evidence/EBR-73/stairs-pad-sequences.json.
+- The restarted Vite server is bound to 100.88.150.21:5181 with --strictPort
+  from this worktree; the URL returned HTTP 200 and passed the parity run.
 
 Not verified: physical touch devices, hardware GPUs, non-Chromium browsers,
 access from a separate tailnet device, or independent QA/Look Dev signoff.
 Gate G instruments the Vite source URL, not a minified production preview;
 production behavior is covered by test:browser, not a production pixel diff.
-EBR-47 is not in the slice-start main baseline; cottage/coops parity and the
-post-merge rebase remain for after EBR-47 lands.
