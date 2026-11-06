@@ -108,7 +108,7 @@ export function createCharacterController({
     character.position.x = transform.position[0];
     character.position.y = transform.position[1];
     character.position.z = transform.position[2];
-    character.rotation.y = transform.yaw;
+    if (!Object.is(character.rotation.y, transform.yaw)) character.rotation.y = transform.yaw;
     if (groundShadow) groundShadow.position.y = shadowOffset + entity.character!.floorHeight - character.position.y;
     lastRendered.x = character.position.x;
     lastRendered.y = character.position.y;

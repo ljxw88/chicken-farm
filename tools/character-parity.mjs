@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
@@ -290,7 +290,8 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
     // The reference is generated from the clean main worktree and stays there, never in the branch.
-    const tracePath = join(baselineRoot, '.ebr74-reference-trace.json');
+    const traceDir = await mkdtemp(join(baselineRoot, '.ebr74-reference-'));
+    const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed,
       scenarios: Object.fromEntries(names.map((name) => [name, {
         script: reference[name].script, trace: reference[name].trace, marks: reference[name].marks,
