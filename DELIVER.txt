@@ -43,7 +43,8 @@ Diagnosis / Engineer decisions
 - One key now remains at world (-11,h,4), target origin, across all phases;
   height, light color/intensity and smaller fill vary. The lantern is off by day,
   0.08 at night (range 2), while its visible glass stays at its prior glow.
-  A non-emissive character tint/top lift improves separation and facing stability.
+  A non-emissive character tint (#fff087, 1.45 linear gain) and vertex top
+  lift improve separation and facing stability; the signed farm palette is unchanged.
 - Character, trees, cottage, both coops, chicken, bridge and waterfall lip use
   black-alpha offset ground blobs opposite that same key; cloud/rain soften them.
   The player blob stays on stairs/bridge support. No shadow maps were added.
