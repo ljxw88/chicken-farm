@@ -65,6 +65,9 @@ test('owned movement resolves actions immediately, preserves placement priority 
   f.input.onMovement((action) => movements.push(action));
   f.pointer('pointerdown');
   assert.deepEqual(movements, [{ type: 'move-to', point: { x: 123, y: 456, pointerType: 'mouse' } }]);
+  f.pointer('pointerdown', 'mouse', { button: 2 });
+  f.pointer('pointerdown', 'touch', { isPrimary: false });
+  assert.equal(movements.length, 1, 'non-primary pointers must not start walking');
   assert.equal(f.key('keydown', 'KeyW').defaultPrevented, true);
   f.key('keydown', 'KeyW', f.document.body, { repeat: true });
   assert.deepEqual(movements.slice(1), [{ type: 'cancel-move-to' }, { type: 'cancel-move-to' }]);

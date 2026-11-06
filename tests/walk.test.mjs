@@ -125,6 +125,15 @@ test('clicking the ground reaches the selected point without overshooting', (t) 
   near(character.position.distanceTo(destination), 0);
 });
 
+test('a click is raycast at event time, before a later camera follow', (t) => {
+  const { character, controls, click, follow } = fixture(t);
+  const destination = new THREE.Vector3(3, 0, -2);
+  click(destination);
+  follow(new THREE.Vector3(5, 0, 4));
+  controls.update(10);
+  near(character.position.distanceTo(destination), 0);
+});
+
 test('keyboard input cancels a click destination and blur releases held keys', (t) => {
   const { character, controls, key, click } = fixture(t);
   click(new THREE.Vector3(6, 0, 0));
