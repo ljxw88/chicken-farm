@@ -1,1 +1,2 @@
-export { createPlacement } from './createPlacement';
+export { createPlacementAdapter } from './createPlacementAdapter';
+export type { PlacementComponents } from './placementSystem';

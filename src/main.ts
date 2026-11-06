@@ -1,11 +1,11 @@
 import './style.css';
 import './ui/farmHud.css';
-import { CHARACTER_RADIUS, createCharacter, createCharacterController, type CharacterComponents } from './character';
+import { CHARACTER_RADIUS, createCharacter, createCharacterController } from './character';
 import { createEngine } from './core/loop';
 import { createDayNightState, createWeatherState, updateDayNightSystem, updateWeatherSystem,
   type DayNightComponents, type WeatherComponents } from './environment';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
-import { createPlacement } from './placement';
+import { createPlacementAdapter, type PlacementComponents } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
 import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
@@ -16,7 +16,7 @@ import { createStartupPhaseController, parseStartupOptions } from './startupOpti
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
-interface GameComponents extends CharacterComponents, DayNightComponents, WeatherComponents {}
+interface GameComponents extends PlacementComponents, DayNightComponents, WeatherComponents {}
 
 declare global {
   interface Window {
@@ -50,7 +50,7 @@ const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 const farmShadows = createFarmShadows(scene);
 const engine = createEngine<GameComponents>({
   setAnimationLoop: (callback) => renderer.setAnimationLoop(callback),
-  input: { target: window, canvas, ownMovement: true, onPointerDown: (event) => placement.handlePointerDown(event),
+  input: { target: window, canvas, ownMovement: true, ownPlacement: true,
     getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
   frameSystems: [
     (world, move, deltaSeconds) => controls.system(world, move, Math.min(deltaSeconds, 0.1)),
@@ -102,14 +102,19 @@ window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
-let cancelClickTarget = () => {};
-const placement = createPlacement({
+const controls = createCharacterController({
+  world: engine.world, input: engine.input, character, camera, canvas, ground,
+  groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: CHARACTER_RADIUS,
+  obstacles, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
+});
+const placement = createPlacementAdapter({
+  world: engine.world, input: engine.input,
   scene, camera, canvas, ground, groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT,
-  character, characterRadius: CHARACTER_RADIUS, obstacles,
+  obstacles, syncObstacles: controls.syncObstacles, syncCharacter: controls.syncExternalPose,
   getBlockers: () => decorations,
   debugGrid: new URLSearchParams(window.location.search).get('grid') === '1',
   onActiveChange(active) {
-    if (active) cancelClickTarget();
+    if (active) controls.cancelTarget();
   },
 });
 const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
@@ -131,10 +136,4 @@ handleResize();
 if (!isPixelRenderingEnabled(window.location.search)) composer.setEnabled(false);
 window.addEventListener('resize', handleResize);
 
-const controls = createCharacterController({
-  world: engine.world, input: engine.input, character, camera, canvas, ground,
-  groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: CHARACTER_RADIUS,
-  obstacles, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
-});
-cancelClickTarget = controls.cancelTarget;
 engine.start();
