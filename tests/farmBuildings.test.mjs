@@ -7,7 +7,7 @@ const vite = await createServer({ configFile: false, server: { middlewareMode: t
 const { FARM_BUILDINGS } = await vite.ssrLoadModule('/src/scene/createFarmBuildings.ts');
 const { createFarmLayout, FARM_LAYOUT } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsland, GROUND_HEIGHT } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
-const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 after(() => vite.close());
 
 const components = [
@@ -242,7 +242,8 @@ test('walking obstacles match only the visible wall, coop bodies and ramps, whil
   const scene = new THREE.Scene();
   const { obstacles, splashExclusions } = createFarmLayout(scene);
   scene.updateMatrixWorld(true);
-  assert.equal(obstacles.length, 10); // Five building boxes, four trunks, one pond.
+  const originalNames = [...components.map(({ name }) => name), 'tree-1', 'tree-2', 'tree-3', 'tree-4', 'pond'];
+  assert.deepEqual(obstacles.filter((entry) => originalNames.includes(entry.name)).map((entry) => entry.name), originalNames);
   for (const { name, mesh, bounds: expected } of components) {
     const box = bounds(scene, mesh);
     const obstacle = obstacles.find((entry) => entry.name === name);

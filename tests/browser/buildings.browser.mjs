@@ -115,7 +115,7 @@ async function probeTreeRoofOverlap() {
   return { step, overlappingSamples, example };
 }
 
-test('locked buildings render at day, sunset, night and rain with the original lights', { timeout: 90000 }, async (t) => {
+test('locked buildings render at day, sunset, night and rain with the practical lights', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
@@ -197,7 +197,7 @@ test('locked buildings render at day, sunset, night and rain with the original l
   near(lights.accents[1], 0.85 * 0.7);
   near(lights.accents[2], 0.85 * 0.7);
   assert.deepEqual(lights.points, ['lantern-light', 'window-light-1', 'window-light-2']);
-  near(lights.lantern, 0.55);
+  near(lights.lantern, 0.12);
   assert.equal(lights.lanternParent, lights.characterName);
   await capture(night.page, '03-night-glow.png');
   assert.deepEqual(night.errors, []);
@@ -213,6 +213,7 @@ test('real fence and plot previews reject the cottage, both bodies and both ramp
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
+  const initialObstacles = await page.evaluate(() => window.__ebr47Test.obstacles.length);
   const components = await page.evaluate((names) => names.map((name) => {
     const obstacle = window.__ebr47Test.obstacles.find((entry) => entry.name === name);
     return { name, x: (obstacle.minX + obstacle.maxX) / 2, z: (obstacle.minZ + obstacle.maxZ) / 2 };
@@ -241,7 +242,7 @@ test('real fence and plot previews reject the cottage, both bodies and both ramp
   await page.mouse.click(open.x, open.y);
   assert.equal(await page.evaluate(() => window.__ebr47Test.scene.getObjectsByProperty('name', 'placed-fence').length), 1);
   await page.keyboard.press('z');
-  assert.equal(await page.evaluate(() => window.__ebr47Test.obstacles.length), 10);
+  assert.equal(await page.evaluate(() => window.__ebr47Test.obstacles.length), initialObstacles);
   assert.deepEqual(errors, []);
   proof.placement = { rejected, openTile: true, errors };
 });

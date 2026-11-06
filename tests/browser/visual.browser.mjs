@@ -6,6 +6,7 @@ import { chromium } from 'playwright';
 import { createServer, preview } from 'vite';
 
 const evidenceDir = process.env.EBR71_EVIDENCE_DIR;
+const nestEvidenceDir = process.env.EBR48_EVIDENCE_DIR;
 const proof = {};
 let devServer;
 let previewServer;
@@ -21,6 +22,7 @@ function serverUrl(server) {
 
 before(async () => {
   if (evidenceDir) await mkdir(evidenceDir, { recursive: true });
+  if (nestEvidenceDir) await mkdir(nestEvidenceDir, { recursive: true });
   devServer = await createServer({
     configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false },
   });
@@ -175,17 +177,35 @@ test('walking and clicking around former interaction targets leaves only static 
   }, beforeClick, { timeout: 10000 });
   await assertNoSimUi(page);
 
-  await page.keyboard.down('s');
-  await page.keyboard.down('d');
-  try {
-    await page.waitForFunction(() => {
-      const { scene, character } = window.__ebr71Test;
-      const nest = scene.getObjectByName('farm-nest-decoration');
-      return Math.hypot(character.position.x - nest.position.x, character.position.z - nest.position.z) <= 1.25;
-    }, null, { timeout: 15000 });
-  } finally {
-    await page.keyboard.up('s');
-    await page.keyboard.up('d');
+  // The relocated nest is on the far bank; use the walkable bridge to reach it.
+  for (const [x, z] of [[0, 0], [2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [4.8, 0]]) {
+    await walkTo(page, x, z);
+  }
+  const nestDistance = await page.evaluate(() => {
+    const { scene, character } = window.__ebr71Test;
+    const nest = scene.getObjectByName('farm-nest-decoration');
+    return Math.hypot(character.position.x - nest.position.x, character.position.z - nest.position.z);
+  });
+  assert.ok(nestDistance < 1.1, `could not approach the relocated nest: ${nestDistance}`);
+  if (nestEvidenceDir) {
+    // A second, test-only camera angle exposes the nest behind tree 2 without
+    // moving or hiding any scenery and leaves the actual walking test alone.
+    const detail = await openPage(context, `${devUrl}/?phase=daytime&weather=clear`, true);
+    await detail.page.evaluate(() => {
+      const { scene, camera, character, renderer, composer } = window.__ebr71Test;
+      renderer.setAnimationLoop(null);
+      const target = scene.getObjectByName('farm-nest-decoration').getWorldPosition(character.position.clone());
+      target.y += 0.3;
+      camera.position.copy(target).add(character.position.clone().set(12, 12, -12));
+      camera.lookAt(target);
+      camera.zoom = 2.3;
+      camera.updateProjectionMatrix();
+      camera.updateMatrixWorld();
+      composer.render(0);
+    });
+    await detail.page.screenshot({ path: join(nestEvidenceDir, 'nest-new-spot.png') });
+    assert.deepEqual(detail.errors, []);
+    await detail.page.close();
   }
   await page.keyboard.press('e');
   const nestPoint = await objectPoint(page, 'farm-nest-decoration', 0.24);
@@ -193,6 +213,10 @@ test('walking and clicking around former interaction targets leaves only static 
   await page.waitForTimeout(200);
   await assertNoSimUi(page);
   assert.equal(await page.evaluate(() => window.__ebr71Test.scene.getObjectByName('farm-nest-decoration').visible), true);
+
+  for (const [x, z] of [[5.15, -1.65], [4.3, -1.95], [3.4, -1.93], [2.5, -1.7]]) {
+    await walkTo(page, x, z);
+  }
 
   // The sign itself is now close to the locked coop A; approach from the
   // walkable side rather than demanding a destination inside its collider.
@@ -224,7 +248,7 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
   await page.keyboard.down('s');
   await page.evaluate(() => {
     const s = window.__ebr71Test;
-    s.controls.update(0.75);
+    s.controls.update(0.5);
     s.follow(s.character.position);
     s.composer.render(0);
   });
@@ -234,9 +258,9 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
     camera: window.__ebr71Test.camera.position.toArray(),
     rotation: window.__ebr71Test.character.rotation.y,
   }));
-  // Values captured from unmodified origin/main f50c7bc with the same fixed steps.
-  nearArray(walk.position, [1.8561553006146863, 2.4, 1.8561553006146867]);
-  nearArray(walk.camera, [13.856155300614686, 15.1, 13.856155300614686]);
+  // Compare the same movement on the still-clear side of the new stream.
+  nearArray(walk.position, [1.2374368670764582, 2.4, 1.2374368670764582]);
+  nearArray(walk.camera, [13.237436867076458, 15.1, 13.237436867076458]);
   assert.ok(Math.abs(walk.rotation - Math.PI / 4) < 1e-6);
 
   await page.reload({ waitUntil: 'networkidle' });
@@ -275,7 +299,7 @@ test('night lights, weather controls, phase and pixel rendering remain usable', 
       glass: character.getObjectByName('lantern-glass').material.emissiveIntensity,
     };
   });
-  assert.deepEqual(lights, { windows: [0.85, 0.85], panes: [0.85, 0.85], lantern: 0.55, glass: 0.55 });
+  assert.deepEqual(lights, { windows: [0.85, 0.85], panes: [0.85, 0.85], lantern: 0.12, glass: 0.55 });
   await capture(page, 'night-cloudy.png');
 
   await page.evaluate(() => window.setWeather('rain'));
@@ -284,7 +308,7 @@ test('night lights, weather controls, phase and pixel rendering remain usable', 
   assert.deepEqual(await page.evaluate(() => [
     window.__ebr71Test.scene.getObjectByName('window-light-1').intensity,
     window.__ebr71Test.character.getObjectByName('lantern-light').intensity,
-  ]), [0.85, 0.55]);
+  ]), [0.85, 0.12]);
   await capture(page, 'night-rain.png');
   await page.evaluate(() => window.setWeather('clear'));
   await page.waitForFunction(() => window.getWeather().rainAmount < 0.01, null, { timeout: 15000 });

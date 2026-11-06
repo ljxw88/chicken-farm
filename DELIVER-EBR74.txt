@@ -1,0 +1,69 @@
+EBR-74 — character engine port
+Baseline: origin/main 9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4
+
+Port map
+- Move the player pose, movement target, collision obstacles, and stair surface
+  into plain-data Miniplex components. Ordered character systems use the core
+  input actions, existing collision/sliding math, and stair support/height math.
+- Keep a thin Three.js pointer/pose adapter, the existing bridge height hook, and
+  the live obstacle array shared with placement. Synchronize its additions and
+  removals with obstacle entities before each movement update.
+- Stay: scene geometry, buildings, stream/deck gap, bridge visuals and height,
+  placement, lighting/weather, camera, shadows, HUD, and their frame order.
+- Delete the old character-controls and scene-collision implementation paths
+  after moving their behavior; remove stair gameplay math from the renderer.
+
+Engineer: walking remains a once-per-render-frame system with the original
+0.1-second clamp. Fixed-step movement would change the baseline timing. The
+fixed-step engine and its one-shot input contract remain available unchanged.
+Engineer: resolve move-to raycasts at pointer-event time and let the existing
+placement handler run first; delaying either to a fixed tick would change input
+ordering. Direct scene-pose edits remain a migration/QA adapter seam.
+Engineer: run the unit and browser test files serially because this shared host
+has a memory hold; this changes test scheduling, not game-frame timing.
+
+QA baseline: evidence/EBR-74/gate-g/baseline{.json,/} is the supplied
+9e8c8c6 set; its pre-port self-check returned 0 changed pixels in all 8 frames.
+Look Dev's separate approval of those baseline frames is still pending.
+Additional replay/route evidence uses a separate temporary 9e8c8c6 worktree.
+QA's independent sequence reference is
+/home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-sequences/main-9e8c8c6/sequences.json.
+Its fixed endpoints and bridge height are additional replay assertions. The
+real-time QA sequence comparison checks positions, heights, placement and
+weather states, with only the documented +/-0.08 bridge-Z allowance; its
+screenshots, sample counts and per-sample height jumps are not pixel baselines.
+Verification so far (source cf55581c2b008a0e6b2e999a430ed7cbca806336):
+- Build passed (76 modules); npm test passed 130/130; npm run test:browser
+  passed 33/33, including all three pad-side routes with zero clipped or
+  unsupported frames (evidence/EBR-74/stairs-pad-sequences.json).
+- The supplied eight Gate G frames each have 0 changed pixels. Six additional
+  controlled frames (spawn, walking, bridge gap/midpoint, mid-climb and stream
+  stop) also have 0 changed pixels; 710 scripted frames have identical position,
+  yaw, camera and shadow traces to main in the temporary worktree.
+- QA's unmodified real-time sequence tool returned zero browser errors, but the
+  strict comparison is 143/147: run 1 walkSA x 2.227 vs 2.186 and z -0.174 vs
+  -0.106; run 1 bridge end z -2.020 vs -1.915 (outside +/-0.08); run 2 stair
+  descent z 0.802 vs 0.760. All three pad-side endpoints, bridge peak, placement
+  states and seven phase/weather states matched. See qa-sequences/diff.json.
+- Engineer: the QA script dispatches multi-key chords in separate awaited
+  keydowns while real animation frames continue. In the first mismatch, walkSA
+  starts at (2.227, 2.4, -2.108), +0.041 on X and Z from the previous sample;
+  in the stair mismatch, descent starts at z=0.802, +0.042 from the climb end.
+  A single 60 Hz S-only frame moves about 0.041 per axis. A controlled replay
+  covering frames between keydowns has been added and awaits the all-clear.
+- Untouched main was rerun with the same QA tool: its bridge z was -2.027,
+  outside the supplied -1.915 reference by 0.112, demonstrating that the
+  real-time bridge approach can exceed the proposed tolerance on main too.
+  That independent control remains uncommitted at /tmp/ebr74-qa-main-fPVspM/.
+  Engineer: retain main's timing and report this QA comparator conflict rather
+  than coalescing key events or changing the tolerance.
+- Graphics matrix/analyzer and the updated transition replay remain unchecked
+  under the renewed host memory hold. No PR has been opened yet.
+
+Inherited conflicts for Look Dev / QA (not changed in this slice):
+- EBR-47 tree 4 canopy intersects coop B roof; locked positions remain.
+- EBR-48's original pond box intrudes 0.1475 units into the nominal bridge gap;
+  stream boxes remain cut away, and the deck center stays traversable.
+- EBR-48's locked water/footprint extends west of the stated keep-out; its
+  path-border/deck coverage, 0.04 plank gaps and pond-to-stream junction retain
+  the documented lock conflicts. See DELIVER-EBR48.txt for measurements.

@@ -1,0 +1,16 @@
+EBR-56 browser evidence
+Browser: Chromium 153.0.8010.12 (headless, SwiftShader)
+Vite dev server: http://100.88.150.21:5184
+Production preview: http://127.0.0.1:42443
+- Production preview: free fence, mouse-targeted Remove, undo and cancel work without simulation UI; pixel canvas is 320×180 at 1280×720.
+- Dev: olive/rust 50% footprint washes; fence rails keep original wood hues; player, pond, chicken, edge and occupied tiles reject placement.
+- Dev: rotate/place a fence and a two-tile plot for free; undo the plot; Delete removes the hovered fence.
+- Dev WASD: fence stopped +Z at 3.22; after removal walking reached 4.21. No page/console errors.
+- Dev WASD: crossed a placed plot to z=5.02 and removed the plot with Delete; it added no walking obstacle.
+- Dev: clicked the foot pad, pushed to its side and climbed back to the island with a fence and plot still placed.
+- Dev ?grid=1: visible 1-pixel-line material #A67C52; default grid is off.
+- 1280×720 touch emulation: tap previews, Rotate changes only ghost, Place confirms and Remove deletes without simulation UI.
+- 390×844 touch emulation: preview, Place and Remove work without the old HUD.
+- 320×568, 390×844, 844×390, 568×320 and 480×320: direct placement controls remain visible and clickable without the removed HUD.
+Screenshots: 01-production-valid-fence.png, 01a-remove-target.png, 02-invalid-rust.png, 03-rotated-fence-preview.png, 04-placed-fence-occupied.png, 05-rotated-plot-preview.png, 06-fence-and-plot.png, 07-walk-blocked.png, 08-walk-after-removal.png, 13-plot-walkable.png, 14-stairs-after-placement.png, 09-debug-grid.png, 10-touch-preview.png, 11-touch-placed.png, 15-touch-portrait-preview.png, 12-short-landscape-controls.png
+The touch check uses Chromium emulation, not a physical device.

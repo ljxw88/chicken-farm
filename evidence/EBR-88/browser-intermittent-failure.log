@@ -1,0 +1,240 @@
+
+> chicken-farm@0.0.0 test:browser
+> npm run build && node --test tests/browser/*.browser.mjs
+
+
+> chicken-farm@0.0.0 build
+> tsc && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 74 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.52 kB │ gzip:   0.33 kB
+dist/assets/index-BdYnIBk0.css    3.74 kB │ gzip:   1.36 kB
+dist/assets/index-CcJSbSmk.js   668.41 kB │ gzip: 175.56 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 490ms
+TAP version 13
+# Subtest: locked buildings render at day, sunset, night and rain with the practical lights
+ok 1 - locked buildings render at day, sunset, night and rain with the practical lights
+  ---
+  duration_ms: 10076.855353
+  type: 'test'
+  ...
+# Subtest: real fence and plot previews reject the cottage, both bodies and both ramps
+ok 2 - real fence and plot previews reject the cottage, both bodies and both ramps
+  ---
+  duration_ms: 5620.619516
+  type: 'test'
+  ...
+# Subtest: actual clicks and WASD stop at the cottage wall and both ramp fronts
+ok 3 - actual clicks and WASD stop at the cottage wall and both ramp fronts
+  ---
+  duration_ms: 8200.635885
+  type: 'test'
+  ...
+# Subtest: fixed upper-left key follows the specified phase, weather and facing rules
+not ok 4 - fixed upper-left key follows the specified phase, weather and facing rules
+  ---
+  duration_ms: 34860.571684
+  type: 'test'
+  location: '/home/michael/Developer/chicken-farm/worktrees/ebr88/tests/browser/lighting.browser.mjs:36:1'
+  failureType: 'testCodeFailure'
+  error: 'sunset-rain: shade/lit 0.7375182846179598 is below 0.75'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/ebr88/tests/browser/lighting.browser.mjs:52:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# LIGHTING_MEASUREMENTS {"daytime":{"lightPosition":[-9.363759928575702,12,7.022819946431775],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":162.44310731915164,"y":95.07280304597111},"towardSunPixels":-2.45315473375843,"shadowPixels":39,"brightenedPixels":0},"samples":[{"lightPosition":[-12,12,12],"sunward":127.48148135593216,"away":80.52783076923076,"difference":46.9536505867014,"ratio":0.6316825778357141,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,12,-12],"sunward":143.85600000000002,"away":83.50121694915248,"difference":60.354783050847544,"ratio":0.5804500121590511,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,12,-12],"luminance":82.9874774774776,"pixels":111},"frontlitFront":{"lightPosition":[12,12,12],"luminance":145.9400414414414,"pixels":111},"backlitRatio":0.5686409066203837,"errors":[]},"sunset":{"lightPosition":[-9.363759928575702,4.000000000000001,7.022819946431775],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":164.40056983806062,"y":95.25524079546038},"towardSunPixels":-4.418989285658285,"shadowPixels":50,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":115.69901355932208,"away":77.0033923076923,"difference":38.69562125162979,"ratio":0.6655492552510875,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":129.8404692307692,"away":79.32606440677968,"difference":50.51440482398952,"ratio":0.6109502289751524,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":79.13356576576572,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":131.61820900900904,"pixels":111},"backlitRatio":0.6012356980206984,"errors":[]},"night":{"lightPosition":[-9.363759928575702,9,7.022819946431775],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":161.35994080968538,"y":94.83075513148832},"towardSunPixels":-1.3537575568974776,"shadowPixels":22,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":70.24406779661018,"away":45.61261538461538,"difference":24.6314524119948,"ratio":0.6493447320944665,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":76.79766153846153,"away":46.62612881355932,"difference":30.171532724902207,"ratio":0.6071295385759655,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":52.144118918918906,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":81.46922702702703,"pixels":111},"backlitRatio":0.6400468105781872,"nightLantern":{"intensity":0.12,"withLantern":52.144118918918906,"withoutLantern":41.418436036036034},"errors":[]}}
+# Subtest: directional character shading and visible shadow follow the key light
+    # Subtest: sun-facing body is brighter, including when the sun is behind the camera-facing front
+    ok 1 - sun-facing body is brighter, including when the sun is behind the camera-facing front
+      ---
+      duration_ms: 1.388905
+      type: 'test'
+      ...
+    # Subtest: the visible shadow is opposite the actual phase sun or moon
+    ok 2 - the visible shadow is opposite the actual phase sun or moon
+      ---
+      duration_ms: 1.342998
+      type: 'test'
+      ...
+    # Subtest: a sunset shadow does not extend into the void at the foot-pad edge
+    ok 3 - a sunset shadow does not extend into the void at the foot-pad edge
+      ---
+      duration_ms: 2511.715861
+      type: 'test'
+      ...
+    # Subtest: the player shadow stays on the raised bridge deck
+    ok 4 - the player shadow stays on the raised bridge deck
+      ---
+      duration_ms: 1788.517338
+      type: 'test'
+      ...
+    # Subtest: the capsule-edge shadow remains on the foot pad
+    ok 5 - the capsule-edge shadow remains on the foot pad
+      ---
+      duration_ms: 2408.777818
+      type: 'test'
+      ...
+    # Subtest: the restored lantern range creates a warm ground pool
+    ok 6 - the restored lantern range creates a warm ground pool
+      ---
+      duration_ms: 4947.480477
+      type: 'test'
+      ...
+    1..6
+ok 5 - directional character shading and visible shadow follow the key light
+  ---
+  duration_ms: 24006.633368
+  type: 'test'
+  ...
+# Subtest: production build: a fence is free, undoable, and rendered through the default pixel pass
+ok 6 - production build: a fence is free, undoable, and rendered through the default pixel pass
+  ---
+  duration_ms: 3647.32078
+  type: 'test'
+  ...
+# Subtest: dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal
+ok 7 - dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal
+  ---
+  duration_ms: 5047.823136
+  type: 'test'
+  ...
+# Subtest: a placed plot can be crossed by WASD and removed from its footprint
+ok 8 - a placed plot can be crossed by WASD and removed from its footprint
+  ---
+  duration_ms: 4364.097715
+  type: 'test'
+  ...
+# Subtest: the foot pad and corner slide remain climbable with a fence and plot placed
+ok 9 - the foot pad and corner slide remain climbable with a fence and plot placed
+  ---
+  duration_ms: 9092.037491
+  type: 'test'
+  ...
+# Subtest: the opt-in debug grid is a dirt-coloured hairline, not the default
+ok 10 - the opt-in debug grid is a dirt-coloured hairline, not the default
+  ---
+  duration_ms: 2677.107065
+  type: 'test'
+  ...
+# Subtest: touch emulation previews first, rotates and confirms with the direct controls
+ok 11 - touch emulation previews first, rotates and confirms with the direct controls
+  ---
+  duration_ms: 2317.217933
+  type: 'test'
+  ...
+# Subtest: portrait touch can place and remove without the old HUD
+ok 12 - portrait touch can place and remove without the old HUD
+  ---
+  duration_ms: 2912.392967
+  type: 'test'
+  ...
+# Subtest: direct controls remain visible and clickable without the old HUD on small screens
+ok 13 - direct controls remain visible and clickable without the old HUD on small screens
+  ---
+  duration_ms: 10556.65595
+  type: 'test'
+  ...
+# Subtest: real clicks and WASD traverse the visible stairs and foot pad without clipping
+ok 14 - real clicks and WASD traverse the visible stairs and foot pad without clipping
+  ---
+  duration_ms: 17225.341265
+  type: 'test'
+  ...
+# Subtest: pad-side QA A: S+A then W+A reaches the path without leaving the visible ground
+ok 15 - pad-side QA A: S+A then W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 12345.456146
+  type: 'test'
+  ...
+# Subtest: pad-side QA B: W+D then W+A reaches the path without leaving the visible ground
+ok 16 - pad-side QA B: W+D then W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 14728.648474
+  type: 'test'
+  ...
+# Subtest: pad-side QA S+D, S+A, W+D, W+A reaches the path without leaving the visible ground
+ok 17 - pad-side QA S+D, S+A, W+D, W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 19330.240325
+  type: 'test'
+  ...
+# Subtest: production build walks without sim, interaction, or Build UI
+ok 18 - production build walks without sim, interaction, or Build UI
+  ---
+  duration_ms: 6651.963645
+  type: 'test'
+  ...
+# Subtest: walking and clicking around former interaction targets leaves only static scenery
+ok 19 - walking and clicking around former interaction targets leaves only static scenery
+  ---
+  duration_ms: 9662.411975
+  type: 'test'
+  ...
+# Subtest: fixed WASD and ground-click steps retain main-branch movement and camera
+ok 20 - fixed WASD and ground-click steps retain main-branch movement and camera
+  ---
+  duration_ms: 4556.434395
+  type: 'test'
+  ...
+# Subtest: night lights, weather controls, phase and pixel rendering remain usable
+ok 21 - night lights, weather controls, phase and pixel rendering remain usable
+  ---
+  duration_ms: 7159.023852
+  type: 'test'
+  ...
+# Subtest: small screens keep the phase label and touch-to-walk without sim UI
+ok 22 - small screens keep the phase label and touch-to-walk without sim UI
+  ---
+  duration_ms: 9683.12438
+  type: 'test'
+  ...
+# Subtest: day, sunset, night and rain retain the pixel pass, three original lights and a visible waterfall
+ok 23 - day, sunset, night and rain retain the pixel pass, three original lights and a visible waterfall
+  ---
+  duration_ms: 13152.289591
+  type: 'test'
+  ...
+# Subtest: real WASD and click cross the graded bridge; water blocks sideways and off-bridge movement
+ok 24 - real WASD and click cross the graded bridge; water blocks sideways and off-bridge movement
+  ---
+  duration_ms: 9692.61373
+  type: 'test'
+  ...
+# Subtest: a 1280x720 close-up shows the waterfall at the +Z rim
+ok 25 - a 1280x720 close-up shows the waterfall at the +Z rim
+  ---
+  duration_ms: 5149.164475
+  type: 'test'
+  ...
+# Subtest: real ghosts reject water and the complete walkable deck
+ok 26 - real ghosts reject water and the complete walkable deck
+  ---
+  duration_ms: 4091.598851
+  type: 'test'
+  ...
+1..26
+# tests 32
+# suites 0
+# pass 31
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 264828.108334

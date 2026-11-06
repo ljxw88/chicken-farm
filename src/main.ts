@@ -1,13 +1,15 @@
 import './style.css';
 import './ui/farmHud.css';
-import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
+import { CHARACTER_RADIUS, createCharacter, createCharacterController, type CharacterComponents } from './character';
 import { createEngine } from './core/loop';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createPlacement } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
 import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
+import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { WATER_FEATURE } from './scene/waterFeatureSpec';
 import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
@@ -39,12 +41,25 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const { windows, extraEmissives, obstacles, splashExclusions } = createFarmLayout(scene);
-const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives });
+const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
+const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
+const farmShadows = createFarmShadows(scene);
+function shadowSupported(x: number, z: number, radius: number) {
+  // The character's blob must not float off a raised bridge deck onto water.
+  if (bridgeHeight(character.position.x, character.position.z) !== undefined) {
+    const { bridge } = WATER_FEATURE;
+    return x - radius >= bridge.x - bridge.length / 2 && x + radius <= bridge.x + bridge.length / 2 &&
+      z - radius >= bridge.z - bridge.width / 2 && z + radius <= bridge.z + bridge.width / 2;
+  }
+  return stairs.supports(x, z, radius);
+}
+const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
+  shadowSupported, updateFarmShadows: farmShadows.update });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
   setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
+  setShadowWeather: dayNight.setShadowWeather,
 });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase);
@@ -57,7 +72,6 @@ window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
-const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 let cancelClickTarget = () => {};
 const placement = createPlacement({
   scene, camera, canvas, ground, groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT,
@@ -68,20 +82,6 @@ const placement = createPlacement({
     if (active) cancelClickTarget();
   },
 });
-const controls = createCharacterControls({
-  character,
-  camera,
-  canvas,
-  ground,
-  groundSize: GROUND_SIZE,
-  groundHeight: GROUND_HEIGHT,
-  characterRadius: CHARACTER_RADIUS,
-  obstacles,
-  stairs,
-  groundShadow: character.getObjectByName('character-shadow'),
-  onPointerDown: placement.handlePointerDown,
-});
-cancelClickTarget = controls.cancelTarget;
 const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
@@ -101,21 +101,30 @@ handleResize();
 if (!isPixelRenderingEnabled(window.location.search)) composer.setEnabled(false);
 window.addEventListener('resize', handleResize);
 
-createEngine({
+const engine = createEngine<CharacterComponents>({
   setAnimationLoop: (callback) => renderer.setAnimationLoop(callback),
-  input: { target: window, canvas, getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
+  input: { target: window, canvas, ownMovement: true, onPointerDown: placement.handlePointerDown,
+    getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
+  frameSystems: [(world, move, deltaSeconds) => controls.system(world, move, Math.min(deltaSeconds, 0.1))],
   beforeFrame() {
     // Moving a window between displays can change DPR without a resize event.
     if (window.devicePixelRatio !== lastDevicePixelRatio) handleResize();
   },
   update(deltaSeconds) {
-    // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
-    controls.update(Math.min(deltaSeconds, 0.1));
     phaseController.update(deltaSeconds);
+    dayNight.updateCharacterShadow();
     farmHud.setPhase(dayNight.getPhase());
     follow(character.position);
     placement.update();
     weather.update(deltaSeconds);
+    updateWaterfall(deltaSeconds);
   },
   render: (deltaSeconds) => composer.render(deltaSeconds),
-}).start();
+});
+const controls = createCharacterController({
+  world: engine.world, input: engine.input, character, camera, canvas, ground,
+  groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: CHARACTER_RADIUS,
+  obstacles, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
+});
+cancelClickTarget = controls.cancelTarget;
+engine.start();

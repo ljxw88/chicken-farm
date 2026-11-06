@@ -1,0 +1,161 @@
+{
+  "source": "Linear EBR-48 comment c6ca07d2",
+  "waterBounds": {
+    "min": [
+      2.232238292694092,
+      2.428999900817871,
+      -2.450073480606079
+    ],
+    "max": [
+      4.511341094970703,
+      2.428999900817871,
+      8
+    ]
+  },
+  "rimBounds": {
+    "min": [
+      2.0822384357452393,
+      2.427000045776367,
+      -2.45009183883667
+    ],
+    "max": [
+      4.661341190338135,
+      2.427000045776367,
+      8
+    ]
+  },
+  "featureBounds": {
+    "min": [
+      2.0822384357452393,
+      -1.2000000476837158,
+      -2.6500000002980233
+    ],
+    "max": [
+      4.900000000298023,
+      3.0700000166893004,
+      8.061
+    ]
+  },
+  "bridge": {
+    "kind": "box",
+    "name": "wooden-bridge",
+    "blocksWalking": false,
+    "minX": 2.9,
+    "maxX": 4.9,
+    "minZ": -2.65,
+    "maxZ": -1.25
+  },
+  "pond": {
+    "kind": "box",
+    "name": "pond",
+    "minX": 2.3724999999999996,
+    "maxX": 5.6275,
+    "minZ": -4.4975,
+    "maxZ": -2.5025
+  },
+  "collisionMinX": 2.205435311381821,
+  "streamBoxStats": {
+    "sourceBoxes": 40,
+    "walkingPiecesAfterDeckCut": 32,
+    "sourceWidth": 1.26,
+    "sourceLengthRange": [0.3258776661034533, 1.0694451045917135]
+  },
+  "closestCoopBRoof": {
+    "distance": 2.0670647310104533,
+    "points": {
+      "stream": [
+        3.299999952316284,
+        -2.4499266147613525
+      ],
+      "roof": [
+        2.200000047683716,
+        -4.199999988079071
+      ]
+    },
+    "roof": {
+      "min": [
+        0.5000000000000001,
+        3.594615364074707,
+        -5.800000011920929
+      ],
+      "max": [
+        2.200000047683716,
+        4.350000047683716,
+        -4.199999988079071
+      ]
+    }
+  },
+  "pathBorderMaxZWithinDeckX": {
+    "x": 4.9,
+    "z": -1.0240665587937596
+  },
+  "pathBorderOverhang": 0.22593344120624037,
+  "pondDeckOverlapDepth": 0.14749999999999996,
+  "pondClearanceAtBridgeCenter": 0.1525,
+  "pondInnerWaterEndAtX3_9": -2.592059591913612,
+  "streamStartToPondInnerWaterGap": 0.14205959191361162,
+  "nest": {
+    "center": [
+      4.3,
+      0.7
+    ],
+    "bounds": {
+      "min": [
+        4.01000000834465,
+        2.4359999978542324,
+        0.4100000083446502
+      ],
+      "max": [
+        4.5899999916553496,
+        2.844000002145767,
+        0.9899999916553497
+      ]
+    },
+    "nearest": {
+      "distance": 1.1773898160150473,
+      "at": [
+        3.1852516365355648,
+        0.321076703000052
+      ]
+    },
+    "clearances": {
+      "method": "minimum X/Z distance from the rendered 20-sided outer straw ring or its full placement bounding box to rendered ribbon triangles and bridge/stair footprints",
+      "visibleRing": {
+        "streamWater": 0.28738129413550917,
+        "streamRim": 0.13738289871630438,
+        "dirtBorder": 1.3464250299705631,
+        "dirtSurface": 1.4164048358026384,
+        "bridgeDeck": 1.6600000083446502,
+        "stairs": 3.4100000202655787,
+        "waterCollisionBoxes": 0.20273051604577308
+      },
+      "placementBounds": {
+        "streamWater": 0.20662283423865876,
+        "streamRim": 0.05662342768770591,
+        "dirtBorder": 1.2235460485750738,
+        "dirtSurface": 1.2935071635175626,
+        "bridgeDeck": 1.6600000083446502,
+        "stairs": 3.4100000202655787,
+        "waterCollisionBoxes": 0.12230811170037166,
+        "x5_2KeepOut": 0.6100000083446506
+      }
+    }
+  },
+  "tufts": {
+    "3,0.85": {
+      "distance": 0.035556836596897325,
+      "at": [
+        3.0345392366800303,
+        0.8584456946629216
+      ]
+    },
+    "3.5,1.5": {
+      "distance": 0.5855462910312978,
+      "at": [
+        2.9225424707934042,
+        1.4030089648311612
+      ]
+    }
+  },
+  "plankGapWidth": 0.04
+}

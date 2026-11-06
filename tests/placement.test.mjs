@@ -3,14 +3,15 @@ import { after, test } from 'node:test';
 import { JSDOM } from 'jsdom';
 import * as THREE from 'three';
 import { createServer } from 'vite';
+import { loadCharacterFixture } from './characterFixture.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createGrid, TILE_SIZE, footprintCells, intersectsFootprint, fenceCollision } =
   await vite.ssrLoadModule('/src/placement/grid.ts');
 const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlacement.ts');
-const { createCharacterControls } = await vite.ssrLoadModule('/src/character/createCharacterControls.ts');
+const createCharacterControls = await loadCharacterFixture(vite);
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
-const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 after(() => vite.close());
 
@@ -154,6 +155,33 @@ test('fence and plot ghosts reject partial overlap with each wall, coop body and
   assert.deepEqual(f.obstacles, original);
 });
 
+test('fence and plot ghosts reject partial water and walkable bridge tiles in every rotation', (t) => {
+  const f = fixture(t, { farm: true });
+  const original = f.obstacles.slice();
+  const water = original.filter((entry) => entry.name.startsWith('stream-'));
+  const bridge = original.find((entry) => entry.name === 'wooden-bridge');
+  assert.ok(water.length);
+  assert.equal(bridge.blocksWalking, false);
+  for (const [name, zones] of [['water', water], ['bridge', [bridge]]]) {
+    // Isolate each feature so another object cannot hide a missing keep-out.
+    f.obstacles.splice(0, f.obstacles.length, ...zones);
+    for (const kind of ['fence', 'plot']) for (let rotation = 0; rotation < 4; rotation++) {
+      f.key(kind === 'fence' ? 'KeyF' : 'KeyP');
+      for (let turn = 0; turn < rotation; turn++) f.key('KeyR');
+      const x = 2.25;
+      const z = name === 'bridge' ? -2.25 : 2.25;
+      f.pointer('pointermove', x, z);
+      assert.match(f.status(), /Blocked by a farm object/, `${name} ${kind} rotation ${rotation}`);
+      assert.equal(f.layer.getObjectByName('placement-wash').material.color.getHex(), 0xc45a3a);
+      assert.equal(document.querySelector('[data-confirm]').disabled, true);
+      f.pointer('pointerdown', x, z);
+      f.key('Enter');
+      assert.equal(f.count(`placed-${kind}`), 0);
+    }
+  }
+  f.obstacles.splice(0, f.obstacles.length, ...original);
+});
+
 test('placement previews, validates, rotates only the ghost, and updates and removes live walking collisions', (t) => {
   const f = fixture(t);
   assert.equal(f.layer.getObjectByName('placement-debug-grid').visible, false);
@@ -232,6 +260,27 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
   f.key('KeyZ');
   assert.equal(f.count('placed-fence'), 0);
   assert.equal(f.obstacles.length, 1); // The pre-existing obstacle is untouched.
+});
+
+test('a placed fence blocks the character system immediately and undo removes its entity', (t) => {
+  const f = fixture(t);
+  f.key('KeyF');
+  f.pointer('pointermove', 3.75, 3.75);
+  f.pointer('pointerdown', 3.75, 3.75);
+  assert.equal(f.count('placed-fence'), 1);
+  f.key('Escape');
+  f.character.position.set(3.75, 2.4, 2);
+  f.key('KeyS');
+  f.key('KeyA'); // World +Z, toward the fence.
+  f.controls.update(1);
+  assert.ok(f.character.position.z <= 3.22 && f.character.position.z > 3.1);
+  assert.ok([...f.controls.world.with('obstacle')].some((entry) => entry.obstacle.name.startsWith('placed-fence-')));
+  f.key('KeyZ');
+  assert.equal(f.count('placed-fence'), 0);
+  f.character.position.set(3.75, 2.4, 2);
+  f.controls.update(1);
+  assert.ok(f.character.position.z > 5.49);
+  assert.equal([...f.controls.world.with('obstacle')].some((entry) => entry.obstacle.name.startsWith('placed-fence-')), false);
 });
 
 test('extra world objects and a moving player are rechecked before confirming; touch previews before Place', (t) => {

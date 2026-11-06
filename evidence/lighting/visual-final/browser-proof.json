@@ -1,0 +1,111 @@
+{
+  "production": {
+    "browser": "153.0.8010.12",
+    "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "pixel": [
+      320,
+      180
+    ],
+    "walked": true,
+    "nightRain": true,
+    "simUi": false,
+    "errors": []
+  },
+  "formerTargets": {
+    "approached": [
+      "chicken",
+      "nest",
+      "sign",
+      "bin"
+    ],
+    "pressedEAndClickedEach": true,
+    "chickenClickWalked": true,
+    "simUi": false,
+    "errors": []
+  },
+  "mainMovementComparison": {
+    "walk": {
+      "position": [
+        1.237436867076458,
+        2.4,
+        1.2374368670764584
+      ],
+      "camera": [
+        13.237436867076458,
+        15.1,
+        13.237436867076458
+      ],
+      "rotation": 0.7853981633974482
+    },
+    "click": {
+      "position": [
+        2.0908318766137595,
+        2.4,
+        -0.1960154681033713
+      ],
+      "camera": [
+        14.090831876613759,
+        15.1,
+        11.803984531896628
+      ]
+    },
+    "errors": []
+  },
+  "environment": {
+    "weather": [
+      "cloudy",
+      "rain",
+      "clear"
+    ],
+    "phases": [
+      "night",
+      "sunset",
+      "night",
+      "morning (cycle)"
+    ],
+    "pixelWidths": [
+      320,
+      1280,
+      320
+    ],
+    "lights": {
+      "windows": [
+        0.85,
+        0.85
+      ],
+      "panes": [
+        0.85,
+        0.85
+      ],
+      "lantern": 0.08,
+      "glass": 0.55
+    },
+    "errors": []
+  },
+  "responsive": {
+    "sizes": [
+      {
+        "width": 320,
+        "height": 568,
+        "errors": []
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "errors": []
+      },
+      {
+        "width": 844,
+        "height": 390,
+        "errors": []
+      },
+      {
+        "width": 480,
+        "height": 320,
+        "errors": []
+      }
+    ],
+    "touchWalked": true,
+    "errors": []
+  }
+}

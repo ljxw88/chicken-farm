@@ -56,7 +56,7 @@ test('a URL phase stays fixed until a valid console phase or cycle setter resume
   const phaseSetter = fixture('night');
   phaseSetter.controller.setDayNightPhase('daytime');
   phaseSetter.controller.update(18);
-  assert.equal(phaseSetter.hemisphere.color.getHex(), 0xf0a878);
+  assert.equal(phaseSetter.hemisphere.color.getHex(), 0xe8dec6);
 
   const defaultCycle = fixture(undefined);
   defaultCycle.controller.update(18);

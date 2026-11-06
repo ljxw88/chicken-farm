@@ -1,0 +1,197 @@
+{
+  "mainSha": "dcbaf70b8f2c1038afe5c0b70f506ec7de931214",
+  "signedSha": "6c3c03a6c5bfe12ad98de019f7abc757897680c4",
+  "candidateSha": "55b21463a0154b5ad35465c3e7fc128dbcefc882",
+  "sourceStatus": "",
+  "signedRainSettingsSha256": "da302529d67fa217e58fdc499699455c02176178a11d883afec4b28a7163a47b",
+  "browser": "153.0.8010.12",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1,
+  "seed": 3950182401,
+  "results": {
+    "day-clear": {
+      "mainRaw": 0,
+      "signedRaw": 0,
+      "outsideStreakMask": 0,
+      "mainWithoutStreaks": 0,
+      "signedMaskChanged": 0,
+      "signedStreakPixelsChanged": 0,
+      "signedWithoutStreaks": 0,
+      "mainFrameSha256": "164efa193a80f6490c0f81c123a6536ee59f5c930001e6646fa47499ee5f3275",
+      "signedFrameSha256": "164efa193a80f6490c0f81c123a6536ee59f5c930001e6646fa47499ee5f3275",
+      "mergedFrameSha256": "164efa193a80f6490c0f81c123a6536ee59f5c930001e6646fa47499ee5f3275",
+      "hudStateIdentical": true,
+      "signedGeometrySha256": "32ead73abab870ab0c7ba67a2337215e63ae49394d3c22dbf133e7ce1c7a2a0a",
+      "mergedGeometrySha256": "32ead73abab870ab0c7ba67a2337215e63ae49394d3c22dbf133e7ce1c7a2a0a",
+      "signedGeometryIdentical": true,
+      "mainCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "signedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "mergedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "position": [
+        0,
+        2.4,
+        0
+      ]
+    },
+    "day-cloudy": {
+      "mainRaw": 0,
+      "signedRaw": 0,
+      "outsideStreakMask": 0,
+      "mainWithoutStreaks": 0,
+      "signedMaskChanged": 0,
+      "signedStreakPixelsChanged": 0,
+      "signedWithoutStreaks": 0,
+      "mainFrameSha256": "efd3f970fd2d6919af226de99364eba21fc33d3c472dd482b3c02108f3d09d1a",
+      "signedFrameSha256": "efd3f970fd2d6919af226de99364eba21fc33d3c472dd482b3c02108f3d09d1a",
+      "mergedFrameSha256": "efd3f970fd2d6919af226de99364eba21fc33d3c472dd482b3c02108f3d09d1a",
+      "hudStateIdentical": true,
+      "signedGeometrySha256": "32ead73abab870ab0c7ba67a2337215e63ae49394d3c22dbf133e7ce1c7a2a0a",
+      "mergedGeometrySha256": "32ead73abab870ab0c7ba67a2337215e63ae49394d3c22dbf133e7ce1c7a2a0a",
+      "signedGeometryIdentical": true,
+      "mainCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "signedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "mergedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "position": [
+        0,
+        2.4,
+        0
+      ]
+    },
+    "day-rain": {
+      "mainRaw": 31407,
+      "signedRaw": 0,
+      "outsideStreakMask": 0,
+      "mainWithoutStreaks": 0,
+      "signedMaskChanged": 0,
+      "signedStreakPixelsChanged": 0,
+      "signedWithoutStreaks": 0,
+      "mainFrameSha256": "2f9e84ecb797b28e3b2103ddc14406211a0594b39789b8272cd86e4cc1544af2",
+      "signedFrameSha256": "f593d654f483304bb95e1e0ea4eaa4d44d956c925a4d4df93620e6ded98e7855",
+      "mergedFrameSha256": "f593d654f483304bb95e1e0ea4eaa4d44d956c925a4d4df93620e6ded98e7855",
+      "hudStateIdentical": true,
+      "signedGeometrySha256": "91e10d7d8e8452a279f6279b41cb3659d27d1e5c5fb57a874eb6c890edb6f823",
+      "mergedGeometrySha256": "91e10d7d8e8452a279f6279b41cb3659d27d1e5c5fb57a874eb6c890edb6f823",
+      "signedGeometryIdentical": true,
+      "mainCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "signedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "mergedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "position": [
+        0,
+        2.4,
+        0
+      ]
+    },
+    "night-rain": {
+      "mainRaw": 31442,
+      "signedRaw": 0,
+      "outsideStreakMask": 0,
+      "mainWithoutStreaks": 0,
+      "signedMaskChanged": 0,
+      "signedStreakPixelsChanged": 0,
+      "signedWithoutStreaks": 0,
+      "mainFrameSha256": "3a13493fca4a4bb7cd44f961258007f019cd6e482d795d8fb19e689ab4c4e2ef",
+      "signedFrameSha256": "4bc7d36a3adb18ccd72fd66f46c74c67ed778390c5cc810a889973731829be1c",
+      "mergedFrameSha256": "4bc7d36a3adb18ccd72fd66f46c74c67ed778390c5cc810a889973731829be1c",
+      "hudStateIdentical": true,
+      "signedGeometrySha256": "91e10d7d8e8452a279f6279b41cb3659d27d1e5c5fb57a874eb6c890edb6f823",
+      "mergedGeometrySha256": "91e10d7d8e8452a279f6279b41cb3659d27d1e5c5fb57a874eb6c890edb6f823",
+      "signedGeometryIdentical": true,
+      "mainCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "signedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "mergedCloud": [
+        0,
+        2.4,
+        0
+      ],
+      "position": [
+        0,
+        2.4,
+        0
+      ]
+    },
+    "day-rain-walk": {
+      "mainRaw": 31968,
+      "signedRaw": 0,
+      "outsideStreakMask": 0,
+      "mainWithoutStreaks": 0,
+      "signedMaskChanged": 0,
+      "signedStreakPixelsChanged": 0,
+      "signedWithoutStreaks": 0,
+      "mainFrameSha256": "fd24ef6211e3b3a2d97e97882ad1a737b425213fd8ab0257ed1b830c65391ec2",
+      "signedFrameSha256": "f0c2a367c0dff5923a63567175407b9ebdfbe530390278f00c1fc93ecbe14ddb",
+      "mergedFrameSha256": "f0c2a367c0dff5923a63567175407b9ebdfbe530390278f00c1fc93ecbe14ddb",
+      "hudStateIdentical": true,
+      "signedGeometrySha256": "342bcb1b0461d202b71570aa03d846a5ad8052659f431be28a3a3724bbca02a0",
+      "mergedGeometrySha256": "342bcb1b0461d202b71570aa03d846a5ad8052659f431be28a3a3724bbca02a0",
+      "signedGeometryIdentical": true,
+      "mainCloud": [
+        1.806658046465012,
+        2.4,
+        1.979898987322335
+      ],
+      "signedCloud": [
+        1.806658046465012,
+        2.4,
+        1.979898987322335
+      ],
+      "mergedCloud": [
+        1.806658046465012,
+        2.4,
+        1.979898987322335
+      ],
+      "position": [
+        1.806658046465012,
+        2.4,
+        1.979898987322335
+      ]
+    }
+  },
+  "consoleWarningsOrErrors": []
+}

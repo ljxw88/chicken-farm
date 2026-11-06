@@ -1,0 +1,14 @@
+diff --git a/src/weather/createRainEffect.ts b/src/weather/createRainEffect.ts
+index d53b481..388af4c 100644
+--- a/src/weather/createRainEffect.ts
++++ b/src/weather/createRainEffect.ts
+@@ -2 +2 @@ import * as THREE from 'three';
+-import type { FarmObstacle } from '../scene/farmCollisions';
++import type { FarmObstacle } from '../character/farmCollisions';
+diff --git a/src/weather/createWeatherSystem.ts b/src/weather/createWeatherSystem.ts
+index ef7cd7b..43be8f8 100644
+--- a/src/weather/createWeatherSystem.ts
++++ b/src/weather/createWeatherSystem.ts
+@@ -2 +2 @@ import * as THREE from 'three';
+-import type { FarmObstacle } from '../scene/farmCollisions';
++import type { FarmObstacle } from '../character/farmCollisions';

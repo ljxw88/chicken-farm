@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { FarmObstacle } from '../scene/farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 import { CLOUDY_LOOK } from './cloudySettings';
 import { createRainEffect } from './createRainEffect';
 import { RAIN_LOOK } from './rainSettings';
@@ -20,6 +20,7 @@ interface WeatherSystemOptions {
   splashExclusions: readonly FarmObstacle[];
   setDirectionalIntensityMultiplier: (multiplier: number) => void;
   setAmbientHemisphereColorMultiplier: (red: number, green: number, blue: number) => void;
+  setShadowWeather?: (rain: number, cloudy: number) => void;
   random?: () => number;
 }
 
@@ -63,6 +64,7 @@ export function createWeatherSystem(options: WeatherSystemOptions) {
       THREE.MathUtils.lerp(1, gains.green, cloudyAmount),
       THREE.MathUtils.lerp(1, gains.blue, cloudyAmount),
     );
+    options.setShadowWeather?.(rainAmount, cloudyAmount);
     rain.update(deltaSeconds, rainAmount);
   }
 
@@ -77,6 +79,7 @@ export function createWeatherSystem(options: WeatherSystemOptions) {
     rain.dispose();
     options.setDirectionalIntensityMultiplier(1);
     options.setAmbientHemisphereColorMultiplier(1, 1, 1);
+    options.setShadowWeather?.(0, 0);
   }
 
   return { setWeather, getWeather, update, dispose };
