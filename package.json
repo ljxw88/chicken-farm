@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "node --test tests/*.test.mjs",
-    "test:browser": "npm run build && node --test tests/browser/*.browser.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:browser": "npm run build && node --test --test-concurrency=1 tests/browser/*.browser.mjs",
     "parity": "node tools/parity.mjs",
     "lighting:parity": "node tools/lighting-parity.mjs",
     "preview": "vite preview"
