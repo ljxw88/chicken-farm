@@ -419,14 +419,18 @@ function historicalBehavior(trace) {
   return copy;
 }
 
-/** Record a clean main worktree first, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir }) {
+/** Record a clean main reference first, then replay identical events and timestamps. */
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir, archivedBaselineSha }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
-  assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
-  assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-    'The reference must be a clean main worktree');
+  if (archivedBaselineSha) {
+    assert.equal(archivedBaselineSha, baselineSha);
+  } else {
+    assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
+    assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
+      'The reference must be a clean main worktree');
+  }
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },
     { name: 'environment-cycle', search: '?phase=sunset&weather=clear' },

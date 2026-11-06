@@ -12,7 +12,8 @@ export interface FarmBounds {
   maxZ: number;
 }
 
-export type FarmBoundarySlide = (x: number, z: number, radius: number, distance: number) => { x: number; z: number } | undefined;
+export type FarmBoundarySlide = (x: number, z: number, radius: number, distance: number, directionX: number) =>
+  { x: number; z: number } | undefined;
 
 function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
   return obstacles.some((obstacle) => {
@@ -89,12 +90,12 @@ export function moveWithFarmCollisions(
       if (!blocked(x, nextZ)) z = nextZ;
       else z = approachEdge(z, nextZ, (value) => !blocked(x, value));
 
-      // An inward step can be pinned at a concave walkable-surface corner even
-      // when its screen-diagonal input has no lateral world-space component.
-      // Use only the unspent movement to slide toward the adjoining surface.
-      if (slideBoundary && supports && nextX < x && !supports(nextX, z, radius)) {
+      // A step into either stair opening can be pinned at a surface corner
+      // even without lateral world-space input. Spend only the unused motion
+      // sliding toward the adjoining surface; support and obstacles still win.
+      if (slideBoundary && supports && nextX !== startX && !supports(nextX, z, radius)) {
         const remaining = Math.max(0, Math.hypot(nextX - startX, nextZ - startZ) - Math.hypot(x - startX, z - startZ));
-        const slide = slideBoundary(x, z, radius, remaining);
+        const slide = slideBoundary(x, z, radius, remaining, nextX - startX);
         if (slide && !blocked(slide.x, slide.z)) {
           x = slide.x;
           z = slide.z;

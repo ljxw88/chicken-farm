@@ -86,6 +86,25 @@ test('stair surface entities enforce the void, capsule height and pad-corner sli
   assert.ok(stairSupports(surface, f.player.transform.position[0], f.player.transform.position[2], 0.4));
 });
 
+test('returning to the stair top slides only tiny opening-edge offsets inward', () => {
+  const surface = createStairSurface(16, 2.4, 0);
+  for (const z of [0.55 - 1e-8, 0.95 + 1e-8, 0.55 - 0.0009, 0.95 + 0.0009]) {
+    const f = fixture([7.9, 2.4, z], surface);
+    assert.ok(stairSupports(surface, 7.9, z, 0.4));
+    f.move(f.world, plusX, 0.25);
+    const [x, , endZ] = f.player.transform.position;
+    assert.ok(x > 8.1, `stair entry stuck at ${x}, ${endZ}`);
+    assert.ok(stairSupports(surface, x, endZ, 0.4));
+    assert.ok(Math.hypot(x - 7.9, endZ - z) <= 3.5 * 0.25 + 1e-6, 'entry slide must not add movement');
+  }
+  for (const z of [0.55 - 0.0011, 0.95 + 0.0011, 0.54, 0.96]) {
+    const outside = fixture([7.9, 2.4, z], surface);
+    outside.move(outside.world, plusX, 1);
+    assert.ok(outside.player.transform.position[0] < 8, 'a real void-side approach must remain blocked');
+    assert.ok(stairSupports(surface, outside.player.transform.position[0], outside.player.transform.position[2], 0.4));
+  }
+});
+
 test('actual cottage and water obstacle entities retain the bridge opening and graded height', () => {
   const scene = new THREE.Scene();
   const layout = createFarmLayout(scene);
