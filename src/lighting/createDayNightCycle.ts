@@ -56,6 +56,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
   const characterRotation = new THREE.Quaternion();
   let cycleSeconds = DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
   let progress = 0;
+  let daytimeCrownAmount = 0;
   let directionalMultiplier = 1;
   let directionalBaseIntensity: number = morning.directionalIntensity;
   let ambientBaseIntensity: number = morning.ambientIntensity;
@@ -147,6 +148,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     }
     rainAmount = rain;
     cloudyAmount = cloudy;
+    setCharacterDaytimeCrown(daytimeCrownAmount, cloudyAmount);
     applyFillIntensities();
     updateCharacterShadow();
   }
@@ -165,7 +167,8 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     setSunsetWaterTint((from.name === 'sunset' ? 1 - blend : 0) + (to.name === 'sunset' ? blend : 0));
     // Preserve the signed morning/sunset/night crowns, and blend the daytime
     // contrast lift with the same smooth phase interpolation as the lighting.
-    setCharacterDaytimeCrown((from.name === 'daytime' ? 1 - blend : 0) + (to.name === 'daytime' ? blend : 0));
+    daytimeCrownAmount = (from.name === 'daytime' ? 1 - blend : 0) + (to.name === 'daytime' ? blend : 0);
+    setCharacterDaytimeCrown(daytimeCrownAmount, cloudyAmount);
 
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);

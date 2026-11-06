@@ -23,14 +23,17 @@ function applyCrownLift(geometry: THREE.BufferGeometry, lift: number, baseGain: 
 export function createCharacterCrownController(character: THREE.Object3D) {
   const body = character.children.find((child) => child instanceof THREE.Mesh && child.geometry.type === 'CapsuleGeometry');
   let currentDaytimeAmount = 0;
-  return (daytimeAmount: number) => {
-    if (!(body instanceof THREE.Mesh) || daytimeAmount === currentDaytimeAmount) return;
+  let currentBaseAmount = 0;
+  return (daytimeAmount: number, cloudyAmount: number) => {
+    const baseAmount = daytimeAmount * (1 - cloudyAmount);
+    if (!(body instanceof THREE.Mesh) || (daytimeAmount === currentDaytimeAmount && baseAmount === currentBaseAmount)) return;
     const lift = THREE.MathUtils.lerp(CROWN_LIFT, DAY_CROWN_LIFT, daytimeAmount);
-    // Uniform linear RGB preserves the signed yellow hue; only daylight gets
-    // the permitted maximum 8% albedo luminance lift, never emission.
-    const baseGain = THREE.MathUtils.lerp(1, DAY_BASE_GAIN, daytimeAmount);
+    // Uniform linear RGB preserves the signed yellow hue, without emission.
+    // Fade out the extra base gain in cloud to retain shade/grass separation.
+    const baseGain = THREE.MathUtils.lerp(1, DAY_BASE_GAIN, baseAmount);
     applyCrownLift(body.geometry, lift, baseGain);
     currentDaytimeAmount = daytimeAmount;
+    currentBaseAmount = baseAmount;
   };
 }
 
