@@ -1,0 +1,21 @@
+[heavy] slot /tmp/farm-heavy.2.lock acquired (waits for QA gate lock if held): node --test --test-concurrency=1 tests/browser/character-replay.browser.mjs
+TAP version 13
+# Subtest: scripted key, mouse and touch traces match main outside the visual effects
+ok 1 - scripted key, mouse and touch traces match main outside the visual effects
+  ---
+  duration_ms: 56993.320144
+  type: 'test'
+  ...
+# Identical traces: walking=34, qa-walk=21, key-transitions=37, bridge=44, stairs=582, stream=31
+# Intended effect pixels: spawn=704, walking=688, bridge-gap=704, bridge-mid=816, stairs-mid=0, stream-block=816
+# Changed pixels with effects hidden: spawn=0, walking=0, bridge-gap=0, bridge-mid=0, stairs-mid=0, stream-block=0
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 57818.901361
+[heavy] released /tmp/farm-heavy.2.lock rc=0

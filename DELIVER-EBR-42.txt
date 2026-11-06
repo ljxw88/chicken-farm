@@ -1,0 +1,165 @@
+EBR-42 — night fireflies and chimney smoke
+
+Branch: feat/ebr42-fireflies-smoke
+Clean-main reference: 5d9ba48f6bd9bfbc3974351b50d0ce89934380ff
+Smoke commit: fb7ef76e21a414721421bfc24f9f5ed699cecc6a
+Fireflies commit: 311094d5f4c91f743d761a90f64604c7d58520d4
+Test-harness/source tip at capture: 1b3dc061f1ac7eb1d65be3743023db15dfab91f4
+Runtime source and test tools are unchanged after that tip; the final commit
+adds only this handoff and the regenerated evidence.
+The evidence/handoff commit cannot contain its own SHA. Run `git rev-parse HEAD`
+for the exact current tip; the final controller message supplies that literal SHA.
+
+Open
+- Review server: http://100.88.150.21:5212/?phase=night&weather=clear&seed=3950182401
+- Change weather to rain or cloudy; also try ?phase=sunset&weather=clear and
+  ?phase=daytime&weather=clear. The phase URL is held, the 4-CSS-pixel pass is on.
+- Full main/candidate frames, exact masks and paired chimney/firefly crops:
+  evidence/EBR-42/ (see its README.md and comparison.json).
+- For exact replay pass ?seed=3950182401 (or ?seed=0xeb730001) and use the
+  controlled-frame capture script. Seeds are unsigned 32-bit decimal or hex;
+  absent a seed, existing rain keeps its ordinary RNG while the new effects use
+  independent fixed streams. A supplied seed also fixes the existing rain
+  streak/splash layout, so an unseeded reload can have a different random rain
+  pattern; it changes no gameplay. Gate G seeds both versions identically.
+
+Intended pixel changes
+- For every named comparison frame, white pixels in
+  evidence/EBR-42/mask/combined/<frame>.png are the only allowed differences
+  from clean main. Separate smoke/ and fireflies/ masks identify each effect;
+  diff/<frame>.png is the exact magenta raw diff. Masks are for the recorded
+  seed, time, camera and pose; moving particles need a newly captured mask.
+- Exact changed-pixel counts and effect bounding boxes below use screen pixels;
+  boxes are (left, top, right-exclusive, bottom-exclusive). A dash means none.
+  Each row's exact, non-rectangular permitted mask is mask/combined/<frame>.png.
+  Frame                       Changed   Smoke box          Firefly box
+  morning-clear                    832   692,140,732,192    -
+  morning-cloudy                   832   692,140,732,192    -
+  morning-rain                     560   692,156,720,188    -
+  daytime-clear                    832   692,140,732,192    -
+  daytime-cloudy                   832   692,140,732,192    -
+  daytime-rain                     576   692,156,720,192    -
+  sunset-clear                     832   692,140,732,192    -
+  sunset-cloudy                    816   692,140,732,188    -
+  sunset-rain                      560   692,156,720,188    -
+  night-clear                     2320   692,140,732,188    424,304,876,488
+  night-cloudy                    1904   692,140,732,188    480,304,876,488
+  night-rain                      1296   692,156,720,188    480,312,876,488
+  walk-night-clear                2336   696,84,736,136     428,248,880,432
+  placement-night-clear            2131   692,140,728,188    424,304,876,488
+  stairs-daytime-clear                0   -                  -
+- In the placement frame, part of the plume is behind the existing translucent
+  toolbar, so its mask includes composited toolbar pixels. The toolbar's DOM,
+  styling and placement state are unchanged.
+- The chimney crop source rectangle is (644,92,136,144); the firefly-cluster
+  crop is (401,284,320,220), containing 10 visible connected mote components.
+  Both are enlarged 3x nearest-neighbour, with paired before/after and masks;
+  the same chimney rectangle is also provided for daytime clear.
+
+Visible-change ledger and design values
+- Smoke originates at cottage-chimney-top: local y=3.6, world
+  (-1.9,6.0,-4.1). It is non-emissive, flat-shaded detail-0 icosahedron
+  geometry in base 0xe4d1ae,
+  lit by the existing scene. Its measured bounding width grows 0.22 to 0.50;
+  the shortest triangle edge at birth is 0.135967 world units. Birth opacity
+  is 0.55, fades to zero, and is multiplied by 0.6 in rain. Rise is 0.5 u/s;
+  the 0.25 u/s wind is (+0.235094, 0, -0.085034) world units/s. At birth its
+  lowest bound is y=5.89, 0.39 above the roof ridge; the geometry test finds
+  no puff/window intersection.
+- Fireflies use one unlit instanced draw, 0.22 x 0.22 world-unit yellow cores
+  (0xf2e27a), no halo and no lights. Stable night counts are 14 clear, 10
+  cloudy, 6 rain; morning/day/sunset anchors are zero. Pulses span 0.25–1.0
+  over 2.5–4.5 s, rain survivors are multiplied by 0.6, and phase/weather
+  envelopes crossfade. Closed 3-D Lissajous loops have horizontal radii
+  0.5–1.19, centre heights 0.63–1.47 above grass, and 3-D speed within the
+  requested 0.15–0.35 u/s.
+  Seeded homes sit near trees, stream and pond; loops and their projected quads
+  stay inside the island and away from building roofs and the stair rim.
+- In the recorded 1280x720 frames the firefly-channel maxima are RGB
+  (240,224,121), all below 250; no firefly mask pixels fall on the void.
+  Night-clear smoke has max luminance 55.43/255 across its mask, versus
+  179.62 and 183.98 at the two visibly lit front-window samples. Over pure
+  void, smoke's max luminance is 69.77 by day and 39.57 at night; its mean
+  background-subtracted blue/red ratio shifts from 0.65 (day) to 0.81 (night).
+  In night rain the smoke-mask maximum is 70.87 (including rain behind it),
+  versus 188.94 and 182.90 at the front-window samples.
+  At the sampled frames the actual added draw calls are one for the instanced
+  fireflies and five clear/cloudy or four rainy smoke puffs.
+- No engine, walk, placement, collision, existing raycast, window/lantern
+  lighting, palette, HUD or pixel-pass logic was changed. Effects opt out of
+  picking; the motes do not light grass or buildings. The only lighting change
+  is a read-only night-amount accessor. Point lights remain the lantern (night
+  intensity 0.12, radius 3.5) and two windows (0.85 each, radius 7), unchanged
+  in clear, cloudy and rain.
+- For the pending EBR-75 port, keep the isolated src/effects/ modules and
+  reconnect the small main.ts update hooks, visual seed and night-amount getter.
+
+Spec tensions / omissions
+- Five slots, 0.6 s births and a 3.2 s life cannot all be exact: a sixth puff
+  would overlap for 0.2 s. A scheduled birth is skipped when all five slots
+  remain alive, preserving each life and the cap. Clear/cloudy settle at 4–5
+  live puffs, with five births per 3.6 s (0.72 s average); a 2.2 s rain life at
+  the same 0.6 s schedule yields 3–4 live puffs, not five. The initial plume
+  is prewarmed at ages 0, 0.6, 1.2, 1.8 and 2.4 s so it is visible immediately.
+- Phase-anchor sunset is exactly zero. The existing 72 s cycle interpolates
+  sunset to night over 18 s while the HUD still says Sunset; at its 9 s midpoint
+  the existing night amount is 0.5 and the motes are faded to half opacity.
+  This preserves the requested continuous night-amount fade instead of popping
+  at the phase-label boundary. Morning/day anchors remain zero.
+- The optional 1.2-unit dynamic player clearance is not enforced; the effects
+  remain nonblocking and do not couple their motion to walking or placement.
+
+Checks and results
+- npm ci in this worktree via the heavy wrapper: passed, 73 packages, 0 audit
+  vulnerabilities. Initial MemAvailable was 44,883,420 kB (>4 GB).
+- /home/michael/OpenBot/Shared/farm-tools/heavy npm run build: passed; Vite's
+  existing >500 kB chunk advisory remains. Log: evidence/EBR-42/build.log.
+- Targeted smoke/firefly unit checks: 14/14 passed, including five visual-seed
+  projection cases and the puff life, size and opacity bounds.
+- Character replay: 749 exact trace frames and all six non-effect screenshots
+  match the historical 9e8c8c6 baseline. Raw intended effect pixels were
+  spawn=704, walking=688, bridge-gap=704, bridge-mid=816, stairs-mid=0,
+  stream-block=816; hiding effects gives zero differences in each. Log:
+  evidence/EBR-42/character-replay-test.log.
+- /home/michael/OpenBot/Shared/farm-tools/heavy npm test: 148/148 passed.
+  Log: evidence/EBR-42/npm-test.log.
+- /home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/capture.mjs:
+  PASS, 15 controlled 1280x720 DPR-1 Chromium 153.0.8010.12 / SwiftShader frames
+  against clean main 5d9ba48, seed 3950182401. All camera, pose, obstacle,
+  light, weather and pixel states match; 0 changed pixels outside effect masks
+  and 0 when effects are hidden for every frame. The night-rain PNG replays
+  byte-for-byte (SHA-256 241c0cdc8fe8fbe36626a402689dd6c5e7bf8105b3f88969bd6229d60a017468).
+  Application console/page errors: 0; favicon errors: 0. See capture.log and
+  comparison.json. Frames and their crops were inspected in the running app.
+- Browser suite command:
+  /home/michael/OpenBot/Shared/farm-tools/heavy env \
+  EBR46_URL=http://100.88.150.21:5212 EBR46_EVIDENCE_DIR=evidence/EBR-42/stairs \
+  EBR46_SLIDE_PROOF=evidence/EBR-42/stairs/pad-sequences.json \
+  EBR56_DEV_URL=http://100.88.150.21:5212 LIGHTING_URL=http://100.88.150.21:5212 \
+  npm run test:browser
+  Result: 35/35 passed. MemAvailable before the run was 44,914,196 kB.
+  Log: evidence/EBR-42/browser-test.log.
+- Real-input pad-side sequences S+A then W+A, W+D then W+A, and S+D/S+A/W+D
+  then W+A all reached the path without clipping or unsupported frames; their
+  final positions were (5.109677,2.4,0.95), (4.257284,2.4,0.55), and
+  (4.257284,2.4,0.55). Their 586, 643 and 955 recorded frames had zero errors.
+  Evidence: evidence/EBR-42/stairs/pad-sequences.json.
+- The separate real-click stair descent/ascent recorded 149/144 movement
+  frames with zero clipping or unsupported frames and no errors; see
+  evidence/EBR-42/stairs/browser-proof.json.
+- /home/michael/OpenBot/Shared/farm-tools/heavy python3 evidence/EBR-42/crop-day.py:
+  passed; generated the paired daytime chimney crops and their mask from the
+  already captured frames. See evidence/EBR-42/day-crops.log.
+- The first unmodified browser run failed only its all-pixels-identical replay
+  because smoke is intentional (34/35 passed); its log is retained. That old
+  test also created and force-removed its own temporary Git worktree. It has
+  been replaced with a clean git-archive snapshot and same-frame effect-only
+  masking; no pre-existing worktree or branch was modified. The first archive
+  retry encountered EACCES on /tmp/opencode; the existing safe unique-temp
+  fallback is now used, with both logs retained.
+
+Not verified
+- Look Dev visual sign-off, physical devices and hardware GPUs. The external
+  QA G1–G7 analyzer and stock all-zero `npm run parity` were not run; the
+  ticket's mask-aware Gate G is reported above. Static still-frame comparisons
+  must mask intended smoke and fireflies as well as pre-existing animation.

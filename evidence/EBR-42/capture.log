@@ -1,0 +1,18 @@
+[heavy] slot /tmp/farm-heavy.2.lock acquired (waits for QA gate lock if held): node evidence/EBR-42/capture.mjs
+morning-clear: 832 changed; 0 outside effect masks; 0 with effects hidden
+morning-cloudy: 832 changed; 0 outside effect masks; 0 with effects hidden
+morning-rain: 560 changed; 0 outside effect masks; 0 with effects hidden
+daytime-clear: 832 changed; 0 outside effect masks; 0 with effects hidden
+daytime-cloudy: 832 changed; 0 outside effect masks; 0 with effects hidden
+daytime-rain: 576 changed; 0 outside effect masks; 0 with effects hidden
+sunset-clear: 832 changed; 0 outside effect masks; 0 with effects hidden
+sunset-cloudy: 816 changed; 0 outside effect masks; 0 with effects hidden
+sunset-rain: 560 changed; 0 outside effect masks; 0 with effects hidden
+night-clear: 2320 changed; 0 outside effect masks; 0 with effects hidden
+night-cloudy: 1904 changed; 0 outside effect masks; 0 with effects hidden
+night-rain: 1296 changed; 0 outside effect masks; 0 with effects hidden
+walk-night-clear: 2336 changed; 0 outside effect masks; 0 with effects hidden
+placement-night-clear: 2131 changed; 0 outside effect masks; 0 with effects hidden
+stairs-daytime-clear: 0 changed; 0 outside effect masks; 0 with effects hidden
+Gate G PASS: 15 frames, exact effect masks, seeded replay
+[heavy] released /tmp/farm-heavy.2.lock rc=0
