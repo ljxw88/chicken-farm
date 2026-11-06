@@ -63,11 +63,11 @@ test('placement keys are one-shot, ordered, repeat-safe, and consumed exactly on
   f.key('keydown', 'KeyF');
   f.key('keydown', 'KeyF', f.document.body, { repeat: true });
   f.key('keydown', 'KeyF'); // Even a duplicate non-repeat keydown is not a second press.
-  assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'fence' }]);
+  assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'fence' }, { type: 'cancel-move-to' }]);
   assert.deepEqual(f.input.consume().actions, []);
   f.key('keyup', 'KeyF');
-  f.key('keydown', 'KeyP');
   f.context.active = true;
+  f.key('keydown', 'KeyP');
   f.key('keydown', 'KeyR');
   f.key('keydown', 'Enter');
   f.key('keydown', 'Delete');
@@ -138,14 +138,28 @@ test('placement takes pointer priority; mouse confirms, touch/pen preview, and U
   assert.deepEqual(f.input.consume().actions, []);
 });
 
+test('entering placement cancels an existing move-to, but switching active tools does not', (t) => {
+  const f = fixture(t);
+  f.pointer('pointerdown');
+  f.key('keydown', 'KeyF');
+  assert.deepEqual(f.input.consume().actions, [
+    { type: 'move-to', point: { x: 123, y: 456, pointerType: 'mouse' } },
+    { type: 'placement-select', kind: 'fence' }, { type: 'cancel-move-to' },
+  ]);
+  f.context.active = true;
+  f.document.querySelector('[data-plot]').click();
+  assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'plot' }]);
+});
+
 test('direct controls map every placement command without changing browser events', (t) => {
   const f = fixture(t);
   const captured = [];
   f.window.addEventListener('click', (event) => captured.push(event.defaultPrevented));
   f.document.querySelector('[data-fence] span').click();
+  f.context.active = true; // The legacy selection handler activates the tool before the next click.
   for (const name of ['plot', 'rotate', 'confirm', 'remove', 'undo', 'cancel']) f.document.querySelector(`[data-${name}]`).click();
   assert.deepEqual(f.input.consume().actions, [
-    { type: 'placement-select', kind: 'fence' }, { type: 'placement-select', kind: 'plot' },
+    { type: 'placement-select', kind: 'fence' }, { type: 'cancel-move-to' }, { type: 'placement-select', kind: 'plot' },
     { type: 'placement-rotate' }, { type: 'placement-confirm' }, { type: 'placement-remove', mode: 'toggle' },
     { type: 'placement-undo' }, { type: 'placement-cancel' },
   ]);

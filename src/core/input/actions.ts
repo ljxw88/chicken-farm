@@ -42,6 +42,13 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
   let pending: InputAction[] = [];
   let pointer: PointerPoint | undefined;
 
+  function enqueue(action: InputAction) {
+    pending.push(action);
+    // The legacy placement controller cancels an outstanding walk target when
+    // a tool first becomes active, but not when switching active tools.
+    if (action.type === 'placement-select' && !getPlacement().active) pending.push({ type: 'cancel-move-to' });
+  }
+
   function keyDown(event: KeyboardEvent) {
     if (modified(event) || editable(event.target)) return;
     if (MOVEMENT_KEYS.has(event.code)) {
@@ -65,7 +72,7 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     }
     if (action) {
       discreteHeld.add(event.code);
-      pending.push(action);
+      enqueue(action);
     }
   }
 
@@ -118,7 +125,7 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     else if (button.hasAttribute('data-remove')) action = { type: 'placement-remove', mode: 'toggle' };
     else if (button.hasAttribute('data-undo')) action = { type: 'placement-undo' };
     else if (button.hasAttribute('data-cancel')) action = { type: 'placement-cancel' };
-    if (action) pending.push(action);
+    if (action) enqueue(action);
   }
 
   function consume(): InputFrame {
