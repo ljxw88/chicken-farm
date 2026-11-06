@@ -19,7 +19,15 @@ For a console-free weather and lighting check, open a URL such as `http://localh
 
 Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the barn, or right past the pond to the stone stairs at the island rim. Click a tread or the small foot pad to walk down, or line up with the stairs and hold **S+D**; **W+A** climbs back up. The stair sides and pad edge stop at the void; there is no ground beyond the pad. The barn, tree trunks, pond water and the rest of the rim also block movement; the character can slide along them. Clicking the void does not start a walk. Click-to-move does not plan a route around obstacles, and keyboard input cancels a clicked destination.
 
-The chicken, nest, sign and bin are static, nonblocking scenery. There are no feeding, collection, market, inventory or building actions in the playable build.
+The chicken, nest, sign and bin are static, nonblocking scenery. There are no feeding, collection, market or inventory actions in the playable build.
+
+## Free placement
+
+Use the direct **FREE Fence** or **Plot** buttons (or **F** / **P**) to enter placement mode. Move the pointer over the island to preview; **R** rotates the ghost and clicking the ground places it. **Enter** or the **Place** button also confirms the current preview; **Escape** or **Cancel** exits without placing it. On touch, tap a tile to preview, then use **Rotate** and **Place**. You can keep walking with WASD while previewing.
+
+The grid uses 1.5-world-unit tiles to fit the fence's 1.47-unit footprint. A plot occupies two tiles and remains walkable; a fence occupies one tile and blocks walking until removed. Full tiles are centred on the island top, leaving a half-unit unbuildable strip at each edge; stairs and the foot pad are not placement surfaces. Existing obstacles, visible scenery, the player and occupied tiles are invalid. Hover a placed object's tile and press **Delete**, or choose **Remove** and click/tap the object; choose **Remove** again to return to placing. **Z** / **Undo** removes the most recently placed remaining object. Placement is free and its objects reset on reload.
+
+The debug grid is hidden by default. Open `?grid=1` (or add `&grid=1` to other URL options) to show its dirt-coloured hairlines. The world, including previews and the grid, goes through the default pixel pass.
 
 The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
 
@@ -67,4 +75,4 @@ npm run build
 
 The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the phase HUD, generic interaction utilities, pixel sizing, farm, collisions, camera, weather and lighting. For the Chromium playable-build checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
 
-The entry point is `src/main.ts`, the pixel presentation is in `src/postprocess/`, the farm layout, static decorations and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.
+The entry point is `src/main.ts`, free placement is in `src/placement/`, the pixel presentation is in `src/postprocess/`, the farm layout, static decorations and camera are in `src/scene/`, the character and controls are in `src/character/`, and the locked lighting presets and cycle driver are in `src/lighting/`. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.

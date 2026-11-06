@@ -70,7 +70,8 @@ async function assertNoSimUi(page) {
     '[data-buy-feed]', '[data-place-fence]', '[data-build-toggle]',
   ];
   assert.equal(await page.locator(forbidden.join(',')).count(), 0);
-  assert.doesNotMatch(await page.locator('body').innerText(), /\b(inventory|collect|egg|feed|supplies|buy|sell|fence|market|build)\b/i);
+  // Free fence placement is present, but the stripped simulation UI stays absent.
+  assert.doesNotMatch(await page.locator('body').innerText(), /\b(inventory|collect|egg|feed|supplies|buy|sell|market|build)\b/i);
 }
 
 async function holdUntil(page, keys, predicate, argument, dwell = 0) {

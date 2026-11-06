@@ -104,4 +104,7 @@ export function createFarmDecorations(scene: THREE.Scene, groundHeight: number) 
     line.position.set(0, y, 0.059);
     sign.add(line);
   }
+
+  // Scenery remains nonblocking for walking; placement can avoid overlapping it.
+  return [chicken, nest, bin, sign];
 }
