@@ -104,11 +104,11 @@ off-palette barrel; numeric heuristics cannot replace Look Dev's eye.
 | H7 | Detect near-coplanar overlap; signed references can have analytic warnings, and empirical flicker is a failure. |
 | H8 | All parts connected to each other or ground. |
 | H9 | Nothing below -0.01 for new assets. |
-| H10 | Collision footprint is 90–130% of the declared footprint. |
+| H10 | Collision footprint area and each box axis are 90–130% of declared dimensions. |
 
 Soft checks include at least 40 changed pixels per silhouette at game scale;
-contrast against grass/path/void of at least 1.15 luminance ratio or a
-meaningful hue difference; key-light/three-step value agreement, night glow,
+contrast against grass/path/void of at least 1.15 luminance ratio or CIE76 ΔE
+of 25; key-light/three-step value agreement, night glow,
 scene scale and style distance. These are design floors, not measurements or
 proof of quality. The vision critic's separate session scores silhouette,
 palette, shape language, value structure, scene fit and craft 1–5 and names
@@ -166,7 +166,7 @@ must name the specific failed part and never override a deterministic blocker.
   "contactTolerance": 0.005,
   "collisionMinRatio": 0.90,
   "collisionMaxRatio": 1.30,
-  "render": { "width": 1280, "height": 720, "pixelSize": 4, "yaws": [0, 45, 90, 135, 180, 225, 270, 315], "phases": ["daytime", "sunset", "night"], "surfaces": ["grass", "path", "void"], "minimumSilhouettePixels": 40, "minimumContrastRatio": 1.15, "minimumHueDifferenceDegrees": 25, "pixelDeltaRGB": 8, "identityMinimumPixels": 2 },
+  "render": { "width": 1280, "height": 720, "pixelSize": 4, "yaws": [0, 45, 90, 135, 180, 225, 270, 315], "phases": ["daytime", "sunset", "night"], "extraPhases": ["morning", "night-rain"], "surfaces": ["grass", "path", "void"], "minimumSilhouettePixels": 40, "minimumContrastRatio": 1.15, "minimumDeltaE": 25, "pixelDeltaRGB": 8, "identityMinimumPixels": 2, "phaseShadeFloors": { "morning": 0.5, "daytime": 0.55, "sunset": 0.45 } },
   "loop": { "maxRounds": 4, "maxCorrectionsPerStage": 2, "maxCorrectionsGlobal": 3, "stages": ["blockout", "form", "material", "detail", "lighting", "optimise"] }
 }
 ```

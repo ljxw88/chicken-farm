@@ -6,7 +6,7 @@ export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const specDirectory = join(root, 'tools/assetgen/specs');
 // Preserve the prior pre-EBR-80 bake-off and permit isolated loop-off runs.
 export const runDirectory = process.env.ASSETGEN_RUN_DIR ? resolve(process.env.ASSETGEN_RUN_DIR) : join(root, 'tools/assetgen/runs-ebr83-85');
-export const evidenceDirectory = join(root, 'evidence/assetgen');
+export const evidenceDirectory = process.env.ASSETGEN_EVIDENCE_DIR ? resolve(process.env.ASSETGEN_EVIDENCE_DIR) : join(root, 'evidence/assetgen');
 export const biblePath = join(root, 'docs/asset-style-bible.md');
 export const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const categories = ['prop', 'flora', 'building', 'terrain'];
@@ -34,6 +34,7 @@ export function validateSpec(spec) {
       new Set(spec.identityFeatures.map((feature) => feature.id)).size !== spec.identityFeatures.length) {
     throw new Error('Spec needs 3–5 uniquely named identityFeatures with descriptions');
   }
+  if (spec.variantOf !== undefined && (!idPattern.test(spec.variantOf) || spec.variantOf === spec.id)) throw new Error('variantOf must name a different valid asset id');
   return spec;
 }
 

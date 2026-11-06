@@ -34,7 +34,8 @@ export function runOpenCode(args, { cwd = root, timeout = 180000, env = process.
       clearTimeout(timer);
       const result = { stdout, stderr, code, signal, durationMs: Date.now() - start };
       if (code !== 0 || timedOut) {
-        const error = new Error(`OpenCode ${timedOut ? 'timed out' : `exited ${code ?? signal}`}: ${stderr.slice(0, 2000)}`);
+        const detail = stderr.trim() || stdout.trim();
+        const error = new Error(`OpenCode ${timedOut ? 'timed out' : `exited ${code ?? signal}`}: ${detail.slice(0, 2000)}`);
         Object.assign(error, result);
         reject(error);
       } else resolve(result);

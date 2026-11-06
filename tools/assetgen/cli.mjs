@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile, copyFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { evidenceDirectory, listSpecs, readBible, readSpec, recipePath, root, runDirectory } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
@@ -7,6 +8,9 @@ import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
 import { createVisualRunner } from './visual.mjs';
 import { isBetterCandidate } from './scoring.mjs';
 import { isolatedSessionDirectory } from './opencode.mjs';
+import { loadFixtures } from './fixtures.mjs';
+import { auditBundleEntry, verifierSourceHash } from './bundle.mjs';
+import { createSignedFixtures, inspectSignedFixture } from './signed-fixtures.mjs';
 
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
 const hash = (value) => createHash('sha256').update(value).digest('hex');
@@ -16,6 +20,38 @@ const digestParts = (before, after) => {
   return { added: [...next.keys()].filter((key) => !old.has(key)), removed: [...old.keys()].filter((key) => !next.has(key)),
     changed: [...next.keys()].filter((key) => old.has(key) && old.get(key) !== next.get(key)) };
 };
+
+async function verifySigned(name, runner, environment, bible, output) {
+  const fixtures = await createSignedFixtures(runner.server);
+  if (!fixtures.names.includes(name)) throw new Error(`Unknown signed fixture ${name}`);
+  const baseline = JSON.parse(await readFile(join(root, 'tools/assetgen/signed-baselines.json'), 'utf8'));
+  const result = inspectSignedFixture(name, fixtures.build(name), fixtures.build(name), bible.rules, environment.palette, baseline);
+  if (result.failures.length) return result;
+  const target = fixtures.expected[name];
+  const spec = { id: `signed-${name}`, category: target.category,
+    size: { width: target.size[0], height: target.size[1], depth: target.size[2] }, identityFeatures: [] };
+  const visual = await runner.capture(spec, bible.rules, join(output, name), null, { signedFixture: name, jitter: true });
+  const jitter = visual.metrics?.jitter || [];
+  const checked = jitter.reduce((sum, item) => sum + item.checkedPixels, 0);
+  const skippedEdges = jitter.reduce((sum, item) => sum + item.skippedEdgePixels, 0);
+  const flicker = jitter.reduce((sum, item) => sum + item.flickerCandidates, 0);
+  result.failures.push(...visual.failures.filter((failure) => failure.code === 'PIXEL_RENDER'));
+  if (visual.failures.some((failure) => failure.code === 'BROWSER') || jitter.length !== 24 || !checked) {
+    result.failures.push({ code: 'A7_UNMEASURED', message: 'Signed jitter/turntable could not be measured' });
+  } else if (flicker) {
+    result.failures.push({ code: 'A7_FLICKER', message: `${flicker} unmatched pixel changes across 24 jittered yaws` });
+  }
+  result.status = result.failures.length ? 'FAIL' : 'PASS';
+  result.metrics.empiricalJitter = { views: jitter.length, checkedPixels: checked, skippedEdgePixels: skippedEdges, flickerCandidates: flicker,
+    differingViews: jitter.filter((item) => item.flickerCandidates) };
+  for (const warning of result.warnings) if (warning.code === 'A7_ANALYTIC_WARNING') {
+    warning.message += `; 24-yaw interior jitter found ${flicker} candidates, with ${skippedEdges} edge pixels excluded`;
+  }
+  result.warnings.push(...visual.failures.filter((failure) => failure.code !== 'BROWSER').map((failure) => ({ ...failure, code: `SIGNED_${failure.code}_WARNING` })));
+  result.notChecked = ['A7 excluded silhouette-edge pixels', 'A11 placement', 'A12 walking shimmer', 'A13 Look Dev'];
+  result.evidence = join(output, name);
+  return result;
+}
 
 async function setup() {
   const bible = await readBible();
@@ -37,7 +73,7 @@ function score(hard, visual, critic) {
 
 async function newAsset(input, args) {
   if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--loop-off]');
-  const { spec } = await readSpec(input);
+  const { spec, path: specPath } = await readSpec(input);
   if (spec.category === 'building') throw new Error('New buildings are out of scope; signed building fixtures remain auditable.');
   const run = join(runDirectory, spec.id);
   await mkdir(run, { recursive: true });
@@ -57,12 +93,20 @@ async function newAsset(input, args) {
   }
   const context = await setup();
   const { bible, runner, environment, probe } = context;
+  if (spec.variantOf) {
+    try {
+      const reference = JSON.parse(await readFile(join(runDirectory, spec.variantOf, 'best.json'), 'utf8'));
+      environment.referenceRecipes = { [spec.variantOf]: reference.recipe };
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  }
   const sessionDir = await isolatedSessionDirectory();
   try {
+    const specBytes = await readFile(specPath, 'utf8');
     const first = Date.now();
     let round = 1, corrections = 0, stageIndex = 0;
     let current = null, previous = null, best = null, stopReason = null;
     let previousSheet = null;
+    const verifierHash = await verifierSourceHash();
     const stageCorrections = {};
     const history = [];
     const loopOff = args.includes('--loop-off');
@@ -81,10 +125,12 @@ async function newAsset(input, args) {
       } catch (error) {
         const message = String(error);
         await writeFile(join(stageDir, 'generation-error.txt'), `${message}\n`);
+        if (error?.stdout) await writeFile(join(stageDir, 'generation-error.jsonl'), error.stdout);
         previous = { failures: [{ code: 'GENERATOR', message }], instruction: 'Retry the JSON generation/build with the exact error.' };
         history.push({ round, stage, action: 'refine-code', failure: message });
-        if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= roundLimit) {
-          stopReason = 'Generation retries exhausted';
+        const quota = /provider\.free-limit|QuotaExceeded|Free usage limit/i.test(message);
+        if (quota || (stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= roundLimit) {
+          stopReason = quota ? 'Free model quota exhausted; work order emitted' : 'Generation retries exhausted';
           await writeFile(join(run, 'work-order.md'), `${prompt}\n\nSave JSON to ${relative(root, recipePath(spec))}, then run npm run asset:verify -- ${spec.id}.\n`);
           break;
         }
@@ -97,9 +143,9 @@ async function newAsset(input, args) {
       await writeFile(join(stageDir, 'recipe.json'), json(current));
       const inspected = inspectRecipe(current, spec, bible.rules, environment);
       const hard = { failures: inspected.failures, metrics: inspected.metrics };
-      let visual = null, review = null, criticSession = null, criticModelId = null, criticDurationMs = null, criticUsage = null, criticError = null;
+      let visual = null, review = null, criticSession = null, criticModelId = null, criticDurationMs = null, criticUsage = null, criticTranscript = null, criticError = null;
       if (!hard.failures.length) {
-        visual = await runner.capture(spec, bible.rules, join(stageDir, 'render'), current); // Only after the hard gate.
+        visual = await runner.capture(spec, bible.rules, join(stageDir, 'render'), current, { jitter: true }); // Only after the hard gate.
         const sheet = join(stageDir, 'render/sheet.png');
         if (process.env.ASSETGEN_IMAGES !== '0' && probe?.imageReadingObserved && !visual.failures.some((failure) => failure.code === 'BROWSER')) {
           try {
@@ -108,10 +154,14 @@ async function newAsset(input, args) {
             criticModelId = result.modelId;
             criticDurationMs = result.durationMs;
             criticUsage = result.usage;
+            criticTranscript = result.transcript;
             await writeFile(join(stageDir, 'critic.jsonl'), result.transcript);
             await writeFile(join(stageDir, 'critic-prompt.txt'), result.prompt);
             review = result.review;
             if (!criticSession || criticSession === generated.sessionId || !criticModelId) throw new Error('Critic needs a distinct session and recorded model id');
+            const canonicalModel = (id) => id.replace(/#default$/, '');
+            const probedModels = new Set(probe.trials?.filter((trial) => trial.correct && trial.modelId).map((trial) => canonicalModel(trial.modelId)) || []);
+            if (!probedModels.has(canonicalModel(criticModelId))) throw new Error(`Critic model ${criticModelId} has not passed the image probe`);
             if (!review.imageReviewed) criticError = 'visual critique not run: critic reported that the image was unavailable';
           } catch (error) { criticError = `visual critique not run: ${String(error)}`; review = null; }
         } else criticError = 'visual critique not run: disabled, image capability not demonstrated, or render unavailable';
@@ -133,13 +183,16 @@ async function newAsset(input, args) {
       if (review && ['request-input', 'stop', 'refine-spec', 'refine-code'].includes(review.action)) action = review.action;
       if (blockers.some((blocker) => blocker.code === 'LIGHTING_UNMEASURED')) action = 'request-input';
       const result = { id: spec.id, round, stage, action, score: stageScore,
-        specHash: hash(JSON.stringify(spec)), bibleHash: hash(bible.text), recipeHash: hash(JSON.stringify(current)), hard, visual, critique: review,
+        specHash: hash(specBytes), bibleHash: hash(bible.text), recipeHash: hash(json(current)), verifierHash, hard, visual, critique: review,
         critiqueStatus: criticError || (review?.imageReviewed ? 'independent visual critique recorded' : 'visual critique not run'),
-        generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId, generatorDurationMs: generated.durationMs, criticDurationMs,
+        generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId,
+        generatorReceiptHash: hash(generated.transcript), criticReceiptHash: criticTranscript ? hash(criticTranscript) : null,
+        generatorDurationMs: generated.durationMs, criticDurationMs,
         generatorUsage: generated.usage, criticUsage, diff: digestParts(old, current), blockers };
       await writeFile(join(stageDir, 'report.json'), json(result));
       history.push({ round, stage, action, score: stageScore, blockers: blockers.map((item) => item.code),
-        generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId, generatorUsage: generated.usage, criticUsage });
+        generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId,
+        imageReviewed: review?.imageReviewed === true && !criticError, critiqueStatus: result.critiqueStatus, generatorUsage: generated.usage, criticUsage });
       const candidate = { score: stageScore, recipe: current, stage, round, hardFailureCount: hard.failures.length,
         lowerTrust: !!hard.metrics.lowerTrust, blockers, report: relative(root, join(stageDir, 'report.json')),
         sheet: visual && !visual.failures.some((failure) => failure.code === 'BROWSER') ? relative(root, join(stageDir, 'render/sheet.png')) : null };
@@ -163,8 +216,9 @@ async function newAsset(input, args) {
     if (!stopReason) stopReason = loopOff ? 'Loop-off baseline: one generation, no revision' : stageIndex === stages.length ? 'All stages completed; human review still required' : 'Round limit reached';
     if (best) await writeFile(recipePath(spec), json(best.recipe));
     if (best?.sheet) {
-      await mkdir(evidenceDirectory, { recursive: true });
-      await copyFile(join(root, best.sheet), join(evidenceDirectory, `${spec.id}-recipe-sheet.png`));
+      const output = join(evidenceDirectory, 'ebr83-85', loopOff ? 'loop-off' : 'loop-on');
+      await mkdir(output, { recursive: true });
+      await copyFile(join(root, best.sheet), join(output, `${spec.id}-recipe-sheet.png`));
     }
     const usageEntries = history.flatMap((item) => [item.generatorUsage, item.criticUsage]).filter(Boolean);
     const sessionCount = history.reduce((sum, item) => sum + Number(!!item.generatorSession) + Number(!!item.criticSession), 0);
@@ -177,13 +231,19 @@ async function newAsset(input, args) {
     } : null;
     // Reaching the fourth round is always needs-human, even if its last review
     // happens to say continue. A pass is only an automated gate, not Look Dev signoff.
-    const status = !loopOff && stageIndex === stages.length && round < bible.rules.loop.maxRounds ? 'PASSED' : 'needs-human';
+    const status = !loopOff && stageIndex === stages.length && round < bible.rules.loop.maxRounds && best?.stage === 'optimise' ? 'PASSED' : 'needs-human';
     if (best) await writeFile(join(run, 'best.json'), json({ status, ...best }));
+    const bestReport = best ? JSON.parse(await readFile(join(root, best.report), 'utf8')) : null;
     const final = { id: spec.id, category: spec.category, status, signedBy: null, roundsUsed: round,
       loopMode: loopOff ? 'off-one-generation' : 'on-bounded',
+      specHash: hash(specBytes), bibleHash: hash(bible.text), recipeHash: best ? hash(json(best.recipe)) : null, verifierHash,
+      generatorSession: bestReport?.generatorSession ?? null, criticSession: bestReport?.criticSession ?? null,
+      criticModelId: bestReport?.criticModelId ?? null, critique: bestReport?.critique ?? null,
+      generatorReceiptHash: bestReport?.generatorReceiptHash ?? null, criticReceiptHash: bestReport?.criticReceiptHash ?? null,
       completedStages: stages.slice(0, stageIndex), corrections, stageCorrections, stopReason, best,
       imageProbe: probe?.imageReadingObserved && process.env.ASSETGEN_IMAGES !== '0' ? 'three colour probes passed' : 'visual critique not run',
       criticModelIds: [...new Set(history.map((item) => item.criticModelId).filter(Boolean))],
+      visualCritiqueStatus: history.some((item) => item.imageReviewed) ? 'image reviewed for one or more stages; see history' : 'visual critique not run',
       lighting: 'merged EBR-80, human review still required', wallTimeMs: Date.now() - first, usage: totalUsage,
       tokenCostNote: 'Usage/cost are OpenCode session-reported values when available; missing sessions are not estimated.', history };
     await writeFile(join(run, 'final.json'), json(final));
@@ -192,27 +252,88 @@ async function newAsset(input, args) {
   } finally { await runner.close(); }
 }
 
-async function verifyCommand(input) {
+async function verifyExternal(directory, selectedId) {
+  const fixtures = await loadFixtures(directory);
+  const references = Object.fromEntries(fixtures.filter((item) => item.spec && item.recipe).map((item) => [item.spec.id, item.recipe]));
+  const selected = selectedId ? fixtures.filter((item) => item.name === selectedId || item.spec?.id === selectedId) : fixtures;
+  if (!selected.length) throw new Error(`Fixture not found: ${selectedId}`);
+  const { bible, runner, environment } = await setup();
+  const output = await mkdtemp(join(tmpdir(), 'assetgen-external-verify-'));
+  try {
+    for (const fixture of selected) {
+      if (fixture.error) {
+        console.log(json({ id: fixture.name, status: 'FAIL', failures: [fixture.error] }));
+        process.exitCode = 1;
+        continue;
+      }
+      if (fixture.signed) {
+        const result = await verifySigned(fixture.signed, runner, environment, bible, output);
+        console.log(json({ id: fixture.name, ...result }));
+        if (result.status !== 'PASS') process.exitCode = 1;
+        continue;
+      }
+      const { spec, recipe } = fixture;
+      const hard = inspectRecipe(recipe, spec, bible.rules, { ...environment, referenceRecipes: references });
+      let visual = null;
+      if (!hard.failures.length) visual = await runner.capture(spec, bible.rules, join(output, spec.id), recipe, { jitter: true });
+      const failures = [...hard.failures, ...(visual?.failures || [])];
+      const result = { id: spec.id, status: failures.length ? 'FAIL' : 'PASS_HARD_AND_MEASURED_VISUAL', failures,
+        hard: { failures: hard.failures, metrics: hard.metrics }, visual, output: visual ? join(output, spec.id) : null,
+        note: 'No model call or Look Dev signoff; unmeasured checks do not become passes.' };
+      console.log(json(result));
+      if (failures.length) process.exitCode = 1;
+    }
+  } finally { await runner.close(); }
+}
+
+async function verifyCommand(input, args) {
+  const options = [input, ...args].filter(Boolean);
+  if (options.includes('--signed')) {
+    const name = options[options.indexOf('--signed') + 1];
+    if (!name || name.startsWith('--')) throw new Error('--signed requires tree, coop, fence, tread or all');
+    const { bible, runner, environment } = await setup();
+    const output = await mkdtemp(join(tmpdir(), 'assetgen-signed-verify-'));
+    try {
+      for (const fixture of name === 'all' ? ['tree', 'coop', 'fence', 'tread'] : [name]) {
+        const result = await verifySigned(fixture, runner, environment, bible, output);
+        console.log(json({ id: fixture, ...result }));
+        if (result.status !== 'PASS') process.exitCode = 1;
+      }
+    } finally { await runner.close(); }
+    return;
+  }
+  if (options.includes('--dir')) {
+    const directory = options[options.indexOf('--dir') + 1];
+    const selected = options.includes('--id') ? options[options.indexOf('--id') + 1] : undefined;
+    if (!directory || directory.startsWith('--') || (options.includes('--id') && (!selected || selected.startsWith('--')))) throw new Error('--dir and --id require values');
+    return verifyExternal(directory, selected);
+  }
+  if (input === '--id') input = args[0];
   if (!input) throw new Error('Usage: npm run asset:verify -- <id|all>');
   const candidates = input === 'all' ? await listSpecs() : [await readSpec(input)];
   const { bible, runner, environment } = await setup();
   try {
+    environment.referenceRecipes = {};
+    for (const { spec } of candidates) if (spec.variantOf) {
+      try { environment.referenceRecipes[spec.variantOf] = JSON.parse(await readFile(join(runDirectory, spec.variantOf, 'candidate.json'), 'utf8')); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+    }
     let count = 0;
-    for (const { spec } of candidates) {
+    for (const { spec, path: specPath } of candidates) {
       let recipe;
+      let recipeBytes;
       try {
-        const best = JSON.parse(await readFile(join(runDirectory, spec.id, 'best.json'), 'utf8'));
-        recipe = best.recipe;
+        recipeBytes = await readFile(recipePath(spec), 'utf8');
+        recipe = JSON.parse(recipeBytes);
       } catch (error) {
         if (error.code !== 'ENOENT') throw error;
-        try { recipe = JSON.parse(await readFile(recipePath(spec), 'utf8')); }
-        catch (missing) { if (input === 'all' && missing.code === 'ENOENT') continue; throw missing; }
+        if (input === 'all') continue;
+        throw error;
       }
       count++;
       await mkdir(join(runDirectory, spec.id), { recursive: true });
-      await writeFile(recipePath(spec), json(recipe));
       const result = inspectRecipe(recipe, spec, bible.rules, environment);
-      const provenance = { specHash: hash(JSON.stringify(spec)), bibleHash: hash(bible.text), recipeHash: hash(JSON.stringify(recipe)) };
+      const provenance = { specHash: hash(await readFile(specPath, 'utf8')), bibleHash: hash(bible.text), recipeHash: hash(recipeBytes), verifierHash: await verifierSourceHash() };
       console.log(json({ id: spec.id, hard: { failures: result.failures, metrics: result.metrics } }));
       const verificationDir = join(runDirectory, spec.id, 'verify');
       await mkdir(verificationDir, { recursive: true });
@@ -220,7 +341,7 @@ async function verifyCommand(input) {
         await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
         process.exitCode = 1; continue;
       }
-      const visual = await runner.capture(spec, bible.rules, verificationDir, recipe);
+      const visual = await runner.capture(spec, bible.rules, verificationDir, recipe, { jitter: true });
       await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual,
         critiqueStatus: 'not rerun by asset:verify; see the original independent critic session' }));
       console.log(json({ id: spec.id, visual }));
@@ -230,10 +351,84 @@ async function verifyCommand(input) {
   } finally { await runner.close(); }
 }
 
+async function bundleCommand(args) {
+  const dirIndex = args.indexOf('--dir');
+  let fixtures;
+  if (dirIndex !== -1) {
+    if (!args[dirIndex + 1]) throw new Error('--dir requires a fixture directory');
+    fixtures = await loadFixtures(args[dirIndex + 1]);
+  } else {
+    fixtures = [];
+    for (const { spec, path: specPath } of await listSpecs()) {
+      const dir = join(runDirectory, spec.id);
+      try {
+        const reportBytes = await readFile(join(dir, 'final.json'), 'utf8');
+        const report = JSON.parse(reportBytes);
+        let recipe, recipeBytes;
+        try { recipeBytes = await readFile(join(dir, 'candidate.json'), 'utf8'); recipe = JSON.parse(recipeBytes); }
+        catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+          fixtures.push({ name: spec.id, error: { code: 'SOURCE_MISSING', message: `${report.status}: no generated candidate` } });
+          continue;
+        }
+        let signoff = null, signoffBytes = null;
+        try { signoffBytes = await readFile(join(dir, 'signoff.json'), 'utf8'); signoff = JSON.parse(signoffBytes); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+        let generator = null, critic = null, generatorPath = null, criticPath = null;
+        if (Number.isInteger(report.best?.round) && report.best.round > 0 && report.best.round <= 4 &&
+            ['blockout', 'form', 'material', 'detail', 'lighting', 'optimise'].includes(report.best.stage)) {
+          const stageDir = join(dir, `round-${report.best.round}`, `stage-${report.best.stage}`);
+          generatorPath = join(stageDir, 'generator.jsonl'); criticPath = join(stageDir, 'critic.jsonl');
+          try { generator = await readFile(generatorPath, 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+          try { critic = await readFile(criticPath, 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+        }
+        fixtures.push({ name: spec.id, spec, recipe, recipeBytes, specBytes: await readFile(specPath, 'utf8'), report, reportBytes, signoff, signoffBytes,
+          receipts: { generator, critic }, sourcePaths: { spec: specPath, recipe: join(dir, 'candidate.json'), report: join(dir, 'final.json'),
+            signoff: join(dir, 'signoff.json'), generator: generatorPath, critic: criticPath } });
+      } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    }
+  }
+  if (!fixtures.length) throw new Error('No candidates; nothing can be bundled');
+  const { bible, runner, environment } = await setup();
+  const sourceHash = await verifierSourceHash();
+  const references = Object.fromEntries(fixtures.filter((item) => item.spec && item.recipe).map((item) => [item.spec.id, item.recipe]));
+  const output = await mkdtemp(join(tmpdir(), 'assetgen-bundle-check-'));
+  const accepted = [], auditedInputs = [];
+  try {
+    for (const item of fixtures) {
+      if (item.error) { console.error(`${item.name}: ${item.error.code}: ${item.error.message}`); process.exitCode = 1; continue; }
+      if (item.signed) { console.error(`${item.name}: signed reference fixtures are not bundle candidates`); process.exitCode = 1; continue; }
+      const result = await auditBundleEntry({ ...item, bible, environment: { ...environment, referenceRecipes: references }, sourceHash,
+        render: (recipe, spec) => runner.capture(spec, bible.rules, join(output, spec.id), recipe, { jitter: true }) });
+      if (!result.failures.length) auditedInputs.push(item);
+      console.log(json({ id: item.spec.id, status: result.status, failures: result.failures, hashes: result.hashes }));
+      if (result.failures.length) process.exitCode = 1;
+      else accepted.push({ id: item.spec.id, category: item.spec.category, ...result.hashes });
+    }
+    if (!process.exitCode) for (const item of auditedInputs) {
+      const [specBytes, recipeBytes, reportBytes, signoffBytes, generator, critic, currentBible, currentVerifier] = await Promise.all([
+        readFile(item.sourcePaths.spec, 'utf8'), readFile(item.sourcePaths.recipe, 'utf8'), readFile(item.sourcePaths.report, 'utf8'),
+        readFile(item.sourcePaths.signoff, 'utf8'), readFile(item.sourcePaths.generator, 'utf8'), readFile(item.sourcePaths.critic, 'utf8'),
+        readBible(), verifierSourceHash(),
+      ]);
+      if (specBytes !== item.specBytes || recipeBytes !== item.recipeBytes || reportBytes !== item.reportBytes || signoffBytes !== item.signoffBytes ||
+          generator !== item.receipts.generator || critic !== item.receipts.critic ||
+          currentBible.text !== bible.text || currentVerifier !== sourceHash) {
+        console.error(`${item.spec.id}: HASH_MISMATCH: inputs changed during bundle verification`);
+        process.exitCode = 1;
+      }
+    }
+    if (!process.exitCode) {
+      // Review manifest only. This PR never writes runtime registry entries.
+      await writeFile(join(output, 'manifest.json'), json({ version: 1, assets: accepted }));
+      console.log(`Review-only manifest: ${join(output, 'manifest.json')}`);
+    } else console.error('Bundle refused; no manifest or runtime entries were written.');
+  } finally { await runner.close(); }
+}
+
 const [command, input, ...args] = process.argv.slice(2);
 try {
   if (command === 'new') await newAsset(input, args);
-  else if (command === 'verify') await verifyCommand(input);
-  else if (command === 'bundle') throw new Error('Bundle disabled: bake-off only; EBR-80 and Look Dev signoff are required.');
+  else if (command === 'verify') await verifyCommand(input, args);
+  else if (command === 'bundle') await bundleCommand([input, ...args].filter(Boolean));
   else throw new Error(`Unknown assetgen command ${command || ''}`);
 } catch (error) { console.error(error?.stack || error); process.exitCode = 1; }

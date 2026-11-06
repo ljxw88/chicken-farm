@@ -40,6 +40,7 @@ export async function createVisualRunner() {
     const page = await browser.newPage({ viewport: { width: rules.render.width, height: rules.render.height }, deviceScaleFactor: 1 });
     if (fixture) await page.addInitScript((recipe) => { window.__assetForgeFixture = recipe; }, fixture);
     if (options.wrongKeyFixture) await page.addInitScript(() => { window.__assetForgeWrongKey = true; });
+    if (options.signedFixture) await page.addInitScript((name) => { window.__assetForgeSigned = name; }, options.signedFixture);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => { if (message.type() === 'error' && !message.location().url.endsWith('/favicon.ico')) errors.push(message.text()); });
@@ -57,17 +58,31 @@ export async function createVisualRunner() {
           if (attempts >= 3 || ![String(error), ...errors].some((message) => message.includes('ERR_NETWORK_CHANGED'))) throw error;
         }
       }
-      const frameIndex = [], contactFrames = [], samples = [], featureVisibility = {}, partVisibility = {}, lightSamples = [];
+      const frameIndex = [], contactFrames = [], samples = [], featureVisibility = {}, partVisibility = {},
+        featureByPhase = {}, partByPhase = {}, lightSamples = [], lightByPhase = {}, keyByPhase = {};
       for (const feature of spec.identityFeatures) featureVisibility[feature.id] = [];
-      for (const phase of rules.render.phases) for (const yaw of rules.render.yaws) for (const surface of rules.render.surfaces) {
+      for (const phase of [...rules.render.phases, ...(rules.render.extraPhases || [])]) for (const yaw of rules.render.yaws) for (const surface of rules.render.surfaces) {
         const capture = await page.evaluate(({ yaw, phase, surface, delta, ids }) => window.__assetForge.capture(yaw, phase, surface, delta, ids),
           { yaw, phase, surface, delta: rules.render.pixelDeltaRGB, ids: spec.identityFeatures.map((feature) => feature.id) });
         const data = Buffer.from(capture.image, 'base64');
         const filename = `${phase}-${surface}-${String(yaw).padStart(3, '0')}.png`;
         await writeFile(join(directory, filename), data);
         frameIndex.push({ file: filename, sha256: digest(data), yaw, phase, surface });
-        if (surface === 'grass') contactFrames.push({ data, yaw, phase });
+        if (surface === 'grass' && rules.render.phases.includes(phase)) contactFrames.push({ data, yaw, phase });
         const { lightingSamples, ...measured } = capture.measured;
+        if (surface === 'grass') {
+          lightByPhase[phase] ??= [];
+          lightByPhase[phase].push(...lightingSamples);
+          keyByPhase[phase] = capture.keyDirection;
+          featureByPhase[phase] ??= {};
+          partByPhase[phase] ??= {};
+          for (const feature of spec.identityFeatures) featureByPhase[phase][feature.id] ??= [];
+          for (const [feature, pixels] of Object.entries(capture.identities)) featureByPhase[phase][feature].push({ yaw, pixels });
+          for (const [name, part] of Object.entries(capture.identityParts)) {
+            partByPhase[phase][name] ??= { feature: part.feature, views: [] };
+            partByPhase[phase][name].views.push({ yaw, pixels: part.pixels });
+          }
+        }
         if (phase === 'daytime' && surface === 'grass') {
           lightSamples.push(...lightingSamples);
           for (const [feature, pixels] of Object.entries(capture.identities)) featureVisibility[feature].push({ yaw, pixels });
@@ -85,7 +100,26 @@ export async function createVisualRunner() {
         await writeFile(join(directory, filename), data);
         frameIndex.push({ file: filename, sha256: digest(data), yaw, phase: 'daytime', surface, kind: 'black-silhouette-320x180' });
       }
+      for (const [name, yaw] of [['front', 0], ['side', 90]]) for (const surface of ['grass', 'path']) {
+        const encoded = await page.evaluate(({ yaw, surface }) => window.__assetForge.silhouette(yaw, surface, true), { yaw, surface });
+        const data = Buffer.from(encoded, 'base64');
+        const filename = `silhouette-${name}-${surface}.png`;
+        await writeFile(join(directory, filename), data);
+        frameIndex.push({ file: filename, sha256: digest(data), yaw, phase: 'daytime', surface, kind: `orthographic-${name}-silhouette-320x180` });
+      }
       const composites = [];
+      const jitter = [];
+      if (options.jitter) for (let yaw = 0; yaw < 360; yaw += 15) {
+        const capture = await page.evaluate((angle) => window.__assetForge.jitter(angle), yaw);
+        for (const [kind, encoded] of [['base', capture.beforeImage], ['offset', capture.afterImage]]) {
+          const data = Buffer.from(encoded, 'base64');
+          const filename = `jitter-${String(yaw).padStart(3, '0')}-${kind}.png`;
+          await writeFile(join(directory, filename), data);
+          frameIndex.push({ file: filename, sha256: digest(data), yaw, phase: 'daytime', surface: 'grass', kind: `jitter-${kind}` });
+        }
+        const { beforeImage: _before, afterImage: _after, ...metrics } = capture;
+        jitter.push(metrics);
+      }
       for (const phase of ['daytime', 'night']) {
         await page.evaluate((phase) => window.__assetForge.setView(45, phase, 'grass', true), phase);
         const data = await page.screenshot({ type: 'png' });
@@ -103,14 +137,22 @@ export async function createVisualRunner() {
       await contactSheet(spec, contactFrames, composites, join(directory, 'sheet.png'));
       frameIndex.push({ file: 'sheet.png', sha256: digest(await readFile(join(directory, 'sheet.png'))), surface: 'contact-sheet' });
       const failures = [];
+      if (options.jitter) {
+        const checked = jitter.reduce((sum, item) => sum + item.checkedPixels, 0);
+        const candidates = jitter.reduce((sum, item) => sum + item.flickerCandidates, 0);
+        if (!checked || jitter.length !== 24) failures.push({ code: 'A7_UNMEASURED', message: '24-yaw interior jitter did not provide measurable pixels' });
+        if (candidates) failures.push({ code: 'A7_FLICKER', message: `${candidates} unmatched interior pixels across 24 jittered yaws` });
+      }
       if (!state.pixel.enabled || state.pixel.canvasWidth !== 320 || state.pixel.canvasHeight !== 180 || state.pixel.cssPixelSize !== 4) {
         failures.push({ code: 'PIXEL_RENDER', message: 'The real game pixel pass did not render at 320×180 / 4 CSS pixels' });
       }
-      const daytime = samples.filter((sample) => sample.phase === 'daytime');
-      for (const sample of daytime) {
+      for (const sample of samples) {
         if (sample.pixels < rules.render.minimumSilhouettePixels ||
-            (sample.meanContrastRatio < rules.render.minimumContrastRatio && sample.meanHueDifference < rules.render.minimumHueDifferenceDegrees)) {
-          failures.push({ code: 'S2', message: `${sample.yaw}°/${sample.surface}: ${sample.pixels} pixels, contrast ${sample.meanContrastRatio.toFixed(2)}, hue difference ${sample.meanHueDifference.toFixed(1)}°` });
+            (sample.meanContrastRatio < rules.render.minimumContrastRatio && sample.meanDeltaE < rules.render.minimumDeltaE)) {
+          failures.push({ code: 'S2', message: `${sample.phase}/${sample.yaw}°/${sample.surface}: ${sample.pixels} pixels, contrast ${sample.meanContrastRatio.toFixed(2)}, CIE76 ΔE ${sample.meanDeltaE.toFixed(1)}` });
+        }
+        if ((sample.phase === 'night' || sample.phase === 'night-rain') && sample.blownHighlights > 0) {
+          failures.push({ code: 'S5_HIGHLIGHT', message: `${sample.phase}/${sample.yaw}°/${sample.surface}: ${sample.blownHighlights} blown highlights` });
         }
       }
       for (const [feature, views] of Object.entries(featureVisibility)) {
@@ -123,14 +165,36 @@ export async function createVisualRunner() {
           failures.push({ code: 'IDENTITY_VISIBLE', message: `${part.feature}/${name} contributes fewer than ${rules.render.identityMinimumPixels} pixels in every fixed daytime view` });
         }
       }
+      for (const [phase, features] of Object.entries(featureByPhase)) for (const [feature, views] of Object.entries(features)) {
+        if (!views.some((view) => view.pixels >= rules.render.identityMinimumPixels)) {
+          failures.push({ code: 'IDENTITY_VISIBLE', message: `${phase}: ${feature} contributes fewer than ${rules.render.identityMinimumPixels} pixels in every view` });
+        }
+      }
+      for (const [phase, parts] of Object.entries(partByPhase)) for (const [name, part] of Object.entries(parts)) {
+        if (!part.views.some((view) => view.pixels >= rules.render.identityMinimumPixels)) {
+          failures.push({ code: 'IDENTITY_VISIBLE', message: `${phase}: ${part.feature}/${name} contributes fewer than ${rules.render.identityMinimumPixels} pixels in every view` });
+        }
+      }
       const light = checkKeyLightAgreement(lightSamples, state.keyDirection);
       if (light.status === 'fail') failures.push({ code: 'S4', message: light.message });
+      const phaseLighting = Object.fromEntries(Object.entries(lightByPhase).map(([phase, values]) => [phase,
+        { ...checkKeyLightAgreement(values, keyByPhase[phase]), sampleCount: values.length }]));
+      for (const [phase, measurement] of Object.entries(phaseLighting)) {
+        if (measurement.status === 'fail') failures.push({ code: 'S4', message: `${phase}: ${measurement.message}` });
+        const floor = rules.render.phaseShadeFloors?.[phase];
+        if (floor !== undefined && measurement.status === 'unmeasured') failures.push({ code: 'A9_UNMEASURED', message: `${phase}: insufficient key/shade samples for a ratio estimate` });
+        if (floor !== undefined && Number.isFinite(measurement.shadeLitRatio) && measurement.shadeLitRatio < floor) {
+          failures.push({ code: 'A9_SHADE_RATIO', message: `${phase}: estimated shade/lit ${measurement.shadeLitRatio.toFixed(3)} is below ${floor}` });
+        }
+      }
       if (errors.length) failures.push({ code: 'BROWSER', message: errors.join('; ') });
       const result = { failures, metrics: { browser: browser.version(), loadAttempts: attempts, renderer: 'game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1',
         lightingStatus: 'merged EBR-80; preliminary', pixel: state.pixel, references: state.references, keyDirection: state.keyDirection,
         referenceScale: { actual: state.subjectHeight / state.references.character, target: spec.size.height / state.references.character },
-        samples, identityVisibility: featureVisibility, identityPartVisibility: partVisibility, keyLight: { ...light, sampleCount: lightSamples.length },
-        unmeasured: ['S1 rendered palette-cluster distance after lighting', 'S3 three-step value structure', 'S5 night glow/highlight analysis', 'S7 style-reference distance'],
+        samples, identityVisibility: featureVisibility, identityPartVisibility: partVisibility, featureByPhase, partByPhase,
+        jitter, keyLight: { ...light, sampleCount: lightSamples.length }, phaseLighting,
+        unmeasured: ['S1 rendered palette-cluster distance after lighting', 'S3 three-step value structure / QA G2 phase-band method', 'S5 unlit-face glow beyond material and highlight checks', 'S7 style-reference distance',
+          ...(options.jitter ? ['A7 excluded silhouette-edge pixels'] : ['A7 empirical jitter not run'])],
         frameIndex } };
       await writeFile(join(directory, 'frames.json'), `${JSON.stringify(frameIndex, null, 2)}\n`);
       return result;
@@ -145,8 +209,8 @@ export async function createVisualRunner() {
       if (fixture) await page.addInitScript((recipe) => { window.__assetForgeFixture = recipe; }, fixture);
       await page.goto(`${url}/tools/assetgen/render.html?id=${encodeURIComponent(spec.id)}`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => !!window.__assetForge, null, { timeout: 15000 });
-      await page.evaluate((zoom) => window.__assetForge.reference(45, zoom), Math.min(8, 5 / Math.max(spec.size.height, spec.size.width * 0.8)));
-      await page.screenshot({ path: destination, clip: { x: 320, y: 40, width: 640, height: 640 } });
+      const image = await page.evaluate((zoom) => window.__assetForge.transparentReference(45, zoom), Math.min(10, 10 / Math.max(spec.size.height, spec.size.width * 0.8)));
+      await writeFile(destination, Buffer.from(image, 'base64'));
     } finally { await page.close(); }
   }
 

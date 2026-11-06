@@ -17,9 +17,19 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
   const failures = [];
   const fail = (message, code = 'H1') => failures.push({ code, message });
   const keys = (value, allowed, where) => {
-    for (const key of Object.keys(value)) if (!allowed.includes(key)) fail(`${where}: unknown field ${key}`);
+    for (const key of Object.keys(value)) if (!allowed.includes(key)) {
+      const code = /vertex.?color|baked/i.test(key) ? 'BAKED_LIGHT' : key === 'visible' && value[key] === false ? 'G_HIDDEN'
+        : /texture|map|opacity|transparent|text|light/i.test(key) ? 'FORBIDDEN_FEATURE' : 'H1';
+      fail(`${where}: forbidden or unknown field ${key}`, code);
+    }
   };
   if (!object(recipe)) return [{ code: 'H1', message: 'Recipe must be an object' }];
+  function nonFinite(value) {
+    if (typeof value === 'number') return !finite(value);
+    if (Array.isArray(value)) return value.some(nonFinite);
+    return object(value) && Object.values(value).some(nonFinite);
+  }
+  if (nonFinite(recipe)) fail('Recipe contains NaN or infinite geometry values', 'G_NON_FINITE');
   keys(recipe, ['id', 'category', 'footprint', 'height', 'origin', 'facing', 'parts', 'anchors', 'collision', 'slots', 'tags', 'emissive', 'proposedTokens'], 'recipe');
   if (recipe.id !== spec.id || !idPattern.test(recipe.id) || recipe.category !== spec.category || !categories.includes(recipe.category)) fail('Recipe id/category must match the spec');
   if (!object(recipe.footprint) || !positive(recipe.footprint.w) || !positive(recipe.footprint.d)) fail('footprint needs positive w and d');
@@ -37,21 +47,43 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
   const names = new Set();
   const features = new Set(spec.identityFeatures.map((feature) => feature.id));
   const accentUsed = new Set();
+  const families = new Map();
   for (const part of recipe.parts) {
     if (!object(part)) { fail('Each part must be an object'); continue; }
     const allowed = primitives[part.prim];
     if (!allowed) { fail(`Forbidden or unknown primitive ${String(part.prim)} (lights, text and textures are not allowed)`, 'FORBIDDEN_FEATURE'); continue; }
     keys(part, [...common, ...allowed], `part ${part.name || '?'}`);
     if (!idPattern.test(part.name || '') || names.has(part.name)) fail(`Invalid or duplicate part name ${String(part.name)}`);
+    if (/baked|shadow|outline|light-side|shade-side/.test(part.name || '')) fail(`Part ${part.name} suggests baked lighting or an outline`, 'BAKED_LIGHT');
     names.add(part.name);
     const token = resolve(part.mat);
     if (!token || !Object.hasOwn(palette, token)) fail(`Part ${part.name} uses an unknown palette token ${String(part.mat)}`);
+    const use = `${spec.id} ${spec.brief || ''}`.toLowerCase();
+    const allowedUse = {
+      'flower.red': /flower|mushroom|bush|berr/,
+      'flower.yellow': /flower/,
+      'flower.blue': /flower/,
+      'flower.orange': /flower|mushroom/,
+      pumpkin: /pumpkin/,
+      metal: /axe|bucket|wheel|lantern/,
+    };
+    if (token && allowedUse[token] && !allowedUse[token].test(use)) fail(`Palette token ${token} is not approved for ${spec.id}`, 'H1');
     if (token === 'lantern.glow' && (spec.id !== 'lantern-post' || !/lantern.*glass|glass.*lantern/.test(part.name))) {
       fail(`lantern.glow is allowed only on lantern-post glass, not ${part.name}`, 'FORBIDDEN_FEATURE');
     }
     if (accentTokens.includes(token)) accentUsed.add(token);
+    const family = /^(wood\.|trunk$|door$|timber$)/.test(token || '') ? 'wood'
+      : /^(foliage\.|grass$)/.test(token || '') ? 'foliage'
+        : /^(dirt\.|dirt$)/.test(token || '') ? 'soil'
+          : /^(roof\.|roof$)/.test(token || '') ? 'roof' : /^(water\.|water$)/.test(token || '') ? 'water' : null;
+    if (family && Object.hasOwn(palette, token)) {
+      if (!families.has(family)) families.set(family, new Set());
+      families.get(family).add(palette[token]);
+    }
     if (!vec(part.at, 3) || (part.rot !== undefined && !vec(part.rot, 3))) fail(`Part ${part.name} needs finite position/rotation triples`);
-    if (part.scale !== undefined && (!vec(part.scale, 3) || part.scale.some((n) => n <= 0) || Math.max(...part.scale) / Math.min(...part.scale) > rules.maxScaleRatio)) fail(`Part ${part.name} has invalid or excessive scale`);
+    if (part.scale !== undefined && (!vec(part.scale, 3) || part.scale.some((n) => n <= 0) || Math.max(...part.scale) / Math.min(...part.scale) > rules.maxScaleRatio)) {
+      fail(`Part ${part.name} has invalid, zero or excessive scale`, Array.isArray(part.scale) && part.scale.some((n) => n === 0) ? 'G_ZERO_SCALE' : 'H1');
+    }
     if (part.feature !== undefined && !features.has(part.feature)) fail(`Part ${part.name} uses undeclared feature ${part.feature}`);
     if (part.exception !== undefined && (!['band', 'cleat', 'twine'].includes(part.exception) || !new RegExp(part.exception === 'band' ? 'band|hoop' : part.exception).test(part.name))) fail(`Part ${part.name} has an invalid small-feature exception`);
     if (part.polygonOffset !== undefined && typeof part.polygonOffset !== 'boolean') fail(`Part ${part.name} has invalid polygonOffset`);
@@ -77,6 +109,7 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
         !part.indices.every((index) => Number.isInteger(index) && index >= 0 && index < part.positions.length / 3))) fail(`Part ${part.name} has invalid custom BufferGeometry`);
   }
   const allowedAccents = spec.id.includes('flower') ? 2 : 1;
+  for (const [family, colors] of families) if (colors.size > 3) fail(`${family} uses more than three albedo tones`);
   if (accentUsed.size > allowedAccents) fail(`At most ${allowedAccents} accent token(s) per asset: ${[...accentUsed].join(', ')}`);
   if (!object(recipe.anchors) || Object.values(recipe.anchors).some((value) => !vec(value, 3))) fail('anchors must map names to finite triples');
   if (!object(recipe.collision) || !['box', 'none'].includes(recipe.collision.type)) fail('collision must have type box or none');

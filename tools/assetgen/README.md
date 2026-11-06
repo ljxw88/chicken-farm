@@ -21,8 +21,8 @@ reports **visual critique not run** and never claims a visual pass.
 ## How a candidate is built
 
 ```sh
-npm run asset:new -- tools/assetgen/specs/barrel.json
-npm run asset:verify -- barrel
+/home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:new -- tools/assetgen/specs/barrel.json
+/home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:verify -- barrel
 ```
 
 OpenCode's default configured model writes JSON only, in a separate locked-down
@@ -51,9 +51,76 @@ emits it immediately without requiring Chromium or an OpenCode connection.
 
 The render pack and SHA-256 frame manifest, contact sheet, recipe, hard-check
 report, prompts and separate model transcripts live under
-`runs/<id>/round-N/stage-<name>/`. The best candidate and final report are in
-`runs/<id>/best.json` and `final.json`. Token usage/cost is read from OpenCode's
-session API when available; unknown cost is not estimated from text length.
+`runs-ebr83-85/<id>/round-N/stage-<name>/`. The best candidate and final
+report are in `runs-ebr83-85/<id>/best.json` and `final.json`. The old
+pre-EBR-80 `runs/` is retained separately. `ASSETGEN_RUN_DIR` selects an
+alternate location without overwriting either. Token usage/cost is read from
+OpenCode's session API when available; unknown cost is not estimated.
+
+## Recipe and external QA fixture schema
+
+Specs are JSON objects with kebab-case `id`, `category` (`prop`, `flora`,
+`terrain`, or `building` for signed fixtures only), a one-paragraph `brief`,
+`size: {width, depth, height}`, `paletteHints`, `referenceAssetIds`, and
+3–5 `identityFeatures: [{id, description}]`. An optional `variantOf` names
+another fixture or previous recipe; an unchanged/recoloured or uniformly
+rescaled silhouette is rejected. New buildings and animals are not generated.
+
+A recipe is data only:
+
+```json
+{
+  "id": "sample", "category": "prop",
+  "footprint": {"w": 1, "d": 1}, "height": 1,
+  "origin": "base-center", "facing": "+Z",
+  "parts": [{"name":"body", "prim":"box", "size":[1,1,1],
+    "at":[0,0.5,0], "mat":"wood.mid", "feature":"body"}],
+  "anchors": {}, "emissive": [],
+  "collision": {"type":"box", "w":1, "d":1, "h":1},
+  "slots": {}, "tags": ["farm"]
+}
+```
+
+This is a shape example, not a complete 3-feature QA fixture. Each part has a
+unique kebab-case `name`, token `mat`, position `at:[x,y,z]`, optional Euler
+`rot` in degrees, positive `scale`, identity `feature`, seeded `jitter`, and
+optional `exception: "band"|"cleat"|"twine"` (still ≥0.1). Primitive fields:
+`box`/`wedge` use `size:[w,h,d]`; `cylinder` has `radiusTop`, `radiusBottom`,
+`h`, `segments`; `cone` has `radius`, `h`, `segments`; `sphere` has `radius`,
+`detail:0|1`; `capsule` has `radius`, `length`, `segments`; `lathe` has
+`profile:[[radius,y],...]`, `segments`; `extrude` has `polygon:[[x,y],...]`,
+`depth`. Round segment counts are 6–8. The `custom` escape hatch takes finite
+`positions` and triangle `indices` and is explicitly lower trust. No raw hex,
+code, lights, textures, transparency or vertex colours. `slots` map aliases to
+approved palette tokens. Only the lantern-post glass can declare
+`emissive:[{part,mat:"lantern.glow",strength}]`; it adds no light. See
+`recipe-cheatsheet.md` and `docs/asset-style-bible.md` for the exact contract.
+
+QA may supply an external folder without giving the verifier write access to
+it. Each subdirectory is `<id>/spec.json` plus `<id>/recipe.json`; alternatively
+use `<id>.spec.json` and `<id>.recipe.json`, or `<id>.fixture.json` containing
+`{"spec":{...},"recipe":{...}}`. A signed reference fixture can be
+`<id>.fixture.json` containing only `{"signed":"tree"}` (or `coop`, `fence`,
+`tread`). The tool prints each named reason and writes render evidence to a
+fresh temporary directory, never into the QA folder. Use either:
+
+```sh
+/home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:verify -- --dir /absolute/path/to/fixtures
+/home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:verify -- --dir /absolute/path/to/fixtures --id fixture-id
+/home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:verify -- --signed all
+```
+
+Verification makes no model calls. `asset:bundle` rechecks exact source-file bytes,
+spec, bible and verifier hashes and reruns offline checks; it refuses any
+`needs-human`, stale or forged result and never changes the runtime registry.
+It also requires a separate Look Dev signoff containing the exact recipe,
+spec, bible, verifier and `reportHash` hashes and refuses
+promotion while required visual checks are unmeasured. The signoff file is not
+a cryptographic identity system; protect it as a review artifact. Generator and
+critic JSONL receipts must match their recorded hashes, session IDs, recipe and
+critique. Loop-off
+comparisons use `--loop-off` (one generation only) with a
+separate `ASSETGEN_RUN_DIR`; their outputs cannot be used as approvals.
 
 ## Important limits
 
@@ -69,12 +136,11 @@ session API when available; unknown cost is not estimated from text length.
   preliminary normal/albedo-normalised key-light estimate under old lighting.
   The loop stops for input at its lighting stage rather than advancing on
   missing S3/S5 evidence.
-* Exact signed scene fixtures are regression-tested for finite, nondegenerate,
-  budgeted geometry using the same overlap/contact routines. They are not all
-  strict H1–H10 goldens: the old fence and coop contain sub-0.3 readable pieces,
-  the tree has a transparent contact shadow, the tree/coop have coplanar
-  shadow/post joins (not necessarily visible z-fighting), and the stair tread
-  derives interpolated colours. QA/Look Dev must resolve these legacy
-  exceptions; new
-  recipes do not inherit them. This is an open checker-acceptance gate.
+* Exact signed tree/coop/fence/tread fixtures have a fingerprinted real-game
+  audit path. Known legacy colours, contact shadows, small details and analytic
+  coplanar ties are reported as warnings only for those exact fingerprints;
+  new recipes do not inherit the exceptions. A 24-yaw 0.001-unit jitter test
+  samples interior pixels and records excluded antialiased silhouette edges;
+  it does **not** prove those excluded edges cannot flicker. Placement, walking
+  shimmer and independent Look Dev signoff remain EBR-86 checks.
 * Neural Meshy/Tripo/Hunyuan3D/TRELLIS workflows are parked and not used.

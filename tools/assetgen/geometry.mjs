@@ -5,6 +5,68 @@ import { validateRecipe } from './schema.mjs';
 const round = (number) => Math.round(number * 10000) / 10000;
 const finite = (values) => values.every(Number.isFinite);
 
+/** A colour/name-independent, uniform-scale-normalised descriptor for variants. */
+function shapeDescriptor(recipe, buildRecipe) {
+  const group = buildRecipe(recipe);
+  group.updateMatrixWorld(true);
+  const bounds = new THREE.Box3();
+  const meshes = [];
+  group.traverse((mesh) => {
+    if (!mesh.isMesh) return;
+    const position = mesh.geometry.getAttribute('position');
+    const points = [];
+    for (let i = 0; i < position.count; i++) {
+      const point = new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(mesh.matrixWorld);
+      points.push(point); bounds.expandByPoint(point);
+    }
+    meshes.push({ points, indices: mesh.geometry.index ? Array.from(mesh.geometry.index.array) : null });
+  });
+  const size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+  const scale = Math.max(size.x, size.y, size.z);
+  if (!Number.isFinite(scale) || scale <= 0) throw new Error('Cannot fingerprint empty or invalid geometry');
+  return meshes.map((mesh) => ({
+    points: mesh.points.flatMap((point) => point.clone().sub(center).multiplyScalar(1 / scale).toArray()),
+    indices: mesh.indices,
+  }));
+}
+
+export function shapeFingerprint(recipe, buildRecipe) {
+  const normalized = shapeDescriptor(recipe, buildRecipe).map((mesh) => JSON.stringify({
+    points: mesh.points.map((value) => Math.round(value * 100) / 100), indices: mesh.indices,
+  })).sort();
+  return createHash('sha256').update(JSON.stringify(normalized)).digest('hex');
+}
+
+export function sameVariantShape(left, right, buildRecipe, tolerance = 0.02) {
+  const a = shapeDescriptor(left, buildRecipe), b = shapeDescriptor(right, buildRecipe);
+  if (a.length !== b.length) return false;
+  const remaining = new Set(b.map((_, index) => index));
+  for (const mesh of a) {
+    const match = [...remaining].find((index) => {
+      const other = b[index];
+      return mesh.points.length === other.points.length && JSON.stringify(mesh.indices) === JSON.stringify(other.indices) &&
+        mesh.points.every((value, i) => Math.abs(value - other.points[i]) <= tolerance);
+    });
+    if (match === undefined) return false;
+    remaining.delete(match);
+  }
+  return true;
+}
+
+export function obviousStyleFailures(recipe, spec) {
+  const failures = [];
+  const text = `${spec.id} ${spec.brief || ''}`.toLowerCase();
+  if (spec.category === 'flora' && /oak|tree/.test(text)) {
+    const foliage = recipe.parts.filter((part) => String(recipe.slots?.[part.mat] ?? part.mat).startsWith('foliage.'));
+    if (foliage.length < 3) failures.push({ code: 'STYLE_TREE', message: 'Round tree needs 3–6 distinct foliage lobes; one smooth sphere is an anti-example' });
+  }
+  if (spec.category === 'terrain' && /rock|stone/.test(text) && recipe.parts.some((part) =>
+    /spike/.test(part.name || '') || (part.prim === 'cone' && part.h > part.radius * 2.5))) {
+    failures.push({ code: 'STYLE_SPIKY', message: 'Spiky cone rock is a Look Dev anti-example' });
+  }
+  return failures;
+}
+
 // Clip one projected triangle against another. Edge-only contact has zero area.
 export function triangleIntersectionArea(a, b) {
   const cross = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
@@ -46,7 +108,7 @@ function coplanarOverlaps(triangles, rules) {
     const a = triangles[i];
     for (let j = i + 1; j < triangles.length; j++) {
       const b = triangles[j];
-      if (a.offset || b.offset || Math.abs(a.normal.dot(b.normal)) < rules.zFightNormalDot) continue;
+      if (Math.abs(a.normal.dot(b.normal)) < rules.zFightNormalDot) continue;
       if (b.points.some((point) => Math.abs(a.normal.dot(point) - a.plane) > rules.zFightPlaneDistance)) continue;
       if (!a.box.clone().expandByScalar(rules.zFightPlaneDistance).intersectsBox(b.box)) continue;
       if (triangleIntersectionArea(a.points.map((p) => project(a.normal, p)), b.points.map((p) => project(a.normal, p))) > rules.zFightOverlapArea) {
@@ -119,26 +181,41 @@ function disconnected(parts, rules, groundHeight = 0) {
   return parts.filter((part) => !connected.has(part)).map((part) => part.name);
 }
 
-function geometryHash(group) {
+export function geometryHash(group) {
   group.updateMatrixWorld(true);
   const hash = createHash('sha256');
   group.traverse((object) => {
-    if (!object.isMesh) return;
+    if (!object.isMesh) {
+      if (object.isLight || object.isPoints || object.isLine || object.isSprite) hash.update(`${object.type}:${object.visible}`);
+      return;
+    }
     const geometry = object.geometry;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
     hash.update(JSON.stringify({ name: object.name, matrix: object.matrixWorld.elements, feature: object.userData.feature,
-      color: object.material.color?.getHex(), emissive: object.material.emissive?.getHex(),
-      positions: Array.from(geometry.getAttribute('position').array), normals: Array.from(geometry.getAttribute('normal').array),
-      indices: geometry.index ? Array.from(geometry.index.array) : null }));
+      visible: object.visible, materials: materials.map((material) => ({ color: material?.color?.getHex(),
+        emissive: material?.emissive?.getHex(), opacity: material?.opacity, transparent: material?.transparent })),
+      positions: geometry?.getAttribute('position') ? Array.from(geometry.getAttribute('position').array) : null,
+      normals: geometry?.getAttribute('normal') ? Array.from(geometry.getAttribute('normal').array) : null,
+      indices: geometry?.index ? Array.from(geometry.index.array) : null }));
   });
   return hash.digest('hex');
 }
 
 /** All hard checks share the same builder used by the game-facing registry. */
-export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accentTokens }) {
+export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accentTokens, referenceRecipes = {} }) {
   const failures = validateRecipe(recipe, spec, rules, palette, accentTokens);
   const metrics = { checks: {}, lowerTrust: false };
   const fail = (code, message) => failures.push({ code, message });
   if (failures.length) return { failures, metrics };
+  failures.push(...obviousStyleFailures(recipe, spec));
+  if (spec.variantOf && !referenceRecipes[spec.variantOf]) fail('VARIANT_REFERENCE_MISSING', `Variant reference ${spec.variantOf} was not supplied`);
+  else if (spec.variantOf) {
+    try {
+      if (sameVariantShape(recipe, referenceRecipes[spec.variantOf], buildRecipe)) {
+        fail('VARIANT_RECOLOR', `Variant ${spec.id} has the same silhouette geometry as ${spec.variantOf}`);
+      }
+    } catch (error) { fail('VARIANT_UNMEASURED', `Cannot compare variant geometry: ${String(error)}`); }
+  }
   if (recipe.parts.length > rules.maxParts) fail('H2', `${recipe.parts.length} parts exceeds ${rules.maxParts}`);
   metrics.lowerTrust = recipe.parts.some((part) => part.prim === 'custom' || part.polygonOffset);
   let group, second;
@@ -153,18 +230,56 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
   const hashes = [geometryHash(group), geometryHash(second)];
   if (hashes[0] !== hashes[1]) fail('H6', 'Two builds produced different geometry/material hashes');
   group.updateMatrixWorld(true);
+  if (group.position.length() > 1e-8 || group.quaternion.angleTo(new THREE.Quaternion()) > 1e-8 ||
+      group.scale.distanceTo(new THREE.Vector3(1, 1, 1)) > 1e-8) fail('H4', 'Root transform must be identity, with base-centred origin');
   const bounds = new THREE.Box3();
   const triangles = [];
   const parts = [];
   const colors = new Set();
   let triangleCount = 0, nonFinite = 0, degenerate = 0, badNormals = 0;
   group.traverse((mesh) => {
+    if (mesh.isLight || mesh.isSprite || mesh.isPoints || mesh.isLine || mesh.isInstancedMesh || mesh.isSkinnedMesh) {
+      fail('FORBIDDEN_FEATURE', `${mesh.name || mesh.type}: lights, sprites, points, lines, instances and skinned meshes are forbidden`);
+    }
     if (!mesh.isMesh) return;
+    let ancestor = mesh;
+    let hidden = false;
+    while (ancestor) { if (!ancestor.visible) hidden = true; ancestor = ancestor.parent; }
+    if (hidden) fail('G_HIDDEN', `${mesh.name}: hidden geometry still carries triangles`);
+    if (!finite(mesh.matrixWorld.elements)) { nonFinite++; return; }
+    if (Math.abs(mesh.matrixWorld.determinant()) < 1e-12) fail('G_ZERO_SCALE', `${mesh.name}: zero world scale`);
     const geometry = mesh.geometry;
+    if (!geometry?.isBufferGeometry) { fail('G_GEOMETRY', `${mesh.name}: invalid BufferGeometry`); return; }
     const position = geometry.getAttribute('position'), normal = geometry.getAttribute('normal');
     if (!position || !normal || position.count !== normal.count) { badNormals++; return; }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      if (!material?.isMeshStandardMaterial || !material.flatShading || material.transparent || material.opacity !== 1 ||
+          material.wireframe || !material.depthWrite || !material.colorWrite || material.metalness !== 0) {
+        fail('FORBIDDEN_FEATURE', `${mesh.name}: material must be opaque, matte and flat-shaded`);
+      }
+      if (!material) continue;
+      if (Object.values(material).some((value) => value?.isTexture)) fail('FORBIDDEN_FEATURE', `${mesh.name}: texture is forbidden`);
+      if (material.vertexColors || geometry.getAttribute('color')) fail('BAKED_LIGHT', `${mesh.name}: vertex-colour/baked shading bypasses palette tokens`);
+      if (material.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile) fail('BAKED_LIGHT', `${mesh.name}: custom shader hook can bypass palette or lighting`);
+      if (material.emissive?.getHex() && material.emissiveIntensity > 0 &&
+          !(spec.id === 'lantern-post' && recipe.emissive.some((item) => item.part === mesh.name && (recipe.slots[item.mat] ?? item.mat) === 'lantern.glow'))) {
+        fail('BAKED_LIGHT', `${mesh.name}: emissive body or undeclared glow is forbidden`);
+      }
+      if (material.color) {
+        if (!finite([material.color.r, material.color.g, material.color.b])) nonFinite++;
+        const hex = material.color.getHex();
+        colors.add(hex);
+        const close = Object.values(palette).some((allowed) => {
+          const d = [16, 8, 0].map((shift) => ((hex >> shift) & 255) - ((allowed >> shift) & 255));
+          return Math.hypot(...d) <= rules.paletteDistanceRGB;
+        });
+        if (!close) fail('H1', `${mesh.name}: built material is off palette (#${hex.toString(16).padStart(6, '0')})`);
+      }
+    }
     geometry.computeBoundingBox();
-    const localSize = geometry.boundingBox.getSize(new THREE.Vector3()).multiply(mesh.scale).toArray().map(Math.abs).sort((a, b) => a - b);
+    const worldScale = new THREE.Vector3().setFromMatrixScale(mesh.matrixWorld);
+    const localSize = geometry.boundingBox.getSize(new THREE.Vector3()).multiply(worldScale).toArray().map(Math.abs).sort((a, b) => a - b);
     const partSpec = recipe.parts.find((part) => part.name === mesh.name);
     const minimum = partSpec?.exception ? rules.exceptionMinimumFeature : rules.minimumFeature;
     const structural = /rail|plank|post|trunk/.test(mesh.name);
@@ -190,7 +305,6 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
         if (length < minimum - 1e-6) fail('H5', `${mesh.name}: profile edge ${i} is only ${round(length)} units`);
       }
     }
-    colors.add(mesh.material.color.getHex());
     const points = [], normals = [];
     const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
     for (let i = 0; i < position.count; i++) {
@@ -253,7 +367,11 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
   if (floating?.length) fail('H8', `Disconnected parts: ${floating.join(', ')}`);
   if (recipe.collision.type === 'box') {
     const ratio = recipe.collision.w * recipe.collision.d / (recipe.footprint.w * recipe.footprint.d);
-    if (ratio < rules.collisionMinRatio || ratio > rules.collisionMaxRatio) fail('H10', `collision footprint ratio ${round(ratio)} outside ${rules.collisionMinRatio}–${rules.collisionMaxRatio}`);
+    const axes = [recipe.collision.w / recipe.footprint.w, recipe.collision.d / recipe.footprint.d, recipe.collision.h / recipe.height];
+    if (ratio < rules.collisionMinRatio || ratio > rules.collisionMaxRatio ||
+        axes.some((value) => value < rules.collisionMinRatio || value > rules.collisionMaxRatio)) {
+      fail('H10', `collision area ratio ${round(ratio)}, axis ratios ${axes.map(round).join('/')} outside ${rules.collisionMinRatio}–${rules.collisionMaxRatio}`);
+    }
   } else fail('H10', 'This spec requires a collision box');
   const tagged = new Set(recipe.parts.map((part) => part.feature).filter(Boolean));
   for (const feature of spec.identityFeatures) if (!tagged.has(feature.id)) fail('IDENTITY', `No part declares identity feature ${feature.id}`);
@@ -280,7 +398,7 @@ export function checkKeyLightAgreement(samples, keyDirection) {
   if (!lit.length || !shade.length) return { status: 'unmeasured', code: 'S4', message: 'Insufficient lit/shade face samples' };
   const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
   const litMean = mean(lit), shadeMean = mean(shade);
-  return { status: litMean > shadeMean ? 'pass' : 'fail', code: 'S4', litMean, shadeMean,
+  return { status: litMean > shadeMean ? 'pass' : 'fail', code: 'S4', litMean, shadeMean, shadeLitRatio: shadeMean / litMean,
     message: litMean > shadeMean ? 'Key-facing samples are brighter' : 'Key-facing samples are not brighter than opposing faces' };
 }
 

@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import * as THREE from 'three';
 import { createServer } from 'vite';
-import { readBible } from '../tools/assetgen/config.mjs';
+import { readBible, root } from '../tools/assetgen/config.mjs';
 import { inspectSignedGroup } from '../tools/assetgen/geometry.mjs';
+import { createSignedFixtures, inspectSignedFixture } from '../tools/assetgen/signed-fixtures.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
@@ -46,4 +49,22 @@ test('signed legacy differences are exposed rather than silently weakening recip
   assert.ok(coopReport.narrowParts.length > 0, 'signed coop includes smaller trim and a glow pane');
   assert.ok(treeReport.zFightPairs > 0 && coopReport.zFightPairs > 0, 'signed shadow/post joins include coplanar pairs');
   assert.ok(treadReport.offPalette.length > 0, 'signed tread derives interpolated colours outside recipe tokens');
+});
+
+test('the four exact signed golden geometry fixtures pass with scoped legacy warnings', async () => {
+  const signed = await createSignedFixtures(vite);
+  const baseline = JSON.parse(await readFile(join(root, 'tools/assetgen/signed-baselines.json'), 'utf8'));
+  for (const name of signed.names) {
+    const result = inspectSignedFixture(name, signed.build(name), signed.build(name), rules, ASSET_PALETTE, baseline);
+    assert.equal(result.status, 'PASS_SIGNED_GEOMETRY', `${name}: ${JSON.stringify(result.failures)}`);
+    assert.deepEqual(result.failures, []);
+  }
+});
+
+test('the signed path does not allow altered geometry to inherit a golden exemption', async () => {
+  const signed = await createSignedFixtures(vite);
+  const baseline = JSON.parse(await readFile(join(root, 'tools/assetgen/signed-baselines.json'), 'utf8'));
+  const changed = signed.build('fence'); changed.children[0].position.x += 0.02;
+  const result = inspectSignedFixture('fence', changed, changed.clone(true), rules, ASSET_PALETTE, baseline);
+  assert.ok(result.failures.some((failure) => failure.code === 'SIGNED_CHANGED'));
 });

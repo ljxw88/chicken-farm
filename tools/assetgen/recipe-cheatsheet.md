@@ -41,7 +41,7 @@ Euler **degrees**; dimensions are full widths):
 * `custom`: `positions` and triangle `indices`; lower-trust, only when necessary.
 
 Each part needs `name`, `prim`, `mat`, `at`; optional `rot`, `scale`, `feature`,
-`exception` (`band` or `cleat` only; still at least 0.1), `polygonOffset`, and seeded `jitter`.
+`exception` (`band`, `cleat` or `twine`; still at least 0.1), `polygonOffset`, and seeded `jitter`.
 No loops, calculations, expressions, URLs, comments, raw hexes, arbitrary keys,
 or code. Matte albedo tokens include `wood.mid`, `wood.light`, `timber`,
 `trunk`, `foliage.mid`, `foliage.light`, `foliage.dark`, `dirt.hi`, `stone`,

@@ -23,8 +23,10 @@ test('real pixel renderer catches a hidden identity feature and a reversed key l
     assert.ok(!result.failures.some((failure) => failure.code === 'BROWSER'), JSON.stringify(result.failures));
     assert.equal(result.metrics.pixel.canvasWidth, 320);
     assert.equal(result.metrics.pixel.canvasHeight, 180);
-    assert.equal(result.metrics.samples.length, 72);
-    assert.equal(result.metrics.frameIndex.length, 82); // 72 views, 6 silhouettes, two composites, native debug, sheet.
+    assert.equal(result.metrics.samples.length, 120);
+    assert.deepEqual([...new Set(result.metrics.samples.map((sample) => sample.phase))].sort(), ['daytime', 'morning', 'night', 'night-rain', 'sunset']);
+    assert.ok(result.metrics.samples.every((sample) => Number.isFinite(sample.meanDeltaE)));
+    assert.equal(result.metrics.frameIndex.length, 134); // 120 views, 10 silhouettes, two composites, native debug, sheet.
     assert.ok(result.failures.some((failure) => failure.code === 'IDENTITY_VISIBLE' && failure.message.includes('hidden')));
     assert.ok(result.metrics.identityVisibility.hidden.every((view) => view.pixels === 0));
     assert.ok(result.metrics.identityPartVisibility.hidden.views.every((view) => view.pixels === 0));
@@ -33,6 +35,8 @@ test('real pixel renderer catches a hidden identity feature and a reversed key l
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
     const silhouette = await readFile(join(directory, 'silhouette-grass-045.png'));
     assert.deepEqual([silhouette.readUInt32BE(16), silhouette.readUInt32BE(20)], [320, 180]);
+    const front = await readFile(join(directory, 'silhouette-front-grass.png'));
+    assert.deepEqual([front.readUInt32BE(16), front.readUInt32BE(20)], [320, 180]);
     const wrong = await runner.capture(spec, rules, join(directory, 'wrong-key'), recipe, { wrongKeyFixture: true });
     assert.ok(wrong.failures.some((failure) => failure.code === 'S4'), JSON.stringify(wrong.metrics.keyLight));
   } finally { await runner.close(); }

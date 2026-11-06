@@ -1,14 +1,17 @@
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFile, cp, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { copyFile, cp, mkdir, readFile, realpath, symlink, writeFile } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { homedir } from 'node:os';
 import { evidenceDirectory, readSpec, root } from './config.mjs';
 import { runOpenCode, sessionMetadata } from './opencode.mjs';
 
 const id = process.argv[2];
 if (!['barrel', 'hay-bale', 'round-oak'].includes(id)) throw new Error('Usage: node tools/assetgen/bakeoff-b.mjs <barrel|hay-bale|round-oak>');
-const scratch = '/tmp/assetgen-img2threejs.REij4K';
-const offline = '/tmp/assetgen-offline-bin.I2tSoG/offline';
+const scratch = await realpath(resolve(process.env.IMG2THREEJS_SCRATCH || '/tmp/assetgen-img2threejs.REij4K'));
+const offline = process.env.IMG2THREEJS_OFFLINE || '/tmp/assetgen-offline-bin.I2tSoG/offline';
+const fromRoot = relative(await realpath(root), scratch);
+if (!(fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot))) throw new Error('img2threejs scratch must be outside the repository');
 const directory = join(scratch, 'ebr83-85', id);
 const out = join(evidenceDirectory, 'ebr83-85', 'img2threejs', id);
 await mkdir(join(scratch, 'ebr83-85'), { recursive: true });
@@ -28,7 +31,7 @@ for (const [target, link] of [[join(root, 'node_modules'), join(directory, 'node
 }
 const prompt = `Use the installed img2threejs skill for the ${id} in reference.png, following its mandatory staged state, deterministic gates and visual review. spec.json, style-bible.md and lookdev-brief.md contain the exact game brief. Reference is a local render of an older approach-A candidate: it is not independent, and must be disclosed. Rebuild as a chunky low-poly Three.js asset under the merged EBR-80 game lights copied in game-src. No image/model downloads, textures, projection, neural meshes, paid keys, network, new lights or shadow maps. Keep every output inside this scratch folder; do not edit the game worktree, push, commit, or open a PR. All shell commands must begin ${offline}, which confines execution to an offline network namespace with the scratch directory writable. The forge symlink is the installed skill. Preserve honest stage/gate state: stop on a failed gate, do not label a partial model a pass. Produce a 1280x720 contact sheet and in-scene scale composite if the skill reaches rendering. The limit is 30 minutes for this asset; report blockers and exact output paths.`;
 await writeFile(join(directory, 'task.txt'), `${prompt}\n`);
-const binary = process.env.OPENCODE_BIN || '/home/michael/.opencode/bin/opencode';
+const binary = process.env.OPENCODE_BIN || join(homedir(), '.opencode/bin/opencode');
 const args = ['run', '--format', 'json', '--model', 'opencode/crouton-alpha-free', '--file', join(directory, 'reference.png'), prompt];
 const start = Date.now();
 const child = spawn(binary, args, { cwd: directory, env: { ...process.env, PWD: directory }, stdio: ['ignore', 'pipe', 'pipe'] });

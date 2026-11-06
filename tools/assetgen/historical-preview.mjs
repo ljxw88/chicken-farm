@@ -1,9 +1,11 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import * as THREE from 'three';
 import { evidenceDirectory, readBible, readSpec, root } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { createVisualRunner } from './visual.mjs';
+import { verifierSourceHash } from './bundle.mjs';
 
 // Preview old, already-generated candidates under the merged renderer without
 // promoting or changing them. The old bevelBox is converted to equivalent
@@ -35,6 +37,12 @@ function displayRecipe(source) {
 const runner = await createVisualRunner();
 try {
   const bible = await readBible();
+  const previewDir = process.env.ASSETGEN_PREVIEW_DIR || 'historical';
+  if (!/^[a-z0-9-]+$/.test(previewDir)) throw new Error('Invalid preview directory label');
+  const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  let trackedDirty = false;
+  try { execFileSync('git', ['diff', '--quiet', 'HEAD'], { cwd: root }); } catch { trackedDirty = true; }
+  const sourceHash = await verifierSourceHash();
   const { buildRecipe } = await runner.server.ssrLoadModule('/src/assets/buildRecipe.ts');
   const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
   for (const id of ['barrel', 'hay-bale', 'round-oak']) {
@@ -42,7 +50,7 @@ try {
     const previous = JSON.parse(await readFile(join(root, 'tools/assetgen/runs', id, 'best.json'), 'utf8'));
     const hard = inspectRecipe(previous.recipe, spec, bible.rules, { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS });
     const display = displayRecipe(previous.recipe);
-    const output = join(evidenceDirectory, 'ebr83-85', 'historical', id);
+    const output = join(evidenceDirectory, 'ebr83-85', previewDir, id);
     await mkdir(output, { recursive: true });
     if (process.argv.includes('--references-only')) {
       await runner.reference(spec, join(output, 'b-reference-transparent.png'), display);
@@ -51,7 +59,8 @@ try {
     }
     const visual = await runner.capture(spec, bible.rules, output, display);
     await runner.reference(spec, join(output, 'b-reference-transparent.png'), display);
-    const report = { id, status: 'needs-human', signedBy: null, origin: 'pre-EBR-80 generated candidate, not a new run',
+    const report = { id, status: 'needs-human', signedBy: null, head, trackedDirty, verifierHash: sourceHash,
+      origin: 'pre-EBR-80 generated candidate, not a new run',
       displayConversion: id === 'hay-bale' ? 'old bevelBox converted to custom triangles solely for preview' : 'none',
       hard: { failures: hard.failures, metrics: hard.metrics }, visual,
       warning: 'Diagnostic render of historical candidate; no current critic or bundle eligibility.' };
