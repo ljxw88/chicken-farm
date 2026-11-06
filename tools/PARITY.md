@@ -21,6 +21,10 @@ pass, pinned phase/weather URLs, LCG seed, manual animation-frame timestamps,
 and input route/pose. The weather RNG is supplied at initialization, before
 rain particles are created. The stairs frame is reached by a real click and
 the day frame by WASD; placement uses the real selection and pointer path.
+Two extra day/night frames use a test-only camera focus and zoom, retaining the
+normal isometric front direction, to frame the cottage and both coops without
+moving the character. They use the existing composer and also check the window
+lights and window/pop-hole emissives.
 `baseline.json` records the source SHA, capture state and frame hashes. Each scenario saves
 baseline, candidate, and a black/magenta exact-RGBA diff PNG under
 `evidence/EBR-73/`; `parity.json` records the counts. Any differing pixel,

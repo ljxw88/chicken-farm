@@ -31,6 +31,8 @@ const scenarios = [
   { name: 'day', search: '?phase=daytime&weather=clear', setup: 'walk' },
   { name: 'night', search: '?phase=night&weather=clear', setup: 'spawn' },
   { name: 'rain', search: '?phase=daytime&weather=rain', setup: 'rain' },
+  { name: 'cottage-coops-day', search: '?phase=daytime&weather=clear', setup: 'buildings' },
+  { name: 'cottage-coops-night', search: '?phase=night&weather=clear', setup: 'buildings' },
 ];
 
 if (recordBaseline && (!baselineSha || suppliedUrl)) {
@@ -108,7 +110,7 @@ try {
       const reference = await readFile(join(evidence, 'baseline', `${name}.png`));
       const candidate = await readFile(join(output, `${name}.png`));
       assert.equal(sha256(reference), baseline.frames[name].sha256, `Baseline image changed: ${name}`);
-      for (const key of ['position', 'yaw', 'camera', 'pixel', 'weather', 'phase']) {
+      for (const key of ['position', 'yaw', 'camera', 'cameraQuaternion', 'cameraZoom', 'pixel', 'weather', 'phase', 'buildings']) {
         if (!isDeepStrictEqual(frames[name][key], baseline.frames[name][key])) stateMismatches.push(`${name}: ${key}`);
       }
       const diff = await diffPage.evaluate(async ({ reference, candidate }) => {
@@ -249,18 +251,48 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
     } else if (scenario.setup === 'rain') {
       await page.evaluate(() => { for (let i = 1; i <= 25; i++) window.__ebr73Step(i * 100); });
       assert.equal(await page.evaluate(() => window.getWeather().rainAmount), 1);
+    } else if (scenario.setup === 'buildings') {
+      // Test-only framing: keep the normal isometric/front direction, move the
+      // camera's focus toward the buildings, and zoom. Gameplay state is not
+      // teleported or modified; use the existing composer for the final draw.
+      await page.evaluate(() => {
+        const { camera, character, follow, composer } = window.__ebr73Parity;
+        follow(character.position.clone().set(-1.45, 2.4, -3.4));
+        camera.zoom = 1.8;
+        camera.updateProjectionMatrix();
+        composer.render(0);
+      });
     }
-    const state = await page.evaluate(() => {
-      const { camera, character } = window.__ebr73Parity;
+    const state = await page.evaluate((inspectBuildings) => {
+      const { scene, camera, character } = window.__ebr73Parity;
       const gl = document.querySelector('#scene').getContext('webgl2');
       const debug = gl?.getExtension('WEBGL_debug_renderer_info');
+      let buildings;
+      if (inspectBuildings) {
+        scene.updateMatrixWorld(true);
+        const names = ['farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2'];
+        const centers = names.map((name) => {
+          const building = scene.getObjectByName(name);
+          if (!building) throw new Error(`Missing building: ${name}`);
+          const p = building.getWorldPosition(character.position.clone());
+          p.y += 0.8;
+          p.project(camera);
+          return { name, visible: building.visible, x: p.x, y: p.y };
+        });
+        const accents = ['cottage-window-1', 'cottage-window-2', 'cottage-east-window',
+          'ramp-coop-1-pop-hole-glow', 'ramp-coop-2-pop-hole-glow']
+          .map((name) => scene.getObjectByName(name).material.emissiveIntensity);
+        const windowLights = ['window-light-1', 'window-light-2'].map((name) => scene.getObjectByName(name).intensity);
+        buildings = { centers, accents, windowLights };
+      }
       return {
         position: character.position.toArray(), yaw: character.rotation.y, camera: camera.position.toArray(),
+        cameraQuaternion: camera.quaternion.toArray(), cameraZoom: camera.zoom, buildings,
         pixel: window.getPixelRendering(), weather: window.getWeather(), webgl: gl?.getParameter(gl.VERSION),
         renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL), randomCalls: window.__ebr73RandomCalls,
         phase: document.querySelector('[data-phase]')?.textContent,
       };
-    });
+    }, scenario.setup === 'buildings');
     assert.match(state.webgl, /WebGL 2\.0/);
     assert.match(state.renderer, /SwiftShader/i);
     assert.equal(state.pixel.enabled, true);
@@ -268,6 +300,14 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
     assert.deepEqual([state.pixel.canvasWidth, state.pixel.canvasHeight], [320, 180]);
     assert.equal(state.phase, scenario.search.includes('phase=night') ? 'Night' : 'Daytime');
     assert.equal(state.weather.mode, scenario.setup === 'rain' ? 'rain' : 'clear');
+    if (state.buildings) {
+      assert.ok(state.buildings.centers.every(({ visible, x, y }) => visible && Math.abs(x) < 1 && Math.abs(y) < 1),
+        'Cottage and both coop centers must be in the framed view');
+      const night = state.phase === 'Night';
+      const expected = night ? [0.85, 0.85, 0.85, 0.595, 0.595] : [0, 0, 0, 0, 0];
+      state.buildings.accents.forEach((value, index) => assert.ok(Math.abs(value - expected[index]) < 1e-9));
+      state.buildings.windowLights.forEach((value) => assert.ok(Math.abs(value - (night ? 0.85 : 0)) < 1e-9));
+    }
     assert.deepEqual(errors, []);
     // CDP capture avoids Playwright's rAF-based screenshot stability wait: the
     // test intentionally owns requestAnimationFrame and advances it manually.
