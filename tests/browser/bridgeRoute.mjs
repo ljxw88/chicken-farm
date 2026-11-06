@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
-// Click-to-move does not pathfind. Approach the unchanged stairs along the
-// dirt path and the new walkable bridge instead of clicking through water.
+// Keep an explicit bridge approach for the existing controlled stairs tests,
+// independently of the new single-click route planner.
 export async function approachStairs(page, stateName) {
   for (const [x, z] of [[2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [6, -0.9], [7.2, 0.75]]) {
     const point = await page.evaluate(({ stateName, x, z }) => {

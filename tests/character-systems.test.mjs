@@ -170,3 +170,39 @@ test('shared placement obstacle additions, mutations and removals immediately re
   assert.equal([...f.world.with('obstacle')].length, 0);
   controller.dispose();
 });
+
+test('pointer-time routing uses walking obstacles owned only by ECS entities', () => {
+  const world = createEntityWorld();
+  const input = createInputActions();
+  const scene = new THREE.Scene();
+  const character = new THREE.Group();
+  character.position.y = 2.4;
+  scene.add(character);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(16, 16), new THREE.MeshBasicMaterial());
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 2.4;
+  scene.add(ground);
+  const { camera, follow, resize } = createIsometricCamera();
+  resize(1280, 720);
+  follow(character.position);
+  const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280, height: 720 }) };
+  const wall = { kind: 'box', name: 'ecs-only-wall', minX: 0.8, maxX: 1, minZ: -0.5, maxZ: 0.5 };
+  world.create({ obstacle: wall });
+  const controller = createCharacterController({ world, input, character, camera, canvas, ground,
+    groundSize: 16, groundHeight: 2.4, characterRadius: 0.4, obstacles: [] });
+  camera.updateMatrixWorld();
+  const projected = new THREE.Vector3(2, 2.4, 0).project(camera);
+  input.pointerDown({ isPrimary: true, button: 0, clientX: (projected.x + 1) * 640,
+    clientY: (1 - projected.y) * 360, pointerType: 'mouse' });
+  assert.ok(controller.entity.character.target, 'routing must resolve during the pointer event');
+  for (let frame = 0; frame < 200; frame++) {
+    controller.update(0.05);
+    const { x, z } = character.position;
+    const closestX = Math.max(wall.minX, Math.min(wall.maxX, x));
+    const closestZ = Math.max(wall.minZ, Math.min(wall.maxZ, z));
+    assert.ok(Math.hypot(x - closestX, z - closestZ) > 0.4 - 1e-7, 'walked through the ECS obstacle');
+  }
+  assert.ok(Math.hypot(character.position.x - 2, character.position.z) < 0.01);
+  assert.equal([...world.with('obstacle')].length, 1, 'routing must not duplicate ECS-owned obstacles');
+  controller.dispose();
+});

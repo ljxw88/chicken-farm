@@ -76,6 +76,7 @@ export function createCottage(parent: THREE.Group, spec: CottageSpec, materials:
   const extraEmissives: EmissiveAccent[] = [{ material: east.material, strength: 1 }];
 
   return {
+    group: cottage,
     windows, extraEmissives,
     obstacle: buildingFootprint(name, x, z, width, depth),
     splashExclusion: buildingFootprint(`${name}-roof`, x, z, width + roofOverhang * 2, depth + roofOverhang * 2),

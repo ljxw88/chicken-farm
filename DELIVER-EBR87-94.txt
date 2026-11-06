@@ -1,0 +1,217 @@
+EBR-94 + EBR-87 handoff
+
+2026-11-07 split-branch update
+- Current main base: 05d5b4aa566bf3d48cd2d1f5b94224224287c4c2.
+- EBR-94 is PR #25, head f5f20a5658bd7ba482e286dce7c81dd0d21b2926.
+- EBR-87 is stacked on that exact head in feat/ebr87-click-route; its fresh
+  integration evidence is in evidence/EBR-87/current-main-05d5b4a/.
+- Everything below describes the earlier combined-branch handoff and its
+  original 5d9ba48 checks; the no-push and branch/head statements are historical.
+
+Branch: feat/ebr87-94-click-route-stair-entry
+Clean-main baseline: 5d9ba48f6bd9bfbc3974351b50d0ce89934380ff
+EBR-94 first commit: bf7b930d62c4337015c73492616a7a13d6cffc22
+EBR-87 final tip: run `git rev-parse HEAD`; the handoff commit cannot contain its own hash.
+The final response reports that exact SHA. HEAD intentionally advanced from the
+verified EBR-94 commit to the EBR-87 commit; no post-handoff head move is intended.
+No push or PR operation was performed.
+
+Open / try
+- Dev server is kept at http://100.88.150.21:5214/?phase=daytime&weather=clear
+  (`npm run dev -- --host 100.88.150.21 --port 5214 --strictPort`). At
+  1280x720 click the foot pad from spawn: the player
+  crosses the existing bridge and descends. Click water or a roof; the player
+  approaches the nearest reachable boundary. Press Q or WASD to cancel a route.
+- F/P placement still receives the pointer before walking. The three pad-side
+  routes and the long top-entry repro are in evidence/EBR-94/ and evidence/EBR-87/.
+- Review `evidence/EBR-87/routes/live-bridge.png`, `live-stair-pad.png`, the
+  blocked-target frames and `07-stair-mouth.png`/`08-stair-corner.png`; the
+  matching JSON files contain positions and error lists. Gate comparisons are
+  in each ticket's `gate-g/`, and the before/after input traces are in
+  `evidence/EBR-87/walking-replay/`.
+
+Intended pixel changes
+- EBR-94: none. Allowed rectangles for every same-pose frame: [] (empty mask).
+- EBR-87: none. Allowed rectangles for every same-pose frame: [] (empty mask).
+- For each ticket: spawn [], stairs-pad [], placement-ghost [], day [], night [],
+  rain [], cottage-coops-day [], cottage-coops-night []; all unchanged-pose
+  replay frames also have []. There are no effect or shadow exceptions.
+- No pixel mask or ALLOW exception is used. Different moving-player/camera poses
+  are behavioral differences and are compared by position traces, not treated
+  as changed art, lighting, weather, water, palette, HUD or pixel pass.
+
+Visible-change ledger / implementation
+- No geometry, materials, lighting, PointLights, weather or HUD changes.
+- All eight Gate G cases use an empty pixel-change rectangle list; the controlled
+  replay's route/end frames differ in the intended character pose, following
+  camera and contact-shadow position/height. Existing directional shading follows
+  the changed pose; there is no new visual effect.
+- EBR-94 slides only a top-entry offset within 0.001 world units inward, with a
+  0.00001-unit inset; the 1.2-wide staircase, support union and void boundaries
+  remain unchanged. The controlled repro's lateral correction was 0.000010009.
+- EBR-87 uses existing obstacle footprints and stair support with a 0.2-unit
+  grid and clear waypoints; the existing movement and bridge-height systems
+  remain authoritative. No flock AI or background pathfinding was added.
+  Grid and path clearances are 0.005 and 0.001 units;
+  endpoint projections back off 0.0001 along the approach (box-face candidates
+  offset by 0.0001); route segments are sampled at no more than 0.025 units.
+  Clear clicks within the former inset retain their old
+  straight trajectory. Building meshes are picked at pointer-event time so
+  clicking a visible roof does not select the ground behind it.
+- Water, pond and building clicks move to a reachable nearest boundary. Empty
+  void clicks are likewise projected onto the nearest safe surface; the support
+  boundary itself is unchanged. Stair riser-only clicks remain ignored as before.
+  Any key cancels the route; placement remains pointer-first.
+- Ground clicks at the stair mouth use the true support union rather than the
+  old rectangular island inset, so reachable seam points are no longer clamped.
+  A new browser/unit repro of (7.9,0.75) first stopped at x=7.6; the expected
+  red result is retained in evidence/EBR-87/mouth-before.log and mouth-before/.
+  The fixed real-click run reached (7.89999957,2.4,0.74999989) through the
+  bridge in 29 sampled frames, with no unsupported frames or browser errors.
+  evidence/EBR-87/mouth-after.log and mouth-after/ contain the passing proof.
+  A nearby unsupported click at (7.95,0.4) reached (7.92945245,0.54383119):
+  distance 0.14529147 versus the rounded-corner infimum 0.14504902, a measured
+  0.00024245-unit difference, without changing the support boundary. Unit and
+  browser regressions require that difference to remain below 0.002 units.
+- The old straight-click parity fixture targeted a point inside the stream; it
+  now uses clear grass for the unchanged movement comparison. Separate route
+  tests exercise that changed blocked-target behavior instead of expecting a stop.
+- No known deviation for the named cases. Collision contact is inclusive, so
+  the measured endpoint uses the documented 0.0001-unit safety clearance.
+
+EBR-94 checks (first commit)
+- npm ci via the shared heavy wrapper: PASS, 73 packages, 0 vulnerabilities.
+- QA's unmodified real-time gateg-sequences.mjs on main: two runs, all three
+  pad-side endpoints reached the path, 0 errors; the intermittent pin did not
+  naturally recur. evidence/EBR-94/main-qa-sequences/ contains the results.
+- The controlled longer QA replay with actual pointer/keyboard input and a
+  0.000002857 ms manually stepped W+D interval (8.58e-9-unit lateral offset;
+  not a normal display frame) reproduced the pin on main at
+  (7.999917157739378, 2.4, 0.5499999914215417). The fixed run reached
+  (13.15, 0.16, 0.55001), 618 frames, min Y 0.16, no clipped/unsupported
+  frames and no console errors. See main-repro/ and fixed-repro/.
+- `npm run build`: PASS; `npm test`: 135/135 PASS; `npm run test:browser`:
+  34/34 PASS. The three real-time pad-side runs had 0 unsupported/clipped
+  frames, minimum Y 0.16, and 0 errors. Logs and frames are under evidence/EBR-94/.
+- `PARITY_EVIDENCE_DIR=evidence/EBR-94/gate-g npm run parity`: PASS against
+  5d9ba48, 0 changed pixels in spawn, stairs-pad, placement-ghost, day, night,
+  rain, cottage-coops-day and cottage-coops-night, with 0 state mismatches.
+  The clean-main baseline was copied from QA's gate-g-baseline-5d9ba48 and the
+  parity tool verified its recorded frame hashes before comparing.
+- EBR-74 controlled replay: 749 unchanged movement/camera/shadow frames exactly
+  match main; spawn, walking, bridge-gap, bridge-mid, stairs-mid and stream-block
+  images each change 0 pixels. evidence/EBR-94/walking-replay/ contains both
+  traces. The clean reference is a git archive, not another Git worktree.
+- Tested code/tests/tools diff from 5d9ba48 to bf7b930 has SHA-256
+  02f05ba062e3a4fcb08d5ccbecfe7579328a456ed7a846cf8a5a526db1bb1ce8
+  (`git diff --binary 5d9ba48 bf7b930 -- src tests tools | sha256sum`).
+- Commands as executed, with H=/home/michael/OpenBot/Shared/farm-tools/heavy:
+  $H npm ci
+  (The next line ran before editing main's application source.)
+  $H node /home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-sequences/gateg-sequences.mjs http://100.88.150.21:5214 evidence/EBR-94/main-qa-sequences /home/michael/Developer/chicken-farm/worktrees/ebr87/package.json
+  (The next line was the expected failing controlled repro on main.)
+  $H env EBR46_URL=http://100.88.150.21:5214 EBR94_EVIDENCE_DIR=evidence/EBR-94/main-repro node --test --test-concurrency=1 --test-name-pattern='longer QA stairs route' tests/browser/stairs.browser.mjs
+  $H env EBR46_URL=http://100.88.150.21:5214 EBR94_EVIDENCE_DIR=evidence/EBR-94/fixed-repro node --test --test-concurrency=1 --test-name-pattern='longer QA stairs route' tests/browser/stairs.browser.mjs
+  $H bash -o pipefail -c 'npm run build 2>&1 | tee evidence/EBR-94/build.log'
+  $H bash -o pipefail -c 'npm test 2>&1 | tee evidence/EBR-94/unit.log'
+  $H env EBR46_URL=http://100.88.150.21:5214 EBR46_EVIDENCE_DIR=evidence/EBR-94/stairs EBR46_SLIDE_PROOF=evidence/EBR-94/stairs/pad-side-results.json EBR94_EVIDENCE_DIR=evidence/EBR-94/fixed-repro EBR74_ROUTE_EVIDENCE_DIR=evidence/EBR-94/walking-replay bash -o pipefail -c 'npm run test:browser 2>&1 | tee evidence/EBR-94/browser.log'
+  $H env PARITY_EVIDENCE_DIR=evidence/EBR-94/gate-g bash -o pipefail -c 'npm run parity 2>&1 | tee evidence/EBR-94/gate-g/parity.log'
+
+EBR-87 checks (final commit)
+- `npm run build`: PASS (77 modules; inherited bundle-size warning only).
+- `npm test`: 148/148 PASS; `npm run test:browser`: 45/45 PASS, including all
+  11 routing cases, the three pad-side sequences and the long entry regression.
+- `PARITY_EVIDENCE_DIR=evidence/EBR-87/gate-g npm run parity`: PASS against
+  5d9ba48, with 0 changed pixels for spawn, stairs-pad, placement-ghost, day,
+  night, rain, cottage-coops-day and cottage-coops-night; 0 state mismatches.
+- The focused router unit suite passed 11/11, including direct/blocked goals,
+  bridge/water safety, closed regions, live blockers and overlapping coops.
+- The focused browser route suite passed 10/10 before the stair-mouth refinement,
+  including the live bridge/pad click, near-bank re-click, every blocked target,
+  keyboard override and active placement priority. The new stair-mouth browser
+  and unit tests then passed 2/2. Every sampled footprint was supported and
+  outside walking blockers; console/page errors were 0.
+- The separate 33-case compatibility unit run, five-case stair/keyboard browser
+  run, targeted character replay and isolated near-bank test passed before the
+  shared-corner refinement; the final full suites rerun those checks on the
+  completed source.
+  A later pre-seam build, 147/147 unit run and 44/44 browser run also passed;
+  their logs are retained as *-pre-mouth.log because seam-click coverage was
+  subsequently added and all final suites were rerun.
+  S+A then W+A, W+D then W+A, and S+D/S+A/W+D then W+A ended respectively at
+  (5.10968,2.4,0.95), (4.25728,2.4,0.55) and (4.25728,2.4,0.55); lowest
+  sampled Y was 0.16, with 0 unsupported/clipped frames and 0 browser errors.
+  The final full run sampled 623, 714 and 965 frames for those sequences,
+  again with 0 unsupported/clipped frames and minimum Y 0.16.
+- The targeted live 1280x720 browser replay reached the pad from spawn after
+  crossing the raised bridge: (12.80000028, 0.34457482, 0.75000035),
+  254 sampled live frames, zero blocked/unsupported frames and 0 errors.
+  The pad top remains 0.16; the existing capsule-height calculation lifts the
+  player at this center point where it contacts the adjoining tread.
+  The controlled click resolved immediately to waypoints (3.4,-2), (5.6,-1.4),
+  (7.8,0.6) and (12.8,0.75); bridge height reached 2.52.
+- The controlled replay compared identical inputs/times to clean main: 749
+  unchanged frames are exact and six same-pose images change 0 pixels. The
+  single-pad-click trajectory intentionally differs for 120/121 frames:
+  main stops at (1.95716067, 2.4, 0.11259990); the candidate arrives at
+  (12.80000028, 0.34457482, 0.75000035) through the bridge. Both full traces,
+  first divergent pose/camera and end frames are in evidence/EBR-87/walking-replay/.
+  At the first changed frame (100 ms), main is at (0.34940073,2.4,0.02047271),
+  yaw 1.51227; the candidate is at (0.30167698,2.4,-0.17745704), yaw 2.10252.
+  Camera follows those positions; the complete 120 frame differences are in the trace.
+- Reachable-boundary distances from the clicked point in the browser: stream
+  1.117169 (sampled oracle 1.12), near-stream 0.268037 (0.28), pond 1.397600
+  (1.40), cottage 1.553946 (1.56), coop 0.981267 (1.00), void 1.400100 (1.42).
+  The independent browser oracle samples free points at 0.02-unit radii and
+  1-degree directions; it is an approximate comparison, not an exact proof of
+  global reachability.
+  A second water click from (1.70000012, 2.4, 3.59999953) moved 0.13196250
+  units to (1.83196261, 2.4, 3.60000034) instead of doing nothing; 0 errors.
+  An intermediate coop click was 0.00339969 units beyond the ideal shared
+  collider corner; its pre-refinement frame and trace are retained at
+  evidence/EBR-87/nearest-pre-refinement/. The final test checks the refined
+  corner (1.2501, 2.4, -2.8499) rather than relying only on the coarser browser
+  oracle: the geometric contact infimum is distance 0.98114789, and the
+  0.0001-clearance corner is 0.98126688 (0.00011899 farther). Contact itself is
+  collision-blocked.
+- Tested EBR-87 code/tests/tools diff from bf7b930 to the final tip has SHA-256
+  d52b8ff632c6c1c5b4793f4cb278481d688d90ccb0e3f4af062a87e97f9682ea
+  (`git diff --binary bf7b930 HEAD -- src tests tools | sha256sum`).
+- Evidence was regenerated before the corresponding commits. Capture reports
+  therefore name the parent SHA plus the working-tree source status; the diff
+  hashes above bind those tested source/test/tool contents to the committed heads.
+- Commands as executed, with H=/home/michael/OpenBot/Shared/farm-tools/heavy:
+  $H bash -o pipefail -c 'node --test --test-concurrency=1 tests/walk-route.test.mjs 2>&1 | tee evidence/EBR-87/router-unit.log'
+  $H env EBR87_URL=http://100.88.150.21:5214 EBR87_EVIDENCE_DIR=evidence/EBR-87/routes bash -o pipefail -c 'node --test --test-concurrency=1 tests/browser/routes.browser.mjs 2>&1 | tee evidence/EBR-87/routes-browser.log'
+  $H bash -o pipefail -c 'node --test --test-concurrency=1 tests/walk.test.mjs tests/engine-input.test.mjs tests/character-systems.test.mjs 2>&1 | tee evidence/EBR-87/compat-unit.log'
+  $H env EBR74_ROUTE_EVIDENCE_DIR=evidence/EBR-87/walking-replay bash -o pipefail -c 'node --test --test-concurrency=1 tests/browser/character-replay.browser.mjs 2>&1 | tee evidence/EBR-87/replay-test.log'
+  $H env EBR46_URL=http://100.88.150.21:5214 EBR46_EVIDENCE_DIR=evidence/EBR-87/stairs-targeted EBR46_SLIDE_PROOF=evidence/EBR-87/stairs-targeted/pad-side-results.json EBR94_EVIDENCE_DIR=evidence/EBR-87/long-repro bash -o pipefail -c 'node --test --test-concurrency=1 --test-name-pattern="pad-side QA|longer QA stairs route|fixed WASD and ground-click" tests/browser/stairs.browser.mjs tests/browser/visual.browser.mjs 2>&1 | tee evidence/EBR-87/compat-browser.log'
+  $H env EBR87_URL=http://100.88.150.21:5214 EBR87_EVIDENCE_DIR=evidence/EBR-87/routes bash -o pipefail -c 'node --test --test-concurrency=1 --test-name-pattern="from close to the bank" tests/browser/routes.browser.mjs 2>&1 | tee evidence/EBR-87/near-bank.log'
+  $H env EBR87_URL=http://100.88.150.21:5214 EBR87_EVIDENCE_DIR=evidence/EBR-87/mouth-before bash -o pipefail -c 'node --test --test-concurrency=1 --test-name-pattern="stair mouth|stair-mouth" tests/walk.test.mjs tests/browser/routes.browser.mjs 2>&1 | tee evidence/EBR-87/mouth-before.log' (expected failure before fix)
+  $H env EBR87_URL=http://100.88.150.21:5214 EBR87_EVIDENCE_DIR=evidence/EBR-87/mouth-after bash -o pipefail -c 'node --test --test-concurrency=1 --test-name-pattern="stair mouth|stair-mouth" tests/walk.test.mjs tests/browser/routes.browser.mjs 2>&1 | tee evidence/EBR-87/mouth-after.log' (PASS)
+  $H bash -o pipefail -c 'npm run build 2>&1 | tee evidence/EBR-87/build.log'
+  $H bash -o pipefail -c 'npm test 2>&1 | tee evidence/EBR-87/unit.log'
+  (Build, unit and full-browser commands were rerun after the seam fix; the
+  earlier logs were copied to the *-pre-mouth.log files.)
+  $H env EBR46_URL=http://100.88.150.21:5214 EBR46_EVIDENCE_DIR=evidence/EBR-87/stairs EBR46_SLIDE_PROOF=evidence/EBR-87/stairs/pad-side-results.json EBR94_EVIDENCE_DIR=evidence/EBR-87/long-repro EBR74_ROUTE_EVIDENCE_DIR=evidence/EBR-87/walking-replay EBR87_URL=http://100.88.150.21:5214 EBR87_EVIDENCE_DIR=evidence/EBR-87/routes bash -o pipefail -c 'npm run test:browser 2>&1 | tee evidence/EBR-87/browser.log'
+  $H env PARITY_EVIDENCE_DIR=evidence/EBR-87/gate-g bash -o pipefail -c 'npm run parity 2>&1 | tee evidence/EBR-87/gate-g/parity.log'
+
+Seed / environment
+- No application randomness was added. Gate G injects the existing weather RNG
+  seed 0xeb730001 automatically; the movement replay uses 0xeb740001 and the
+  controlled route browser tests use 0xeb870001. QA's real-time sequence tool
+  seeds Math.random with 0x1a2b3c4d. No new ?seed URL is needed.
+- Captures: Chromium 153.0.8010.12, SwiftShader, 1280x720, DPR 1, 4 CSS-px
+  pixel pass. All heavy commands were run serially through
+  /home/michael/OpenBot/Shared/farm-tools/heavy after checking
+  `grep MemAvailable /proc/meminfo` was above 4 GB. Vite's existing >500 kB
+  chunk warning is non-fatal.
+
+Not verified
+- Physical phone/device testing and Look Dev's independent by-eye signoff;
+  the existing Playwright touch-emulation checks passed.
+- The optional full QA graphics matrix/analyzer was not run; the exact Gate G
+  frame parity and existing browser lighting/weather suites were run instead.
+- Exhaustive nearest-path optimality for every possible sub-grid placement
+  topology is not proven; the real farm, water/pond/buildings, overlapping
+  colliders, a closed region and live obstacle changes are covered by tests.

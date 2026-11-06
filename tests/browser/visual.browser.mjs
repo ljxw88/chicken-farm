@@ -266,7 +266,9 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr71Test));
   await page.evaluate(() => window.__ebr71Test.renderer.setAnimationLoop(null));
-  const target = await worldPoint(page, 3.2, -0.3);
+  // Use clear grass: the old target (3.2, -0.3) is now inside the stream
+  // collider and is deliberately handled by the nearest-point router.
+  const target = await worldPoint(page, 1.5, 1.5);
   await page.mouse.click(target.x, target.y);
   await page.evaluate(() => {
     const s = window.__ebr71Test;
@@ -278,8 +280,8 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
     position: window.__ebr71Test.character.position.toArray(),
     camera: window.__ebr71Test.camera.position.toArray(),
   }));
-  nearArray(click.position, [2.0908318766137595, 2.4, -0.1960154681033713]);
-  nearArray(click.camera, [14.090831876613759, 15.1, 11.803984531896628]);
+  nearArray(click.position, [1.4849242404917498, 2.4, 1.4849242404917498]);
+  nearArray(click.camera, [13.48492424049175, 15.1, 13.48492424049175]);
   assert.deepEqual(errors, []);
   proof.mainMovementComparison = { walk, click, errors };
 });

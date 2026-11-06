@@ -1,0 +1,303 @@
+
+> chicken-farm@0.0.0 test:browser
+> npm run build && node --test --test-concurrency=1 tests/browser/*.browser.mjs
+
+
+> chicken-farm@0.0.0 build
+> tsc && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 77 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.52 kB │ gzip:   0.33 kB
+dist/assets/index-BdYnIBk0.css    3.74 kB │ gzip:   1.36 kB
+dist/assets/index-CIlrf9Qd.js   674.82 kB │ gzip: 178.41 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 675ms
+TAP version 13
+# Subtest: locked buildings render at day, sunset, night and rain with the practical lights
+ok 1 - locked buildings render at day, sunset, night and rain with the practical lights
+  ---
+  duration_ms: 10484.181604
+  type: 'test'
+  ...
+# Subtest: real fence and plot previews reject the cottage, both bodies and both ramps
+ok 2 - real fence and plot previews reject the cottage, both bodies and both ramps
+  ---
+  duration_ms: 5455.181
+  type: 'test'
+  ...
+# Subtest: actual clicks and WASD stop at the cottage wall and both ramp fronts
+ok 3 - actual clicks and WASD stop at the cottage wall and both ramp fronts
+  ---
+  duration_ms: 8186.300675
+  type: 'test'
+  ...
+# Subtest: unchanged controls match main while a single pad click reroutes over the bridge
+ok 4 - unchanged controls match main while a single pad click reroutes over the bridge
+  ---
+  duration_ms: 60579.006386
+  type: 'test'
+  ...
+# Replay frames: walking=34 (identical), qa-walk=21 (identical), key-transitions=37 (identical), bridge=44 (identical), stairs=582 (identical), stream=31 (identical), single-click-pad=121 (intended route)
+# Changed same-pose pixels: spawn=0, walking=0, bridge-gap=0, bridge-mid=0, stairs-mid=0, stream-block=0
+# Intended route changes: [{"scenario":"single-click-pad","firstChangedFrame":1,"changedFrames":120,"baselineEnd":[1.9571606729752813,2.4,0.11259989822032679],"candidateEnd":[12.800000277505395,0.3445748164445849,0.7500003465209417],"baselineFirstChange":{"time":100,"position":[0.3494007272918386,2.4,0.020472707879864147],"yaw":1.5122694685152456,"camera":[12.349400727291838,15.1,12.020472707879865],"shadowY":0.040000000000000036},"candidateFirstChange":{"time":100,"position":[0.30167697530521936,2.4,-0.17745704429718784],"yaw":2.1025203940537023,"camera":[12.30167697530522,15.1,11.822542955702811],"shadowY":0.040000000000000036}}]
+# PHASE_GRAPHICS {"morning-clear":{"asymmetry":0.36666241183535125,"ratio":0.6901438836382213,"bodyToTop":0.9407444332131719,"contrast":1.3285526740228892,"shadeGrassDeltaE":35.95069367829794,"facings":{"toward_cam_S":118.73252461538462,"away_W":123.82906769230769,"left_A":114.21409461538462,"right_D":123.82906769230769}},"day-clear":{"asymmetry":0.35683590066792226,"ratio":0.6971907118634812,"bodyToTop":0.6741789303704658,"contrast":1.0124212159873012,"shadeGrassDeltaE":31.958251620630502,"facings":{"toward_cam_S":100.52992999999998,"away_W":104.65653153846151,"left_A":99.57222769230768,"right_D":104.65653153846151}},"sunset-clear":{"asymmetry":0.3239097991042051,"ratio":0.7212372018663872,"bodyToTop":0.9419533496597493,"contrast":1.3005020762880062,"shadeGrassDeltaE":29.389111285492007,"facings":{"toward_cam_S":93.43449538461536,"away_W":97.44163846153847,"left_A":90.58714307692313,"right_D":97.44163846153847}},"night-clear":{"asymmetry":0.39965594637902363,"ratio":0.6669056270486716,"bodyToTop":0.7292939908304402,"contrast":1.0127209534514752,"shadeGrassDeltaE":30.040784282548913,"facings":{"toward_cam_S":58.986558461538465,"away_W":52.02051384615383,"left_A":57.71335923076921,"right_D":52.01748538461537}},"day-cloudy":{"asymmetry":0.2852322112381898,"ratio":0.7503691661306974,"bodyToTop":0.7055892628395277,"contrast":1.0626329584822274,"shadeGrassDeltaE":27.180569742762263,"facings":{"toward_cam_S":92.89247615384619,"away_W":97.26644461538464,"left_A":93.15277230769232,"right_D":97.26644461538464}},"day-rain":{"asymmetry":0.25856443456185,"ratio":0.771036477325908,"bodyToTop":0.7181644376119968,"contrast":1.0769247768789352,"shadeGrassDeltaE":28.921266550306672,"facings":{"toward_cam_S":94.08295615384611,"away_W":98.68130923076917,"left_A":94.71335384615381,"right_D":98.68130923076917}},"night-rain":{"asymmetry":0.3758041760490889,"ratio":0.68364044491744,"bodyToTop":0.7390153361576646,"contrast":1.0024687981805929,"shadeGrassDeltaE":27.649356492899397,"facings":{"toward_cam_S":53.81774769230768,"away_W":45.95267230769231,"left_A":53.028566153846164,"right_D":45.95185461538461}},"morning-cloudy":{"asymmetry":0.29516530039506184,"ratio":0.7427938629568374,"bodyToTop":0.9584745836367308,"contrast":1.3305404753642234,"shadeGrassDeltaE":32.251652057891974,"facings":{"toward_cam_S":110.12643846153847,"away_W":115.30734692307688,"left_A":107.45918230769232,"right_D":115.30734692307688}},"morning-rain":{"asymmetry":0.2695782701773761,"ratio":0.7624419710748221,"bodyToTop":0.964452038003595,"contrast":1.3449365599487157,"shadeGrassDeltaE":35.51242802060493,"facings":{"toward_cam_S":111.47047769230767,"away_W":116.88172153846155,"left_A":109.3064430769231,"right_D":116.88172153846155}},"sunset-cloudy":{"asymmetry":0.26564778210089096,"ratio":0.7654994883144979,"bodyToTop":0.9525111548358636,"contrast":1.2981743766463043,"shadeGrassDeltaE":27.331792401879582,"facings":{"toward_cam_S":86.60733461538464,"away_W":90.57063846153846,"left_A":85.00731076923076,"right_D":90.57063846153846}},"sunset-rain":{"asymmetry":0.25687852987581383,"ratio":0.77235945446302,"bodyToTop":0.9500822074077229,"contrast":1.3015710156308744,"shadeGrassDeltaE":30.2077398753785,"facings":{"toward_cam_S":87.05787846153846,"away_W":91.05503923076922,"left_A":85.69851230769234,"right_D":91.05503923076922}},"night-cloudy":{"asymmetry":0.3922498277687836,"ratio":0.6720661669900678,"bodyToTop":0.7320328980774372,"contrast":1.0063599489579937,"shadeGrassDeltaE":26.130598974561263,"facings":{"toward_cam_S":53.558906153846166,"away_W":45.5056884615385,"left_A":52.587550000000036,"right_D":45.504870769230806}}}
+# Subtest: fixed upper-left key follows the specified phase, weather and facing rules
+ok 5 - fixed upper-left key follows the specified phase, weather and facing rules
+  ---
+  duration_ms: 41014.044592
+  type: 'test'
+  ...
+# LIGHTING_MEASUREMENTS {"daytime":{"lightPosition":[-9.363759928575702,12,7.022819946431775],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":162.44310731915164,"y":95.07280304597111},"towardSunPixels":-2.45315473375843,"shadowPixels":39,"brightenedPixels":0},"samples":[{"lightPosition":[-12,12,12],"sunward":127.48148135593216,"away":80.52783076923076,"difference":46.9536505867014,"ratio":0.6316825778357141,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,12,-12],"sunward":143.85600000000002,"away":83.50121694915248,"difference":60.354783050847544,"ratio":0.5804500121590511,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,12,-12],"luminance":82.9874774774776,"pixels":111},"frontlitFront":{"lightPosition":[12,12,12],"luminance":145.9400414414414,"pixels":111},"backlitRatio":0.5686409066203837,"errors":[]},"sunset":{"lightPosition":[-9.363759928575702,4.000000000000001,7.022819946431775],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":164.40056983806062,"y":95.25524079546038},"towardSunPixels":-4.418989285658285,"shadowPixels":50,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":115.69901355932208,"away":77.0033923076923,"difference":38.69562125162979,"ratio":0.6655492552510875,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":129.8404692307692,"away":79.32606440677968,"difference":50.51440482398952,"ratio":0.6109502289751524,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":79.13356576576572,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":131.61820900900904,"pixels":111},"backlitRatio":0.6012356980206984,"errors":[]},"night":{"lightPosition":[-9.363759928575702,9,7.022819946431775],"buffer":[320,180],"shadow":{"foot":{"x":159.99999999999997,"y":94.84998969071067},"centroid":{"x":161.35994080968538,"y":94.83075513148832},"towardSunPixels":-1.3537575568974776,"shadowPixels":22,"brightenedPixels":0},"samples":[{"lightPosition":[-12,3,12],"sunward":70.24406779661018,"away":45.61261538461538,"difference":24.6314524119948,"ratio":0.6493447320944665,"sunwardPixels":59,"awayPixels":26},{"lightPosition":[12,3,-12],"sunward":76.79766153846153,"away":46.62612881355932,"difference":30.171532724902207,"ratio":0.6071295385759655,"sunwardPixels":26,"awayPixels":59}],"backlitFront":{"lightPosition":[-12,3,-12],"luminance":52.144118918918906,"pixels":111},"frontlitFront":{"lightPosition":[12,3,12],"luminance":81.46922702702703,"pixels":111},"backlitRatio":0.6400468105781872,"nightLantern":{"intensity":0.12,"withLantern":52.144118918918906,"withoutLantern":41.418436036036034},"errors":[]}}
+# Subtest: directional character shading and visible shadow follow the key light
+    # Subtest: sun-facing body is brighter, including when the sun is behind the camera-facing front
+    ok 1 - sun-facing body is brighter, including when the sun is behind the camera-facing front
+      ---
+      duration_ms: 1.199085
+      type: 'test'
+      ...
+    # Subtest: the visible shadow is opposite the actual phase sun or moon
+    ok 2 - the visible shadow is opposite the actual phase sun or moon
+      ---
+      duration_ms: 0.706016
+      type: 'test'
+      ...
+    # Subtest: a sunset shadow does not extend into the void at the foot-pad edge
+    ok 3 - a sunset shadow does not extend into the void at the foot-pad edge
+      ---
+      duration_ms: 3016.963219
+      type: 'test'
+      ...
+    # Subtest: the player shadow stays on the raised bridge deck
+    ok 4 - the player shadow stays on the raised bridge deck
+      ---
+      duration_ms: 2064.018159
+      type: 'test'
+      ...
+    # Subtest: the capsule-edge shadow remains on the foot pad
+    ok 5 - the capsule-edge shadow remains on the foot pad
+      ---
+      duration_ms: 2306.581803
+      type: 'test'
+      ...
+    # Subtest: the restored lantern range creates a warm ground pool
+    ok 6 - the restored lantern range creates a warm ground pool
+      ---
+      duration_ms: 5530.265221
+      type: 'test'
+      ...
+    1..6
+ok 6 - directional character shading and visible shadow follow the key light
+  ---
+  duration_ms: 27505.054979
+  type: 'test'
+  ...
+# Subtest: production build: a fence is free, undoable, and rendered through the default pixel pass
+ok 7 - production build: a fence is free, undoable, and rendered through the default pixel pass
+  ---
+  duration_ms: 4773.473023
+  type: 'test'
+  ...
+# Subtest: dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal
+ok 8 - dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal
+  ---
+  duration_ms: 5804.13165
+  type: 'test'
+  ...
+# Subtest: a placed plot can be crossed by WASD and removed from its footprint
+ok 9 - a placed plot can be crossed by WASD and removed from its footprint
+  ---
+  duration_ms: 4259.236875
+  type: 'test'
+  ...
+# Subtest: the foot pad and corner slide remain climbable with a fence and plot placed
+ok 10 - the foot pad and corner slide remain climbable with a fence and plot placed
+  ---
+  duration_ms: 8989.59758
+  type: 'test'
+  ...
+# Subtest: the opt-in debug grid is a dirt-coloured hairline, not the default
+ok 11 - the opt-in debug grid is a dirt-coloured hairline, not the default
+  ---
+  duration_ms: 2782.52943
+  type: 'test'
+  ...
+# Subtest: touch emulation previews first, rotates and confirms with the direct controls
+ok 12 - touch emulation previews first, rotates and confirms with the direct controls
+  ---
+  duration_ms: 2247.980795
+  type: 'test'
+  ...
+# Subtest: portrait touch can place and remove without the old HUD
+ok 13 - portrait touch can place and remove without the old HUD
+  ---
+  duration_ms: 3199.056649
+  type: 'test'
+  ...
+# Subtest: direct controls remain visible and clickable without the old HUD on small screens
+ok 14 - direct controls remain visible and clickable without the old HUD on small screens
+  ---
+  duration_ms: 11195.429924
+  type: 'test'
+  ...
+# Subtest: one click from spawn reaches the stair pad over the bridge without entering water
+ok 15 - one click from spawn reaches the stair pad over the bridge without entering water
+  ---
+  duration_ms: 4227.03064
+  type: 'test'
+  ...
+# Subtest: the running app follows a single live pad click across the bridge
+ok 16 - the running app follows a single live pad click across the bridge
+  ---
+  duration_ms: 6745.491168
+  type: 'test'
+  ...
+# Subtest: clicking the stream walks to its nearest reachable point
+ok 17 - clicking the stream walks to its nearest reachable point
+  ---
+  duration_ms: 3439.076236
+  type: 'test'
+  ...
+# Subtest: clicking the near-stream walks to its nearest reachable point
+ok 18 - clicking the near-stream walks to its nearest reachable point
+  ---
+  duration_ms: 3101.942131
+  type: 'test'
+  ...
+# Subtest: clicking the pond walks to its nearest reachable point
+ok 19 - clicking the pond walks to its nearest reachable point
+  ---
+  duration_ms: 2812.561324
+  type: 'test'
+  ...
+# Subtest: clicking the cottage walks to its nearest reachable point
+ok 20 - clicking the cottage walks to its nearest reachable point
+  ---
+  duration_ms: 2972.125818
+  type: 'test'
+  ...
+# Subtest: clicking the coop walks to its nearest reachable point
+ok 21 - clicking the coop walks to its nearest reachable point
+  ---
+  duration_ms: 2880.196678
+  type: 'test'
+  ...
+# Subtest: clicking the void walks to its nearest reachable point
+ok 22 - clicking the void walks to its nearest reachable point
+  ---
+  duration_ms: 3132.11882
+  type: 'test'
+  ...
+# Subtest: a click on the water from close to the bank still moves to the bank
+ok 23 - a click on the water from close to the bank still moves to the bank
+  ---
+  duration_ms: 2674.769979
+  type: 'test'
+  ...
+# Subtest: any key cancels a route, and an active placement tool keeps pointer priority
+ok 24 - any key cancels a route, and an active placement tool keeps pointer priority
+  ---
+  duration_ms: 5118.527515
+  type: 'test'
+  ...
+# Subtest: real clicks and WASD traverse the visible stairs and foot pad without clipping
+ok 25 - real clicks and WASD traverse the visible stairs and foot pad without clipping
+  ---
+  duration_ms: 17181.81427
+  type: 'test'
+  ...
+# Subtest: pad-side QA A: S+A then W+A reaches the path without leaving the visible ground
+ok 26 - pad-side QA A: S+A then W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 12833.92776
+  type: 'test'
+  ...
+# Subtest: pad-side QA B: W+D then W+A reaches the path without leaving the visible ground
+ok 27 - pad-side QA B: W+D then W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 14749.768888
+  type: 'test'
+  ...
+# Subtest: pad-side QA S+D, S+A, W+D, W+A reaches the path without leaving the visible ground
+ok 28 - pad-side QA S+D, S+A, W+D, W+A reaches the path without leaving the visible ground
+  ---
+  duration_ms: 19835.403145
+  type: 'test'
+  ...
+# Subtest: the longer QA stairs route can re-enter the top at the edge of the run
+ok 29 - the longer QA stairs route can re-enter the top at the edge of the run
+  ---
+  duration_ms: 10577.924694
+  type: 'test'
+  ...
+# Subtest: production build walks without sim, interaction, or Build UI
+ok 30 - production build walks without sim, interaction, or Build UI
+  ---
+  duration_ms: 7118.706293
+  type: 'test'
+  ...
+# Subtest: walking and clicking around former interaction targets leaves only static scenery
+ok 31 - walking and clicking around former interaction targets leaves only static scenery
+  ---
+  duration_ms: 10100.914349
+  type: 'test'
+  ...
+# Subtest: fixed WASD and ground-click steps retain main-branch movement and camera
+ok 32 - fixed WASD and ground-click steps retain main-branch movement and camera
+  ---
+  duration_ms: 4198.193124
+  type: 'test'
+  ...
+# Subtest: night lights, weather controls, phase and pixel rendering remain usable
+ok 33 - night lights, weather controls, phase and pixel rendering remain usable
+  ---
+  duration_ms: 7215.705057
+  type: 'test'
+  ...
+# Subtest: small screens keep the phase label and touch-to-walk without sim UI
+ok 34 - small screens keep the phase label and touch-to-walk without sim UI
+  ---
+  duration_ms: 10526.174424
+  type: 'test'
+  ...
+# Subtest: day, sunset, night and rain retain the pixel pass, three original lights and a visible waterfall
+ok 35 - day, sunset, night and rain retain the pixel pass, three original lights and a visible waterfall
+  ---
+  duration_ms: 14335.781098
+  type: 'test'
+  ...
+# Subtest: real WASD and click cross the graded bridge; water blocks sideways and off-bridge movement
+ok 36 - real WASD and click cross the graded bridge; water blocks sideways and off-bridge movement
+  ---
+  duration_ms: 9836.571774
+  type: 'test'
+  ...
+# Subtest: a 1280x720 close-up shows the waterfall at the +Z rim
+ok 37 - a 1280x720 close-up shows the waterfall at the +Z rim
+  ---
+  duration_ms: 5007.474237
+  type: 'test'
+  ...
+# Subtest: real ghosts reject water and the complete walkable deck
+ok 38 - real ghosts reject water and the complete walkable deck
+  ---
+  duration_ms: 4069.39581
+  type: 'test'
+  ...
+1..38
+# tests 44
+# suites 0
+# pass 44
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 391533.215541

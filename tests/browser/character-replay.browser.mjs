@@ -10,7 +10,7 @@ const references = [
   { label: '5d9ba48', sha: '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff', env: 'EBR94_BASELINE_WORKTREE' },
 ];
 
-for (const reference of references) test(`scripted key, mouse and touch traces match ${reference.label} frame by frame`, { timeout: 300000 }, async (t) => {
+for (const reference of references) test(`unchanged controls match ${reference.label} while a single pad click reroutes over the bridge`, { timeout: 300000 }, async (t) => {
   const root = process.cwd();
   let baseline = process.env[reference.env];
   let archiveDir;
@@ -37,9 +37,11 @@ for (const reference of references) test(`scripted key, mouse and touch traces m
     const report = await compareCharacterParity({ baselineRoot: resolve(baseline), candidateRoot: root,
       baselineSha: reference.sha, archivedBaselineSha,
       evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR, reference.label) });
-    t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.frames}`).join(', ')}`);
-    t.diagnostic(`Changed pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
-    t.diagnostic('The unchanged body geometry/shader and the complete body-hidden frames match main; visible changes are body-only.');
+    t.diagnostic(`Replay frames: ${Object.entries(report.results).map(([name, result]) =>
+      `${name}=${result.frames} (${result.identical ? 'identical' : 'intended route'})`).join(', ')}`);
+    t.diagnostic(`Changed same-pose pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
+    t.diagnostic(`Intended route changes: ${JSON.stringify(report.intendedRouteChanges)}`);
+    t.diagnostic('Historical visual differences are isolated to the signed character body; body-hidden frames match.');
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }

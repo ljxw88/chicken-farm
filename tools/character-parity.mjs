@@ -317,6 +317,15 @@ async function recordScenario(browser, url, name, replayScript) {
         await emit({ type: 'mark', name: 'stream' });
         await key('s', false);
         await key('d', false);
+      } else if (name === 'single-click-pad') {
+        const pad = await page.evaluate(() => {
+          const { footPad } = window.__ebr74.stairs;
+          return [footPad.position.x, footPad.position.z, footPad.position.y + footPad.geometry.parameters.height / 2];
+        });
+        await click(pad[0], pad[1], pad[2]);
+        await advance(120, 100);
+        await emit({ type: 'capture', name: 'single-click-pad-end' });
+        await emit({ type: 'mark', name: 'end' });
       } else throw new Error(`Unknown scenario ${name}`);
     }
     assert.deepEqual(fixture.errors, []);
@@ -389,7 +398,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
-    const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
+    const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream', 'single-click-pad'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
     // The reference is generated from the clean main worktree and stays there, never in the branch.
@@ -407,6 +416,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     const frameResults = {};
     const bodyIsolation = {};
     const traceMismatches = [];
+    const intendedRouteChanges = [];
     const traces = {};
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
@@ -418,11 +428,25 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       traces[name] = { baseline: expectedTrace, candidate: actualTrace };
       const mismatch = actualTrace.findIndex((frame, index) => !isDeepStrictEqual(frame, expectedTrace[index]));
       const identical = mismatch === -1 && actualTrace.length === expectedTrace.length;
-      if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
-        baseline: expectedTrace[mismatch], candidate: actualTrace[mismatch],
-        baselineFrames: expectedTrace.length, candidateFrames: actualTrace.length });
-      if (!isDeepStrictEqual(current.marks, saved.scenarios[name].marks)) {
-        traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
+      if (name === 'single-click-pad') {
+        const baselineEnd = saved.scenarios[name].marks.end.position;
+        const candidateEnd = current.marks.end.position;
+        assert.equal(actualTrace.length, expectedTrace.length);
+        assert.ok(!identical && baselineEnd[0] > 0.1 && baselineEnd[0] < 3, `main did not stop at the stream: ${baselineEnd}`);
+        assert.ok(Math.hypot(candidateEnd[0] - 12.8, candidateEnd[2] - 0.75) < 0.03,
+          `one click did not reach the pad: ${candidateEnd}`);
+        assert.ok(actualTrace.some(({ position }) => position[0] > 2.9 && position[0] < 4.9 && position[1] > 2.5),
+          'the new route must cross the raised bridge');
+        intendedRouteChanges.push({ scenario: name, firstChangedFrame: mismatch,
+          changedFrames: actualTrace.filter((frame, i) => !isDeepStrictEqual(frame, expectedTrace[i])).length,
+          baselineEnd, candidateEnd, baselineFirstChange: expectedTrace[mismatch], candidateFirstChange: actualTrace[mismatch] });
+      } else {
+        if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
+          baseline: expectedTrace[mismatch], candidate: actualTrace[mismatch],
+          baselineFrames: expectedTrace.length, candidateFrames: actualTrace.length });
+        if (!isDeepStrictEqual(current.marks, saved.scenarios[name].marks)) {
+          traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
+        }
       }
       if (!isDeepStrictEqual(current.bodyShape, reference[name].bodyShape)) {
         traceMismatches.push({ scenario: name, body: 'geometry, material or shade shader differs' });
@@ -431,6 +455,16 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       for (const [frameName, bytes] of Object.entries(current.frames)) {
         const original = reference[name].frames[frameName];
         assert.ok(original, `Missing baseline frame ${frameName}`);
+        if (name === 'single-click-pad') {
+          // Different moving player/camera poses are compared by trace, not as
+          // a static visual change. Keep both 1280x720 frames for review.
+          if (evidenceDir) {
+            for (const directory of ['baseline', 'candidate']) await mkdir(join(evidenceDir, directory), { recursive: true });
+            await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original);
+            await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), bytes);
+          }
+          continue;
+        }
         const diff = await pixelDiff(diffPage, original, bytes, reference[name].bodylessFrames[frameName], current.bodylessFrames[frameName]);
         frameResults[frameName] = diff.changedPixels;
         bodyIsolation[frameName] = { outsideBodyPixels: diff.outsideBodyPixels, bodylessChangedPixels: diff.bodylessChangedPixels };
@@ -481,7 +515,8 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults, bodyIsolation, marks };
+      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath,
+      results, traceMismatches, intendedRouteChanges, frameResults, bodyIsolation, marks };
     if (evidenceDir) {
       await writeFile(join(evidenceDir, 'traces.json'), `${JSON.stringify(traces, null, 2)}\n`);
       await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);

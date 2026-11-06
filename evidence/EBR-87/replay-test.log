@@ -1,0 +1,19 @@
+TAP version 13
+# Subtest: unchanged controls match main while a single pad click reroutes over the bridge
+ok 1 - unchanged controls match main while a single pad click reroutes over the bridge
+  ---
+  duration_ms: 61719.087006
+  type: 'test'
+  ...
+# Replay frames: walking=34 (identical), qa-walk=21 (identical), key-transitions=37 (identical), bridge=44 (identical), stairs=582 (identical), stream=31 (identical), single-click-pad=121 (intended route)
+# Changed same-pose pixels: spawn=0, walking=0, bridge-gap=0, bridge-mid=0, stairs-mid=0, stream-block=0
+# Intended route changes: [{"scenario":"single-click-pad","firstChangedFrame":1,"changedFrames":120,"baselineEnd":[1.9571606729752813,2.4,0.11259989822032679],"candidateEnd":[12.800000277505395,0.3445748164445849,0.7500003465209417],"baselineFirstChange":{"time":100,"position":[0.3494007272918386,2.4,0.020472707879864147],"yaw":1.5122694685152456,"camera":[12.349400727291838,15.1,12.020472707879865],"shadowY":0.040000000000000036},"candidateFirstChange":{"time":100,"position":[0.30167697530521936,2.4,-0.17745704429718784],"yaw":2.1025203940537023,"camera":[12.30167697530522,15.1,11.822542955702811],"shadowY":0.040000000000000036}}]
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 62495.897474

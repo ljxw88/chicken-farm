@@ -60,12 +60,13 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
   }
 
   function keyDown(event: KeyboardEvent, deferPlacement = false) {
+    // Any key cancels a pointer route immediately, including a shortcut,
+    // modifier or repeat; shortcut and held-WASD handling remains unchanged.
+    notifyMovement({ type: 'cancel-move-to' });
     if (modified(event) || editable(event.target)) return;
     if (MOVEMENT_KEYS.has(event.code)) {
       if (!held.has(event.code)) pending.push({ type: 'cancel-move-to' });
       held.add(event.code);
-      // The previous controller cancelled on every keydown, including repeats.
-      notifyMovement({ type: 'cancel-move-to' });
       return;
     }
     if (!deferPlacement) placementKeyDown(event);
