@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { FarmObstacle } from '../scene/farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 import { RAIN_LOOK } from './rainSettings';
 
 interface RainEffectOptions {

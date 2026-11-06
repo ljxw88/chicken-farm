@@ -1,6 +1,6 @@
 import './style.css';
 import './ui/farmHud.css';
-import { CHARACTER_RADIUS, createCharacter, createCharacterControls } from './character';
+import { CHARACTER_RADIUS, createCharacter, createCharacterController, type CharacterComponents } from './character';
 import { createEngine } from './core/loop';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createPlacement } from './placement';
@@ -82,21 +82,6 @@ const placement = createPlacement({
     if (active) cancelClickTarget();
   },
 });
-const controls = createCharacterControls({
-  character,
-  camera,
-  canvas,
-  ground,
-  groundSize: GROUND_SIZE,
-  groundHeight: GROUND_HEIGHT,
-  characterRadius: CHARACTER_RADIUS,
-  obstacles,
-  stairs,
-  bridgeHeight,
-  groundShadow: character.getObjectByName('character-shadow'),
-  onPointerDown: placement.handlePointerDown,
-});
-cancelClickTarget = controls.cancelTarget;
 const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
@@ -116,16 +101,16 @@ handleResize();
 if (!isPixelRenderingEnabled(window.location.search)) composer.setEnabled(false);
 window.addEventListener('resize', handleResize);
 
-createEngine({
+const engine = createEngine<CharacterComponents>({
   setAnimationLoop: (callback) => renderer.setAnimationLoop(callback),
-  input: { target: window, canvas, getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
+  input: { target: window, canvas, ownMovement: true, onPointerDown: placement.handlePointerDown,
+    getPlacement: () => ({ active: placement.isActive(), removing: placement.isRemoving() }) },
+  frameSystems: [(world, move, deltaSeconds) => controls.system(world, move, Math.min(deltaSeconds, 0.1))],
   beforeFrame() {
     // Moving a window between displays can change DPR without a resize event.
     if (window.devicePixelRatio !== lastDevicePixelRatio) handleResize();
   },
   update(deltaSeconds) {
-    // Avoid a walking jump after a background tab resumes; lighting keeps elapsed time.
-    controls.update(Math.min(deltaSeconds, 0.1));
     phaseController.update(deltaSeconds);
     dayNight.updateCharacterShadow();
     farmHud.setPhase(dayNight.getPhase());
@@ -135,4 +120,11 @@ createEngine({
     updateWaterfall(deltaSeconds);
   },
   render: (deltaSeconds) => composer.render(deltaSeconds),
-}).start();
+});
+const controls = createCharacterController({
+  world: engine.world, input: engine.input, character, camera, canvas, ground,
+  groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: CHARACTER_RADIUS,
+  obstacles, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
+});
+cancelClickTarget = controls.cancelTarget;
+engine.start();

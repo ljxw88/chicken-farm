@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { compareCharacterParity } from '../../tools/character-parity.mjs';
 
-test('scripted key, mouse and touch traces match the main worktree frame by frame', { timeout: 180000 }, async (t) => {
+test('scripted key, mouse and touch traces match the main worktree frame by frame', { timeout: 300000 }, async (t) => {
   const root = process.cwd();
   let baseline = process.env.EBR74_BASELINE_WORKTREE;
   let owned = false;

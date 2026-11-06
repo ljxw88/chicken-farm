@@ -1,4 +1,4 @@
-import type { FarmObstacle } from './farmCollisions';
+import type { FarmObstacle } from '../character/farmCollisions';
 
 export interface CottageSpec {
   name: string;

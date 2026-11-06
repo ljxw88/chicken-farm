@@ -16,3 +16,22 @@ Port map
 Engineer: walking remains a once-per-render-frame system with the original
 0.1-second clamp. Fixed-step movement would change the baseline timing. The
 fixed-step engine and its one-shot input contract remain available unchanged.
+Engineer: resolve move-to raycasts at pointer-event time and let the existing
+placement handler run first; delaying either to a fixed tick would change input
+ordering. Direct scene-pose edits remain a migration/QA adapter seam.
+Engineer: run the unit and browser test files serially because this shared host
+has a memory hold; this changes test scheduling, not game-frame timing.
+
+QA baseline: evidence/EBR-74/gate-g/baseline{.json,/} is the supplied
+9e8c8c6 set; its pre-port self-check returned 0 changed pixels in all 8 frames.
+Additional replay/route evidence uses a separate temporary 9e8c8c6 worktree.
+Status: implementation and tests are written; verification is pending the
+shared-host memory hold. No PR has been opened yet.
+
+Inherited conflicts for Look Dev / QA (not changed in this slice):
+- EBR-47 tree 4 canopy intersects coop B roof; locked positions remain.
+- EBR-48's original pond box intrudes 0.1475 units into the nominal bridge gap;
+  stream boxes remain cut away, and the deck center stays traversable.
+- EBR-48's locked water/footprint extends west of the stated keep-out; its
+  path-border/deck coverage, 0.04 plank gaps and pond-to-stream junction retain
+  the documented lock conflicts. See DELIVER-EBR48.txt for measurements.

@@ -7,7 +7,7 @@ const vite = await createServer({ configFile: false, server: { middlewareMode: t
 const { FARM_BUILDINGS } = await vite.ssrLoadModule('/src/scene/createFarmBuildings.ts');
 const { createFarmLayout, FARM_LAYOUT } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsland, GROUND_HEIGHT } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
-const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/scene/farmCollisions.ts');
+const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 after(() => vite.close());
 
 const components = [

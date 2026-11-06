@@ -1,3 +1,5 @@
+// Shared plain-data footprints; placement and the character systems use the
+// same objects so placed fences take effect without a second collision model.
 export type FarmObstacle = (
   | { kind: 'box'; name: string; minX: number; maxX: number; minZ: number; maxZ: number }
   | { kind: 'circle'; name: string; x: number; z: number; radius: number }
