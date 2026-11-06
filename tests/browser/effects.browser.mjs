@@ -42,7 +42,7 @@ async function open(phase, weather, seed = 3950182401) {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr42 = { scene, camera, renderer, composer };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr42 = { scene, camera, renderer, composer, dayNight, weather };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr42));
@@ -117,6 +117,44 @@ test('pixel-pass app renders smoke at every phase and the correct weather-depend
       assert.deepEqual(errors, []);
     } finally { await context.close(); }
   }
+});
+
+test('engine environment systems drive the sunset fade and rainy-night effects', { timeout: 45000 }, async () => {
+  const { context, page, errors } = await open('sunset', 'clear');
+  try {
+    const states = await page.evaluate(() => {
+      const { scene, dayNight, weather } = window.__ebr42;
+      const flies = scene.getObjectByName('night-fireflies');
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const sample = () => {
+        const opacity = Array.from(flies.geometry.getAttribute('instanceOpacity').array);
+        return { nightAmount: dayNight.getNightAmount(), weather: weather.getWeather(), opacity,
+          active: flies.visible ? opacity.filter((value) => value > 0).length : 0,
+          smokePeakOpacity: Math.max(...smoke.children.filter((puff) => puff.visible).map((puff) => puff.material.opacity)) };
+      };
+      window.setDayNightCycleSeconds(72); // Release the URL hold at the sunset anchor.
+      window.__ebr42Step(12000); // Nine seconds after the t=3 fixture frame.
+      const midpoint = sample();
+      window.setDayNightPhase('night');
+      window.__ebr42Step(12000); // Same effect age, at full night.
+      const night = sample();
+      window.setWeather('rain');
+      window.__ebr42Step(13750); // Complete the 1.75 s weather transition.
+      return { midpoint, night, rain: sample() };
+    });
+    assert.ok(Math.abs(states.midpoint.nightAmount - 0.5) < 1e-9);
+    assert.equal(states.midpoint.active, 14);
+    assert.equal(states.night.active, 14);
+    for (let i = 0; i < states.night.opacity.length; i++) {
+      assert.ok(Math.abs(states.midpoint.opacity[i] * 2 - states.night.opacity[i]) < 1e-6, `mote ${i}`);
+    }
+    assert.ok(Math.abs(states.midpoint.smokePeakOpacity - 0.6) < 1e-9);
+    assert.ok(Math.abs(states.night.smokePeakOpacity - 0.45) < 1e-9);
+    assert.deepEqual(states.rain.weather, { mode: 'rain', rainAmount: 1, cloudyAmount: 0 });
+    assert.equal(states.rain.active, 6);
+    assert.ok(Math.abs(states.rain.smokePeakOpacity - 0.45) < 1e-9);
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
 });
 
 test('three smoke puffs contribute readable lit pixels across phase and weather', { timeout: 120000 }, async () => {

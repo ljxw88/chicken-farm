@@ -51,8 +51,14 @@ export function createCharacterController({
         obstacleEntities.delete(obstacle);
       }
     }
+    const worldObstacles = new Set([...world.with('obstacle')].map((entry) => entry.obstacle));
     for (const obstacle of obstacles) {
-      if (!obstacleEntities.has(obstacle)) obstacleEntities.set(obstacle, world.create({ obstacle }));
+      // A placed fence already owns its collision component. The shared array
+      // is only the compatibility view for scene/QA consumers in that case.
+      if (!obstacleEntities.has(obstacle) && !worldObstacles.has(obstacle)) {
+        obstacleEntities.set(obstacle, world.create({ obstacle }));
+        worldObstacles.add(obstacle);
+      }
     }
   }
   syncObstacles();
@@ -91,18 +97,29 @@ export function createCharacterController({
     }
   });
 
-  function system(systemWorld: EntityWorld<CharacterComponents>, move: MoveAction, deltaSeconds: number) {
-    if (systemWorld !== world) throw new Error('Character system must run in its own world');
+  function syncExternalPose() {
     const transform = entity.transform!;
-    // Unported scene systems and the existing QA seam can still move the mesh.
+    // The existing scene and QA seam can still move the mesh externally.
     // Otherwise the entity remains authoritative and is rendered below.
     if (!Object.is(character.position.x, lastRendered.x) || !Object.is(character.position.y, lastRendered.y) ||
         !Object.is(character.position.z, lastRendered.z)) {
       transform.position[0] = character.position.x;
       transform.position[1] = character.position.y;
       transform.position[2] = character.position.z;
+      lastRendered.x = character.position.x;
+      lastRendered.y = character.position.y;
+      lastRendered.z = character.position.z;
     }
-    if (!Object.is(character.rotation.y, lastRendered.yaw)) transform.yaw = character.rotation.y;
+    if (!Object.is(character.rotation.y, lastRendered.yaw)) {
+      transform.yaw = character.rotation.y;
+      lastRendered.yaw = character.rotation.y;
+    }
+  }
+
+  function system(systemWorld: EntityWorld<CharacterComponents>, move: MoveAction, deltaSeconds: number) {
+    if (systemWorld !== world) throw new Error('Character system must run in its own world');
+    const transform = entity.transform!;
+    syncExternalPose();
     syncObstacles();
     movementSystem(world, move, deltaSeconds);
     character.position.x = transform.position[0];
@@ -129,5 +146,5 @@ export function createCharacterController({
     obstacleEntities.clear();
   }
 
-  return { system, update, cancelTarget, dispose, entity };
+  return { system, update, cancelTarget, syncExternalPose, syncObstacles, dispose, entity };
 }

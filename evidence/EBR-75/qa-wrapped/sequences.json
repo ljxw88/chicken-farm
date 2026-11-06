@@ -1,0 +1,441 @@
+{
+ "base": "http://127.0.0.1:37249",
+ "browser": "153.0.8010.12",
+ "sequences": {
+  "run1": {
+   "spawn": {
+    "pos": [
+     0,
+     2.4,
+     0
+    ]
+   },
+   "walkD2s": {
+    "samples": 24,
+    "start": [
+     0,
+     2.4,
+     0
+    ],
+    "end": [
+     2.186,
+     2.4,
+     -2.149
+    ],
+    "yMin": 2.4,
+    "yMax": 2.4,
+    "maxYStep": 0
+   },
+   "walkSA": {
+    "samples": 18,
+    "start": [
+     2.186,
+     2.4,
+     -2.149
+    ],
+    "end": [
+     2.186,
+     2.4,
+     -0.105
+    ],
+    "yMin": 2.4,
+    "yMax": 2.4,
+    "maxYStep": 0
+   },
+   "bridgeCrossing": {
+    "samples": 39,
+    "start": [
+     2.169,
+     2.4,
+     -2.02
+    ],
+    "end": [
+     7.6,
+     2.4,
+     -2.02
+    ],
+    "yMin": 2.4,
+    "yMax": 2.52,
+    "maxYStep": 0.09600000000000009
+   },
+   "padArrival": [
+    12.8,
+    0.345,
+    0.76
+   ],
+   "stairsClimb": {
+    "samples": 63,
+    "start": [
+     12.759,
+     0.385,
+     0.719
+    ],
+    "end": [
+     4.207,
+     2.4,
+     0.719
+    ],
+    "yMin": 0.385,
+    "yMax": 2.4,
+    "maxYStep": 0.362
+   },
+   "stairsDescend": {
+    "samples": 78,
+    "start": [
+     4.207,
+     2.4,
+     0.719
+    ],
+    "end": [
+     13.15,
+     0.16,
+     0.719
+    ],
+    "yMin": 0.16,
+    "yMax": 2.4,
+    "maxYStep": 0.33599999999999997
+   },
+   "padSide": {
+    "SA_then_WA": {
+     "samples": 75,
+     "start": [
+      13.15,
+      0.16,
+      0.719
+     ],
+     "end": [
+      5.11,
+      2.4,
+      0.95
+     ],
+     "yMin": 0.16,
+     "yMax": 2.4,
+     "maxYStep": 0.397
+    },
+    "WD_then_WA": {
+     "samples": 99,
+     "start": [
+      13.15,
+      0.16,
+      0.95
+     ],
+     "end": [
+      4.257,
+      2.4,
+      0.55
+     ],
+     "yMin": 0.16,
+     "yMax": 2.4,
+     "maxYStep": 0.399
+    },
+    "SD_SA_WD_then_WA": {
+     "samples": 117,
+     "start": [
+      13.15,
+      0.16,
+      0.55
+     ],
+     "end": [
+      4.257,
+      2.4,
+      0.55
+     ],
+     "yMin": 0.16,
+     "yMax": 2.4,
+     "maxYStep": 0.3839999999999999
+    }
+   },
+   "placement": {
+    "fenceValid": "Fence · Ready to place",
+    "fenceOnPlayer": "Fence · Blocked by a farm object",
+    "fenceOnDeck": "Fence · Blocked by a farm object",
+    "fenceOnWater": "Fence · Blocked by a farm object",
+    "fenceOnCottage": "Fence · Blocked by a farm object",
+    "plotValid": "Plot · Ready to place",
+    "placed": [
+     "placed-fence",
+     "placed-plot"
+    ],
+    "afterUndo": [
+     "placed-fence"
+    ]
+   },
+   "states": {
+    "morning": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "daytime": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "sunset": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "night": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "night-rain": {
+     "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "cloudy": {
+     "weather": {
+      "mode": "cloudy",
+      "rainAmount": 0,
+      "cloudyAmount": 1
+     },
+     "pixel": true
+    },
+    "rain": {
+     "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    }
+   }
+  },
+  "run2": {
+   "spawn": {
+    "pos": [
+     0,
+     2.4,
+     0
+    ]
+   },
+   "walkD2s": {
+    "samples": 24,
+    "start": [
+     0,
+     2.4,
+     0
+    ],
+    "end": [
+     2.186,
+     2.4,
+     -2.149
+    ],
+    "yMin": 2.4,
+    "yMax": 2.4,
+    "maxYStep": 0
+   },
+   "walkSA": {
+    "samples": 19,
+    "start": [
+     2.186,
+     2.4,
+     -2.149
+    ],
+    "end": [
+     2.186,
+     2.4,
+     -0.106
+    ],
+    "yMin": 2.4,
+    "yMax": 2.4,
+    "maxYStep": 0
+   },
+   "bridgeCrossing": {
+    "samples": 39,
+    "start": [
+     2.298,
+     2.4,
+     -1.81
+    ],
+    "end": [
+     7.6,
+     2.4,
+     -1.81
+    ],
+    "yMin": 2.4,
+    "yMax": 2.52,
+    "maxYStep": 0.09699999999999998
+   },
+   "padArrival": [
+    12.8,
+    0.345,
+    0.76
+   ],
+   "stairsClimb": {
+    "samples": 63,
+    "start": [
+     12.8,
+     0.345,
+     0.76
+    ],
+    "end": [
+     4.207,
+     2.4,
+     0.76
+    ],
+    "yMin": 0.345,
+    "yMax": 2.4,
+    "maxYStep": 0.44399999999999973
+   },
+   "stairsDescend": {
+    "samples": 79,
+    "start": [
+     4.249,
+     2.4,
+     0.801
+    ],
+    "end": [
+     13.15,
+     0.16,
+     0.801
+    ],
+    "yMin": 0.16,
+    "yMax": 2.4,
+    "maxYStep": 0.44799999999999995
+   },
+   "padSide": {
+    "SA_then_WA": {
+     "samples": 75,
+     "start": [
+      13.15,
+      0.16,
+      0.801
+     ],
+     "end": [
+      5.11,
+      2.4,
+      0.95
+     ],
+     "yMin": 0.16,
+     "yMax": 2.4,
+     "maxYStep": 0.399
+    },
+    "WD_then_WA": {
+     "samples": 99,
+     "start": [
+      13.15,
+      0.16,
+      0.95
+     ],
+     "end": [
+      4.257,
+      2.4,
+      0.55
+     ],
+     "yMin": 0.16,
+     "yMax": 2.4,
+     "maxYStep": 0.34299999999999997
+    },
+    "SD_SA_WD_then_WA": {
+     "samples": 117,
+     "start": [
+      13.15,
+      0.16,
+      0.55
+     ],
+     "end": [
+      4.257,
+      2.4,
+      0.55
+     ],
+     "yMin": 0.16,
+     "yMax": 2.4,
+     "maxYStep": 0.398
+    }
+   },
+   "placement": {
+    "fenceValid": "Fence · Ready to place",
+    "fenceOnPlayer": "Fence · Blocked by a farm object",
+    "fenceOnDeck": "Fence · Blocked by a farm object",
+    "fenceOnWater": "Fence · Blocked by a farm object",
+    "fenceOnCottage": "Fence · Blocked by a farm object",
+    "plotValid": "Plot · Ready to place",
+    "placed": [
+     "placed-fence",
+     "placed-plot"
+    ],
+    "afterUndo": [
+     "placed-fence"
+    ]
+   },
+   "states": {
+    "morning": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "daytime": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "sunset": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "night": {
+     "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "night-rain": {
+     "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    },
+    "cloudy": {
+     "weather": {
+      "mode": "cloudy",
+      "rainAmount": 0,
+      "cloudyAmount": 1
+     },
+     "pixel": true
+    },
+    "rain": {
+     "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+     },
+     "pixel": true
+    }
+   }
+  }
+ },
+ "errors": []
+}

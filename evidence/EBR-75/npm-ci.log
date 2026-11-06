@@ -1,0 +1,10 @@
+[heavy] slot /tmp/farm-heavy.1.lock acquired (waits for QA gate lock if held): npm ci
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+
+added 73 packages, and audited 74 packages in 3s
+
+16 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+[heavy] released /tmp/farm-heavy.1.lock rc=0
