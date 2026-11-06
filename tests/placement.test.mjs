@@ -124,11 +124,13 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
   assert.equal(wash.material.opacity, 0.5);
   assert.ok(Math.abs(ghost.position.y - 2.48) < 1e-10);
   assert.ok(ghost.children.every((part) => part.material.transparent && part.material.opacity === 0.5));
+  assert.deepEqual(ghost.children.map((part) => part.material.color.getHex()), [0x8b6914, 0x8b6914, 0xd4a574, 0xd4a574]);
   assert.equal(f.pointer('pointerdown', 3.75, 3.75).defaultPrevented, true);
   assert.equal(f.count('placed-fence'), 1);
   assert.equal(f.obstacles.length, 2);
   assert.match(f.status(), /Space already occupied/);
   assert.equal(wash.material.color.getHex(), 0xc45a3a);
+  assert.deepEqual(ghost.children.map((part) => part.material.color.getHex()), [0x8b6914, 0x8b6914, 0xd4a574, 0xd4a574]);
   f.pointer('pointerdown', 3.75, 3.75);
   assert.equal(f.count('placed-fence'), 1);
   f.controls.update(1);
@@ -147,11 +149,15 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
 
   f.key('KeyP');
   f.pointer('pointermove', -3.75, -0.75);
+  assert.deepEqual(f.layer.getObjectByName('placement-ghost').children.map((part) => part.material.color.getHex()),
+    [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
   f.key('KeyR');
   f.pointer('pointerdown', -3.75, -0.75);
   assert.equal(f.count('placed-plot'), 1);
   assert.equal(f.obstacles.length, 3); // Dirt is walkable, not a solid box.
   assert.equal(f.layer.children.find((child) => child.name === 'placed-plot').rotation.y, Math.PI / 2);
+  assert.deepEqual(f.layer.children.find((child) => child.name === 'placed-plot').children.map((part) => part.material.color.getHex()),
+    [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
   const acrossDirt = moveWithFarmCollisions(-5, 0, 3, 0, 0.4, f.obstacles);
   assert.ok(Math.abs(acrossDirt.x + 2) < 1e-8);
 
@@ -163,6 +169,10 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
   assert.ok(unblocked.z > 5.99);
   f.key('Escape');
   assert.equal(f.placement.isActive(), false);
+  f.pointer('pointermove', 2.25, 3.75);
+  assert.equal(f.key('Delete').defaultPrevented, false);
+  assert.equal(f.count('placed-fence'), 1);
+  assert.equal(f.count('placed-plot'), 1);
   f.key('KeyZ');
   assert.equal(f.count('placed-plot'), 0);
   f.key('KeyZ');

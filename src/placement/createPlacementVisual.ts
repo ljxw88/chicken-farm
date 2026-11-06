@@ -42,22 +42,19 @@ export function createPlacementVisual(kind: PlacementKind) {
 }
 
 export function makeGhost(group: THREE.Group) {
-  const colors = new Map<THREE.MeshStandardMaterial, THREE.Color>();
+  const materials = new Set<THREE.MeshStandardMaterial>();
   group.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    for (const material of materials) {
-      if (!(material instanceof THREE.MeshStandardMaterial) || colors.has(material)) continue;
-      colors.set(material, material.color.clone());
+    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of meshMaterials) {
+      if (!(material instanceof THREE.MeshStandardMaterial) || materials.has(material)) continue;
+      materials.add(material);
       material.transparent = true;
       material.opacity = 0.5;
       material.depthWrite = false;
     }
     object.renderOrder = 2;
   });
-  return (wash: THREE.Color) => {
-    for (const [material, color] of colors) material.color.copy(color).lerp(wash, 0.5);
-  };
 }
 
 export function disposePlacementVisual(group: THREE.Object3D) {

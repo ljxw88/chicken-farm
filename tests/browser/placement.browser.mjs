@@ -70,7 +70,7 @@ async function openPage(context, url, instrument = false) {
     // test hooks, teleportation, or synthetic placement calls are in the app.
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
-      const body = `${await response.text()}\nwindow.__ebr56Test = { scene, camera, character, obstacles };\n`;
+      const body = `${await response.text()}\nwindow.__ebr56Test = { scene, camera, character, obstacles, stairs };\n`;
       await route.fulfill({ response, body });
     });
   }
@@ -78,6 +78,18 @@ async function openPage(context, url, instrument = false) {
   if (instrument) await page.waitForFunction(() => Boolean(window.__ebr56Test));
   await page.waitForFunction(() => Boolean(window.getPixelRendering?.().canvasWidth));
   return { page, errors };
+}
+
+async function assertNoSimUi(page) {
+  const forbidden = [
+    '.farm-supplies', '.farm-growing', '.farm-inventory', '.farm-market', '.farm-build',
+    '.interaction-prompt', '.interaction-feedback', '[data-collect]', '[data-sell-egg]',
+    '[data-buy-feed]', '[data-place-fence]', '[data-build-toggle]',
+  ];
+  assert.equal(await page.locator(forbidden.join(',')).count(), 0);
+  assert.doesNotMatch(await page.locator('body').innerText(), /\b(inventory|collect|egg|feed|supplies|buy|sell|market|build)\b/i);
+  assert.equal(await page.locator('[data-fence]').isVisible(), true);
+  assert.equal(await page.locator('[data-plot]').isVisible(), true);
 }
 
 async function capture(page, name) {
@@ -114,44 +126,45 @@ test('production build: a fence is free, undoable, and rendered through the defa
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${previewUrl}/?phase=daytime`);
-  await page.locator('[data-growing-toggle]').click();
-  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
+  await assertNoSimUi(page);
   await page.keyboard.press('f');
-  await page.mouse.move(640, 490);
+  // An open patch makes the untinted wood silhouette easy to inspect.
+  const target = { x: 449, y: 381 };
+  await page.mouse.move(target.x, target.y);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   const pixel = await page.evaluate(() => window.getPixelRendering());
   assert.equal(pixel.enabled, true);
   assert.deepEqual([pixel.canvasWidth, pixel.canvasHeight, pixel.cssPixelSize], [320, 180, 4]);
   await capture(page, '01-production-valid-fence.png');
-  await page.mouse.click(640, 490);
+  await page.mouse.click(target.x, target.y);
   assert.match(await page.locator('.placement-status').textContent(), /Space already occupied/);
-  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
   const removeButton = await page.locator('[data-remove]').boundingBox();
   await page.mouse.move(removeButton.x + removeButton.width / 2, removeButton.y + removeButton.height / 2, { steps: 30 });
   assert.equal(await page.locator('[data-remove]').isEnabled(), true);
   await page.locator('[data-remove]').click();
   assert.equal(await page.locator('[data-remove]').getAttribute('aria-pressed'), 'true');
-  await page.mouse.move(640, 490);
+  await page.mouse.move(target.x, target.y);
   assert.match(await page.locator('.placement-status').textContent(), /highlighted tile/);
   await capture(page, '01a-remove-target.png');
-  await page.mouse.click(640, 490);
+  await page.mouse.click(target.x, target.y);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
-  await page.mouse.click(640, 490);
+  await page.mouse.click(target.x, target.y);
   assert.match(await page.locator('.placement-status').textContent(), /Space already occupied/);
   await page.keyboard.press('z');
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('.placement-detail').isVisible(), false);
   assert.deepEqual(errors, []);
-  proof.production = { pixel, supplies: '0 before and after placement', mouseRemove: true, undoRestoredTile: true, errors };
-  proof.checks.push('Production preview: free fence, mouse-targeted Remove, undo and cancel work at 0 Supplies; pixel canvas is 320×180 at 1280×720.');
+  await assertNoSimUi(page);
+  proof.production = { pixel, strippedUi: true, mouseRemove: true, undoRestoredTile: true, errors };
+  proof.checks.push('Production preview: free fence, mouse-targeted Remove, undo and cancel work without simulation UI; pixel canvas is 320×180 at 1280×720.');
 });
 
 test('dev: valid and invalid previews, rotations, two kinds, collisions, undo and targeted removal', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
-  await page.locator('[data-growing-toggle]').click();
+  await assertNoSimUi(page);
   const initial = await page.evaluate(() => ({
     obstacles: window.__ebr56Test.obstacles.length,
     gridVisible: window.__ebr56Test.scene.getObjectByName('placement-debug-grid').visible,
@@ -167,9 +180,11 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
     const { scene } = window.__ebr56Test;
     const ghost = scene.getObjectByName('placement-ghost');
     const wash = scene.getObjectByName('placement-wash');
-    return { color: wash.material.color.getHex(), opacity: wash.material.opacity, ghostOpacity: ghost.children[0].material.opacity };
+    return { color: wash.material.color.getHex(), opacity: wash.material.opacity, ghostOpacity: ghost.children[0].material.opacity,
+      woodColors: ghost.children.map((part) => part.material.color.getHex()) };
   });
-  assert.deepEqual(invalid, { color: 0xc45a3a, opacity: 0.5, ghostOpacity: 0.5 });
+  assert.deepEqual(invalid, { color: 0xc45a3a, opacity: 0.5, ghostOpacity: 0.5,
+    woodColors: [0x8b6914, 0x8b6914, 0xd4a574, 0xd4a574] });
 
   await moveWorld(page, 7.8, 3.75);
   assert.match(await page.locator('.placement-status').textContent(), /Outside the buildable island/);
@@ -180,8 +195,8 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   assert.match(await page.locator('.placement-status').textContent(), /Blocked by a farm object/);
   const chickenPoint = await worldPoint(page, 1.75, 1.75);
   await page.mouse.click(chickenPoint.x, chickenPoint.y);
-  assert.equal(await page.locator('[data-feed-count]').textContent(), '5');
   assert.equal(await count(page, 'placed-fence'), 0);
+  await assertNoSimUi(page);
 
   const fencePoint = await moveWorld(page, -0.75, 3.75);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
@@ -189,9 +204,11 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
     const { scene } = window.__ebr56Test;
     const ghost = scene.getObjectByName('placement-ghost');
     const wash = scene.getObjectByName('placement-wash');
-    return { color: wash.material.color.getHex(), opacity: wash.material.opacity, ghostOpacity: ghost.children[0].material.opacity, y: ghost.position.y };
+    return { color: wash.material.color.getHex(), opacity: wash.material.opacity, ghostOpacity: ghost.children[0].material.opacity,
+      y: ghost.position.y, woodColors: ghost.children.map((part) => part.material.color.getHex()) };
   });
-  assert.deepEqual(valid, { color: 0x283724, opacity: 0.5, ghostOpacity: 0.5, y: 2.48 });
+  assert.deepEqual(valid, { color: 0x283724, opacity: 0.5, ghostOpacity: 0.5, y: 2.48,
+    woodColors: [0x8b6914, 0x8b6914, 0xd4a574, 0xd4a574] });
   await page.keyboard.press('r');
   assert.equal(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placement-ghost').rotation.y), Math.PI / 2);
   await capture(page, '03-rotated-fence-preview.png');
@@ -201,11 +218,11 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 7);
   assert.equal(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placed-fence').rotation.y), Math.PI);
   assert.deepEqual(await position(page), [0, 2.4, 0]);
-  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
   assert.match(await page.locator('.placement-status').textContent(), /Space already occupied/);
   await capture(page, '04-placed-fence-occupied.png');
 
-  await page.locator('[data-plot]').click();
+  await page.keyboard.press('p');
+  assert.equal(await page.locator('[data-plot]').getAttribute('aria-pressed'), 'true');
   const plotPoint = await moveWorld(page, -3.75, 3.75);
   await page.keyboard.press('r');
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
@@ -213,9 +230,18 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   await page.mouse.click(plotPoint.x, plotPoint.y);
   assert.equal(await count(page, 'placed-plot'), 1);
   assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 7);
-  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
-  await capture(page, '06-fence-and-plot.png');
+  assert.deepEqual(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placed-plot').children.map((part) => part.material.color.getHex())),
+    [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
   await page.keyboard.press('Escape');
+  await capture(page, '06-fence-and-plot.png');
+  await moveWorld(page, -0.75, 3.75);
+  await page.evaluate(() => window.addEventListener('keydown', (event) => {
+    if (event.code === 'Delete') window.__ebr56DeletePrevented = event.defaultPrevented;
+  }, { once: true }));
+  await page.keyboard.press('Delete'); // Delete without an active tool stays a no-op.
+  assert.equal(await page.evaluate(() => window.__ebr56DeletePrevented), false);
+  assert.equal(await count(page, 'placed-fence'), 1);
+  assert.equal(await count(page, 'placed-plot'), 1);
   await page.keyboard.press('z');
   assert.equal(await count(page, 'placed-plot'), 0);
   assert.equal(await count(page, 'placed-fence'), 1);
@@ -254,16 +280,133 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   await capture(page, '08-walk-after-removal.png');
   assert.deepEqual(errors, []);
   proof.dev = { initial, valid, invalid, blocked, afterRemoval, fenceRotated: true, plotRotated: true, errors };
-  proof.checks.push('Dev: olive/rust 50% previews; player, pond, chicken, edge and occupied tiles reject placement.');
+  proof.checks.push('Dev: olive/rust 50% footprint washes; fence rails keep original wood hues; player, pond, chicken, edge and occupied tiles reject placement.');
   proof.checks.push('Dev: rotate/place a fence and a two-tile plot for free; undo the plot; Delete removes the hovered fence.');
   proof.checks.push(`Dev WASD: fence stopped +Z at ${blocked[2].toFixed(2)}; after removal walking reached ${afterRemoval[2].toFixed(2)}. No page/console errors.`);
+});
+
+test('a placed plot can be crossed by WASD and removed from its footprint', { timeout: 60000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
+  await assertNoSimUi(page);
+  await page.keyboard.press('p');
+  const plotPoint = await moveWorld(page, -0.75, 3.75);
+  assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
+  await page.mouse.click(plotPoint.x, plotPoint.y);
+  assert.equal(await count(page, 'placed-plot'), 1);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 6);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => {
+    window.__ebr56WalkFrames = [];
+    function record() {
+      const p = window.__ebr56Test.character.position;
+      window.__ebr56WalkFrames.push([p.x, p.y, p.z]);
+      requestAnimationFrame(record);
+    }
+    requestAnimationFrame(record);
+  });
+  // The dirt spans z=3..4.5. S+A travels across it in world +Z.
+  await page.keyboard.down('s');
+  await page.keyboard.down('a');
+  try {
+    await page.waitForFunction(() => window.__ebr56Test.character.position.z > 5, null, { timeout: 15000 });
+  } finally {
+    await page.keyboard.up('s');
+    await page.keyboard.up('a');
+  }
+  const end = await position(page);
+  const frames = await page.evaluate(() => window.__ebr56WalkFrames);
+  assert.ok(frames.some(([x, y, z]) => Math.abs(x) < 0.1 && Math.abs(y - 2.4) < 1e-6 && z > 3.2 && z < 4.3));
+  await capture(page, '13-plot-walkable.png');
+  await page.keyboard.press('p');
+  await moveWorld(page, -0.75, 3.75);
+  await page.keyboard.press('Delete');
+  assert.equal(await count(page, 'placed-plot'), 0);
+  assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 6);
+  assert.deepEqual(errors, []);
+  proof.plotWalk = { end, sampledFrames: frames.length, walkedOverDirt: true, removedWithDelete: true, errors };
+  proof.checks.push(`Dev WASD: crossed a placed plot to z=${end[2].toFixed(2)} and removed the plot with Delete; it added no walking obstacle.`);
+});
+
+test('the foot pad and corner slide remain climbable with a fence and plot placed', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
+  await page.keyboard.press('f');
+  const fencePoint = await moveWorld(page, -3.75, 3.75);
+  assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
+  await page.mouse.click(fencePoint.x, fencePoint.y);
+  await page.keyboard.press('p');
+  const plotPoint = await moveWorld(page, -5.25, 5.25);
+  assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
+  await page.mouse.click(plotPoint.x, plotPoint.y);
+  assert.equal(await count(page, 'placed-fence'), 1);
+  assert.equal(await count(page, 'placed-plot'), 1);
+  await page.keyboard.press('Escape');
+
+  const pad = await page.evaluate(() => {
+    const { camera, character, stairs } = window.__ebr56Test;
+    const mesh = stairs.footPad;
+    const p = mesh.getWorldPosition(character.position.clone());
+    const world = { x: p.x, z: p.z };
+    p.y += mesh.geometry.parameters.height / 2;
+    camera.updateMatrixWorld();
+    p.project(camera);
+    const rect = document.querySelector('#scene').getBoundingClientRect();
+    return { world, x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2 };
+  });
+  assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, pad), 'scene');
+  await page.mouse.click(pad.x, pad.y);
+  await page.waitForFunction(({ x, z }) => {
+    const p = window.__ebr56Test.character.position;
+    return Math.hypot(p.x - x, p.z - z) < 0.04;
+  }, pad.world, { timeout: 20000 });
+  // At the pad centre the capsule still touches the last tread's upper edge.
+  await page.keyboard.down('s');
+  await page.keyboard.down('d');
+  try {
+    await page.waitForFunction(() => window.__ebr56Test.character.position.x > window.__ebr56Test.stairs.bounds.maxX - 0.41,
+      null, { timeout: 10000 });
+  } finally {
+    await page.keyboard.up('s');
+    await page.keyboard.up('d');
+  }
+  const bottom = await position(page);
+  assert.ok(Math.abs(bottom[1] - 0.16) < 0.01);
+  await page.keyboard.down('s');
+  await page.keyboard.down('a');
+  try {
+    await page.waitForFunction(() => window.__ebr56Test.character.position.z > 1.145, null, { timeout: 10000 });
+  } finally {
+    await page.keyboard.up('s');
+    await page.keyboard.up('a');
+  }
+  const padSide = await position(page);
+  await page.keyboard.down('w');
+  await page.keyboard.down('a');
+  try {
+    await page.waitForFunction(() => window.__ebr56Test.character.position.x < 7.4, null, { timeout: 20000 });
+  } finally {
+    await page.keyboard.up('w');
+    await page.keyboard.up('a');
+  }
+  const top = await position(page);
+  assert.ok(Math.abs(top[1] - 2.4) < 1e-6);
+  assert.equal(await count(page, 'placed-fence'), 1);
+  assert.equal(await count(page, 'placed-plot'), 1);
+  await capture(page, '14-stairs-after-placement.png');
+  await assertNoSimUi(page);
+  assert.deepEqual(errors, []);
+  proof.stairs = { padClick: pad, bottom, padSide, top, placedFence: true, placedPlot: true, errors };
+  proof.checks.push('Dev: clicked the foot pad, pushed to its side and climbed back to the island with a fence and plot still placed.');
 });
 
 test('the opt-in debug grid is a dirt-coloured hairline, not the default', { timeout: 45000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime&grid=1`, true);
-  await page.locator('[data-growing-toggle]').click();
+  await assertNoSimUi(page);
   const state = await page.evaluate(() => {
     const grid = window.__ebr56Test.scene.getObjectByName('placement-debug-grid');
     return { visible: grid.visible, color: grid.material.color.getHex(), linewidth: grid.material.linewidth, pixel: window.getPixelRendering().enabled };
@@ -276,10 +419,10 @@ test('the opt-in debug grid is a dirt-coloured hairline, not the default', { tim
 });
 
 test('touch emulation previews first, rotates and confirms with the direct controls', { timeout: 45000 }, async (t) => {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, isMobile: true, hasTouch: true });
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
-  await page.locator('[data-growing-toggle]').tap();
+  await assertNoSimUi(page);
   await page.locator('[data-fence]').tap();
   const point = await worldPoint(page, 0.75, -3.75);
   assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
@@ -291,37 +434,58 @@ test('touch emulation previews first, rotates and confirms with the direct contr
   assert.equal(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placement-ghost').rotation.y), Math.PI / 2);
   await page.locator('[data-confirm]').tap();
   assert.equal(await count(page, 'placed-fence'), 1);
-  assert.equal(await page.locator('[data-supplies-count]').textContent(), '0');
   await capture(page, '11-touch-placed.png');
   await page.locator('[data-remove]').tap();
   await page.touchscreen.tap(point.x, point.y);
   assert.equal(await count(page, 'placed-fence'), 0);
   assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), 6);
   assert.deepEqual(errors, []);
-  proof.touch = { viewport: '390×844', previewBeforeConfirm: true, rotated: true, removed: true, supplies: 0, errors };
-  proof.checks.push('390×844 touch emulation: tap previews, Rotate changes only ghost, Place confirms and Remove deletes at 0 Supplies.');
+  proof.touch = { viewport: '1280×720', previewBeforeConfirm: true, rotated: true, removed: true, errors };
+  proof.checks.push('1280×720 touch emulation: tap previews, Rotate changes only ghost, Place confirms and Remove deletes without simulation UI.');
 });
 
-test('direct controls and existing disclosures remain clickable on small screens', { timeout: 90000 }, async () => {
+test('portrait touch can place and remove without the old HUD', { timeout: 45000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
+  await assertNoSimUi(page);
+  await page.locator('[data-fence]').tap();
+  const point = await worldPoint(page, 0.75, -3.75);
+  assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
+  await page.touchscreen.tap(point.x, point.y);
+  assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
+  await capture(page, '15-touch-portrait-preview.png');
+  await page.locator('[data-confirm]').tap();
+  assert.equal(await count(page, 'placed-fence'), 1);
+  await page.locator('[data-remove]').tap();
+  await page.touchscreen.tap(point.x, point.y);
+  assert.equal(await count(page, 'placed-fence'), 0);
+  assert.deepEqual(errors, []);
+  proof.touchPortrait = { viewport: '390×844', placed: true, removed: true, errors };
+  proof.checks.push('390×844 touch emulation: preview, Place and Remove work without the old HUD.');
+});
+
+test('direct controls remain visible and clickable without the old HUD on small screens', { timeout: 90000 }, async () => {
   const sizes = [[320, 568, true], [390, 844, true], [844, 390, false], [568, 320, false], [480, 320, false]];
   for (const [width, height, touch] of sizes) {
     const context = await browser.newContext({ viewport: { width, height }, isMobile: touch, hasTouch: touch });
     try {
       const { page, errors } = await openPage(context, `${previewUrl}/?phase=daytime`);
       const activate = (selector) => touch ? page.locator(selector).tap() : page.locator(selector).click();
+      await assertNoSimUi(page);
       await activate('[data-fence]');
       assert.equal(await page.locator('[data-fence]').getAttribute('aria-pressed'), 'true');
       await activate('[data-rotate]');
       if (width === 480) await capture(page, '12-short-landscape-controls.png');
       await activate('[data-cancel]');
-      await activate('[data-growing-toggle]');
-      await activate('[data-build-toggle]');
-      await activate('[data-build-close]');
-      assert.equal(await page.locator('#farm-build-sheet').isVisible(), false);
+      await activate('[data-plot]');
+      assert.equal(await page.locator('[data-plot]').getAttribute('aria-pressed'), 'true');
+      await activate('[data-cancel]');
+      await assertNoSimUi(page);
       assert.deepEqual(errors, []);
     } finally {
       await context.close();
     }
   }
-  proof.checks.push('320×568, 390×844, 844×390, 568×320 and 480×320: placement controls and pre-existing disclosures remain clickable.');
+  proof.checks.push('320×568, 390×844, 844×390, 568×320 and 480×320: direct placement controls remain visible and clickable without the removed HUD.');
 });

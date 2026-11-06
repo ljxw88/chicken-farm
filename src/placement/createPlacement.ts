@@ -79,7 +79,6 @@ export function createPlacement({
   let kind: PlacementKind | undefined;
   let rotation = 0;
   let ghost: THREE.Group | undefined;
-  let tintGhost: ((color: THREE.Color) => void) | undefined;
   let cell: Cell | undefined;
   let area: Footprint | undefined;
   let valid = false;
@@ -166,7 +165,6 @@ export function createPlacement({
     const reason = validate(area);
     valid = !reason;
     const color = valid ? VALID_WASH : INVALID_WASH;
-    tintGhost?.(color);
     ghost.position.set(area.centerX, groundHeight + GHOST_LIFT, area.centerZ);
     ghost.rotation.y = rotation * Math.PI / 2;
     ghost.visible = true;
@@ -187,7 +185,7 @@ export function createPlacement({
     removing = false;
     ghost = createPlacementVisual(kind);
     ghost.name = 'placement-ghost';
-    tintGhost = makeGhost(ghost);
+    makeGhost(ghost);
     layer.add(ghost);
     if (!wasActive) onActiveChange?.(true);
     update();
@@ -255,7 +253,6 @@ export function createPlacement({
     removing = false;
     if (ghost) disposePlacementVisual(ghost);
     ghost = undefined;
-    tintGhost = undefined;
     wash.visible = false;
     onActiveChange?.(false);
     update();

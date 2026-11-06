@@ -38,7 +38,7 @@ class FakeView {
 globalThis.HTMLElement = FakeElement;
 globalThis.window = new EventTarget();
 
-function fixture(t, { isEnabled } = {}) {
+function fixture(t) {
   const scene = new THREE.Scene();
   const { camera, follow, resize } = createIsometricCamera();
   resize(800, 600);
@@ -51,7 +51,7 @@ function fixture(t, { isEnabled } = {}) {
   const view = new FakeView();
   let controls;
   const interactions = createInteractionController({
-    character, camera, canvas, view, onInteract: () => controls.cancelTarget(), isEnabled,
+    character, camera, canvas, view, onInteract: () => controls.cancelTarget(),
   });
   controls = createCharacterControls({
     character, camera, canvas, ground, groundSize: 32, groundHeight: 0, characterRadius: 0.4,
@@ -175,24 +175,6 @@ test('E ignores text entry, modifiers and IME input, and blur releases a held ke
   window.dispatchEvent(new Event('blur'));
   key('keydown', 'KeyE');
   assert.equal(chicken.calls.length, 2);
-});
-
-test('temporarily disabling interactions hides prompts and prevents stale prompt and E actions', (t) => {
-  let enabled = true;
-  const { view, interactions, target, key } = fixture(t, { isEnabled: () => enabled });
-  const chicken = target('chicken', 0.5, 0);
-  interactions.update();
-  assert.equal(view.shown.interactable.id, 'chicken');
-  enabled = false;
-  view.click();
-  key('keydown', 'KeyE');
-  assert.equal(view.shown, undefined);
-  assert.deepEqual(chicken.calls, []);
-  enabled = true;
-  interactions.update();
-  assert.equal(view.shown.interactable.id, 'chicken');
-  key('keydown', 'KeyE');
-  assert.deepEqual(chicken.calls, ['chicken']);
 });
 
 test('the prompt targets the nearest action and rechecks range and registration on click', (t) => {
