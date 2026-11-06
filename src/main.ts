@@ -38,8 +38,8 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const { windows, obstacles, splashExclusions } = createFarmLayout(scene);
-const dayNight = createDayNightCycle({ scene, character, windows });
+const { windows, extraEmissives, obstacles, splashExclusions } = createFarmLayout(scene);
+const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives });
 const weather = createWeatherSystem({
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,

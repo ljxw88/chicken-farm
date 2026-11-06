@@ -204,7 +204,7 @@ export function createFarmLayout(scene: THREE.Scene) {
   group.name = 'farm-layout';
   scene.add(group);
   createPath(group);
-  const { windows, obstacles: buildingObstacles } = createFarmBuildings(group);
+  const { windows, extraEmissives, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
   createTrees(group);
   createPond(group);
   createGrassTufts(group);
@@ -223,12 +223,12 @@ export function createFarmLayout(scene: THREE.Scene) {
     pondObstacle,
   ];
   const splashExclusions: FarmObstacle[] = [
-    ...buildingObstacles,
+    ...buildingShelters,
     // Shelter beneath the tree crowns and keep the pond's existing ripples uncluttered.
     ...trees.map(({ x, z, scale }, index): FarmObstacle => ({
       kind: 'circle', name: `tree-canopy-${index + 1}`, x, z, radius: 1.02 * scale,
     })),
     pondObstacle,
   ];
-  return { windows, obstacles, splashExclusions };
+  return { windows, extraEmissives, obstacles, splashExclusions };
 }

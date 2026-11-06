@@ -3,10 +3,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import * as THREE from 'three';
 import { createServer } from 'vite';
 
 const evidenceDir = process.env.EBR47_EVIDENCE_DIR;
-const names = ['cottage', 'ramp-coop-1', 'ramp-coop-2'];
+const componentNames = ['cottage', 'ramp-coop-1-body', 'ramp-coop-1-ramp', 'ramp-coop-2-body', 'ramp-coop-2-ramp'];
 const proof = { screenshots: [] };
 let server;
 let browser;
@@ -30,27 +31,28 @@ after(async () => {
   await server?.close();
 });
 
-async function openPage(context, phase = 'daytime') {
+async function openPage(context, phase = 'daytime', weather = 'clear') {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error' && !message.location().url.endsWith('/favicon.ico')) errors.push(message.text());
   });
-  // Expose live scene state for measurement and projection only; inputs below
-  // still use the actual canvas, mouse and keyboard.
+  // Expose scene state for measurement and projection only; interaction tests
+  // still use the real canvas, mouse and keyboard.
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr47Test = { scene, camera, character, obstacles };\n` });
   });
-  await page.goto(`${url}/?phase=${phase}&weather=clear`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/?phase=${phase}&weather=${weather}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr47Test && window.getPixelRendering?.().canvasWidth));
+  if (weather === 'rain') await page.waitForFunction(() => window.getWeather().rainAmount > 0.99, null, { timeout: 15000 });
   return { page, errors };
 }
 
-async function capture(page, name) {
+async function capture(page, name, clip) {
   if (!evidenceDir) return;
-  await page.screenshot({ path: join(evidenceDir, name) });
+  await page.screenshot({ path: join(evidenceDir, name), ...(clip ? { clip } : {}) });
   proof.screenshots.push(name);
 }
 
@@ -75,42 +77,101 @@ function near(actual, expected, tolerance = 1e-6) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} is not close to ${expected}`);
 }
 
-test('day and night show three placeholders with matching footprints and working practical lights', { timeout: 45000 }, async (t) => {
+async function probeTreeRoofOverlap() {
+  // Measure the actual 3D meshes in a separate scene, not just overlapping
+  // projected silhouettes or their bounding boxes. Never move the live tree.
+  const { createFarmLayout } = await server.ssrLoadModule('/src/scene/createFarmLayout.ts');
+  const scene = new THREE.Scene();
+  createFarmLayout(scene);
+  scene.updateMatrixWorld(true);
+  const roof = scene.getObjectByName('ramp-coop-2-roof');
+  const crowns = scene.getObjectByName('farm-tree-4').children
+    .filter((child) => child.isMesh && child.geometry.type === 'IcosahedronGeometry');
+  roof.children.forEach((child) => { child.material.side = THREE.DoubleSide; });
+  crowns.forEach((crown) => { crown.material.side = THREE.DoubleSide; });
+  const roofBox = new THREE.Box3().setFromObject(roof);
+  const canopyBox = crowns.reduce((box, crown) => box.union(new THREE.Box3().setFromObject(crown)), new THREE.Box3());
+  const ray = new THREE.Raycaster();
+  const step = 0.02;
+  let overlappingSamples = 0;
+  let example;
+  for (let x = Math.max(roofBox.min.x, canopyBox.min.x); x <= Math.min(roofBox.max.x, canopyBox.max.x); x += step) {
+    for (let z = Math.max(roofBox.min.z, canopyBox.min.z); z <= Math.min(roofBox.max.z, canopyBox.max.z); z += step) {
+      ray.set(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0));
+      const roofHits = ray.intersectObject(roof, true);
+      if (roofHits.length < 2) continue;
+      const roofTop = roofHits[0].point.y;
+      const roofBottom = roofHits.at(-1).point.y;
+      const overlap = crowns.some((crown) => {
+        const hits = ray.intersectObject(crown);
+        return hits.length >= 2 && Math.min(roofTop, hits[0].point.y) > Math.max(roofBottom, hits.at(-1).point.y) + 1e-6;
+      });
+      if (overlap) {
+        overlappingSamples++;
+        example ??= { x, z, roofBottom, roofTop };
+      }
+    }
+  }
+  return { step, overlappingSamples, example };
+}
+
+test('locked buildings render at day, sunset, night and rain with the original lights', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
   const daytime = await page.evaluate((names) => {
-    const { scene, obstacles, character } = window.__ebr47Test;
+    const { scene, obstacles } = window.__ebr47Test;
     scene.updateMatrixWorld(true);
     return {
       oldBarn: Boolean(scene.getObjectByName('farm-barn')),
-      buildings: names.map((name) => {
-        const mesh = scene.getObjectByName(`${name}-placeholder`);
-        const position = mesh.getWorldPosition(character.position.clone());
-        return { name, position: position.toArray(), size: mesh.geometry.parameters, obstacle: obstacles.find((entry) => entry.name === name) };
-      }),
+      components: names.map((name) => obstacles.find((entry) => entry.name === name)),
+      names: ['farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2', 'cottage-chimney-top']
+        .map((name) => Boolean(scene.getObjectByName(name))),
       pixel: window.getPixelRendering(),
     };
-  }, names);
+  }, componentNames);
   assert.equal(daytime.oldBarn, false);
+  assert.ok(daytime.names.every(Boolean));
+  assert.equal(daytime.components.length, 5);
+  assert.ok(daytime.components.every((obstacle) => obstacle?.kind === 'box'));
   assert.equal(daytime.pixel.enabled, true);
   assert.deepEqual([daytime.pixel.canvasWidth, daytime.pixel.canvasHeight], [320, 180]);
-  for (const { position, size, obstacle } of daytime.buildings) {
-    assert.ok(obstacle && obstacle.kind === 'box');
-    near(obstacle.minX, position[0] - size.width / 2);
-    near(obstacle.maxX, position[0] + size.width / 2);
-    near(obstacle.minZ, position[2] - size.depth / 2);
-    near(obstacle.maxZ, position[2] + size.depth / 2);
-  }
-  await capture(page, '01-day-placeholder.png');
+  await capture(page, '01-daytime-front.png');
 
-  // A URL phase is held; calling the public phase setter would resume the
-  // cycle and make the exact night-light assertion depend on frame timing.
+  // Crop the same unaltered 1280x720 view; do not move tree 4 or the camera.
+  await capture(page, '05-tree4-coopB-crop.png', { x: 720, y: 185, width: 160, height: 180 });
+  const tree4 = await page.evaluate(() => {
+    const { scene } = window.__ebr47Test;
+    const tree = scene.getObjectByName('farm-tree-4');
+    const roof = scene.getObjectByName('ramp-coop-2-roof');
+    scene.updateMatrixWorld(true);
+    const worldBox = (mesh) => {
+      mesh.geometry.computeBoundingBox();
+      return mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+    };
+    const roofParts = roof.children.filter((child) => child.isMesh).map(worldBox);
+    const roofBox = roofParts.slice(1).reduce((box, part) => box.union(part), roofParts[0].clone());
+    const crowns = tree.children.filter((child) => child.isMesh && child.geometry.type === 'IcosahedronGeometry');
+    return { position: tree.position.toArray(), crownBoxesOverlappingRoof: crowns.map((crown) => worldBox(crown).intersectsBox(roofBox)) };
+  });
+  near(tree4.position[0], 0.05);
+  near(tree4.position[2], -5.6);
+  proof.tree4 = { ...tree4, meshProbe: await probeTreeRoofOverlap() }; // Report, do not assert this as a desired layout.
+  assert.deepEqual(errors, []);
   await page.close();
-  const { page: nightPage, errors: nightErrors } = await openPage(context, 'night');
-  const night = await nightPage.evaluate(() => {
+
+  const sunset = await openPage(context, 'sunset');
+  await capture(sunset.page, '02-sunset.png');
+  assert.deepEqual(sunset.errors, []);
+  await sunset.page.close();
+
+  // URL phases are held, avoiding a frame-timing race in the intensity checks.
+  const night = await openPage(context, 'night');
+  const lights = await night.page.evaluate(() => {
     const { scene, character } = window.__ebr47Test;
     scene.updateMatrixWorld(true);
+    const points = [];
+    scene.traverse((object) => { if (object.isPointLight) points.push(object.name); });
     return {
       windows: [1, 2].map((i) => {
         const pane = scene.getObjectByName(`cottage-window-${i}`);
@@ -118,95 +179,112 @@ test('day and night show three placeholders with matching footprints and working
         return { parent: pane.parent.name, emissive: pane.material.emissiveIntensity,
           intensity: light.intensity, offsetZ: light.getWorldPosition(character.position.clone()).z - pane.getWorldPosition(character.position.clone()).z };
       }),
+      accents: ['cottage-east-window', 'ramp-coop-1-pop-hole-glow', 'ramp-coop-2-pop-hole-glow']
+        .map((name) => scene.getObjectByName(name).material.emissiveIntensity),
+      points: points.sort(),
       lantern: character.getObjectByName('lantern-light').intensity,
       lanternParent: character.getObjectByName('lantern').parent.name,
       characterName: character.name,
     };
   });
-  for (const window of night.windows) {
+  for (const window of lights.windows) {
     assert.equal(window.parent, 'farm-cottage');
     near(window.emissive, 0.85);
     near(window.intensity, 0.85);
     near(window.offsetZ, 0.7);
   }
-  near(night.lantern, 0.55);
-  assert.equal(night.lanternParent, night.characterName);
-  await capture(nightPage, '02-night-placeholder.png');
-  assert.deepEqual(errors, []);
-  assert.deepEqual(nightErrors, []);
-  proof.appearanceAndLights = { daytime, night, errors: [...errors, ...nightErrors] };
+  near(lights.accents[0], 0.85);
+  near(lights.accents[1], 0.85 * 0.7);
+  near(lights.accents[2], 0.85 * 0.7);
+  assert.deepEqual(lights.points, ['lantern-light', 'window-light-1', 'window-light-2']);
+  near(lights.lantern, 0.55);
+  assert.equal(lights.lanternParent, lights.characterName);
+  await capture(night.page, '03-night-glow.png');
+  assert.deepEqual(night.errors, []);
+  await night.page.close();
+
+  const rain = await openPage(context, 'daytime', 'rain');
+  await capture(rain.page, '04-rain.png');
+  assert.deepEqual(rain.errors, []);
+  proof.appearanceAndLights = { daytime, lights, weather: await rain.page.evaluate(() => window.getWeather()), errors: [] };
 });
 
-test('real fence and plot previews reject all three buildings, including rotated ghosts', { timeout: 60000 }, async (t) => {
+test('real fence and plot previews reject the cottage, both bodies and both ramps', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
-  const buildings = await page.evaluate((names) => names.map((name) => {
+  const components = await page.evaluate((names) => names.map((name) => {
     const obstacle = window.__ebr47Test.obstacles.find((entry) => entry.name === name);
     return { name, x: (obstacle.minX + obstacle.maxX) / 2, z: (obstacle.minZ + obstacle.maxZ) / 2 };
-  }), names);
+  }), componentNames);
   const rejected = [];
   for (const kind of ['fence', 'plot']) {
     for (const rotation of [0, 1]) {
-      for (const building of buildings) {
+      for (const component of components) {
         await page.keyboard.press(kind === 'fence' ? 'f' : 'p');
         if (rotation) await page.keyboard.press('r');
-        const point = await moveWorld(page, building.x, building.z);
-        assert.match(await page.locator('.placement-status').textContent(), /Blocked by a farm object/, `${kind} on ${building.name}`);
+        const point = await moveWorld(page, component.x, component.z);
+        assert.match(await page.locator('.placement-status').textContent(), /Blocked by a farm object/, `${kind} on ${component.name}`);
         assert.equal(await page.locator('[data-confirm]').isDisabled(), true);
         assert.equal(await page.evaluate(() => window.__ebr47Test.scene.getObjectByName('placement-wash').material.color.getHex()), 0xc45a3a);
         await page.mouse.click(point.x, point.y);
         await page.keyboard.press('Enter');
         assert.equal(await page.evaluate((name) => window.__ebr47Test.scene.getObjectsByProperty('name', `placed-${name}`).length, kind), 0);
-        rejected.push(`${kind}/${rotation}/${building.name}`);
+        rejected.push(`${kind}/${rotation}/${component.name}`);
       }
     }
   }
-  await capture(page, '03-coop-plot-rejected.png');
+  await capture(page, '06-ramp-plot-rejected.png');
   await page.keyboard.press('f');
   const open = await moveWorld(page, -6.75, -6.75);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   await page.mouse.click(open.x, open.y);
   assert.equal(await page.evaluate(() => window.__ebr47Test.scene.getObjectsByProperty('name', 'placed-fence').length), 1);
   await page.keyboard.press('z');
-  assert.equal(await page.evaluate(() => window.__ebr47Test.obstacles.length), 8);
+  assert.equal(await page.evaluate(() => window.__ebr47Test.obstacles.length), 10);
   assert.deepEqual(errors, []);
-  proof.placement = { rejected, adjacentFreeSpace: true, errors };
+  proof.placement = { rejected, openTile: true, errors };
 });
 
-test('actual clicks and WASD stop at the front of every visible building', { timeout: 90000 }, async (t) => {
+test('actual clicks and WASD stop at the cottage wall and both ramp fronts', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   t.after(() => context.close());
   const { page, errors } = await openPage(context);
-  const buildings = await page.evaluate((names) => names.map((name) => {
+  const components = await page.evaluate((names) => names.map((name) => {
     const obstacle = window.__ebr47Test.obstacles.find((entry) => entry.name === name);
     return { name, x: (obstacle.minX + obstacle.maxX) / 2, front: obstacle.maxZ };
-  }), names);
-  const stopped = [];
-  for (const building of buildings) {
-    const approach = { x: building.x, z: building.front + 1.1 };
-    const point = await worldPoint(page, approach.x, approach.z);
+  }), ['cottage', 'ramp-coop-1-ramp', 'ramp-coop-2-ramp']);
+
+  async function walkTo(x, z) {
+    const point = await worldPoint(page, x, z);
     assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
     await page.mouse.click(point.x, point.y);
     await page.waitForFunction(({ x, z }) => {
       const p = window.__ebr47Test.character.position;
       return Math.hypot(p.x - x, p.z - z) < 0.05;
-    }, approach, { timeout: 15000 });
+    }, { x, z }, { timeout: 15000 });
+  }
+
+  const stopped = [];
+  for (const component of components) {
+    await walkTo(0, 0);
+    if (component.name === 'ramp-coop-2-ramp') await walkTo(1.8, 0.2);
+    await walkTo(component.x, component.front + 1.1);
     // W+D is world -Z: keep pushing after reaching the visible front face.
     await page.keyboard.down('w');
     await page.keyboard.down('d');
     try {
-      await page.waitForFunction((front) => window.__ebr47Test.character.position.z < front + 0.43, building.front, { timeout: 10000 });
+      await page.waitForFunction((front) => window.__ebr47Test.character.position.z < front + 0.43, component.front, { timeout: 10000 });
       await page.waitForTimeout(250);
     } finally {
       await page.keyboard.up('w');
       await page.keyboard.up('d');
     }
     const position = await page.evaluate(() => window.__ebr47Test.character.position.toArray());
-    assert.ok(position[2] >= building.front + 0.4 - 1e-5 && position[2] < building.front + 0.43, `${building.name}: ${position}`);
-    stopped.push({ name: building.name, front: building.front, position });
+    assert.ok(position[2] >= component.front + 0.4 - 1e-5 && position[2] < component.front + 0.43, `${component.name}: ${position}`);
+    stopped.push({ name: component.name, front: component.front, position });
   }
-  await capture(page, '04-coop-walk-blocked.png');
+  await capture(page, '07-ramp-walk-blocked.png');
   assert.deepEqual(errors, []);
   proof.walking = { stopped, errors };
 });

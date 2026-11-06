@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createPracticalLights, type WindowPane } from './createPracticalLights';
+import { createPracticalLights, type EmissiveAccent, type WindowPane } from './createPracticalLights';
 import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, type DayNightPhaseName } from './dayNightPhases';
 
 // THREE.Color converts the locked sRGB hex values to its linear working space.
@@ -15,9 +15,10 @@ interface DayNightCycleOptions {
   scene: THREE.Scene;
   character: THREE.Object3D;
   windows: readonly WindowPane[];
+  extraEmissives?: readonly EmissiveAccent[];
 }
 
-export function createDayNightCycle({ scene, character, windows }: DayNightCycleOptions) {
+export function createDayNightCycle({ scene, character, windows, extraEmissives }: DayNightCycleOptions) {
   const morning = DAY_NIGHT_PHASES[0];
   // The scene owns the fixed diorama void; phases still drive fog and lights.
   const fog = new THREE.FogExp2(morning.fog, morning.fogDensity);
@@ -35,7 +36,7 @@ export function createDayNightCycle({ scene, character, windows }: DayNightCycle
   directional.name = 'day-night-directional';
   scene.add(ambient, hemisphere, directional);
 
-  const practicalLights = createPracticalLights(character, windows);
+  const practicalLights = createPracticalLights(character, windows, extraEmissives);
   let cycleSeconds = DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
   let progress = 0;
   let directionalMultiplier = 1;

@@ -6,10 +6,11 @@ import { createServer } from 'vite';
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
+const { BUILDING_PALETTE } = await vite.ssrLoadModule('/src/scene/farmBuildingMaterials.ts');
 const { GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
-test('the locked palette contains only the specified farm colors', () => {
+test('the original farm palette stays locked alongside the building palette', () => {
   assert.deepEqual(FARM_PALETTE, {
     grass: 0x5fa846, dirt: 0xa67c52, dirtEdge: 0x7a5a3a, dirtHighlight: 0xc4a06a,
     barnWood: 0xd4a574, barnTrim: 0x8b6914, barnRoof: 0xc45a3a, barnDoor: 0x6b4423, barnWindow: 0x8aa0a8,
@@ -18,7 +19,7 @@ test('the locked palette contains only the specified farm colors', () => {
   });
   const scene = new THREE.Scene();
   createFarmLayout(scene);
-  const allowed = new Set(Object.values(FARM_PALETTE));
+  const allowed = new Set([...Object.values(FARM_PALETTE), ...Object.values(BUILDING_PALETTE)]);
   scene.traverse((object) => {
     if (object.isMesh) assert.ok(allowed.has(object.material.color.getHex()), `unexpected color on ${object.name}`);
   });

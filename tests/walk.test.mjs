@@ -238,7 +238,7 @@ test('click-to-walk reaches the foot pad and returns to the original island', (t
 test('WASD cannot tunnel through the front or side of the replacement buildings', (t) => {
   const { character, controls, key, groundHeight, obstacles } = fixture(t, true);
   const cottage = obstacles.find((obstacle) => obstacle.name === 'cottage');
-  const coop = obstacles.find((obstacle) => obstacle.name === 'ramp-coop-2');
+  const coop = obstacles.find((obstacle) => obstacle.name === 'ramp-coop-2-body');
   character.position.set((cottage.minX + cottage.maxX) / 2, groundHeight, cottage.maxZ + 1.3);
   key('keydown', 'KeyW');
   key('keydown', 'KeyD'); // Screen up + right is world -Z.
@@ -293,11 +293,12 @@ test('clicks also stop at the cottage and WASD also stops at trees', (t) => {
 
 test('the pond water also blocks movement', (t) => {
   const { character, controls, click } = fixture(t, true);
-  character.position.set(1.3, 0, -3.5);
-  click(new THREE.Vector3(6, 0, -3.5));
+  // The locked coop B ramp now occupies the old western approach.
+  character.position.set(6.5, 0, -3.5);
+  click(new THREE.Vector3(3, 0, -3.5));
   controls.update(10);
-  assert.ok(character.position.x <= 1.9725 + 1e-8);
-  assert.ok(character.position.x > 1.85);
+  assert.ok(character.position.x >= 6.0275 - 1e-8);
+  assert.ok(character.position.x < 6.1775);
 });
 
 test('a glancing movement slides along a solid wall', () => {

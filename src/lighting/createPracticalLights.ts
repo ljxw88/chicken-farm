@@ -2,8 +2,12 @@ import * as THREE from 'three';
 import { LANTERN_LIGHT, WINDOW_LIGHT } from './dayNightPhases';
 
 export type WindowPane = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+export interface EmissiveAccent {
+  material: THREE.MeshStandardMaterial;
+  strength: number;
+}
 
-export function createPracticalLights(character: THREE.Object3D, windows: readonly WindowPane[]) {
+export function createPracticalLights(character: THREE.Object3D, windows: readonly WindowPane[], accents: readonly EmissiveAccent[] = []) {
   const windowLights = windows.map((window, index) => {
     window.material.emissive.setHex(WINDOW_LIGHT.color);
     window.material.emissiveIntensity = 0;
@@ -14,6 +18,10 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
     window.add(light);
     return light;
   });
+  for (const { material } of accents) {
+    material.emissive.setHex(WINDOW_LIGHT.color);
+    material.emissiveIntensity = 0;
+  }
 
   const lantern = new THREE.Group();
   lantern.name = 'lantern';
@@ -65,6 +73,7 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
   function setNightAmount(amount: number) {
     for (const light of windowLights) light.intensity = WINDOW_LIGHT.intensity * amount;
     for (const window of windows) window.material.emissiveIntensity = WINDOW_LIGHT.intensity * amount;
+    for (const { material, strength } of accents) material.emissiveIntensity = WINDOW_LIGHT.intensity * strength * amount;
     lanternLight.intensity = LANTERN_LIGHT.intensity * amount;
     glassMaterial.emissiveIntensity = LANTERN_LIGHT.intensity * amount;
   }

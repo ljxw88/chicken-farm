@@ -194,7 +194,9 @@ test('walking and clicking around former interaction targets leaves only static 
   await assertNoSimUi(page);
   assert.equal(await page.evaluate(() => window.__ebr71Test.scene.getObjectByName('farm-nest-decoration').visible), true);
 
-  await walkTo(page, 0.95, -2.35);
+  // The sign itself is now close to the locked coop A; approach from the
+  // walkable side rather than demanding a destination inside its collider.
+  await walkTo(page, 1.1, -1.85);
   await page.keyboard.press('e');
   const signPoint = await objectPoint(page, 'farm-sign', 1.05);
   await page.mouse.click(signPoint.x, signPoint.y);

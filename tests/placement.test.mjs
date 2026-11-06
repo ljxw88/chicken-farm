@@ -102,18 +102,22 @@ test('whole tiles reserve space around boxes and circles; fences collide only at
   assert.ok(Math.abs((rotated.maxZ - rotated.minZ) - 1.47) < 1e-10);
 });
 
-test('fence and plot ghosts reject even partial overlap with each real building in every rotation', (t) => {
+test('fence and plot ghosts reject partial overlap with each wall, coop body and ramp in every rotation', (t) => {
   const f = fixture(t, { farm: true });
   const grid = createGrid(16);
   const original = f.obstacles.slice();
   f.scene.updateMatrixWorld(true);
-  for (const name of ['cottage', 'ramp-coop-1', 'ramp-coop-2']) {
-    const mesh = f.scene.getObjectByName(`${name}-placeholder`);
+  for (const [name, meshName] of [
+    ['cottage', 'cottage-walls'],
+    ['ramp-coop-1-body', 'ramp-coop-1-body'], ['ramp-coop-1-ramp', 'ramp-coop-1-ramp'],
+    ['ramp-coop-2-body', 'ramp-coop-2-body'], ['ramp-coop-2-ramp', 'ramp-coop-2-ramp'],
+  ]) {
+    const mesh = f.scene.getObjectByName(meshName);
     const box = new THREE.Box3().setFromObject(mesh);
     const obstacle = original.find((entry) => entry.name === name);
     assert.ok(obstacle, name);
-    // Exercise each obstacle independently: the adjacent boxes cannot hide an
-    // absent cottage/coop rejection. Use the real rendered bounds as the oracle.
+    // Isolate each real obstacle so another building cannot mask a missing
+    // wall/body/ramp rejection. Rendered bounds are the independent oracle.
     f.obstacles.splice(0, f.obstacles.length, obstacle);
     for (const kind of ['fence', 'plot']) {
       for (let rotation = 0; rotation < 4; rotation++) {

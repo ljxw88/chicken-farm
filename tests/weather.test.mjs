@@ -18,11 +18,11 @@ function fixture(t) {
   const character = createCharacter();
   character.position.y = GROUND_HEIGHT;
   scene.add(character);
-  const { windows, splashExclusions } = createFarmLayout(scene);
+  const { windows, extraEmissives, splashExclusions } = createFarmLayout(scene);
   const { camera, follow, resize } = createIsometricCamera();
   resize(1280, 720);
   follow(character.position);
-  const cycle = createDayNightCycle({ scene, character, windows });
+  const cycle = createDayNightCycle({ scene, character, windows, extraEmissives });
   let seed = 0x12345678;
   let suppressSpawns = false;
   function random() {
@@ -370,7 +370,7 @@ test('splash rings are occasional, short-lived and avoid buildings, water and gr
   const { scene, character, weather, splashes, stopNewSplashes } = fixture(t);
   scene.updateMatrixWorld(true);
   const buildings = ['cottage', 'ramp-coop-1', 'ramp-coop-2']
-    .map((name) => new THREE.Box3().setFromObject(scene.getObjectByName(`${name}-placeholder`)));
+    .map((name) => new THREE.Box3().setFromObject(scene.getObjectByName(`${name}-roof`)));
   weather.setWeather('rain');
   weather.update(1.75);
   let sawSplash = false;
