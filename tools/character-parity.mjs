@@ -164,6 +164,7 @@ async function recordScenario(browser, url, name, replayScript) {
       await emit({ type: 'frames', times: [0] });
       if (name === 'walking') {
         await emit({ type: 'capture', name: 'spawn' });
+        await emit({ type: 'mark', name: 'spawn' });
         await key('s', true);
         await advance(8, 100);
         await emit({ type: 'capture', name: 'walking' });
@@ -184,6 +185,11 @@ async function recordScenario(browser, url, name, replayScript) {
         await advance(2, 100);
         await key('d', false);
         await key('a', false);
+      } else if (name === 'qa-walk') {
+        await key('d', true);
+        await advance(20, 100);
+        await emit({ type: 'mark', name: 'walkD2s' });
+        await key('d', false);
       } else if (name === 'bridge') {
         await click(2.5, -1.7);
         await advance(10, 100);
@@ -197,7 +203,8 @@ async function recordScenario(browser, url, name, replayScript) {
         await advance(3, 400 / 7);
         await emit({ type: 'capture', name: 'bridge-mid' });
         await emit({ type: 'mark', name: 'bridge' });
-        await advance(7, 400 / 7);
+        await advance(21, 400 / 7);
+        await emit({ type: 'mark', name: 'bridge-end' });
         await key('s', false);
         await key('d', false);
       } else if (name === 'stairs') {
@@ -212,16 +219,43 @@ async function recordScenario(browser, url, name, replayScript) {
           const { footPad } = window.__ebr74.stairs;
           return [footPad.position.x, footPad.position.z, footPad.position.y + footPad.geometry.parameters.height / 2];
         });
-        await click(...pad);
+        // QA's pad route deliberately targets z=0.76 rather than the pad centre.
+        await click(pad[0], 0.76, pad[2]);
         await advance(20, 100);
+        await emit({ type: 'mark', name: 'pad-arrival' });
         await key('w', true);
         await key('a', true); // World -X, climbing from the pad.
         await advance(6, 100);
         await emit({ type: 'capture', name: 'stairs-mid' });
         await emit({ type: 'mark', name: 'stairs' });
-        await advance(12, 100);
+        await advance(46, 100);
+        await emit({ type: 'mark', name: 'climb-end' });
         await key('w', false);
         await key('a', false);
+        await key('s', true);
+        await key('d', true);
+        await advance(65, 100);
+        await emit({ type: 'mark', name: 'descent-end' });
+        await key('s', false);
+        await key('d', false);
+        const legs = {
+          'pad-SA': [[['s', 'a'], 22], [['w', 'a'], 40]],
+          'pad-WD': [[['w', 'd'], 22], [['w', 'a'], 60]],
+          'pad-both': [[['s', 'd'], 12], [['s', 'a'], 12], [['w', 'd'], 12], [['w', 'a'], 60]],
+        };
+        for (const [mark, route] of Object.entries(legs)) {
+          await key('s', true);
+          await key('d', true);
+          await advance(50, 100); // Reset to the pad corner, just as QA does.
+          await key('s', false);
+          await key('d', false);
+          for (const [keys, count] of route) {
+            for (const code of keys) await key(code, true);
+            await advance(count, 100);
+            for (const code of keys) await key(code, false);
+          }
+          await emit({ type: 'mark', name: mark });
+        }
       } else if (name === 'stream') {
         await click(1.2, 3.6);
         await advance(15, 100);
@@ -286,7 +320,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
-    const names = ['walking', 'bridge', 'stairs', 'stream'];
+    const names = ['walking', 'qa-walk', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
     // The reference is generated from the clean main worktree and stays there, never in the branch.
@@ -345,6 +379,22 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       marks.stairs.stairs.position[1] > 0.16 && marks.stairs.stairs.position[1] < 2.4, 'character must be mid-climb');
     assert.ok(marks.stream.stream.position[0] > 1.2 && marks.stream.stream.position[0] < 2,
       'stream must block the off-bridge route');
+    // Independent QA checkpoints from main-9e8c8c6/sequences.json. These
+    // manual 100 ms frames can stop one collision substep away from real-time
+    // QA, so their X/Z tolerance is explicit; the replay itself is exact.
+    const checkpoint = (actual, expected, horizontal = 0.08, vertical = 0.002) => {
+      actual.forEach((value, index) => assert.ok(Math.abs(value - expected[index]) <= (index === 1 ? vertical : horizontal),
+        `QA checkpoint: ${actual} differs from ${expected}`));
+    };
+    checkpoint(marks.walking.spawn.position, [0, 2.4, 0], 1e-8, 1e-8);
+    checkpoint(marks['qa-walk'].walkD2s.position, [2.186, 2.4, -2.149]);
+    checkpoint(marks.bridge['bridge-end'].position, [7.6, 2.4, -1.915]);
+    checkpoint(marks.stairs['pad-arrival'].position, [12.8, 0.345, 0.76]);
+    checkpoint(marks.stairs['climb-end'].position, [4.207, 2.4, 0.76]);
+    checkpoint(marks.stairs['descent-end'].position, [13.15, 0.16, 0.76]);
+    checkpoint(marks.stairs['pad-SA'].position, [5.11, 2.4, 0.95]);
+    checkpoint(marks.stairs['pad-WD'].position, [4.257, 2.4, 0.55]);
+    checkpoint(marks.stairs['pad-both'].position, [4.257, 2.4, 0.55]);
     const report = { baselineSha, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),

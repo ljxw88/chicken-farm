@@ -25,6 +25,12 @@ has a memory hold; this changes test scheduling, not game-frame timing.
 QA baseline: evidence/EBR-74/gate-g/baseline{.json,/} is the supplied
 9e8c8c6 set; its pre-port self-check returned 0 changed pixels in all 8 frames.
 Additional replay/route evidence uses a separate temporary 9e8c8c6 worktree.
+QA's independent sequence reference is
+/home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-sequences/main-9e8c8c6/sequences.json.
+Its fixed endpoints and bridge height are additional replay assertions. The
+real-time QA sequence comparison checks positions, heights, placement and
+weather states, with only the documented +/-0.08 bridge-Z allowance; its
+screenshots, sample counts and per-sample height jumps are not pixel baselines.
 Status: implementation and tests are written; verification is pending the
 shared-host memory hold. No PR has been opened yet.
 
