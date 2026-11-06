@@ -7,7 +7,7 @@ const integer = (value, min, max) => Number.isInteger(value) && value >= min && 
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const common = ['name', 'prim', 'mat', 'at', 'rot', 'scale', 'feature', 'exception', 'polygonOffset', 'seed', 'jitter'];
 const primitives = {
-  box: ['size'], bevelBox: ['size', 'bevel'], cylinder: ['radiusTop', 'radiusBottom', 'h', 'segments'],
+  box: ['size'], cylinder: ['radiusTop', 'radiusBottom', 'h', 'segments'],
   cone: ['radius', 'h', 'segments'], sphere: ['radius', 'detail'], capsule: ['radius', 'length', 'segments'],
   wedge: ['size'], lathe: ['profile', 'segments'], extrude: ['polygon', 'depth'], custom: ['positions', 'indices'],
 };
@@ -15,7 +15,7 @@ const primitives = {
 /** Fail-closed closed-vocabulary schema, before any recipe data reaches Three.js. */
 export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
   const failures = [];
-  const fail = (message) => failures.push({ code: 'H1', message });
+  const fail = (message, code = 'H1') => failures.push({ code, message });
   const keys = (value, allowed, where) => {
     for (const key of Object.keys(value)) if (!allowed.includes(key)) fail(`${where}: unknown field ${key}`);
   };
@@ -24,7 +24,9 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
   if (recipe.id !== spec.id || !idPattern.test(recipe.id) || recipe.category !== spec.category || !categories.includes(recipe.category)) fail('Recipe id/category must match the spec');
   if (!object(recipe.footprint) || !positive(recipe.footprint.w) || !positive(recipe.footprint.d)) fail('footprint needs positive w and d');
   else keys(recipe.footprint, ['w', 'd'], 'footprint');
-  if (!positive(recipe.height) || recipe.origin !== 'base-center' || recipe.facing !== '+Z') fail('height, origin=base-center and facing=+Z are required');
+  if (!positive(recipe.height)) fail('height must be positive');
+  if (recipe.origin !== 'base-center') fail('origin must be base-center', 'H4');
+  if (recipe.facing !== '+Z') fail('facing must be +Z, not -Z', 'H4');
   if (!object(recipe.slots)) fail('slots must be an object');
   const slots = object(recipe.slots) ? recipe.slots : {};
   for (const [key, value] of Object.entries(slots)) {
@@ -38,17 +40,20 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
   for (const part of recipe.parts) {
     if (!object(part)) { fail('Each part must be an object'); continue; }
     const allowed = primitives[part.prim];
-    if (!allowed) { fail(`Unknown primitive ${String(part.prim)}`); continue; }
+    if (!allowed) { fail(`Forbidden or unknown primitive ${String(part.prim)} (lights, text and textures are not allowed)`, 'FORBIDDEN_FEATURE'); continue; }
     keys(part, [...common, ...allowed], `part ${part.name || '?'}`);
     if (!idPattern.test(part.name || '') || names.has(part.name)) fail(`Invalid or duplicate part name ${String(part.name)}`);
     names.add(part.name);
     const token = resolve(part.mat);
     if (!token || !Object.hasOwn(palette, token)) fail(`Part ${part.name} uses an unknown palette token ${String(part.mat)}`);
+    if (token === 'lantern.glow' && (spec.id !== 'lantern-post' || !/lantern.*glass|glass.*lantern/.test(part.name))) {
+      fail(`lantern.glow is allowed only on lantern-post glass, not ${part.name}`, 'FORBIDDEN_FEATURE');
+    }
     if (accentTokens.includes(token)) accentUsed.add(token);
     if (!vec(part.at, 3) || (part.rot !== undefined && !vec(part.rot, 3))) fail(`Part ${part.name} needs finite position/rotation triples`);
     if (part.scale !== undefined && (!vec(part.scale, 3) || part.scale.some((n) => n <= 0) || Math.max(...part.scale) / Math.min(...part.scale) > rules.maxScaleRatio)) fail(`Part ${part.name} has invalid or excessive scale`);
     if (part.feature !== undefined && !features.has(part.feature)) fail(`Part ${part.name} uses undeclared feature ${part.feature}`);
-    if (part.exception !== undefined && (!['band', 'cleat'].includes(part.exception) || !new RegExp(part.exception === 'band' ? 'band|hoop' : 'cleat').test(part.name))) fail(`Part ${part.name} has an invalid small-feature exception`);
+    if (part.exception !== undefined && (!['band', 'cleat', 'twine'].includes(part.exception) || !new RegExp(part.exception === 'band' ? 'band|hoop' : part.exception).test(part.name))) fail(`Part ${part.name} has an invalid small-feature exception`);
     if (part.polygonOffset !== undefined && typeof part.polygonOffset !== 'boolean') fail(`Part ${part.name} has invalid polygonOffset`);
     if (part.jitter !== undefined) {
       if (!object(part.jitter) || !Number.isInteger(part.seed)) fail(`Part ${part.name} jitter requires an integer seed`);
@@ -58,21 +63,21 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
       }
     } else if (part.seed !== undefined && !Number.isInteger(part.seed)) fail(`Part ${part.name} seed must be an integer`);
     const size = part.size;
-    if (['box', 'bevelBox', 'wedge'].includes(part.prim) && (!vec(size, 3) || size.some((n) => n <= 0))) fail(`Part ${part.name} needs positive size`);
-    if (part.prim === 'bevelBox' && part.bevel !== undefined && (!positive(part.bevel) || !vec(size, 3) || part.bevel * 2 >= Math.min(...size))) fail(`Part ${part.name} has invalid bevel`);
-    if (part.prim === 'cylinder' && (!positive(part.radiusTop) || !positive(part.radiusBottom) || !positive(part.h) || !integer(part.segments, 3, 24))) fail(`Part ${part.name} needs positive cylinder radii/height and 3–24 segments`);
-    if (part.prim === 'cone' && (!positive(part.radius) || !positive(part.h) || !integer(part.segments, 3, 24))) fail(`Part ${part.name} has invalid cone dimensions`);
+    if (['box', 'wedge'].includes(part.prim) && (!vec(size, 3) || size.some((n) => n <= 0))) fail(`Part ${part.name} needs positive size`);
+    if (part.prim === 'cylinder' && (!positive(part.radiusTop) || !positive(part.radiusBottom) || !positive(part.h) || !integer(part.segments, 6, 8))) fail(`Part ${part.name} needs positive cylinder radii/height and 6–8 segments`);
+    if (part.prim === 'cone' && (!positive(part.radius) || !positive(part.h) || !integer(part.segments, 6, 8))) fail(`Part ${part.name} has invalid cone dimensions or segment count (6–8)`);
     if (part.prim === 'sphere' && (!positive(part.radius) || ![0, 1].includes(part.detail))) fail(`Part ${part.name} has invalid sphere radius/detail`);
-    if (part.prim === 'capsule' && (!positive(part.radius) || !positive(part.length) || !integer(part.segments, 3, 24))) fail(`Part ${part.name} has invalid capsule dimensions`);
+    if (part.prim === 'capsule' && (!positive(part.radius) || !positive(part.length) || !integer(part.segments, 6, 8))) fail(`Part ${part.name} has invalid capsule dimensions or segment count (6–8)`);
     if (part.prim === 'lathe' && (!Array.isArray(part.profile) || part.profile.length < 2 || part.profile.length > 32 ||
-        !part.profile.every((point) => vec(point, 2) && point[0] >= 0) || !integer(part.segments, 3, 24) ||
+        !part.profile.every((point) => vec(point, 2) && point[0] >= 0) || !integer(part.segments, 6, 8) ||
         part.profile.some((point, i) => i > 0 && (point[1] < part.profile[i - 1][1] || (point[0] === 0 && part.profile[i - 1][0] === 0))))) fail(`Part ${part.name} has invalid lathe profile`);
     if (part.prim === 'extrude' && (!Array.isArray(part.polygon) || part.polygon.length < 3 || part.polygon.length > 32 || !part.polygon.every((point) => vec(point, 2)) || !positive(part.depth))) fail(`Part ${part.name} has invalid extrude polygon`);
     if (part.prim === 'custom' && (!Array.isArray(part.positions) || part.positions.length < 9 || part.positions.length > 30000 || part.positions.length % 3 ||
         !part.positions.every(finite) || !Array.isArray(part.indices) || part.indices.length < 3 || part.indices.length > 30000 || part.indices.length % 3 ||
         !part.indices.every((index) => Number.isInteger(index) && index >= 0 && index < part.positions.length / 3))) fail(`Part ${part.name} has invalid custom BufferGeometry`);
   }
-  if (accentUsed.size > 1) fail(`At most one accent token per asset: ${[...accentUsed].join(', ')}`);
+  const allowedAccents = spec.id.includes('flower') ? 2 : 1;
+  if (accentUsed.size > allowedAccents) fail(`At most ${allowedAccents} accent token(s) per asset: ${[...accentUsed].join(', ')}`);
   if (!object(recipe.anchors) || Object.values(recipe.anchors).some((value) => !vec(value, 3))) fail('anchors must map names to finite triples');
   if (!object(recipe.collision) || !['box', 'none'].includes(recipe.collision.type)) fail('collision must have type box or none');
   else if (recipe.collision.type === 'box') {
@@ -87,8 +92,11 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
     keys(accent, ['part', 'mat', 'strength'], 'emissive');
     const token = resolve(accent.mat);
     if (!names.has(accent.part) || !Object.hasOwn(palette, token || '') || !finite(accent.strength) || accent.strength < 0 || accent.strength > 1) fail('Invalid emissive part/token/strength');
+    if (spec.id !== 'lantern-post' || token !== 'lantern.glow' || !/lantern.*glass|glass.*lantern/.test(accent.part || '')) {
+      fail('Emissive is forbidden except declared lantern-post glass with lantern.glow', 'BAKED_LIGHT');
+    }
     if (accentTokens.includes(token)) accentUsed.add(token);
   }
-  if (accentUsed.size > 1) fail('At most one accent token is allowed, including emissive accents');
+  if (accentUsed.size > allowedAccents) fail(`At most ${allowedAccents} accent token(s) including emissive accents`);
   return failures;
 }

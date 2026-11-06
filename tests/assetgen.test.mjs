@@ -127,7 +127,7 @@ test('nondeterministic geometry fails H6 and an oversized collision box fails H1
 });
 
 test('declared emissive materials start dark, ramp explicitly, and add no lights', () => {
-  const recipe = clone(); recipe.emissive = [{ part: 'top', mat: 'lantern', strength: 0.7 }];
+  const recipe = clone(); recipe.emissive = [{ part: 'top', mat: 'lantern.glow', strength: 0.7 }];
   const group = buildRecipe(recipe);
   const top = group.getObjectByName('top');
   assert.equal(top.material.emissiveIntensity, 0);
@@ -140,7 +140,6 @@ test('declared emissive materials start dark, ramp explicitly, and add no lights
 test('closed primitive builders produce finite nondegenerate geometry', () => {
   const variants = [
     { prim: 'box', size: [0.6, 0.6, 0.6] },
-    { prim: 'bevelBox', size: [0.6, 0.6, 0.6], bevel: 0.05 },
     { prim: 'cylinder', radiusTop: 0.3, radiusBottom: 0.25, h: 0.6, segments: 8 },
     { prim: 'cone', radius: 0.3, h: 0.6, segments: 8 },
     { prim: 'sphere', radius: 0.3, detail: 1 },

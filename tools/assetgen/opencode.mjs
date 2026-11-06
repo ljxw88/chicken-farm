@@ -48,3 +48,17 @@ export function textEvents(stdout) {
   });
   return { events, text: events.filter((event) => event.type === 'text').map((event) => event.part?.text || event.text || '').join('\n') };
 }
+
+/** Read the actual model and usage from the session, not a guessed default. */
+export async function sessionMetadata(sessionId, cwd) {
+  if (!sessionId) return { modelId: null, usage: null };
+  const [info, messages] = await Promise.all([
+    runOpenCode(['api', 'get', `/api/session/${sessionId}`], { cwd, timeout: 30000 }),
+    runOpenCode(['api', 'get', `/api/session/${sessionId}/message`], { cwd, timeout: 30000 }),
+  ]);
+  const data = JSON.parse(info.stdout).data;
+  const records = JSON.parse(messages.stdout).data;
+  const model = records?.find((record) => record.type === 'assistant' && record.model)?.model;
+  return { modelId: model?.providerID && model?.id ? `${model.providerID}/${model.id}${model.variant ? `#${model.variant}` : ''}` : null,
+    usage: data?.tokens ? { tokens: data.tokens, cost: typeof data.cost === 'number' ? data.cost : null } : null };
+}

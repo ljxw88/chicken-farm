@@ -4,11 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const specDirectory = join(root, 'tools/assetgen/specs');
-export const runDirectory = join(root, 'tools/assetgen/runs');
+// Preserve the prior pre-EBR-80 bake-off and permit isolated loop-off runs.
+export const runDirectory = process.env.ASSETGEN_RUN_DIR ? resolve(process.env.ASSETGEN_RUN_DIR) : join(root, 'tools/assetgen/runs-ebr83-85');
 export const evidenceDirectory = join(root, 'evidence/assetgen');
 export const biblePath = join(root, 'docs/asset-style-bible.md');
 export const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const categories = ['prop', 'flora', 'animal', 'building', 'terrain'];
+export const categories = ['prop', 'flora', 'building', 'terrain'];
 
 export async function readBible() {
   const text = await readFile(biblePath, 'utf8');

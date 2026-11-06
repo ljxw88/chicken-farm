@@ -28,6 +28,7 @@ test('work-order fallback does not require a browser or model', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'assetgen-work-order-test-'));
   const id = `work-order-${randomBytes(6).toString('hex')}`;
   const run = join(runDirectory, id);
+  await mkdir(runDirectory, { recursive: true });
   await mkdir(run); // Ensure the test owns the exact directory it cleans up.
   const spec = { id, category: 'prop', brief: 'A chunky test object with clear identity features.', size: { width: 1, depth: 1, height: 1 },
     paletteHints: ['wood.mid'], referenceAssetIds: ['signed-fence', 'signed-coop'],

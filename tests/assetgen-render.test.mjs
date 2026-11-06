@@ -24,13 +24,15 @@ test('real pixel renderer catches a hidden identity feature and a reversed key l
     assert.equal(result.metrics.pixel.canvasWidth, 320);
     assert.equal(result.metrics.pixel.canvasHeight, 180);
     assert.equal(result.metrics.samples.length, 72);
-    assert.equal(result.metrics.frameIndex.length, 76); // 72 views, two composites, native debug, sheet.
+    assert.equal(result.metrics.frameIndex.length, 82); // 72 views, 6 silhouettes, two composites, native debug, sheet.
     assert.ok(result.failures.some((failure) => failure.code === 'IDENTITY_VISIBLE' && failure.message.includes('hidden')));
     assert.ok(result.metrics.identityVisibility.hidden.every((view) => view.pixels === 0));
     assert.ok(result.metrics.identityPartVisibility.hidden.views.every((view) => view.pixels === 0));
     assert.ok(result.metrics.identityVisibility.body.some((view) => view.pixels > 0));
     const png = await readFile(join(directory, 'sheet.png'));
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    const silhouette = await readFile(join(directory, 'silhouette-grass-045.png'));
+    assert.deepEqual([silhouette.readUInt32BE(16), silhouette.readUInt32BE(20)], [320, 180]);
     const wrong = await runner.capture(spec, rules, join(directory, 'wrong-key'), recipe, { wrongKeyFixture: true });
     assert.ok(wrong.failures.some((failure) => failure.code === 'S4'), JSON.stringify(wrong.metrics.keyLight));
   } finally { await runner.close(); }

@@ -30,7 +30,7 @@ export async function createVisualRunner() {
         .tag{position:absolute;top:4px;left:4px;background:#211d18dd;padding:3px 5px;font-size:11px}.footer{display:flex;height:264px;gap:10px;padding:10px}
         .context{position:relative;width:390px;height:220px;overflow:hidden}.context img{width:100%;height:100%;image-rendering:pixelated}
         .note{flex:1;line-height:1.5;padding:8px;color:#eadcbb}.small{color:#d1ba91;font-size:12px}
-      </style><header>${escape(spec.id)} · 8 fixed yaws × 3 phases · 3× nearest-neighbour crops</header><div class="grid">${panels}</div><div class="footer">${context}<div class="note">Identity: ${escape(spec.identityFeatures.map((f) => f.id).join(', '))}<br>Context: actual game scale, cottage/coops/tree/fence/character.<br><br><span class="small">Existing pre-EBR-80 lighting. This sheet is preliminary, not visual approval.</span></div></div>`);
+      </style><header>${escape(spec.id)} · 8 fixed yaws × 3 phases · 3× nearest-neighbour crops</header><div class="grid">${panels}</div><div class="footer">${context}<div class="note">Identity: ${escape(spec.identityFeatures.map((f) => f.id).join(', '))}<br>Context: actual game scale, cottage/coops/tree/fence/character.<br><br><span class="small">Merged EBR-80 lighting. This sheet is preliminary, not visual approval.</span></div></div>`);
       await page.screenshot({ path: destination });
     } finally { await page.close(); }
   }
@@ -78,6 +78,13 @@ export async function createVisualRunner() {
         }
         samples.push({ yaw, phase, surface, ...measured });
       }
+      for (const yaw of [0, 45, 90]) for (const surface of ['grass', 'path']) {
+        const encoded = await page.evaluate(({ yaw, surface }) => window.__assetForge.silhouette(yaw, surface), { yaw, surface });
+        const data = Buffer.from(encoded, 'base64');
+        const filename = `silhouette-${surface}-${String(yaw).padStart(3, '0')}.png`;
+        await writeFile(join(directory, filename), data);
+        frameIndex.push({ file: filename, sha256: digest(data), yaw, phase: 'daytime', surface, kind: 'black-silhouette-320x180' });
+      }
       const composites = [];
       for (const phase of ['daytime', 'night']) {
         await page.evaluate((phase) => window.__assetForge.setView(45, phase, 'grass', true), phase);
@@ -120,7 +127,7 @@ export async function createVisualRunner() {
       if (light.status === 'fail') failures.push({ code: 'S4', message: light.message });
       if (errors.length) failures.push({ code: 'BROWSER', message: errors.join('; ') });
       const result = { failures, metrics: { browser: browser.version(), loadAttempts: attempts, renderer: 'game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1',
-        lightingStatus: 'pre-EBR-80; preliminary', pixel: state.pixel, references: state.references, keyDirection: state.keyDirection,
+        lightingStatus: 'merged EBR-80; preliminary', pixel: state.pixel, references: state.references, keyDirection: state.keyDirection,
         referenceScale: { actual: state.subjectHeight / state.references.character, target: spec.size.height / state.references.character },
         samples, identityVisibility: featureVisibility, identityPartVisibility: partVisibility, keyLight: { ...light, sampleCount: lightSamples.length },
         unmeasured: ['S1 rendered palette-cluster distance after lighting', 'S3 three-step value structure', 'S5 night glow/highlight analysis', 'S7 style-reference distance'],
@@ -132,9 +139,10 @@ export async function createVisualRunner() {
     } finally { await page.close(); }
   }
 
-  async function reference(spec, destination) {
+  async function reference(spec, destination, fixture) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
     try {
+      if (fixture) await page.addInitScript((recipe) => { window.__assetForgeFixture = recipe; }, fixture);
       await page.goto(`${url}/tools/assetgen/render.html?id=${encodeURIComponent(spec.id)}`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => !!window.__assetForge, null, { timeout: 15000 });
       await page.evaluate((zoom) => window.__assetForge.reference(45, zoom), Math.min(8, 5 / Math.max(spec.size.height, spec.size.width * 0.8)));

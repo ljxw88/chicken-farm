@@ -14,6 +14,6 @@ for (const id of ['barrel', 'hay-bale', 'round-oak']) {
     keyLight: visual.metrics.keyLight, unmeasured: visual.metrics.unmeasured,
     frameCount: visual.metrics.frameIndex.length, browserLoadAttempts: visual.metrics.loadAttempts });
 }
-const result = { status: 'needs-human', noRuntimeAssetsRegistered: true, renderer: 'pre-EBR-80', assets };
+const result = { status: 'needs-human', noRuntimeAssetsRegistered: true, renderer: 'merged EBR-80', assets };
 await writeFile(join(evidenceDirectory, 'verification-summary.json'), `${JSON.stringify(result, null, 2)}\n`);
 console.log(JSON.stringify(result, null, 2));

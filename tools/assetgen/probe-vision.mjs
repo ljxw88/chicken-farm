@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { evidenceDirectory } from './config.mjs';
-import { runOpenCode, textEvents } from './opencode.mjs';
+import { runOpenCode, sessionMetadata, textEvents } from './opencode.mjs';
 
 const colors = [
   { name: 'RED', css: 'rgb(225,25,35)' },
@@ -16,7 +16,7 @@ for (let i = colors.length - 1; i > 0; i--) {
   const j = randomInt(i + 1);
   [colors[i], colors[j]] = [colors[j], colors[i]];
 }
-const directory = join(evidenceDirectory, 'vision-probe');
+const directory = join(evidenceDirectory, 'vision-probe-ebr83-85');
 await mkdir(directory, { recursive: true });
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 const trials = [];
@@ -30,11 +30,15 @@ try {
     let answer = '';
     let transcript = '';
     let error = null;
+    let sessionId = null;
+    let modelId = null;
     try {
       const result = await runOpenCode(['run', '--format', 'json', '--file', image, prompt], { timeout: 120000 });
       transcript = result.stdout;
       const { events, text } = textEvents(result.stdout);
       answer = text.trim().toUpperCase();
+      sessionId = events.find((event) => event.sessionID)?.sessionID ?? null;
+      try { modelId = (await sessionMetadata(sessionId)).modelId; } catch { /* reported as unknown */ }
       const errors = events.filter((event) => event.type === 'error');
       if (errors.length) error = JSON.stringify(errors);
     } catch (failure) {
@@ -42,7 +46,7 @@ try {
       transcript = `${failure.stdout || ''}\n${failure.stderr || ''}`;
     }
     await writeFile(join(directory, `probe-${index + 1}.jsonl`), transcript);
-    trials.push({ image: `probe-${index + 1}.png`, expected: color.name, answer, correct: answer === color.name, error });
+    trials.push({ image: `probe-${index + 1}.png`, expected: color.name, answer, correct: answer === color.name, error, sessionId, modelId });
   }
 } finally {
   await browser.close();

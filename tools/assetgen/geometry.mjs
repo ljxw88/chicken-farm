@@ -167,8 +167,17 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
     const localSize = geometry.boundingBox.getSize(new THREE.Vector3()).multiply(mesh.scale).toArray().map(Math.abs).sort((a, b) => a - b);
     const partSpec = recipe.parts.find((part) => part.name === mesh.name);
     const minimum = partSpec?.exception ? rules.exceptionMinimumFeature : rules.minimumFeature;
-    if (localSize[0] < minimum - 1e-6 || (!partSpec?.exception && localSize[1] < rules.minimumReadableFace - 1e-6)) {
+    const structural = /rail|plank|post|trunk/.test(mesh.name);
+    const minimumCrossSection = structural ? 0.13 : rules.minimumReadableFace;
+    if (localSize[0] < minimum - 1e-6 || (!partSpec?.exception && localSize[1] < minimumCrossSection - 1e-6)) {
       fail('H5', `${mesh.name}: dimensions ${localSize.map(round).join('×')} violate minimum feature/readable face`);
+    }
+    if (partSpec?.feature && !partSpec.exception && !structural && localSize[0] < rules.minimumReadableThickness - 1e-6) {
+      fail('H5', `${mesh.name}: readable feature is thinner than ${rules.minimumReadableThickness}`);
+    }
+    const mustRead = /handle|wheel|window|hat/.test(`${mesh.name} ${partSpec?.feature || ''}`);
+    if (mustRead && (localSize[0] < rules.minimumReadableThickness - 1e-6 || localSize[1] < rules.minimumReadableFace - 1e-6)) {
+      fail('H5', `${mesh.name}: handle/wheel/window/hat must be at least ${rules.minimumReadableThickness} thick and ${rules.minimumReadableFace} in two dimensions`);
     }
     // The bounding box of a hollow ring can be wide even when its wall is a
     // hairline. Check lathe/profile and polygon edges in local feature space.
@@ -234,7 +243,7 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
     if (Math.abs(center[axis]) > Math.max(rules.centerToleranceAbsolute, expected * rules.centerToleranceRelative)) fail('H4', `${axis} bounds centre ${round(center[axis])} is not base-centred`);
   }
   if (Math.abs(bounds.min.y) > rules.baseTolerance) fail('H4', `bottom y ${round(bounds.min.y)} must be within ±${rules.baseTolerance}`);
-  if (bounds.min.y < -rules.baseTolerance) fail('H9', `bottom y ${round(bounds.min.y)} is below ground`);
+  if (bounds.min.y < -rules.belowGroundTolerance) fail('H9', `bottom y ${round(bounds.min.y)} is below -${rules.belowGroundTolerance}`);
   // Do not do quadratic pairwise work on an already-rejected triangle bomb.
   // Mark the skipped checks explicitly rather than claiming they passed.
   const overBudget = triangleCount > rules.triBudgets[spec.category];

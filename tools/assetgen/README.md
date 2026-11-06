@@ -1,6 +1,7 @@
 # Asset Forge: bake-off prototype
 
-`docs/asset-style-bible.md` is the generator/checker contract. The source of
+`docs/asset-style-bible.md`, aligned to Look Dev's `ASSET-BRIEF.md`, is the
+generator/checker contract. The source of
 truth is a closed-vocabulary JSON recipe built by `src/assets/buildRecipe.ts`,
 not generated TypeScript. Specs contain 3–5 identity features. The builder
 resolves palette slots, adds no lights, and can flag custom BufferGeometry or
@@ -9,12 +10,12 @@ bake-off candidates are **not** signed, bundled, or placed in the game.
 
 ## Image capability test
 
-On 2026-11-06 the installed `~/.opencode/bin/opencode` correctly answered three
-shuffled, blinded dominant-colour PNG probes (BLUE, GREEN, RED), each in a new
-session. Images, answers and transcripts are in
-`evidence/assetgen/vision-probe/`. This establishes that image reading worked
-for these probes; it does not prove reliable artistic judgment. Rerun with
-`node tools/assetgen/probe-vision.mjs`. If it fails or is missing, the forge
+The pre-EBR-80 probe passed three blinded dominant-colour PNGs; its historical
+evidence remains in `evidence/assetgen/vision-probe/`. The current probe writes
+`evidence/assetgen/vision-probe-ebr83-85/` and records the actual model ID.
+On 2026-11-06, `opencode/crouton-alpha-free` answered all three correctly.
+Rerun it through the host heavy wrapper. A colour probe does not prove reliable
+artistic judgment. If it fails, is disabled, or is missing, the forge
 reports **visual critique not run** and never claims a visual pass.
 
 ## How a candidate is built
@@ -40,11 +41,11 @@ location. Their JSONL transcripts contain **no tool calls**; the generator was
 instructed to return data only. The subsequent re-critiques used the corrected
 scratch policy. A regression test now checks that both `cwd` and `PWD` match.
 
-Up to five rounds are allowed, with at most two corrections per stage and five
-globally. Every decision and best-so-far candidate is recorded. Even a candidate
-with all internal gates clear remains `needs-human`, `signedBy: null` and is not
-in the runtime registry. `npm run asset:bundle` deliberately refuses to ship
-before EBR-80 and Look Dev review. A failed OpenCode call is retried with its
+Up to four rounds are allowed, with at most two corrections per stage and three
+globally. Every decision and best-so-far candidate is recorded. A candidate
+reaching the cap is `needs-human` and must not ship. Earlier automated `PASSED`
+results still need Look Dev signoff before game integration. This PR creates no
+runtime entries. A failed OpenCode call is retried with its
 error; exhausting generation retries writes a Herdr work order. `--work-order`
 emits it immediately without requiring Chromium or an OpenCode connection.
 
@@ -56,8 +57,8 @@ session API when available; unknown cost is not estimated from text length.
 
 ## Important limits
 
-* Current lighting is the pre-EBR-80 game lighting. No view here is final
-  Look Dev approval; a gallery/showcase is deferred until EBR-80 lands.
+* Fresh renders use the merged EBR-80 lighting. No view here is final Look Dev
+  approval; a gallery/showcase and bundle generation are deferred to EBR-86.
 * H8 uses triangle/contact and closed-mesh containment checks, but arbitrary
   malformed custom meshes and near-tangencies still merit human inspection.
 * H4 checks declared facing and centred bounds, not whether a semantic door

@@ -145,8 +145,24 @@ function capture(yaw, phase, surface, delta, featureIds) {
   return { image, measured, identities, identityParts };
 }
 
+function silhouette(yaw, surface) {
+  setView(yaw, 'daytime', surface);
+  const black = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const saved = [];
+  subject.traverse((object) => {
+    if (object.isMesh) { saved.push([object, object.material]); object.material = black; }
+  });
+  composer.render();
+  const image = png(pixels());
+  for (const [object, material] of saved) object.material = material;
+  black.dispose();
+  composer.render();
+  return image;
+}
+
 window.__assetForge = {
   capture,
+  silhouette,
   setView,
   native(enabled) { composer.setEnabled(!enabled); composer.render(); },
   reference(yaw, zoom) {

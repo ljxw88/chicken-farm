@@ -27,9 +27,9 @@ tests each feature's visible contribution in eight fixed daytime views.
 Primitive fields (all position/dimension units are world units; rotations are
 Euler **degrees**; dimensions are full widths):
 
-* `box` / `bevelBox`: `size:[width,height,depth]`; optional `bevel` on bevelBox.
-* `cylinder`: `radiusTop`, `radiusBottom`, `h`, `segments` (3–24; both radii positive).
-* `cone`: `radius`, `h`, `segments` (3–24); the builder makes a nondegenerate tip.
+* `box`: `size:[width,height,depth]`.
+* `cylinder`: `radiusTop`, `radiusBottom`, `h`, `segments` (6–8; both radii positive).
+* `cone`: `radius`, `h`, `segments` (6–8); the builder makes a nondegenerate tip.
 * `sphere`: faceted icosahedron, `radius`, `detail` (0 or 1).
 * `capsule`: `radius`, `length` (straight middle), `segments`.
 * `wedge`: `size:[width,height,depth]`.
@@ -41,7 +41,7 @@ Euler **degrees**; dimensions are full widths):
 * `custom`: `positions` and triangle `indices`; lower-trust, only when necessary.
 
 Each part needs `name`, `prim`, `mat`, `at`; optional `rot`, `scale`, `feature`,
-`exception` (`band` or `cleat` only), `polygonOffset`, and seeded `jitter`.
+`exception` (`band` or `cleat` only; still at least 0.1), `polygonOffset`, and seeded `jitter`.
 No loops, calculations, expressions, URLs, comments, raw hexes, arbitrary keys,
 or code. Matte albedo tokens include `wood.mid`, `wood.light`, `timber`,
 `trunk`, `foliage.mid`, `foliage.light`, `foliage.dark`, `dirt.hi`, `stone`,

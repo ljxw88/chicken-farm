@@ -53,20 +53,6 @@ function capsule(radius: number, length: number, segments: number) {
 function geometryFor(part: AssetPart): THREE.BufferGeometry {
   switch (part.prim) {
     case 'box': return new THREE.BoxGeometry(...part.size);
-    case 'bevelBox': {
-      const [width, height, depth] = part.size;
-      const bevel = part.bevel ?? Math.min(width, height, depth) * 0.08;
-      const shape = new THREE.Shape();
-      shape.moveTo(-width / 2 + bevel, -height / 2 + bevel);
-      shape.lineTo(width / 2 - bevel, -height / 2 + bevel);
-      shape.lineTo(width / 2 - bevel, height / 2 - bevel);
-      shape.lineTo(-width / 2 + bevel, height / 2 - bevel);
-      shape.closePath();
-      const geometry = new THREE.ExtrudeGeometry(shape, { depth: depth - bevel * 2, bevelEnabled: true,
-        bevelSize: bevel, bevelThickness: bevel, bevelSegments: 1, steps: 1, curveSegments: 1 });
-      geometry.translate(0, 0, -depth / 2 + bevel);
-      return geometry;
-    }
     case 'cylinder': return new THREE.CylinderGeometry(part.radiusTop, part.radiusBottom, part.h, part.segments);
     case 'cone': return lathe([[0, -part.h / 2], [part.radius, -part.h / 2], [0, part.h / 2]], part.segments);
     case 'sphere': return new THREE.IcosahedronGeometry(part.radius, part.detail);

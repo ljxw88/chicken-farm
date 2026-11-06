@@ -23,7 +23,7 @@ async function setup() {
   const { buildRecipe } = await runner.server.ssrLoadModule('/src/assets/buildRecipe.ts');
   const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
   let probe = null;
-  try { probe = JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe/result.json'), 'utf8')); } catch { /* no probe */ }
+  try { probe = JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe-ebr83-85/result.json'), 'utf8')); } catch { /* no probe */ }
   return { bible, runner, environment: { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS }, probe };
 }
 
@@ -36,8 +36,9 @@ function score(hard, visual, critic) {
 }
 
 async function newAsset(input, args) {
-  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order]');
+  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--loop-off]');
   const { spec } = await readSpec(input);
+  if (spec.category === 'building') throw new Error('New buildings are out of scope; signed building fixtures remain auditable.');
   const run = join(runDirectory, spec.id);
   await mkdir(run, { recursive: true });
   if (!args.includes('--work-order')) {
@@ -64,8 +65,10 @@ async function newAsset(input, args) {
     let previousSheet = null;
     const stageCorrections = {};
     const history = [];
-    const stages = bible.rules.loop.stages;
-    while (round <= bible.rules.loop.maxRounds && stageIndex < stages.length) {
+    const loopOff = args.includes('--loop-off');
+    const stages = loopOff ? ['blockout'] : bible.rules.loop.stages;
+    const roundLimit = loopOff ? 1 : bible.rules.loop.maxRounds;
+    while (round <= roundLimit && stageIndex < stages.length) {
       const stage = stages[stageIndex];
       const stageDir = join(run, `round-${round}`, `stage-${stage}`);
       await mkdir(stageDir, { recursive: true });
@@ -80,7 +83,7 @@ async function newAsset(input, args) {
         await writeFile(join(stageDir, 'generation-error.txt'), `${message}\n`);
         previous = { failures: [{ code: 'GENERATOR', message }], instruction: 'Retry the JSON generation/build with the exact error.' };
         history.push({ round, stage, action: 'refine-code', failure: message });
-        if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= bible.rules.loop.maxRounds) {
+        if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= roundLimit) {
           stopReason = 'Generation retries exhausted';
           await writeFile(join(run, 'work-order.md'), `${prompt}\n\nSave JSON to ${relative(root, recipePath(spec))}, then run npm run asset:verify -- ${spec.id}.\n`);
           break;
@@ -94,23 +97,24 @@ async function newAsset(input, args) {
       await writeFile(join(stageDir, 'recipe.json'), json(current));
       const inspected = inspectRecipe(current, spec, bible.rules, environment);
       const hard = { failures: inspected.failures, metrics: inspected.metrics };
-      let visual = null, review = null, criticSession = null, criticDurationMs = null, criticUsage = null, criticError = null;
+      let visual = null, review = null, criticSession = null, criticModelId = null, criticDurationMs = null, criticUsage = null, criticError = null;
       if (!hard.failures.length) {
-        visual = await runner.capture(spec, bible.rules, join(stageDir, 'render')); // Only after the hard gate.
+        visual = await runner.capture(spec, bible.rules, join(stageDir, 'render'), current); // Only after the hard gate.
         const sheet = join(stageDir, 'render/sheet.png');
-        if (probe?.imageReadingObserved && !visual.failures.some((failure) => failure.code === 'BROWSER')) {
+        if (process.env.ASSETGEN_IMAGES !== '0' && probe?.imageReadingObserved && !visual.failures.some((failure) => failure.code === 'BROWSER')) {
           try {
             const result = await critiqueRecipe(spec, bible, stage, { hard, visual }, sheet, sessionDir);
             criticSession = result.sessionId;
+            criticModelId = result.modelId;
             criticDurationMs = result.durationMs;
             criticUsage = result.usage;
             await writeFile(join(stageDir, 'critic.jsonl'), result.transcript);
             await writeFile(join(stageDir, 'critic-prompt.txt'), result.prompt);
             review = result.review;
-            if (!criticSession || criticSession === generated.sessionId) throw new Error('Critic did not use a distinct OpenCode session');
+            if (!criticSession || criticSession === generated.sessionId || !criticModelId) throw new Error('Critic needs a distinct session and recorded model id');
             if (!review.imageReviewed) criticError = 'visual critique not run: critic reported that the image was unavailable';
           } catch (error) { criticError = `visual critique not run: ${String(error)}`; review = null; }
-        } else criticError = 'visual critique not run: image capability was not demonstrated or render was unavailable';
+        } else criticError = 'visual critique not run: disabled, image capability not demonstrated, or render unavailable';
         previousSheet = visual.failures.some((failure) => failure.code === 'BROWSER') ? null : sheet;
       }
       const identityMissing = review ? spec.identityFeatures.filter((feature) => !review.features[feature.id]).map((feature) => feature.id) : [];
@@ -118,7 +122,7 @@ async function newAsset(input, args) {
       const blockers = [...hard.failures, ...(visual?.failures || [])];
       if (criticError) blockers.push({ code: 'CRITIQUE_UNAVAILABLE', message: criticError });
       if (stage === 'lighting' && visual?.metrics?.unmeasured?.some((item) => item.startsWith('S3 ') || item.startsWith('S5 '))) {
-        blockers.push({ code: 'LIGHTING_UNMEASURED', message: 'Three-step value and night-glow checks are not implemented; EBR-80 is not integrated.' });
+        blockers.push({ code: 'LIGHTING_UNMEASURED', message: 'Three-step value and night-glow checks are not implemented under the merged EBR-80 lighting.' });
       }
       if (review && (weakScores.length || review.blockers.length || identityMissing.length)) {
         blockers.push({ code: 'CRITIQUE', message: [...weakScores, ...review.blockers, ...identityMissing.map((id) => `identity not seen: ${id}`)].join('; ') });
@@ -131,11 +135,11 @@ async function newAsset(input, args) {
       const result = { id: spec.id, round, stage, action, score: stageScore,
         specHash: hash(JSON.stringify(spec)), bibleHash: hash(bible.text), recipeHash: hash(JSON.stringify(current)), hard, visual, critique: review,
         critiqueStatus: criticError || (review?.imageReviewed ? 'independent visual critique recorded' : 'visual critique not run'),
-        generatorSession: generated.sessionId, criticSession, generatorDurationMs: generated.durationMs, criticDurationMs,
+        generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId, generatorDurationMs: generated.durationMs, criticDurationMs,
         generatorUsage: generated.usage, criticUsage, diff: digestParts(old, current), blockers };
       await writeFile(join(stageDir, 'report.json'), json(result));
       history.push({ round, stage, action, score: stageScore, blockers: blockers.map((item) => item.code),
-        generatorSession: generated.sessionId, criticSession, generatorUsage: generated.usage, criticUsage });
+        generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId, generatorUsage: generated.usage, criticUsage });
       const candidate = { score: stageScore, recipe: current, stage, round, hardFailureCount: hard.failures.length,
         lowerTrust: !!hard.metrics.lowerTrust, blockers, report: relative(root, join(stageDir, 'report.json')),
         sheet: visual && !visual.failures.some((failure) => failure.code === 'BROWSER') ? relative(root, join(stageDir, 'render/sheet.png')) : null };
@@ -150,13 +154,13 @@ async function newAsset(input, args) {
       if (action === 'continue') { stageIndex++; previous = { action, diff: result.diff, hard, visual: visualSummary, critique: review }; continue; }
       if (['request-input', 'stop', 'refine-spec'].includes(action)) { stopReason = `Critic requested ${action}; spec is not silently changed`; break; }
       previous = { action, diff: result.diff, failures: blockers.slice(0, 15), hard: hard.metrics, visual: visualSummary, critique: review };
-      if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= bible.rules.loop.maxRounds) {
+      if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= roundLimit) {
         stopReason = 'Bounded correction limit reached'; break;
       }
       corrections++; stageCorrections[stage] = (stageCorrections[stage] || 0) + 1;
       round++;
     }
-    if (!stopReason) stopReason = stageIndex === stages.length ? 'All stages completed; human and EBR-80 review still required' : 'Round limit reached';
+    if (!stopReason) stopReason = loopOff ? 'Loop-off baseline: one generation, no revision' : stageIndex === stages.length ? 'All stages completed; human review still required' : 'Round limit reached';
     if (best) await writeFile(recipePath(spec), json(best.recipe));
     if (best?.sheet) {
       await mkdir(evidenceDirectory, { recursive: true });
@@ -171,13 +175,19 @@ async function newAsset(input, args) {
       reportedCostUSD: usageEntries.length === sessionCount && usageEntries.every((item) => item.cost !== null) ? usageEntries.reduce((sum, item) => sum + item.cost, 0) : null,
       sessionsWithUsage: usageEntries.length, sessionCount, complete: usageEntries.length === sessionCount,
     } : null;
-    const final = { id: spec.id, category: spec.category, status: 'needs-human', signedBy: null, roundsUsed: round,
+    // Reaching the fourth round is always needs-human, even if its last review
+    // happens to say continue. A pass is only an automated gate, not Look Dev signoff.
+    const status = !loopOff && stageIndex === stages.length && round < bible.rules.loop.maxRounds ? 'PASSED' : 'needs-human';
+    if (best) await writeFile(join(run, 'best.json'), json({ status, ...best }));
+    const final = { id: spec.id, category: spec.category, status, signedBy: null, roundsUsed: round,
+      loopMode: loopOff ? 'off-one-generation' : 'on-bounded',
       completedStages: stages.slice(0, stageIndex), corrections, stageCorrections, stopReason, best,
-      imageProbe: probe?.imageReadingObserved ? 'three colour probes passed' : 'visual critique not run',
-      lighting: 'pre-EBR-80, no visual pass claimed', wallTimeMs: Date.now() - first, usage: totalUsage,
+      imageProbe: probe?.imageReadingObserved && process.env.ASSETGEN_IMAGES !== '0' ? 'three colour probes passed' : 'visual critique not run',
+      criticModelIds: [...new Set(history.map((item) => item.criticModelId).filter(Boolean))],
+      lighting: 'merged EBR-80, human review still required', wallTimeMs: Date.now() - first, usage: totalUsage,
       tokenCostNote: 'Usage/cost are OpenCode session-reported values when available; missing sessions are not estimated.', history };
     await writeFile(join(run, 'final.json'), json(final));
-    console.log(`${spec.id}: needs-human · ${stageIndex}/${stages.length} stages · ${stopReason}`);
+    console.log(`${spec.id}: ${status} · ${stageIndex}/${stages.length} stages · ${stopReason}`);
     if (!best) process.exitCode = 1;
   } finally { await runner.close(); }
 }
@@ -210,7 +220,7 @@ async function verifyCommand(input) {
         await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
         process.exitCode = 1; continue;
       }
-      const visual = await runner.capture(spec, bible.rules, verificationDir);
+      const visual = await runner.capture(spec, bible.rules, verificationDir, recipe);
       await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual,
         critiqueStatus: 'not rerun by asset:verify; see the original independent critic session' }));
       console.log(json({ id: spec.id, visual }));

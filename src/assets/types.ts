@@ -1,4 +1,4 @@
-export type AssetCategory = 'prop' | 'flora' | 'animal' | 'building' | 'terrain';
+export type AssetCategory = 'prop' | 'flora' | 'building' | 'terrain';
 export type Vec3 = [number, number, number];
 
 export interface PartBase {
@@ -9,14 +9,14 @@ export interface PartBase {
   rot?: Vec3;
   scale?: Vec3;
   feature?: string;
-  exception?: 'band' | 'cleat';
+  exception?: 'band' | 'cleat' | 'twine';
   polygonOffset?: boolean;
   seed?: number;
   jitter?: { position?: number; rotation?: number };
 }
 
 export type AssetPart = PartBase & (
-  | { prim: 'box' | 'bevelBox'; size: Vec3; bevel?: number }
+  | { prim: 'box'; size: Vec3 }
   | { prim: 'cylinder'; radiusTop: number; radiusBottom: number; h: number; segments: number }
   | { prim: 'cone'; radius: number; h: number; segments: number }
   | { prim: 'sphere'; radius: number; detail: 0 | 1 }

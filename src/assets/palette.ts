@@ -1,11 +1,10 @@
 import { FARM_PALETTE } from '../scene/farmPalette';
 import { BUILDING_PALETTE } from '../scene/farmBuildingMaterials';
-import { LANTERN_LIGHT, WINDOW_LIGHT } from '../lighting/dayNightPhases';
+import { LANTERN_LIGHT } from '../lighting/dayNightPhases';
 
-// Look Dev's named accent/legacy extension (2026-11-06). The chicken and
-// character colours already exist in createFarmDecorations/createCharacter;
-// yellow/blue flowers are the two explicitly proposed flower accents. No
-// new colours are silently interpolated. At most one accent token per recipe.
+// Look Dev's approved named extensions (ASSET-BRIEF.md, 2026-11-06): flower
+// colours, pumpkins, existing lantern metal, and lantern glass. Wool and animal
+// tokens are intentionally excluded from EBR-83..85 / this PR.
 export const ASSET_PALETTE = {
   grass: FARM_PALETTE.grass,
   'foliage.mid': FARM_PALETTE.treeFoliage,
@@ -29,19 +28,14 @@ export const ASSET_PALETTE = {
   water: FARM_PALETTE.pondWater,
   'water.rim': FARM_PALETTE.pondRim,
   'water.deep': FARM_PALETTE.pondDepth,
-  'feather.white': 0xfff1d7,
-  'feather.shade': 0xe4d1ae,
-  comb: 0xc75b46,
-  beak: 0xe9a048,
-  'char.yellow': 0xffd477,
-  pophole: BUILDING_PALETTE.popHole,
-  eye: 0x302820,
   'flower.red': 0xc75b46,
   'flower.yellow': 0xf2c94c,
   'flower.blue': 0x6a8fd0,
-  lantern: LANTERN_LIGHT.color,
-  'window.glow': WINDOW_LIGHT.color,
+  'flower.orange': 0xe08a3c,
+  pumpkin: 0xd9822b,
+  metal: 0x554433,
+  'lantern.glow': LANTERN_LIGHT.color,
 } as const;
 
-export const ACCENT_TOKENS = ['flower.red', 'flower.yellow', 'flower.blue', 'lantern', 'window.glow'] as const;
+export const ACCENT_TOKENS = ['flower.red', 'flower.yellow', 'flower.blue', 'flower.orange', 'pumpkin', 'lantern.glow'] as const;
 export type PaletteToken = keyof typeof ASSET_PALETTE;
