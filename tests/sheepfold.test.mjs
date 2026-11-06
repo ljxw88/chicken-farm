@@ -149,7 +149,7 @@ test('signed fence segments, shelter and sheep fit with the required surrounding
     assert.ok(distanceFromBox(extents, obstacle) >= 0.8 - 1e-9, `${obstacle.name} is too close`);
   }
   const path = new THREE.Box3().setFromObject(scene.getObjectByName('farm-path-edge'));
-  assert.ok(path.max.z < extents.minZ, 'the pen must not overlap the path');
+  assert.ok(extents.minZ - path.max.z >= 0.8, `the pen is too close to the path: ${extents.minZ - path.max.z}`);
   const shelter = fold.obstacles.find((obstacle) => obstacle.name === 'sheepfold-lean-to');
   near(shelter.maxX - shelter.minX, 1.4);
   near(shelter.maxZ - shelter.minZ, 1.2);
@@ -189,7 +189,7 @@ test('the center opening is walkable; the front fence, shelter and sheep stop th
   assert.ok(sheep.z >= sheepZ + 0.8 - 1e-8 && sheep.z < sheepZ + 0.9, `sheep not solid: ${sheep.z}`);
 });
 
-test('every walkable point in the fold connects back to the outside, including around both sheep', () => {
+test('walkable fold positions sampled at 0.05 units connect back to the outside', () => {
   const scene = new THREE.Scene();
   const farm = createFarmLayout(scene);
   const fold = createSheepfold(scene, 123);
@@ -291,15 +291,26 @@ test('every overlapping fence or plot tile is reserved, including the opening an
 test('new contact shadows track the existing sun direction and weather opacity', () => {
   const scene = new THREE.Scene();
   const fold = createSheepfold(scene, 123);
+  const { camera, resize, follow } = createIsometricCamera();
+  resize(1280, 720);
+  follow(new THREE.Vector3(0, 2.4, 0));
+  camera.updateMatrixWorld();
   for (const [offset, strength] of [[0.48, 1], [0.266, 1], [0.16, 0.09 / 0.22], [0.133, 0.5]]) {
     fold.updateShadows(0.8, -0.6, offset, strength);
     scene.updateMatrixWorld(true);
-    for (const name of ['sheep-1', 'sheep-2', 'sheepfold-lean-to']) {
+    for (const name of ['sheep-1', 'sheep-2', 'sheepfold-lean-to', ...Array.from({ length: 9 }, (_, i) => `sheepfold-fence-${i + 1}`)]) {
       const object = scene.getObjectByName(name);
       const shadow = scene.getObjectByName(`${name}-shadow`);
-      const delta = shadow.getWorldPosition(new THREE.Vector3()).sub(object.getWorldPosition(new THREE.Vector3())).setY(0);
+      const shadowPosition = shadow.getWorldPosition(new THREE.Vector3());
+      const origin = object.getWorldPosition(new THREE.Vector3());
+      const delta = shadowPosition.clone().sub(origin).setY(0);
       assert.ok(delta.dot(new THREE.Vector3(0.8, 0, -0.6)) > 0);
       assert.ok(delta.clone().normalize().dot(new THREE.Vector3(0.8, 0, -0.6)) > 0.999999);
+      // Compare at the shadow's ground-plane lift, so the lift itself does
+      // not masquerade as an upward shadow displacement on screen.
+      const from = origin.setY(shadowPosition.y).project(camera);
+      const to = shadowPosition.project(camera);
+      assert.ok(to.x > from.x && to.y <= from.y + 1e-9, `${name} shadow is not screen lower-right`);
       assert.equal(shadow.material.color.getHex(), 0x0a1409);
       near(shadow.material.opacity, (name.startsWith('sheep-') ? 0.18 : 0.12) * strength);
     }

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -107,7 +108,26 @@ async function perform(fixture, action, trace, frames, marks) {
   } else if (action.type === 'blur') {
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   } else if (action.type === 'capture') {
-    frames[action.name] = await capture(context, page);
+    // EBR-70 adds scenery deliberately. Keep the original all-zero replay
+    // assertion for the rest of the frame, without removing collision data or
+    // hiding anything during movement. Gate G separately checks the full frame.
+    const hidden = fixture.excludeSheepfold && await page.evaluate(() => {
+      const { scene, composer } = window.__ebr74;
+      const fold = scene.getObjectByName('farm-sheepfold');
+      if (!fold) return false;
+      fold.visible = false;
+      composer.render(0);
+      return true;
+    });
+    try {
+      frames[action.name] = await capture(context, page);
+    } finally {
+      if (hidden) await page.evaluate(() => {
+        const { scene, composer } = window.__ebr74;
+        scene.getObjectByName('farm-sheepfold').visible = true;
+        composer.render(0);
+      });
+    }
   } else if (action.type === 'mark') {
     marks[action.name] = await page.evaluate(() => {
       const { scene, character, obstacles } = window.__ebr74;
@@ -132,6 +152,7 @@ async function perform(fixture, action, trace, frames, marks) {
 
 async function recordScenario(browser, url, name, replayScript) {
   const fixture = await open(browser, url);
+  fixture.excludeSheepfold = Boolean(replayScript);
   const { page } = fixture;
   const script = [];
   const trace = [];
@@ -327,12 +348,25 @@ async function pixelDiff(page, reference, candidate) {
   }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
 }
 
-/** Record main in a temporary worktree, then replay the same events and frame times on the candidate. */
-export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir }) {
+/** Replay the same events and frame times against a verified baseline. */
+export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, baselineArchive = false }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
-  assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-    'The reference worktree must contain the unmodified baseline source');
+  if (baselineArchive) {
+    // Verify every archived source file against Git's blob ID without creating,
+    // modifying or deleting a worktree or branch.
+    const entries = git(candidateRoot, 'ls-tree', '-r', baselineSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json');
+    for (const entry of entries.split('\n')) {
+      const match = /^100644 blob ([0-9a-f]{40})\t(.+)$/.exec(entry);
+      assert.ok(match, `Unexpected baseline tree entry: ${entry}`);
+      const bytes = await readFile(join(baselineRoot, match[2]));
+      const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+      assert.equal(blob, match[1], `Archived baseline differs: ${match[2]}`);
+    }
+  } else {
+    assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
+    assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
+      'The reference worktree must contain the unmodified baseline source');
+  }
   let baseline;
   let candidate;
   let browser;
@@ -343,7 +377,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
-    // The reference is generated from the clean main worktree and stays there, never in the branch.
+    // Keep the generated reference alongside the verified baseline, not in the branch.
     const traceDir = await mkdtemp(join(baselineRoot, '.ebr74-reference-'));
     const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed,
