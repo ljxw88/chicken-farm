@@ -14,8 +14,8 @@ export const PAD_OVERLAP = STAIR.padOverlap;
 // At the island-to-stair seam, a previously supported footprint can be a
 // fraction outside the opening after a long pad-side/key sequence. Only slide
 // offsets within 0.001 world units; never widen the actual supported surface.
-const TOP_ENTRY_TOLERANCE = 0.001;
-const TOP_ENTRY_INSET = 0.00001;
+const TOP_ENTRY_TOLERANCE = STAIR.entryTolerance;
+const TOP_ENTRY_INSET = STAIR.entryInset;
 
 export interface StairSurface {
   edge: number;

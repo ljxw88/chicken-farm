@@ -21,6 +21,9 @@ const modules = {
   cloudySettings: ['CLOUDY_LOOK'],
   weatherVisual: ['RAIN_INITIAL_OPACITY'],
   presentation: ['PIXEL_PRESENTATION'],
+  sheep: ['DEFAULT_SHEEP_SEED', 'SHEEPFOLD', 'LEAN_TO', 'SHEEPFOLD_GEOMETRY', 'LEAN_TO_GEOMETRY', 'SHEEP_GEOMETRY'],
+  effects: ['FIREFLIES', 'CHIMNEY_SMOKE'],
+  startup: ['STARTUP_OPTIONS', 'VISUAL_SEEDS'],
 };
 
 function paths(value, path, result) {

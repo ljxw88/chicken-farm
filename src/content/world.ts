@@ -20,6 +20,8 @@ export const STAIR = {
   padHeight: 0.16,
   padOverlap: 0.45,
   edgeDepth: 0.18,
+  entryTolerance: 0.001,
+  entryInset: 0.00001,
 } as const;
 
 export const GRID = {
