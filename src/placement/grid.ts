@@ -34,7 +34,7 @@ export function createGrid(groundSize: number) {
   }
 
   function footprint(cell: Cell, kind: PlacementKind, rotation: number): Footprint {
-    const sideways = rotation % 2 !== 0;
+    const sideways = kind === 'plot' && rotation % 2 !== 0;
     const dimensions = GRID.footprints[kind];
     const columns = sideways ? dimensions.rows : dimensions.columns;
     const rows = sideways ? dimensions.columns : dimensions.rows;
