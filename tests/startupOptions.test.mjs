@@ -10,7 +10,7 @@ const { VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
 test('URL options accept every weather and day/night phase combination', () => {
-  for (const weather of ['clear', 'cloudy', 'rain']) {
+  for (const weather of ['clear', 'cloudy', 'rain', 'snow']) {
     for (const phase of ['morning', 'daytime', 'sunset', 'night']) {
       assert.deepEqual(parseStartupOptions(`?weather=${weather}&phase=${phase}`), { weather, phase });
     }
@@ -18,6 +18,7 @@ test('URL options accept every weather and day/night phase combination', () => {
   assert.deepEqual(parseStartupOptions('?phase=night&weather=%63loudy&other=ignored'), {
     weather: 'cloudy', phase: 'night',
   });
+  assert.deepEqual(parseStartupOptions('?weather=%73now'), { weather: 'snow', phase: undefined });
 });
 
 test('missing and invalid URL options are ignored independently', () => {
