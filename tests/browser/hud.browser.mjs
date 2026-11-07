@@ -196,10 +196,10 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   assert.equal(await panel.isVisible(), true);
   assert.equal(await page.locator('.hud-panel__footer').textContent(), 'One farm day lasts 24 minutes.');
   assert.deepEqual(await page.evaluate(() => window.getDayNightState()), { phase: 'morning', following: false, cycleSeconds: 1440 });
-  assert.equal(await page.getByRole('button', { name: 'Sound unavailable' }).isDisabled(), true);
+  assert.equal(await page.getByRole('button', { name: 'Sound off, activate to enable' }).isEnabled(), true);
   assert.equal(await page.getByRole('button', { name: 'More options unavailable' }).isDisabled(), true);
-  assert.equal(await page.getByRole('button', { name: 'Sound unavailable' }).getAttribute('aria-disabled'), 'true');
-  assert.equal(await page.getByRole('button', { name: 'Sound unavailable' }).getAttribute('title'), 'Not available yet');
+  assert.equal(await page.getByRole('button', { name: 'Sound off, activate to enable' }).getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.getByRole('button', { name: 'Sound off, activate to enable' }).getAttribute('title'), 'Turn sound on');
   assert.equal(await page.getByRole('button', { name: 'More options unavailable' }).getAttribute('title'), 'Not available yet');
   assert.equal(await automatic.isEnabled(), true);
   assert.equal(await page.locator('#hud').evaluate((root) => Boolean(root.closest('canvas'))), false);
@@ -222,7 +222,7 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   assert.equal(surface.radius, '22px');
   assert.deepEqual([surface.titleSize, surface.valueSize, surface.toggleSize, surface.footerSize, surface.artwork],
     ['20px', '22px', '14px', '13px', 120]);
-  assert.equal(await page.getByRole('button', { name: 'Sound unavailable' }).evaluate((node) => getComputedStyle(node).opacity), '0.45');
+  assert.equal(await page.getByRole('button', { name: 'Sound off, activate to enable' }).evaluate((node) => getComputedStyle(node).opacity), '0.45');
   const alignment = await panel.evaluate((element) => {
     const measure = (node) => {
       const range = document.createRange();
@@ -555,7 +555,7 @@ test('non-focusable sky surfaces isolate pointer, walking and placement keys', {
     await page.mouse.click((a.x + a.width + b.x) / 2, a.y + a.height / 2);
   });
   await assertIsolated('disabled toolbar button', async () => {
-    const box = await page.getByRole('button', { name: 'Sound unavailable' }).boundingBox();
+    const box = await page.getByRole('button', { name: 'More options unavailable' }).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   });
   await assertIsolated('pointerdown before click', async () => {
@@ -615,7 +615,7 @@ test('touching non-focusable sky surfaces keeps subsequent walking keys isolated
       await page.touchscreen.tap((a.x + a.width + b.x) / 2, a.y + a.height / 2);
     }],
     ['disabled toolbar button', async () => {
-      const box = await page.getByRole('button', { name: 'Sound unavailable' }).boundingBox();
+      const box = await page.getByRole('button', { name: 'More options unavailable' }).boundingBox();
       await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     }],
   ];
@@ -867,6 +867,12 @@ test('production build renders real controls and handles denied fullscreen hones
   await page.goto(`${previewUrl}/?phase=morning`, { waitUntil: 'networkidle' });
   assert.equal(await page.locator('#scene').evaluate((canvas) => Boolean(canvas.getContext('webgl2'))), true);
   assert.equal(await page.locator('#sky-panel').isHidden(), true);
+  const sound = page.locator('[data-action="sound"]');
+  assert.equal(await sound.getAttribute('data-audio-state'), 'locked');
+  await sound.click();
+  await page.waitForFunction(() => document.querySelector('[data-action="sound"]').dataset.audioState === 'on');
+  await sound.click();
+  assert.equal(await sound.getAttribute('data-audio-state'), 'muted');
   await page.locator('[data-action="sky"]').click();
   await page.getByRole('button', { name: 'Next weather' }).click();
   assert.equal(await page.evaluate(() => window.getWeather().mode), 'cloudy');

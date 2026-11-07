@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
+const { registerAudio } = await vite.ssrLoadModule('/src/app/audio.ts');
 const { registerEngine } = await vite.ssrLoadModule('/src/app/engine.ts');
 const { registerFarm, registerFarmDecorations } = await vite.ssrLoadModule('/src/app/farm.ts');
 const { registerGarden } = await vite.ssrLoadModule('/src/app/garden.ts');
@@ -189,4 +190,49 @@ test('normal startup mounts the sky HUD through the public scene adapter', (t) =
   assert.equal(context.skyState.dayNight.getState().cycleSeconds, 1440);
   context.skyHud.dispose();
   context.farmHud.dispose();
+});
+
+test('audio registration supplies the sky HUD without opening a device before activation', async (t) => {
+  const dom = new JSDOM('<!doctype html><body><div id="farm-hud"></div><div id="hud"></div></body>',
+    { url: 'http://localhost/?phase=night' });
+  const previous = { window: globalThis.window, document: globalThis.document };
+  const audioDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext');
+  let created = 0;
+  class Context {
+    state = 'suspended';
+    constructor() { created++; }
+    resume() { this.state = 'running'; return Promise.resolve(); }
+    close() { this.state = 'closed'; return Promise.resolve(); }
+  }
+  Object.defineProperty(globalThis, 'AudioContext', { configurable: true, value: Context });
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  t.after(() => {
+    if (audioDescriptor) Object.defineProperty(globalThis, 'AudioContext', audioDescriptor);
+    else delete globalThis.AudioContext;
+    globalThis.window = previous.window; globalThis.document = previous.document; dom.window.close();
+  });
+  window.getDayNightState = () => ({ phase: 'night', following: false, cycleSeconds: 1440 });
+  window.setDayNightPhase = () => {};
+  window.setDayNightFollowing = () => {};
+  window.getWeather = () => ({ mode: 'clear', rainAmount: 0, cloudyAmount: 0 });
+  window.setWeather = () => {};
+  const context = { hudRoot: document.querySelector('#farm-hud'), skyRoot: document.querySelector('#hud'),
+    dayNight: { getPhase: () => 'night' } };
+  registerAudio(context);
+  registerHud(context);
+  const sound = document.querySelector('[data-action="sound"]');
+  assert.equal(context.audio.getState(), 'locked');
+  assert.equal(sound.dataset.audioState, 'locked');
+  assert.equal(created, 0);
+  await context.audio.toggle();
+  assert.equal(sound.dataset.audioState, 'on');
+  assert.equal(sound.getAttribute('aria-pressed'), 'true');
+  assert.equal(created, 1);
+  await context.audio.toggle();
+  assert.equal(sound.dataset.audioState, 'muted');
+  assert.equal(sound.getAttribute('aria-pressed'), 'false');
+  context.skyHud.dispose();
+  context.farmHud.dispose();
+  context.audio.dispose();
 });

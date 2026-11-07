@@ -8,6 +8,7 @@ export const CLOSE_ICON = lineIcon('<path d="M6 6l12 12M18 6L6 18"/>');
 export const PREVIOUS_ICON = lineIcon('<path d="m14 6-6 6 6 6"/>');
 export const NEXT_ICON = lineIcon('<path d="m10 6 6 6-6 6"/>');
 export const SPEAKER_ICON = lineIcon('<path d="M4 9v6h4l5 4V5L8 9H4ZM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>');
+export const MUTED_SPEAKER_ICON = lineIcon('<path d="M4 9v6h4l5 4V5L8 9H4ZM4 4l16 16"/>');
 export const EXPAND_ICON = lineIcon('<path d="M8.5 4.5h-4v4M15.5 4.5h4v4M4.5 15.5v4h4M19.5 15.5v4h-4"/>');
 export const COLLAPSE_ICON = lineIcon('<path d="M4.5 8.5h4v-4M19.5 8.5h-4v-4M8.5 19.5v-4h-4M15.5 19.5v-4h4"/>');
 export const SUN_ICON = lineIcon('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4"/>');

@@ -8,8 +8,9 @@ modules in order before starting the engine:
 2. `engine` installs the existing input and ordered frame callbacks.
 3. `environment`, `effects`, and `startup` create the clock, weather and visual
    effects, then apply URL options and publish the existing console setters.
-4. `character`, `placement`, and `hud` install their adapters in that order;
-   the sky HUD uses its public-scene adapter and can be removed with `?skyhud=0`.
+4. `character`, `placement`, `audio`, and `hud` install their adapters in that order;
+   audio creates a silent controller for the sky HUD, which uses its public-scene
+   adapter and can be removed with `?skyhud=0`.
 5. `presentation` creates the pixel composer, publishes its setters and handles
    the initial resize and later resize events.
 

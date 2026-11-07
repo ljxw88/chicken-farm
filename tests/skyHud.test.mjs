@@ -6,6 +6,7 @@ import { createServer } from 'vite';
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { formatFarmDayLength } = await vite.ssrLoadModule('/src/ui/format.ts');
 const { createSkyStateAdapter } = await vite.ssrLoadModule('/src/ui/skyStateAdapter.ts');
+const { createSkyHud } = await vite.ssrLoadModule('/src/ui/createSkyHud.ts');
 const { createPanel, createSelector, createToggle } = await vite.ssrLoadModule('/src/ui/controls.ts');
 after(() => vite.close());
 
@@ -21,6 +22,21 @@ function sceneFixture() {
   };
   return { state, calls, api, adapter: createSkyStateAdapter(api) };
 }
+
+test('the sky HUD remains usable without an audio adapter', (t) => {
+  const dom = new JSDOM('<!doctype html><body><div id="hud"></div></body>');
+  const oldDocument = globalThis.document;
+  globalThis.document = dom.window.document;
+  t.after(() => { globalThis.document = oldDocument; dom.window.close(); });
+  const root = dom.window.document.querySelector('#hud');
+  const hud = createSkyHud({ root, ...sceneFixture().adapter });
+  const sound = root.querySelector('[data-action="sound"]');
+  assert.equal(sound.disabled, true);
+  assert.equal(sound.getAttribute('aria-label'), 'Sound unavailable');
+  assert.equal(sound.title, 'Not available yet');
+  hud.dispose();
+  assert.equal(root.childElementCount, 0);
+});
 
 test('the footer describes the actual configured cycle length', () => {
   assert.equal(formatFarmDayLength(1440), 'One farm day lasts 24 minutes.');

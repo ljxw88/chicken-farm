@@ -1,8 +1,9 @@
+import type { AudioController } from '../audio';
 import type { DayNightHudAdapter, SkyPhase, SkyWeather, WeatherHudAdapter } from './adapters';
 import { createIconButton, createPanel, createSelector, createToggle } from './controls';
 import { formatFarmDayLength } from './format';
 import {
-  COLLAPSE_ICON, EXPAND_ICON, MOON_ICON, MORE_ICON, PENDING_WEATHER_ARTWORK,
+  COLLAPSE_ICON, EXPAND_ICON, MOON_ICON, MORE_ICON, MUTED_SPEAKER_ICON, PENDING_WEATHER_ARTWORK,
   PHASE_ARTWORK, SPEAKER_ICON, SUN_ICON, SUNSET_ICON, WEATHER_ARTWORK,
 } from './icons';
 
@@ -17,6 +18,7 @@ interface SkyHudOptions {
   root: HTMLElement;
   dayNight: DayNightHudAdapter;
   weather: WeatherHudAdapter;
+  audio?: AudioController;
 }
 
 function createColumn(title: string, id: string) {
@@ -34,7 +36,7 @@ function createColumn(title: string, id: string) {
   return { element, artwork };
 }
 
-export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
+export function createSkyHud({ root, dayNight, weather, audio }: SkyHudOptions) {
   if (dayNight.phases.length === 0) throw new Error('The sky HUD needs at least one day/night phase');
   root.dataset.inputScope = 'ui';
 
@@ -102,9 +104,7 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   toolbar.setAttribute('role', 'group');
   toolbar.setAttribute('aria-label', 'Farm controls');
   const sound = createIconButton('Sound unavailable', SPEAKER_ICON, 'hud-toolbar__button');
-  sound.disabled = true;
-  sound.setAttribute('aria-disabled', 'true');
-  sound.title = 'Not available yet';
+  sound.dataset.action = 'sound';
   const fullscreen = createIconButton('Enter fullscreen', EXPAND_ICON, 'hud-toolbar__button');
   fullscreen.dataset.action = 'fullscreen';
   const sky = createIconButton('Close sky settings', SUN_ICON, 'hud-toolbar__button');
@@ -127,6 +127,22 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   let lastWeather: SkyWeather | undefined;
   let lastCycleSeconds: number | undefined;
   let fullscreenUnavailable = !document.fullscreenEnabled || typeof document.documentElement.requestFullscreen !== 'function';
+
+  function syncSound() {
+    const state = audio?.getState() ?? 'unavailable';
+    const unavailable = state === 'unavailable';
+    sound.dataset.audioState = state;
+    sound.disabled = unavailable;
+    if (unavailable) sound.setAttribute('aria-disabled', 'true');
+    else sound.removeAttribute('aria-disabled');
+    sound.setAttribute('aria-pressed', String(state === 'on'));
+    sound.setAttribute('aria-label', unavailable ? 'Sound unavailable' : state === 'on' ? 'Sound on' :
+      state === 'muted' ? 'Sound muted' : 'Sound off, activate to enable');
+    sound.title = unavailable ? 'Not available yet' : state === 'on' ? 'Mute sound' : 'Turn sound on';
+    sound.innerHTML = state === 'muted' ? MUTED_SPEAKER_ICON : SPEAKER_ICON;
+  }
+  const unsubscribeSound = audio?.subscribe(syncSound);
+  sound.addEventListener('click', () => { void audio?.toggle(); });
 
   function updateSkyButton(phase: SkyPhase) {
     const label = `${panelOpen ? 'Close' : 'Open'} sky settings (${PHASE_LABELS[phase]})`;
@@ -233,11 +249,13 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
     }
   }
 
+  syncSound();
   syncFullscreen();
   setPanelOpen(false);
   update();
 
   function dispose() {
+    unsubscribeSound?.();
     document.removeEventListener('fullscreenchange', syncFullscreen);
     root.removeEventListener('pointerdown', handleHudPointerDown, true);
     root.removeEventListener('keydown', handleHudKeyDown);

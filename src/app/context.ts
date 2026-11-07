@@ -1,3 +1,4 @@
+import type { AudioController } from '../audio';
 import type { createCharacter, createCharacterController } from '../character';
 import type { Entity } from '../core/ecs';
 import type { createEngine } from '../core/loop';
@@ -52,6 +53,7 @@ export interface AppContext extends SceneParts, FarmParts {
   getWeather: Weather['getWeather'];
   controls: ReturnType<typeof createCharacterController>;
   placement: ReturnType<typeof createPlacementAdapter>;
+  audio: AudioController;
   farmHud: ReturnType<typeof createFarmHud>;
   skyState: ReturnType<typeof createSkyStateAdapter> | undefined;
   skyHud: ReturnType<typeof createSkyHud> | undefined;

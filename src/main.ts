@@ -1,5 +1,6 @@
 import './style.css';
 import './ui/farmHud.css';
+import { registerAudio } from './app/audio';
 import { registerCharacter } from './app/character';
 import type { AppContext, AppModule } from './app/context';
 import { registerEffects } from './app/effects';
@@ -24,7 +25,7 @@ if (!skyRoot) throw new Error('Sky HUD root not found');
 const context = { canvas, hudRoot, skyRoot } as AppContext;
 const modules: readonly AppModule[] = [
   registerScene, registerFarm, registerGarden, registerFarmDecorations, registerEngine, registerEnvironment, registerEffects,
-  registerStartup, registerCharacter, registerPlacement, registerHud, registerPresentation,
+  registerStartup, registerCharacter, registerPlacement, registerAudio, registerHud, registerPresentation,
 ];
 for (const register of modules) register(context);
 
