@@ -34,7 +34,7 @@ async function serverAt(root) {
   return { server, url: `http://${host}:${address.port}` };
 }
 
-async function open(browser, url, search, normalizeClock = false, normalizeGardenRain = false) {
+async function open(browser, url, search, normalizeClock = false, normalizeGardenRain = false, normalizeEbr89 = false) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', hasTouch: true });
   const page = await context.newPage();
   const errors = [];
@@ -112,6 +112,20 @@ async function open(browser, url, search, normalizeClock = false, normalizeGarde
       };
     };
   }, { seed });
+  if (normalizeEbr89) {
+    // Historical references predate EBR-89. Restore only the old sunset slots
+    // in this replay; independent tests and pixel gates exercise the live look.
+    await page.route('**/src/content/slots.ts*', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: `${await response.text()}
+const __ebr89Sunset = ART_SLOTS.light.sunset;
+if (__ebr89Sunset.fogDensity !== 0.0129 || __ebr89Sunset.directionalIntensity !== 1.38)
+  throw new Error('Unexpected EBR-89 sunset values in historical replay');
+__ebr89Sunset.fogDensity = 0.015;
+__ebr89Sunset.directionalIntensity = 1.2;
+` });
+    });
+  }
   await page.route('**/src/app/environment.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
@@ -139,6 +153,18 @@ window.__ebr75 = typeof context !== 'undefined' ? context : { scene, camera, cha
   // This is a scene/placement replay, so use the real HUD-free gate flag.
   await page.goto(`${url}/${search}${search.includes('?') ? '&' : '?'}skyhud=0`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => window.__ebr75 && window.__ebr75RandomCalls > 0));
+  if (normalizeEbr89) {
+    // The old references predate EBR-89. Isolate only its new accents while
+    // retaining the original protected-anchor body, shader, face and lantern.
+    await page.evaluate(() => {
+      const { character, composer } = window.__ebr75;
+      for (const name of ['character-comb', 'character-wing-left', 'character-wing-right']) {
+        const detail = character.getObjectByName(name);
+        if (detail) detail.visible = false;
+      }
+      composer.render(0);
+    });
+  }
   // The sky ticket intentionally changes the app default to 1440s. Compare
   // invalid-URL behavior at the same explicit speed as the old baseline.
   if (normalizeClock) await page.evaluate(() => window.setDayNightCycleSeconds(72));
@@ -249,7 +275,7 @@ async function capture(fixture, { hideBody = false, hideRain = false, hideFold =
 
 async function recordScenario(browser, url, scenario, replayScript, historical, exactVisual, normalizeClock, baselineHasFold) {
   const fixture = await open(browser, url, scenario.search, normalizeClock && scenario.name === 'invalid-url',
-    !exactVisual && Boolean(replayScript));
+    !exactVisual && Boolean(replayScript), Boolean(replayScript));
   const { page } = fixture;
   const script = [];
   const trace = [];
@@ -805,8 +831,8 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
       referenceTrace: evidenceDir ? join(evidenceDir, 'reference-trace.json') : tracePath,
       referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
-      visualComparison: exactVisual ? 'Full unmasked frames, including the fold, garden, plots and effects; zero changed pixels allowed.' :
-        'The garden and old/new plot visuals, and any absent fold, are isolated only for historical screenshots; gameplay stays active.',
+      visualComparison: exactVisual ? 'Full unmasked frames with EBR-89 accents hidden and sunset slots normalized; zero other changed pixels allowed.' :
+        'Historical garden/plot visuals and EBR-89 accents are isolated and sunset slots normalized; gameplay stays active.',
       mask: exactVisual ? { allowedPixels: 0, path: evidenceDir ? join(evidenceDir, 'mask', 'no-changes-1280x720.png') : null } : null,
       excludedHistoricalFields: [...(historical ? ['environment.rain except visible', 'environment.randomCalls'] : []),
         ...(exactVisual ? [] : ['plot visual parts'])],

@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { packSceneReference, unpackSceneReference } from '../tools/scene-data-dump.mjs';
+import { createEbr89SceneFixture } from '../tools/ebr89-scene-fixture.mjs';
 
 test('the compact clean-main fixture reconstructs every original scene byte', async () => {
   const fixture = await readFile('tests/fixtures/scene-a75e8db.json.gz');
@@ -31,4 +32,22 @@ test('the compact clean-main fixture reconstructs every original scene byte', as
   const corrupt = JSON.parse(gunzipSync(fixture));
   corrupt.data.snapshots.morning.objects[0] = corrupt.pools.objects.length;
   assert.throws(() => unpackSceneReference(gzipSync(JSON.stringify(corrupt))), /Invalid objects pool index/);
+});
+
+test('the EBR-89 fixture is derived from main with only the signed detail and sunset changes', async () => {
+  const original = JSON.parse(unpackSceneReference(await readFile('tests/fixtures/scene-a75e8db.json.gz')));
+  const actual = unpackSceneReference(await readFile('tests/fixtures/scene-ebr89.json.gz'));
+  const derived = JSON.stringify(createEbr89SceneFixture(original));
+  assert.equal(actual, derived);
+  assert.equal(Buffer.byteLength(actual), 8952665);
+  assert.equal(createHash('sha256').update(actual).digest('hex'), '1d6150783e457af98a1e2690ac64d7b6f29508612afcf60f72c57b0d2ac983d5');
+  const { snapshots } = JSON.parse(actual);
+  for (const snapshot of Object.values(snapshots)) {
+    assert.deepEqual(snapshot.objects.filter(({ name }) => name.startsWith('character-comb') || name.startsWith('character-wing-'))
+      .map(({ name }) => name), ['character-comb', 'character-comb-bump-1', 'character-comb-bump-2',
+      'character-comb-bump-3', 'character-wing-left', 'character-wing-right']);
+  }
+  assert.equal(snapshots.sunset.fog.density, 0.0129);
+  assert.equal(snapshots.sunset.objects.find(({ name }) => name === 'day-night-directional').light.intensity, 1.38);
+  assert.equal(unpackSceneReference(packSceneReference(actual)), actual);
 });

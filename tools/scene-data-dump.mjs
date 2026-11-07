@@ -7,11 +7,13 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { verifyBaselineArchive } from './baseline-archive.mjs';
+import { createEbr89SceneFixture } from './ebr89-scene-fixture.mjs';
 
 // The reference comes from verified clean main, never the implementation under
 // test. The dump deliberately excludes Three UUIDs.
 export const REFERENCE_SHA = 'a75e8db0bbd865df2000f030912bb6910258432c';
 export const REFERENCE_PATH = 'tests/fixtures/scene-a75e8db.json.gz';
+export const EBR89_REFERENCE_PATH = 'tests/fixtures/scene-ebr89.json.gz';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb760001;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -376,7 +378,9 @@ async function assertCleanMain(root) {
 }
 
 export async function compareSceneData(root = process.cwd()) {
-  const expected = unpackSceneReference(await readFile(resolve(root, REFERENCE_PATH)));
+  const original = unpackSceneReference(await readFile(resolve(root, REFERENCE_PATH)));
+  const expected = unpackSceneReference(await readFile(resolve(root, EBR89_REFERENCE_PATH)));
+  assertSameDump(JSON.stringify(createEbr89SceneFixture(JSON.parse(original))), expected, 'EBR-89 fixture');
   const actual = JSON.stringify(await captureSceneData(root));
   assertSameDump(expected, actual, 'Candidate scene');
   return { bytes: Buffer.byteLength(expected), sha256: hash(Buffer.from(expected)), snapshots: Object.keys(JSON.parse(expected).snapshots) };
@@ -399,10 +403,10 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/scene-data-du
     const expected = unpackSceneReference(await readFile(REFERENCE_PATH));
     assertSameDump(expected, JSON.stringify(await captureSceneData(root)), 'Clean main recapture');
     const result = await compareSceneData();
-    console.log(`Clean main recapture and candidate both match ${REFERENCE_SHA}: ${result.snapshots.length} snapshots, ${result.bytes} bytes, SHA-256 ${result.sha256}`);
+    console.log(`Clean main matches ${REFERENCE_SHA}; candidate matches the derived EBR-89 fixture: ${result.snapshots.length} snapshots, ${result.bytes} bytes, SHA-256 ${result.sha256}`);
   } else if (!args.length) {
     const result = await compareSceneData();
-    console.log(`Scene dump matches ${REFERENCE_SHA}: ${result.snapshots.length} snapshots, ${result.bytes} bytes, SHA-256 ${result.sha256}`);
+    console.log(`Scene dump matches the EBR-89 fixture derived from ${REFERENCE_SHA}: ${result.snapshots.length} snapshots, ${result.bytes} bytes, SHA-256 ${result.sha256}`);
   } else {
     throw new Error('Usage: node tools/scene-data-dump.mjs [--write-reference|--against-main <clean-main-archive-or-worktree>]');
   }

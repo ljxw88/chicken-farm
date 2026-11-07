@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ART_SLOTS } from '../content/slots';
 import { PLAYER_GEOMETRY } from '../content/playerGeometry';
+import { createCharacterDetails } from './createCharacterDetails';
 
 export const CHARACTER_RADIUS = PLAYER_GEOMETRY.radius;
 const BODY_LENGTH = PLAYER_GEOMETRY.bodyLength;
@@ -77,6 +78,7 @@ export function createCharacter() {
   const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
   body.position.y = CHARACTER_RADIUS + BODY_LENGTH / 2;
   character.add(body);
+  createCharacterDetails(body);
 
   // A little face makes the direction of travel visible.
   const eyeGeometry = new THREE.SphereGeometry(...PLAYER_GEOMETRY.eye);

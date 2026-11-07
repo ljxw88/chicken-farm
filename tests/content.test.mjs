@@ -88,6 +88,19 @@ test('content and slots are plain finite JSON data with separate dimensions and 
   assert.deepEqual(BEEHIVE_FOOTPRINT, { halfWidth: 0.35, halfDepth: 0.35 });
 });
 
+test('the signed sunset warmth lives in the lighting slots without changing the other anchors', () => {
+  assert.deepEqual(ART_SLOTS.light.sunset, {
+    sky: 0xf0a878, fog: 0xe89870, fogDensity: 0.0129, ambient: 0xeadbc8, ambientIntensity: 0.08,
+    hemisphereSky: 0xe8dec6, hemisphereGround: 0xb5b99a, hemisphereIntensity: 0.2,
+    directional: 0xffeddb, directionalIntensity: 1.38, shadowOpacity: 0.22, nightLights: 0,
+  });
+  assert.deepEqual(DAY_NIGHT_PHASES.find(({ name }) => name === 'sunset'),
+    { name: 'sunset', ...ART_SLOTS.light.sunset, shadowOffset: 0.48 });
+  assert.deepEqual(DAY_NIGHT_PHASES.filter(({ name }) => name !== 'sunset')
+    .map(({ name, fogDensity, directionalIntensity }) => [name, fogDensity, directionalIntensity]),
+  [['morning', 0.012, 2.35], ['daytime', 0.006, 1.8], ['night', 0.02, 0.52]]);
+});
+
 test('placement asset IDs resolve only through known render factories', () => {
   assert.equal(createPlacementAsset('fence').name, 'placement-fence-visual');
   assert.equal(createPlacementAsset('plot').name, 'placement-plot-visual');
