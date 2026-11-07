@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readBible } from '../tools/assetgen/config.mjs';
+import { diagnosticEligibility } from '../tools/assetgen/diagnostic-preview.mjs';
 import { makePrompt, revisionFeedback } from '../tools/assetgen/generator.mjs';
 import { validateRecipe } from '../tools/assetgen/schema.mjs';
 
@@ -19,6 +20,10 @@ test('nested jitter is rejected with exact forbidden fields and the sibling-seed
   for (const field of ['seed', 'max', 'rot']) assert.ok(failures.some((failure) => failure.code === 'H1' && failure.message === `part left-lobe jitter: forbidden or unknown field ${field}`));
   assert.ok(failures.some((failure) => failure.code === 'H1' && failure.message.includes('integer seed on the part, beside jitter')));
   assert.ok(failures.some((failure) => failure.code === 'VARIANT_SEED'));
+  const preview = diagnosticEligibility(recipe, failures, bible.rules);
+  assert.equal(preview.safe, true);
+  assert.ok(preview.notes.some((note) => note.includes('requested seeded variation is not shown')));
+  assert.ok(validate(recipe).some((failure) => failure.code === 'H1'));
 });
 
 test('valid sibling seed works, while extra fields, arrays and excessive jitter still fail H1', () => {

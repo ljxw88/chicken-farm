@@ -65,15 +65,6 @@ runtime entries. A failed OpenCode call is retried with its
 error; exhausting generation retries writes a Herdr work order. `--work-order`
 emits it immediately without requiring Chromium or an OpenCode connection.
 
-An explicitly requested recipe-only trial can start from an earlier image
-critique using `--prior-review /absolute/path/to/stage/report.json`. The spec,
-bible, recipe and separate generator/critic receipts must match; the old critic
-verdict and fixes are supplied verbatim, never treated as a pass. The new run
-does not change the spec and still needs fresh verification and critique.
-`--prior-review` cannot be combined with `--loop-off` or `--work-order`.
-Optional `--review-plan /absolute/path/to/notes.md` adds a bounded human review
-plan to that trial; its bytes and hash are recorded as input, not approval.
-
 The render pack, report and transcripts go outside the repository, under
 `/home/michael/OpenBot/Shared/farm-evidence/EBR-85/<head>/runs/` by default.
 `ASSETGEN_EVIDENCE_DIR` and `ASSETGEN_RUN_DIR` select alternate locations. The
@@ -194,10 +185,6 @@ allowed invalid name or nested jitter field, the page says when the builder
 ignored jitter or the name remains invalid. Other malformed or unsafe
 candidates remain unavailable. `ASSETGEN_SHOWCASE_DIR`
 changes the output directory; existing showcases are not overwritten.
-The `ready for Look Dev P0 review` label requires the selected recipe's fresh
-offline implemented checks, authenticated separate image critic, scores and
-identity features to clear. It is not a `PASSED` bundle, signoff or a waiver of
-the explicitly unmeasured checks. Other candidates show their blocking reason.
 `tools/assetgen/write-p0-report.mjs` writes a separate evidence table with
 rounds, blockers, actual recipe seed use, reported tokens and cost.
 
