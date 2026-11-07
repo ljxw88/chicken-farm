@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { copyFile, cp, mkdir, readFile, realpath, symlink, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
-import { evidenceDirectory, readSpec, root } from './config.mjs';
+import { evidenceDirectory, goldenDirectory, readSpec, root } from './config.mjs';
 import { runOpenCode, sessionMetadata } from './opencode.mjs';
 
 const id = process.argv[2];
@@ -18,7 +18,7 @@ await mkdir(join(scratch, 'ebr83-85'), { recursive: true });
 await mkdir(directory); // Refuse to overwrite another attempt.
 await mkdir(out, { recursive: true });
 const { spec, path: specPath } = await readSpec(id);
-const ref = join(evidenceDirectory, 'ebr83-85', 'historical', id, 'b-reference-transparent.png');
+const ref = join(goldenDirectory, 'img2threejs', `${id}.png`);
 await copyFile(ref, join(directory, 'reference.png'));
 await copyFile(specPath, join(directory, 'spec.json'));
 await copyFile(join(root, 'docs/asset-style-bible.md'), join(directory, 'style-bible.md'));

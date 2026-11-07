@@ -14,6 +14,7 @@ test('verifier remeasures a changed signed fence and refuses edited calibration 
   for (const entry of await readdir(join(root, 'tools/assetgen'), { withFileTypes: true })) {
     if (entry.isFile()) await cp(join(root, 'tools/assetgen', entry.name), join(copy, 'tools/assetgen', entry.name));
   }
+  await cp(join(root, 'tools/assetgen/golden'), join(copy, 'tools/assetgen/golden'), { recursive: true });
   for (const name of ['asset-style-bible.md', 'asset-lookdev-brief.md']) await cp(join(root, 'docs', name), join(copy, 'docs', name));
   for (const name of ['package.json', 'package-lock.json', 'tsconfig.json']) await cp(join(root, name), join(copy, name));
   await symlink(join(root, 'node_modules'), join(copy, 'node_modules'));

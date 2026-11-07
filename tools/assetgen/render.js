@@ -17,7 +17,7 @@ if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id || '')) throw new Error('Invalid asset
 let recipe = window.__assetForgeFixture;
 const signedType = window.__assetForgeSigned;
 if (!recipe && !signedType) {
-  const response = await fetch(`/tools/assetgen/runs/${id}/candidate.json?t=${Date.now()}`);
+  const response = await fetch(`/tools/assetgen/golden/historical/${id}.json?t=${Date.now()}`);
   if (!response.ok) throw new Error(`Cannot load candidate: ${response.status}`);
   recipe = await response.json();
 }

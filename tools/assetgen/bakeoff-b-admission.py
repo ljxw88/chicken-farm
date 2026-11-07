@@ -2,6 +2,7 @@
 """Run installed img2threejs reference admission without copying its code."""
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -15,9 +16,14 @@ from check_reference_admission import check_admission  # type: ignore[import-not
 
 results = {}
 for name in ("barrel", "hay-bale", "round-oak"):
-    image = root / "evidence/assetgen/ebr83-85/historical" / name / "b-reference-transparent.png"
+    image = root / "tools/assetgen/golden/img2threejs" / f"{name}.png"
     results[name] = check_admission(image)
-output = root / "evidence/assetgen/ebr83-85/img2threejs/reference-admission.json"
+try:
+    head = subprocess.check_output(["git", "rev-parse", "--short=7", "HEAD"], cwd=root, text=True, stderr=subprocess.DEVNULL).strip()
+except (OSError, subprocess.CalledProcessError):
+    head = "unversioned"
+evidence = Path(os.environ.get("ASSETGEN_EVIDENCE_DIR", Path.home() / "OpenBot/Shared/farm-evidence/EBR-85" / head))
+output = evidence / "ebr83-85/img2threejs/reference-admission.json"
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(results, indent=2))

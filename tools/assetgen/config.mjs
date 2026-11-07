@@ -1,15 +1,32 @@
 import { readFile, readdir } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const specDirectory = join(root, 'tools/assetgen/specs');
-// Preserve the prior pre-EBR-80 bake-off and permit isolated loop-off runs.
-export const runDirectory = process.env.ASSETGEN_RUN_DIR ? resolve(process.env.ASSETGEN_RUN_DIR) : join(root, 'tools/assetgen/runs-ebr83-85');
-export const evidenceDirectory = process.env.ASSETGEN_EVIDENCE_DIR ? resolve(process.env.ASSETGEN_EVIDENCE_DIR) : join(root, 'evidence/assetgen');
+export const goldenDirectory = join(root, 'tools/assetgen/golden');
+let head = 'unversioned';
+try { head = execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
+catch { /* Standalone fixture copies need no git checkout. */ }
+const evidenceRoot = join(homedir(), 'OpenBot/Shared/farm-evidence/EBR-85');
+export const evidenceDirectory = process.env.ASSETGEN_EVIDENCE_DIR ? resolve(process.env.ASSETGEN_EVIDENCE_DIR) : join(evidenceRoot, head);
+export const runDirectory = process.env.ASSETGEN_RUN_DIR ? resolve(process.env.ASSETGEN_RUN_DIR) : join(evidenceDirectory, 'runs');
+export const archiveDirectory = process.env.ASSETGEN_ARCHIVE_DIR ? resolve(process.env.ASSETGEN_ARCHIVE_DIR) : join(evidenceRoot, 'pr21-tracked');
 export const biblePath = join(root, 'docs/asset-style-bible.md');
 export const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const categories = ['prop', 'flora', 'building', 'terrain'];
+
+/** Prefer a fresh probe; a malformed current probe must not fall back to a pass. */
+export async function readVisionProbe() {
+  try { return JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe-ebr83-85/result.json'), 'utf8')); }
+  catch (error) {
+    if (error.code !== 'ENOENT') return null;
+    try { return JSON.parse(await readFile(join(goldenDirectory, 'vision-probe.json'), 'utf8')); }
+    catch { return null; }
+  }
+}
 
 export async function readBible() {
   const text = await readFile(biblePath, 'utf8');

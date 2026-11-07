@@ -10,9 +10,10 @@ bake-off candidates are **not** signed, bundled, or placed in the game.
 
 ## Image capability test
 
-The pre-EBR-80 probe passed three blinded dominant-colour PNGs; its historical
-evidence remains in `evidence/assetgen/vision-probe/`. The current probe writes
-`evidence/assetgen/vision-probe-ebr83-85/` and records the actual model ID.
+The pre-EBR-80 probe passed three blinded dominant-colour PNGs. Historical
+images and transcripts are in the external `pr21-tracked/evidence/assetgen/`
+archive. `tools/assetgen/golden/vision-probe.json` is the retained capability
+input; a fresh probe writes under `ASSETGEN_EVIDENCE_DIR` and takes precedence.
 On 2026-11-06, `opencode/crouton-alpha-free` answered all three correctly.
 Rerun it through the host heavy wrapper. A colour probe does not prove reliable
 artistic judgment. If it fails, is disabled, or is missing, the forge
@@ -50,13 +51,15 @@ runtime entries. A failed OpenCode call is retried with its
 error; exhausting generation retries writes a Herdr work order. `--work-order`
 emits it immediately without requiring Chromium or an OpenCode connection.
 
-The render pack and SHA-256 frame manifest, contact sheet, recipe, hard-check
-report, prompts and separate model transcripts live under
-`runs-ebr83-85/<id>/round-N/stage-<name>/`. The best candidate and final
-report are in `runs-ebr83-85/<id>/best.json` and `final.json`. The old
-pre-EBR-80 `runs/` is retained separately. `ASSETGEN_RUN_DIR` selects an
-alternate location without overwriting either. Token usage/cost is read from
-OpenCode's session API when available; unknown cost is not estimated.
+The render pack, report and transcripts go outside the repository, under
+`/home/michael/OpenBot/Shared/farm-evidence/EBR-85/<head>/runs/` by default.
+`ASSETGEN_EVIDENCE_DIR` and `ASSETGEN_RUN_DIR` select alternate locations. The
+old runs and all review outputs are archived at
+`/home/michael/OpenBot/Shared/farm-evidence/EBR-85/pr21-tracked/`; set
+`ASSETGEN_ARCHIVE_DIR` if the archive is elsewhere. Only the three historical
+recipes and three img2threejs input PNGs needed by the tools remain under
+`tools/assetgen/golden/`; they are not approved runtime assets. Token usage/cost
+is session-reported when available; unknown cost is not estimated.
 
 ## Recipe and external QA fixture schema
 

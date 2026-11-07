@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import * as THREE from 'three';
-import { evidenceDirectory, readBible, readSpec, root } from './config.mjs';
+import { evidenceDirectory, goldenDirectory, readBible, readSpec, root } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { createVisualRunner } from './visual.mjs';
 import { verifierSourceHash } from './bundle.mjs';
@@ -47,9 +47,9 @@ try {
   const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
   for (const id of ['barrel', 'hay-bale', 'round-oak']) {
     const { spec } = await readSpec(id);
-    const previous = JSON.parse(await readFile(join(root, 'tools/assetgen/runs', id, 'best.json'), 'utf8'));
-    const hard = inspectRecipe(previous.recipe, spec, bible.rules, { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS });
-    const display = displayRecipe(previous.recipe);
+    const previous = JSON.parse(await readFile(join(goldenDirectory, 'historical', `${id}.json`), 'utf8'));
+    const hard = inspectRecipe(previous, spec, bible.rules, { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS });
+    const display = displayRecipe(previous);
     const output = join(evidenceDirectory, 'ebr83-85', previewDir, id);
     await mkdir(output, { recursive: true });
     if (process.argv.includes('--references-only')) {

@@ -1,5 +1,9 @@
 # Asset Forge bake-off — preliminary, incomplete
 
+Historical reports, screenshots, transcripts and run records are stored under
+`/home/michael/OpenBot/Shared/farm-evidence/EBR-85/pr21-tracked/` (the archive).
+The paths mentioned below are relative to that archive, not this checkout.
+
 ## EBR-83–85 continuation on main 5d9ba48
 
 **Still blocked; no winner can be chosen.** After EBR-80 was merged, the
@@ -19,8 +23,8 @@ model was generated. The per-asset 30-minute B limit was not consumed.
 | Hay bale | Blocked: 3 failed attempts, 1.97s, no recipe/score | Blocked: 1 attempt, 1.14s, no recipe/score | Session returned 429 in 1.0s; 0 input/output tokens reported | No score / unavailable |
 | Round oak | Blocked: 1 attempt, 1.23s, no recipe/score | Blocked: 1 attempt, 1.22s, no recipe/score | Session returned 429 in 1.2s; 0 input/output tokens reported | No score / unavailable |
 
-The six attempts are preserved under `tools/assetgen/runs-ebr83-85/` and
-`runs-ebr83-85-off/`; `final.json` records rounds, time, status, and
+The six attempts are preserved in the archive under `tools/assetgen/runs-ebr83-85/`
+and `tools/assetgen/runs-ebr83-85-off/`; `final.json` records rounds, time, status, and
 `visual critique not run`. The first four attempts did not preserve the 429
 stdout; the OpenCode server reported the quota error and the runner was fixed
 to retain it. The oak attempts include the actual 429 events. No output token
@@ -30,11 +34,9 @@ were re-rendered under EBR-80 on transparent backgrounds and all three passed
 img2threejs's technical admission check. They are not independent references
 and remain a bias even after quota recovery. Without independent B models, comparable scores, and human
 review, recommending a winner would be misleading.
-The three B attempt records and admitted transparent inputs are under
-[`evidence/assetgen/ebr83-85/img2threejs/`](../evidence/assetgen/ebr83-85/img2threejs/).
-The review layouts for [barrel](../evidence/assetgen/ebr83-85/comparisons/barrel-blocked.png),
-[hay](../evidence/assetgen/ebr83-85/comparisons/hay-bale-blocked.png) and
-[oak](../evidence/assetgen/ebr83-85/comparisons/round-oak-blocked.png) explicitly
+The three B attempt records and admitted transparent inputs are in the archive's
+`evidence/assetgen/ebr83-85/img2threejs/`. The review layouts for barrel, hay
+and oak in `evidence/assetgen/ebr83-85/comparisons/` explicitly
 show **NO B MODEL** alongside A's historical sheet; they are not B contact sheets.
 
 For Look Dev's P0-only review, **historical** loop outputs (not new runs and
@@ -42,9 +44,9 @@ not shippable assets) were re-rendered with the merged EBR-80 lights:
 
 | Historical candidate | New deterministic status | EBR-80 contact / 320×180 silhouette / scale composite |
 | --- | --- | --- |
-| Barrel | FAIL H1: old 12/16-segment geometry exceeds the new 6–8-segment vocabulary; further geometry checks not run. Five-phase visual check reports 25 S2 and 3 estimated A9 failures. | [Sheet](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/composite-daytime.png) |
-| Hay bale | FAIL: old `bevelBox` is outside the PM vocabulary; a lower-trust custom conversion was used **only for display**. Five-phase visual check reports 21 S2 and 3 estimated A9 failures. | [Sheet](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/composite-daytime.png) |
-| Round oak | Current hard checks clear; five-phase visual check reports 7 S2 and 3 estimated A9 failures. Its old loop hit five rounds, and visual critics disagreed, so it remains `needs-human`. | [Sheet](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/sheet.png) · [silhouette](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/silhouette-grass-045.png) · [composite](../evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/composite-daytime.png) |
+| Barrel | FAIL H1: old 12/16-segment geometry exceeds the new 6–8-segment vocabulary; further geometry checks not run. Five-phase visual check reports 25 S2 and 3 estimated A9 failures. | Archive: `evidence/assetgen/ebr83-85/historical-final-6d49d0e/barrel/` |
+| Hay bale | FAIL: old `bevelBox` is outside the PM vocabulary; a lower-trust custom conversion was used **only for display**. Five-phase visual check reports 21 S2 and 3 estimated A9 failures. | Archive: `evidence/assetgen/ebr83-85/historical-final-6d49d0e/hay-bale/` |
+| Round oak | Current hard checks clear; five-phase visual check reports 7 S2 and 3 estimated A9 failures. Its old loop hit five rounds, and visual critics disagreed, so it remains `needs-human`. | Archive: `evidence/assetgen/ebr83-85/historical-final-6d49d0e/round-oak/` |
 
 On the fresh renders, minimum daytime changed-pixel counts are barrel 51,
 hay 57 and oak 195; the numeric silhouette test is not semantic recognition.
@@ -99,9 +101,9 @@ Do not select a winner from this incomplete trial.
 
 | Asset | A recipe result | A preliminary evidence | B img2threejs result |
 | --- | --- | --- | --- |
-| Barrel | 3 rounds, 0/6 stages completed; 400 tris, 3 palette colours; H1–H10 and measured pixel floors clear, but original critic rejected the hoops. Corrected-sheet re-critiques disagree on the lid. `needs-human`. | [Original critic sheet](../evidence/assetgen/barrel-recipe-sheet.png); [corrected verification sheet](../evidence/assetgen/barrel-verified-sheet.png); [report](../tools/assetgen/runs/barrel/final.json) | Interrupted during local-spec search. Input admission rejected the synthetic reference; the session nevertheless marked admission done. No B model or sheet. |
-| Hay bale | 3 rounds, 0/6 stages completed; 76 tris, 3 palette colours; H1–H10 and measured pixel floors clear, but the original critic rejected readability. Corrected-sheet re-critiques disagree on bands/ends. `needs-human`. | [Original critic sheet](../evidence/assetgen/hay-bale-recipe-sheet.png); [corrected verification sheet](../evidence/assetgen/hay-bale-verified-sheet.png); [report](../tools/assetgen/runs/hay-bale/final.json) | Interrupted at reference admission. No B model or sheet. |
-| Round oak | 5 rounds, 3/6 stages completed; best material-stage candidate has 88 tris, 4 palette colours and passes H1–H10 and measured pixel floors. Corrected-sheet re-critiques disagree on the foliage tiers. `needs-human`. | [Corrected verification sheet](../evidence/assetgen/round-oak-verified-sheet.png); [original critic sheet](../evidence/assetgen/round-oak-recipe-sheet.png); [report](../tools/assetgen/runs/round-oak/final.json) | Not started before B time box expired. |
+| Barrel | 3 rounds, 0/6 stages completed; 400 tris, 3 palette colours; H1–H10 and measured pixel floors clear, but original critic rejected the hoops. Corrected-sheet re-critiques disagree on the lid. `needs-human`. | Archive: `evidence/assetgen/barrel-*-sheet.png`; `tools/assetgen/runs/barrel/final.json` | Interrupted during local-spec search. Input admission rejected the synthetic reference; the session nevertheless marked admission done. No B model or sheet. |
+| Hay bale | 3 rounds, 0/6 stages completed; 76 tris, 3 palette colours; H1–H10 and measured pixel floors clear, but the original critic rejected readability. Corrected-sheet re-critiques disagree on bands/ends. `needs-human`. | Archive: `evidence/assetgen/hay-bale-*-sheet.png`; `tools/assetgen/runs/hay-bale/final.json` | Interrupted at reference admission. No B model or sheet. |
+| Round oak | 5 rounds, 3/6 stages completed; best material-stage candidate has 88 tris, 4 palette colours and passes H1–H10 and measured pixel floors. Corrected-sheet re-critiques disagree on the foliage tiers. `needs-human`. | Archive: `evidence/assetgen/round-oak-*-sheet.png`; `tools/assetgen/runs/round-oak/final.json` | Not started before B time box expired. |
 
 For A, barrel's smallest measured daytime silhouette across fixed views and
 backgrounds is 58 pixels; hay bale's is 59; oak's is 188. Those floors and a
@@ -126,7 +128,7 @@ At equal scores the best-of selector now prefers the later equally clean stage;
 oak was transparently reselected from blockout to its material-stage candidate.
 The barrel was scored before the later cap on critic-blocked candidates;
 its numeric score is historical and is **not comparable** with the other two.
-The review-only [`bakeoff-manifest.json`](../tools/assetgen/bakeoff-manifest.json)
+The archived review-only `tools/assetgen/bakeoff-manifest.json`
 contains the three candidate hashes and `needs-human` statuses; the runtime
 registry remains empty.
 
@@ -152,7 +154,7 @@ future, separately authorised retry by binding a writable cache directory;
 the rejected input image also needs an independently sourced, segmentable
 reference. No workaround was used after the time box. Sanitised call traces,
 state and the two A-derived references are in
-[`evidence/assetgen/img2threejs/`](../evidence/assetgen/img2threejs/); full
+the archive's `evidence/assetgen/img2threejs/`; full
 upstream code and raw tool-response transcripts are not copied into the repo.
 
 ## Checker acceptance still open
@@ -166,7 +168,7 @@ all pass the new strict rules: old fence/coop details violate the 0.3-unit
 readable-face floor; the tree has a transparent contact shadow; the tree and
 coop contain near-coplanar contact pairs (not necessarily visible z-fighting);
 and the tread uses interpolated colours. See
-[`signed-fixtures.json`](../evidence/assetgen/signed-fixtures.json). These
+the archive's `evidence/assetgen/signed-fixtures.json`. These
 are signed legacy references, not automatic exemptions for new recipes;
 QA and Look Dev must decide how to reconcile the golden-fixture requirement.
 S1 rendered palette distance, S3 three-step values, S5 night glow and S7 style

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, writeFile, copyFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { evidenceDirectory, listSpecs, readBible, readSpec, recipePath, root, runDirectory } from './config.mjs';
+import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
 import { createVisualRunner } from './visual.mjs';
@@ -78,8 +78,7 @@ async function setup() {
     const calibration = await runner.calibration(bible.rules);
     const { buildRecipe } = await runner.server.ssrLoadModule('/src/assets/buildRecipe.ts');
     const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
-    let probe = null;
-    try { probe = JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe-ebr83-85/result.json'), 'utf8')); } catch { /* no probe */ }
+    const probe = await readVisionProbe();
     return { bible, runner, calibration, environment: { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS }, probe };
   } catch (error) { await runner.close(); throw error; }
 }

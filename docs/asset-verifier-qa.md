@@ -1,8 +1,9 @@
 # EBR-85 verifier coverage and limits
 
 This is Engineer's self-test, **not** independent QA acceptance. Look Dev's
-art verdict and QA's game gate apply only to an exact tested SHA. See
-`DELIVER-EBR83-85.txt` for the source tested and whether HEAD later moved.
+art verdict and QA's game gate apply only to an exact tested SHA. Historical
+handoffs and outputs are archived outside git under
+`/home/michael/OpenBot/Shared/farm-evidence/EBR-85/pr21-tracked/`.
 
 | QA item | Current status and boundary |
 | --- | --- |
@@ -42,8 +43,8 @@ stair tread. Each ran 24 jittered yaws; interior sampled pixels were
 changes. The corresponding 2,894 / 2,255 / 1,163 / 1,718 excluded edge
 pixels are **not** asserted flicker-free. Analytic overlaps, signed legacy
 materials and signed-fence low-area side silhouettes remain printed warnings.
-The report and fixed frames are under
-[`evidence/assetgen/ebr83-85/signed-head-6d49d0e/`](../evidence/assetgen/ebr83-85/signed-head-6d49d0e/).
+The report and fixed frames are under the archive's
+`evidence/assetgen/ebr83-85/signed-head-6d49d0e/`.
 The raw log names its original `/tmp` directory; the corresponding complete
 frame folders were copied unchanged into the evidence directory above.
 Any later commit changes HEAD; independent QA must retest the final tip.

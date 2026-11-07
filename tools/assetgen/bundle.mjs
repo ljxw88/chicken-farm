@@ -30,6 +30,7 @@ export async function verifierSourceHash({ includeCalibration = true, readSource
     'tools/assetgen/schema.mjs', 'tools/assetgen/geometry.mjs', 'tools/assetgen/render.js', 'tools/assetgen/color.js',
     'tools/assetgen/visual.mjs', 'tools/assetgen/bundle.mjs', 'tools/assetgen/config.mjs', 'tools/assetgen/cli.mjs',
     'tools/assetgen/fixtures.mjs', 'tools/assetgen/signed-fixtures.mjs', 'tools/assetgen/signed-baselines.json', 'tools/assetgen/a9-calibration.mjs',
+    'tools/assetgen/golden/vision-probe.json',
     'tools/assetgen/generator.mjs', 'docs/asset-lookdev-brief.md', 'package-lock.json',
     'src/scene/createScene.ts', 'src/scene/createIsland.ts', 'src/scene/createFarmLayout.ts', 'src/scene/createIsometricCamera.ts',
     'src/scene/farmPalette.ts', 'src/scene/farmBuildingMaterials.ts', 'src/scene/farmBuildingSpecs.ts',
