@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pair QA's full matrix with same-pose rain-hidden lighting captures.
 
-Usage: python3 evidence/EBR-92/prepare-paired-qa.py before|after
+Usage: python3 evidence/EBR-92/prepare-paired-qa.py before|after|merged-6daf042
 The unmodified gfx-matrix frames are retained except for the crisp-away
 measurement frames. Symlinks keep the original raw captures available too.
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 
 root = Path('evidence/EBR-92')
 label = sys.argv[1]
-assert label in ('before', 'after')
+assert label in ('before', 'after', 'merged-6daf042')
 raw = root / f'matrix-{label}'
 capture = root / label
 paired = root / f'paired-{label}'

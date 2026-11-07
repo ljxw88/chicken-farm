@@ -16,15 +16,18 @@ if (!url || !label) throw new Error('Usage: capture.mjs <Vite URL> <label>');
 // not alter source, lights, weather or the crown gradient.
 const trialGain = process.env.EBR92_TEST_BASE_GAIN ? Number(process.env.EBR92_TEST_BASE_GAIN) : undefined;
 const onlyDay = process.env.EBR92_ONLY_DAY === '1';
-const out = join('evidence/EBR-92', label);
+const onlyGate = process.env.EBR92_ONLY_GATE === '1';
+const out = join(process.env.EBR92_OUTPUT_ROOT || 'evidence/EBR-92', label);
 for (const sub of ['gate-g', 'gate-g-bodyless', 'frames', 'bodyless', 'crisp', 'crisp-bodyless']) {
   await mkdir(join(out, sub), { recursive: true });
 }
 const browser = await chromium.launch({ headless: true,
   args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
 const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const sourceStatus = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all', '--',
+  'src', 'tests', 'tools', 'index.html', 'package.json', 'package-lock.json'], { encoding: 'utf8' }).trim();
 const report = { label, base: url, browser: browser.version(), viewport: [1280, 720], dpr: 1,
-  sourceSha, seed: '0xeb730001', trialBaseGain: trialGain, gate: {}, phases: {}, errors: [] };
+  sourceSha, sourceStatus, seed: '0xeb730001', trialBaseGain: trialGain, gate: {}, phases: {}, errors: [] };
 
 async function open(search) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
@@ -158,7 +161,7 @@ try {
     ['sunset-rain', 'sunset', 'rain'], ['night-clear', 'night', 'clear'],
     ['night-cloudy', 'night', 'cloudy'], ['night-rain', 'night', 'rain'],
   ];
-  for (const [name, phase, weather] of phases) {
+  for (const [name, phase, weather] of onlyGate ? [] : phases) {
     if (onlyDay && phase !== 'daytime') continue;
     const { context, page, cdp, errors } = await open(`?phase=${phase}&weather=${weather}`);
     try {
