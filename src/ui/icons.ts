@@ -34,9 +34,11 @@ export const PHASE_ARTWORK: Record<SkyPhase, string> = {
   night: artwork(`<path d="M78 31a29 29 0 1 0 11 51A29 29 0 0 1 78 31Z" fill="#dfe8ff"/>${dots('<circle cx="60" cy="59" r="40"/><path d="M12 105h96"/>')}`),
 };
 
+const FRONT_CLOUD = 'M34 77a18 18 0 0 1 1-36 24 24 0 0 1 43 6 16 16 0 0 1 4 30H34Z';
+
 export const WEATHER_ARTWORK: Record<SkyWeather, string> = {
   clear: PHASE_ARTWORK.daytime,
-  cloudy: artwork(`<circle cx="48" cy="45" r="17" fill="#fffdf2"/>${dots('<circle cx="48" cy="45" r="27"/><path d="M34 77a18 18 0 0 1 1-36 24 24 0 0 1 43 6 16 16 0 0 1 4 30H34ZM57 33a22 22 0 0 1 39 16 13 13 0 0 1-2 25M12 101h96"/>')}`),
+  cloudy: artwork(`<defs><mask id="sky-cloud-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120"><rect width="120" height="120" fill="white"/><path d="${FRONT_CLOUD}" fill="black"/></mask></defs><circle cx="48" cy="45" r="17" fill="#fffdf2" mask="url(#sky-cloud-cut)"/>${dots(`<circle cx="48" cy="45" r="27"/><path d="${FRONT_CLOUD}M57 33a22 22 0 0 1 39 16 13 13 0 0 1-2 25M12 101h96"/>`)}`),
   rain: artwork(`${dots('<path d="M31 65a17 17 0 0 1 1-34 24 24 0 0 1 45 5 15 15 0 0 1 3 29H31ZM36 75l-6 14M57 75l-6 14M78 75l-6 14M12 104h96"/>')}`),
 };
 
