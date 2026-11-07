@@ -10,13 +10,14 @@ const { createWeatherState, updateWeatherSystem } = await vite.ssrLoadModule('/s
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { createWeatherSystem } = await vite.ssrLoadModule('/src/weather/createWeatherSystem.ts');
 const { createStartupPhaseController, parseStartupOptions } = await vite.ssrLoadModule('/src/startupOptions.ts');
+const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 after(() => vite.close());
 
-function fixture(t, search = '') {
+function fixture(t, search = '', withCharacter = false) {
   const world = createEntityWorld();
   const environment = world.create({ dayNight: createDayNightState(), weather: createWeatherState() });
   const scene = new THREE.Scene();
-  const character = new THREE.Group();
+  const character = withCharacter ? createCharacter() : new THREE.Group();
   scene.add(character);
   const camera = new THREE.OrthographicCamera(-8, 8, 4.5, -4.5, 0.1, 100);
   camera.position.set(12, 15, 12);
@@ -32,7 +33,7 @@ function fixture(t, search = '') {
   const controller = createStartupPhaseController(cycle, startup.phase);
   if (startup.weather) weather.setWeather(startup.weather);
   t.after(weather.dispose);
-  return { world, environment, scene, cycle, weather, controller };
+  return { world, environment, scene, character, cycle, weather, controller };
 }
 
 test('every URL phase and weather pins the engine clock while weather reaches its requested state', (t) => {
@@ -99,4 +100,42 @@ test('engine weather reverses and crossfades continuously and drives the existin
   assert.deepEqual(f.weather.getWeather(), { mode: 'rain', rainAmount: 1, cloudyAmount: 0 });
   assert.throws(() => f.weather.setWeather('storm'), RangeError);
   assert.throws(() => updateWeatherSystem(f.world, -1), RangeError);
+});
+
+test('engine phase and weather systems preserve the signed character crown across transitions', (t) => {
+  const f = fixture(t, '?phase=daytime&weather=cloudy', true);
+  const body = f.character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+  const colors = body.geometry.getAttribute('color').array;
+  const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6, `${actual} != ${expected}`);
+  const check = (base, crown) => {
+    near(Math.min(...colors), base);
+    near(Math.max(...colors), crown);
+    assert.equal(body.material.color.getHex(), 0xffd477);
+    assert.equal(body.material.emissive.getHex(), 0);
+  };
+
+  check(1.08, 1.08 * 1.28);
+  updateWeatherSystem(f.world, 1.75);
+  f.weather.render(1.75);
+  check(1, 1.28); // Cloud retains the crown but not the extra base gain.
+  f.weather.setWeather('rain');
+  updateWeatherSystem(f.world, 0.875);
+  f.weather.render(0.875);
+  check(1.04, 1.04 * 1.28);
+  updateWeatherSystem(f.world, 0.875);
+  f.weather.render(0.875);
+  check(1.08, 1.08 * 1.28);
+
+  f.controller.setDayNightPhase('morning');
+  check(1, 1.15);
+  updateDayNightSystem(f.world, 9);
+  f.cycle.applyState();
+  check(1.04, 1.04 * 1.215);
+  updateDayNightSystem(f.world, 9);
+  f.cycle.applyState();
+  check(1.08, 1.08 * 1.28);
+  for (const phase of ['sunset', 'night', 'morning']) {
+    f.controller.setDayNightPhase(phase);
+    check(1, 1.15);
+  }
 });

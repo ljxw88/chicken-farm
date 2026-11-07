@@ -155,8 +155,17 @@ async function perform(fixture, action) {
   return { label: action.label, outcome, samples: [await page.evaluate(() => window.__ebr75Sample())] };
 }
 
-async function capture(fixture) {
-  await fixture.page.evaluate(() => window.__ebr75.composer.render(0));
+async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
+  const visibility = await fixture.page.evaluate(({ hideBody, hideRain }) => {
+    const { scene, character, composer } = window.__ebr75;
+    const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+    const rain = scene.getObjectByName('weather-rain');
+    const previous = { body: body.visible, rain: rain.visible };
+    if (hideBody) body.visible = false;
+    if (hideRain) rain.visible = false;
+    composer.render(0);
+    return previous;
+  }, { hideBody, hideRain });
   const cdp = await fixture.context.newCDPSession(fixture.page);
   try {
     const screenshot = async () => Buffer.from((await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
@@ -187,19 +196,45 @@ async function capture(fixture) {
     }
   } finally {
     await cdp.detach();
+    if (hideBody || hideRain) await fixture.page.evaluate((previous) => {
+      const { scene, character, composer } = window.__ebr75;
+      character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = previous.body;
+      scene.getObjectByName('weather-rain').visible = previous.rain;
+      composer.render(0);
+    }, visibility);
   }
 }
 
-async function recordScenario(browser, url, scenario, replayScript) {
+async function recordScenario(browser, url, scenario, replayScript, historical) {
   const fixture = await open(browser, url, scenario.search);
   const { page } = fixture;
   const script = [];
   const trace = [];
   const captures = {};
+  const bodylessCaptures = {};
+  const rainlessCaptures = {};
+  const bothHiddenCaptures = {};
+  const bodyShape = await page.evaluate(() => {
+    const body = window.__ebr75.character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+    const geometry = body.geometry;
+    return { position: body.position.toArray(), rotation: body.rotation.toArray(), scale: body.scale.toArray(),
+      positions: Array.from(geometry.getAttribute('position').array), normals: Array.from(geometry.getAttribute('normal').array),
+      indices: Array.from(geometry.index.array), material: { type: body.material.type, color: body.material.color.getHex(),
+        emissive: body.material.emissive.getHex(), roughness: body.material.roughness, metalness: body.material.metalness,
+        side: body.material.side, opacity: body.material.opacity, transparent: body.material.transparent,
+        vertexColors: body.material.vertexColors, shadeShader: body.material.onBeforeCompile.toString() } };
+  });
   let time = 0;
   async function run(action) {
     if (action.type !== 'capture') return perform(fixture, action);
     captures[action.label] = await capture(fixture);
+    bodylessCaptures[action.label] = await capture(fixture, { hideBody: true });
+    // The older EBR-75 reference predates EBR-88. Isolate its already-approved
+    // rain layer as well as the EBR-92 body, without allowing other changes.
+    if (historical && await page.evaluate(() => window.getWeather().rainAmount > 0)) {
+      rainlessCaptures[action.label] = await capture(fixture, { hideRain: true });
+      bothHiddenCaptures[action.label] = await capture(fixture, { hideBody: true, hideRain: true });
+    }
     return { label: action.label, outcome: null, samples: [await page.evaluate(() => window.__ebr75Sample())] };
   }
   async function emit(action) {
@@ -306,42 +341,79 @@ async function recordScenario(browser, url, scenario, replayScript) {
       }
     }
     assert.deepEqual(fixture.errors, []);
-    return { script, trace: canonical(trace), frames: captures };
+    return { script, trace: canonical(trace), frames: captures, bodylessFrames: bodylessCaptures,
+      rainlessFrames: rainlessCaptures, bothHiddenFrames: bothHiddenCaptures, bodyShape };
   } finally {
     await fixture.context.close();
   }
 }
 
-async function pixelDiff(page, reference, candidate) {
-  return page.evaluate(async ({ reference, candidate }) => {
+async function pixelDiff(page, frames) {
+  return page.evaluate(async (frames) => {
     async function decode(data) {
       const image = new Image();
       image.src = `data:image/png;base64,${data}`;
       await image.decode();
       return image;
     }
-    const [a, b] = await Promise.all([decode(reference), decode(candidate)]);
-    if (a.width !== b.width || a.height !== b.height) throw new Error('Frame dimensions differ');
+    const names = Object.keys(frames);
+    const images = await Promise.all(names.map((name) => decode(frames[name])));
+    const [a] = images;
+    if (images.some((image) => image.width !== a.width || image.height !== a.height)) throw new Error('Frame dimensions differ');
     const canvas = document.createElement('canvas');
     canvas.width = a.width;
     canvas.height = a.height;
     const context = canvas.getContext('2d', { willReadFrequently: true });
-    context.drawImage(a, 0, 0);
-    const original = context.getImageData(0, 0, a.width, a.height);
-    context.clearRect(0, 0, a.width, a.height);
-    context.drawImage(b, 0, 0);
-    const current = context.getImageData(0, 0, a.width, a.height);
+    const pixels = Object.fromEntries(images.map((image, index) => {
+      context.clearRect(0, 0, a.width, a.height);
+      context.drawImage(image, 0, 0);
+      return [names[index], context.getImageData(0, 0, a.width, a.height).data];
+    }));
+    const { reference, candidate, referenceBodyless, candidateBodyless, rawReference, rawCandidate,
+      referenceRainless, candidateRainless, referenceBothHidden, candidateBothHidden } = pixels;
     const diff = context.createImageData(a.width, a.height);
+    const rawDiff = context.createImageData(a.width, a.height);
+    const bodyMask = context.createImageData(a.width, a.height);
+    const rainMask = context.createImageData(a.width, a.height);
+    const effectMask = context.createImageData(a.width, a.height);
     let changedPixels = 0;
-    for (let i = 0; i < original.data.length; i += 4) {
-      const changed = original.data[i] !== current.data[i] || original.data[i + 1] !== current.data[i + 1] ||
-        original.data[i + 2] !== current.data[i + 2] || original.data[i + 3] !== current.data[i + 3];
+    let rawChangedPixels = 0;
+    let rawOutsideAllowedPixels = 0;
+    let outsideAllowedPixels = 0;
+    let hiddenChangedPixels = 0;
+    let rainlessChangedPixels = 0;
+    const differs = (x, y, i) => x[i] !== y[i] || x[i + 1] !== y[i + 1] || x[i + 2] !== y[i + 2] || x[i + 3] !== y[i + 3];
+    for (let i = 0; i < reference.length; i += 4) {
+      const changed = differs(reference, candidate, i);
+      const rawChanged = differs(rawReference, rawCandidate, i);
+      const body = differs(reference, referenceBodyless, i) || differs(candidate, candidateBodyless, i);
+      const effects = differs(rawReference, reference, i) || differs(rawCandidate, candidate, i);
+      const rain = Boolean(referenceRainless) && (differs(reference, referenceRainless, i) ||
+        differs(candidate, candidateRainless, i) || differs(referenceBodyless, referenceBothHidden, i) ||
+        differs(candidateBodyless, candidateBothHidden, i));
       if (changed) { changedPixels++; diff.data[i] = 255; diff.data[i + 2] = 255; }
-      diff.data[i + 3] = 255;
+      if (rawChanged) { rawChangedPixels++; rawDiff.data[i] = 255; rawDiff.data[i + 2] = 255; }
+      if (changed && !body && !rain) outsideAllowedPixels++;
+      if (rawChanged && !body && !rain && !effects) rawOutsideAllowedPixels++;
+      if (differs(referenceBothHidden || referenceBodyless, candidateBothHidden || candidateBodyless, i)) hiddenChangedPixels++;
+      if (referenceRainless && differs(referenceRainless, candidateRainless, i)) rainlessChangedPixels++;
+      if (body) bodyMask.data[i] = bodyMask.data[i + 1] = bodyMask.data[i + 2] = 255;
+      if (rain) rainMask.data[i] = rainMask.data[i + 1] = rainMask.data[i + 2] = 255;
+      if (effects) effectMask.data[i] = effectMask.data[i + 1] = effectMask.data[i + 2] = 255;
+      diff.data[i + 3] = rawDiff.data[i + 3] = bodyMask.data[i + 3] = rainMask.data[i + 3] = effectMask.data[i + 3] = 255;
     }
     context.putImageData(diff, 0, 0);
-    return { changedPixels, png: canvas.toDataURL('image/png').split(',')[1] };
-  }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
+    const png = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(bodyMask, 0, 0);
+    const bodyPng = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(rainMask, 0, 0);
+    const rainPng = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(rawDiff, 0, 0);
+    const rawPng = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(effectMask, 0, 0);
+    return { changedPixels, rawChangedPixels, rawOutsideAllowedPixels, outsideAllowedPixels, hiddenChangedPixels,
+      rainlessChangedPixels, png, rawPng, bodyPng, rainPng, effectPng: canvas.toDataURL('image/png').split(',')[1] };
+  }, Object.fromEntries(Object.entries(frames).map(([name, bytes]) => [name, bytes.toString('base64')])));
 }
 
 function assertReferenceCoverage(reference) {
@@ -427,10 +499,17 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
     const reference = {};
     const referenceFrames = {};
+    const referenceBodyless = {};
+    const referenceRainless = {};
+    const referenceBothHidden = {};
     for (const scenario of scenarios) {
-      const { frames, ...result } = await recordScenario(browser, baseline.url, scenario);
+      const { frames, bodylessFrames, rainlessFrames, bothHiddenFrames, ...result } =
+        await recordScenario(browser, baseline.url, scenario, undefined, historical);
       reference[scenario.name] = result;
       referenceFrames[scenario.name] = frames;
+      referenceBodyless[scenario.name] = bodylessFrames;
+      referenceRainless[scenario.name] = rainlessFrames;
+      referenceBothHidden[scenario.name] = bothHiddenFrames;
     }
     assertReferenceCoverage(reference);
     traceDir = await temporary('ebr75-reference-');
@@ -444,12 +523,14 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const mismatches = [];
     const visualResults = {};
     const rawVisualResults = {};
+    const visualIsolation = {};
     const expectedRainChanges = [];
+    const intendedBodyChanges = [];
     const unexpectedVisualChanges = [];
     const rawTraceDifferences = [];
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const scenario of scenarios) {
-      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script);
+      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script, historical);
       const expected = saved.scenarios[scenario.name].trace;
       for (let i = 0; i < actual.trace.length; i++) {
         if (!isDeepStrictEqual(actual.trace[i], expected[i])) rawTraceDifferences.push(`${scenario.name}:${actual.trace[i].label}`);
@@ -460,21 +541,45 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       const identical = index === -1 && actual.trace.length === expected.length;
       if (!identical) mismatches.push({ scenario: scenario.name, action: index, expected: comparedExpected[index], actual: comparedActual[index],
         expectedActions: expected.length, actualActions: actual.trace.length });
+      const shape = canonical(actual.bodyShape);
+      const referenceShape = saved.scenarios[scenario.name].bodyShape;
+      if (!isDeepStrictEqual(shape, referenceShape)) {
+        mismatches.push({ scenario: scenario.name, body: 'geometry, material or shade shader differs',
+          fields: Object.keys(shape).filter((key) => !isDeepStrictEqual(shape[key], referenceShape[key])) });
+      }
       results[scenario.name] = { actions: actual.trace.length,
         samples: actual.trace.reduce((sum, entry) => sum + entry.samples.length, 0), identical };
       for (const [name, frame] of Object.entries(actual.frames)) {
         const original = referenceFrames[scenario.name][name];
         assert.ok(original, `Missing reference frame: ${name}`);
-        const rawDiff = await pixelDiff(diffPage, original.image, frame.image);
-        const diff = await pixelDiff(diffPage, original.withoutEffects, frame.withoutEffects);
-        rawVisualResults[name] = rawDiff.changedPixels;
-        visualResults[name] = diff.changedPixels;
         const captured = expected.find((entry) => entry.label === name)?.samples[0];
         assert.ok(captured, `Missing reference snapshot: ${name}`);
+        const frames = { reference: original.withoutEffects, candidate: frame.withoutEffects,
+          rawReference: original.image, rawCandidate: frame.image,
+          referenceBodyless: referenceBodyless[scenario.name][name]?.withoutEffects,
+          candidateBodyless: actual.bodylessFrames[name]?.withoutEffects };
+        if (historical && captured.environment.weather.rainAmount > 0) {
+          frames.referenceRainless = referenceRainless[scenario.name][name]?.withoutEffects;
+          frames.candidateRainless = actual.rainlessFrames[name]?.withoutEffects;
+          frames.referenceBothHidden = referenceBothHidden[scenario.name][name]?.withoutEffects;
+          frames.candidateBothHidden = actual.bothHiddenFrames[name]?.withoutEffects;
+        }
+        assert.ok(Object.values(frames).every(Boolean), `Missing isolated render: ${name}`);
+        const diff = await pixelDiff(diffPage, frames);
+        // The signed look explicitly protects the morning, sunset and night
+        // anchors. Do not allow even body-only changes in those stills.
+        const protectedAnchor = /^url-(morning|sunset|night)-/.test(name) || name === 'weather-night-rain';
+        const protectedChangedPixels = protectedAnchor ? (frames.referenceRainless ? diff.rainlessChangedPixels : diff.changedPixels) : 0;
+        rawVisualResults[name] = diff.rawChangedPixels;
+        visualResults[name] = diff.changedPixels;
+        visualIsolation[name] = { rawOutsideAllowedPixels: diff.rawOutsideAllowedPixels,
+          outsideAllowedPixels: diff.outsideAllowedPixels, hiddenChangedPixels: diff.hiddenChangedPixels, protectedChangedPixels };
         if (diff.changedPixels && historical && captured.environment.weather.rainAmount > 0) expectedRainChanges.push(name);
-        else if (diff.changedPixels) unexpectedVisualChanges.push(name);
+        else if (diff.changedPixels) intendedBodyChanges.push(name);
+        if (diff.rawOutsideAllowedPixels || diff.outsideAllowedPixels || diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
         if (evidenceDir) {
-          for (const dir of ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff']) {
+          for (const dir of ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff',
+            'body-mask', 'rain-mask', 'effect-mask']) {
             await mkdir(join(evidenceDir, dir), { recursive: true });
           }
           await writeFile(join(evidenceDir, 'baseline', `${name}.png`), original.image);
@@ -482,7 +587,10 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
           await writeFile(join(evidenceDir, 'baseline-no-effects', `${name}.png`), original.withoutEffects);
           await writeFile(join(evidenceDir, 'candidate-no-effects', `${name}.png`), frame.withoutEffects);
           await writeFile(join(evidenceDir, 'diff', `${name}.png`), Buffer.from(diff.png, 'base64'));
-          await writeFile(join(evidenceDir, 'raw-diff', `${name}.png`), Buffer.from(rawDiff.png, 'base64'));
+          await writeFile(join(evidenceDir, 'raw-diff', `${name}.png`), Buffer.from(diff.rawPng, 'base64'));
+          await writeFile(join(evidenceDir, 'body-mask', `${name}.png`), Buffer.from(diff.bodyPng, 'base64'));
+          await writeFile(join(evidenceDir, 'rain-mask', `${name}.png`), Buffer.from(diff.rainPng, 'base64'));
+          await writeFile(join(evidenceDir, 'effect-mask', `${name}.png`), Buffer.from(diff.effectPng, 'base64'));
         }
       }
     }
@@ -494,13 +602,14 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       baselineSource: archiveRoot ? 'git archive' : 'clean worktree',
       referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
       excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
-      results, rawTraceDifferences, rawVisualResults, visualResults, expectedRainChanges, unexpectedVisualChanges, mismatches };
+      results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
+      expectedRainChanges, unexpectedVisualChanges, mismatches };
     if (evidenceDir) {
       await mkdir(evidenceDir, { recursive: true });
       await writeFile(join(evidenceDir, 'replay.json'), `${JSON.stringify(report, null, 2)}\n`);
     }
     assert.deepEqual(mismatches, [], 'Placement/environment replay differs from clean main');
-    assert.deepEqual(unexpectedVisualChanges, [], 'Additional non-rain placement/environment frames differ from clean main');
+    assert.deepEqual(unexpectedVisualChanges, [], 'Placement/environment frames differ outside the isolated body and historical rain');
     return report;
   } finally {
     await browser?.close();
