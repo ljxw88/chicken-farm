@@ -1,14 +1,34 @@
-EBR-70 — Look Dev sheep silhouette revision
+EBR-70 — sheepfold, merged with EBR-75 engine systems
 
 Branch: feat/ebr70-sheep-pen
-Accepted pen and revision parent: 8ce0cbe19d7c63e5c2608b28725ccb8e9b4700aa
-Clean-main comparison base: 5d9ba48f6bd9bfbc3974351b50d0ce89934380ff
+Pre-merge / published head: 76a2181a2bc90b793b7dc58e21cc062d17d13dd6
+Merged clean main: 6daf042ad85882f020268baf53fc92fb09e921ad
+Merge implementation/harness: 4843c6388f3b1cf97b1d3ab24fc7235240d935b1
 Tip SHA: run `git rev-parse HEAD`; a commit cannot embed its own hash. The
-tested implementation/harness SHA is 96d0084493bec20e2dc2171b75c238f5751caded,
-also recorded in the revision Gate reports. The final commit adds only evidence
-and this handoff. Any later head change
-requires fresh evidence and QA review. Local HEAD moved after the 8ce0cbe report;
-PR #22 was not edited or pushed and remains at its previous published head.
+tested merge source SHA is also recorded in the merge Gate reports. The final
+evidence/handoff commit adds no application or harness changes. No push or PR
+operation was performed for this merge.
+
+Merge wiring
+- EBR-75's engine owns the day/night and weather entities, their full-frame
+  systems, the placement adapter and the original update ordering. The lighting
+  adapter shares the engine day/night state; its existing night amount continues
+  to drive the unchanged sheep wool shader through the existing key light.
+- Both farm and sheepfold shadows receive the same phase/weather callback.
+  Sheep animation updates after the existing waterfall update on each frame.
+- The nine fence boxes, shelter box, two radius-0.4 sheep circles and the
+  non-walking placement reservation enter the shared obstacle array before the
+  character controller mirrors them into Miniplex obstacle entities. The
+  reservation blocks placement, not walking.
+- The sheepfold geometry, materials, palette, wool limiter, lights, shelter,
+  collision dimensions, seed and all other look constants remain unchanged.
+  See evidence/EBR-70/merge-6daf042/README.md for the new checks and captures.
+- The original EBR-75 real-time QA result in DELIVER-EBR75.txt was not passing;
+  the deterministic merge comparisons do not turn that historical result into
+  a QA PASS. Hardware GPU, physical-device and Look Dev sign-off remain open.
+
+The measurements and older evidence below describe the pre-merge Look Dev
+revision at 76a2181; they are retained as historical context.
 
 Open / try
 - The dev server is bound to http://100.88.150.21:5213/ with --strictPort.
@@ -19,8 +39,8 @@ Open / try
 - Sheep phases are deterministic via ?seed=<integer>; absent/invalid seeds use
   0xeb700001 (decimal 3949985793). The existing weather RNG is not changed by
   this URL parameter; the evidence harness seeds rain separately as parity does.
-- Open evidence/EBR-70/sheep-revision/README.md for the revised frames, 4×
-  unzoomed gameplay crops, per-part pixel counts, masks and replay.
+- Open evidence/EBR-70/merge-6daf042/README.md for current captures and masks;
+  sheep-revision/ retains the previous 4× crops and historical comparisons.
 - Source: src/scene/sheep/createSheep.ts and src/scene/sheepfold/; assembly and
   the shared obstacle hookup are in src/main.ts.
 
@@ -39,11 +59,8 @@ Visible-change ledger
 - The pen, lean-to, all shadows, collision circles, placement behavior, HUD,
   lights and other scenery are unchanged from 8ce0cbe. No new light, emissive
   surface or ground patch was added.
-- The only changed `src/` file relative to 8ce0cbe is
-  src/scene/sheep/createSheep.ts; other code edits are tests/evidence tooling.
-- EBR-75 rebase note: the scene assembly adds nine signed fence collisions, one
-  shelter box, two sheep circles and a placement-only box (blocksWalking=false).
-  Preserve the existing fence builder/collision reuse, shadow callback and seed.
+- Before this merge, the only changed `src/` file relative to 8ce0cbe was
+  src/scene/sheep/createSheep.ts; EBR-75 subsequently changed engine wiring.
 
 Measured design approximations / deviations
 - The nominal center is (-4.7, 4.6), shifted +0.5 X from the requested center.
@@ -100,7 +117,7 @@ Actual 320 × 180 pixel-pass visibility
   night    1       35–36   20–21   21–22
   night    2       33      13–19   11–12
 
-Intended pixel changes
+Historical intended pixel changes (pre-merge at 76a2181)
 - Against 8ce0cbe, only the old/new sheep silhouettes and their wool shading may
   change, including normal occlusion and frosted-HUD compositing. Exact white-on-
   black 1280 × 720 masks are in evidence/EBR-70/mask/sheep-revision/, one per
@@ -149,7 +166,7 @@ Intended pixel changes
   because its frosted backdrop reflects the new scene. In placement-rejected,
   5,463 pixels belong to the feedback mask, including 3,511 within control bounds.
 
-Verification and remaining limitations
+Historical verification and remaining limitations (pre-merge at 76a2181)
 - See evidence/EBR-70/sheep-revision/README.md and its logs/JSON for commands,
   images, part counts, sampled motion and phase/weather measurements.
 - `heavy` below means /home/michael/OpenBot/Shared/farm-tools/heavy; before each

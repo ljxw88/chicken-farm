@@ -1,5 +1,8 @@
 # EBR-70 evidence
 
+For the EBR-75 merge and comparisons against clean `6daf042` and the exact
+pre-merge head, see [`merge-6daf042/`](merge-6daf042/README.md).
+
 **Historical:** the root-level frames and logs document the original
 `8ce0cbe` submission. For the Look Dev sheep revision, use
 [`sheep-revision/`](sheep-revision/README.md) and the new masks under

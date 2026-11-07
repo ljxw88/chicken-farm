@@ -1,5 +1,10 @@
 # EBR-70 sheep silhouette revision
 
+This is the historical pre-merge record at `76a2181`. For verification after
+merging EBR-75, see [`../merge-6daf042/`](../merge-6daf042/README.md). The
+commands below describe the earlier run; use the harness at that historical
+commit rather than overwriting these files from a newer head.
+
 The 1280×720 `browser/visibility-*-full.png` images use the ordinary, unzoomed
 game camera, DPR 1 and the actual 320×180 pixel pass. The `*-sheep-*-4x.png`
 images are nearest-neighbour enlargements of crops from those same frames.
