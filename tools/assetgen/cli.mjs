@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
+import { fitGeneratedRecipe } from './fit-generated.mjs';
 import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
 import { createVisualRunner } from './visual.mjs';
 import { isBetterCandidate } from './scoring.mjs';
@@ -158,7 +159,9 @@ async function newAsset(input, args) {
         round++; continue;
       }
       const old = current;
-      current = generated.recipe;
+      const fitted = fitGeneratedRecipe(generated.recipe, spec, bible.rules, environment);
+      current = fitted.recipe;
+      if (fitted.normalization) await writeFile(join(stageDir, 'generated-recipe.json'), json(generated.recipe));
       await writeFile(recipePath(spec), json(current));
       await writeFile(join(stageDir, 'recipe.json'), json(current));
       const inspected = inspectRecipe(current, spec, bible.rules, environment);
@@ -208,14 +211,14 @@ async function newAsset(input, args) {
         critiqueStatus: criticError || (review?.imageReviewed ? 'independent visual critique recorded' : 'visual critique not run'),
         generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId,
         generatorReceiptHash: hash(generated.transcript), criticReceiptHash: criticTranscript ? hash(criticTranscript) : null,
-        generatorDurationMs: generated.durationMs, criticDurationMs,
+        generatorDurationMs: generated.durationMs, criticDurationMs, normalization: fitted.normalization,
         generatorUsage: generated.usage, criticUsage, diff: digestParts(old, current), blockers };
       await writeFile(join(stageDir, 'report.json'), json(result));
       history.push({ round, stage, action, score: stageScore, blockers: blockers.map((item) => item.code),
         generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId,
         imageReviewed: review?.imageReviewed === true && !criticError, critiqueStatus: result.critiqueStatus, generatorUsage: generated.usage, criticUsage });
       const candidate = { score: stageScore, recipe: current, stage, round, hardFailureCount: hard.failures.length,
-        lowerTrust: !!hard.metrics.lowerTrust, blockers, report: relative(root, join(stageDir, 'report.json')),
+        lowerTrust: !!hard.metrics.lowerTrust, blockers, normalization: fitted.normalization, report: relative(root, join(stageDir, 'report.json')),
         sheet: visual && !visual.failures.some((failure) => failure.code === 'BROWSER') ? relative(root, join(stageDir, 'render/sheet.png')) : null };
       if (isBetterCandidate(candidate, best, stages)) {
         best = candidate;

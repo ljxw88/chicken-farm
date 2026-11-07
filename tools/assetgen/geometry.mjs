@@ -328,9 +328,13 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
     const profile = partSpec?.prim === 'lathe' ? partSpec.profile : partSpec?.prim === 'extrude' ? partSpec.polygon : null;
     if (profile) {
       const edgeCount = partSpec.prim === 'extrude' ? profile.length : profile.length - 1;
+      // Retain the original local-edge floor and also check the scaled edge.
+      // A lathe can be elliptical, so use its narrower radius.
+      const profileScale = partSpec.prim === 'lathe' ? [Math.min(worldScale.x, worldScale.z), worldScale.y] : [worldScale.x, worldScale.y];
       for (let i = 0; i < edgeCount; i++) {
         const a = profile[i], b = profile[(i + 1) % profile.length];
-        const length = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        const length = Math.min(Math.hypot(a[0] - b[0], a[1] - b[1]),
+          Math.hypot((a[0] - b[0]) * profileScale[0], (a[1] - b[1]) * profileScale[1]));
         if (length < minimum - 1e-6) fail('H5', `${mesh.name}: profile edge ${i} is only ${round(length)} units`);
       }
     }
@@ -365,7 +369,8 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
       triangles.push(triangle); partTriangles.push(triangle);
     }
     const box = new THREE.Box3().setFromObject(mesh);
-    parts.push({ name: mesh.name, box, triangles: partTriangles, thickness: localSize[0] });
+    const vertexBounds = new THREE.Box3().setFromPoints(points.filter(Boolean));
+    parts.push({ name: mesh.name, box, vertexBounds, triangles: partTriangles, thickness: localSize[0] });
   });
   if (nonFinite) fail('G_NON_FINITE', `${nonFinite} non-finite positions, normals or transforms`);
   if (degenerate) fail('G_DEGENERATE', `${degenerate} zero-area triangles`);
@@ -408,6 +413,8 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
   for (const feature of spec.identityFeatures) if (!tagged.has(feature.id)) fail('IDENTITY', `No part declares identity feature ${feature.id}`);
   metrics.triangles = triangleCount; metrics.triangleBudget = rules.triBudgets[spec.category]; metrics.partCount = parts.length;
   metrics.bounds = { min: bounds.min.toArray().map(round), max: bounds.max.toArray().map(round), width: round(size.x), depth: round(size.z), height: round(size.y), centerXZ: [round(center.x), round(center.z)] };
+  metrics.partBounds = parts.filter((part) => !part.vertexBounds.isEmpty()).map((part) => ({ name: part.name,
+    min: part.vertexBounds.min.toArray().map(round), max: part.vertexBounds.max.toArray().map(round) }));
   metrics.colorCount = colors.size; metrics.geometryHashes = hashes; metrics.zFightPairs = overlap?.count ?? null;
   metrics.thinSliverCrossings = thinCrossings;
   metrics.disconnectedParts = floating; metrics.nonFinite = nonFinite; metrics.degenerate = degenerate; metrics.badNormals = badNormals;

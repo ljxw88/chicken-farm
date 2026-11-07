@@ -37,7 +37,9 @@ Euler **degrees**; dimensions are full widths):
   A zero-radius endpoint is supported. For a closed barrel, use e.g. axis point,
   base rim, middle bulge, top rim, axis point. The local y values are relative
   to `at`, not absolute world coordinates.
-* `extrude`: `polygon:[[x,y],...]`, `depth` along Z.
+* `extrude`: `polygon:[[x,y],...]`, `depth` along Z. It is centred on
+  `at[2]`: before rotation/scale its Z range is `at[2] - depth/2` through
+  `at[2] + depth/2`. Include both ends when measuring the full asset bounds.
 * `custom`: `positions` and triangle `indices`; lower-trust, only when necessary.
 
 Each part needs `name`, `prim`, `mat`, `at`; optional `rot`, `scale`, `feature`,

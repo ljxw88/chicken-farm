@@ -37,6 +37,14 @@ Identity tags must exist and each tagged part must have a measured visible
 pixel contribution in at least one fixed view; the critic must also judge
 whether the part genuinely depicts the feature.
 
+For schema-valid, axis-aligned recipes without jitter, a modest (at most 25%)
+geometry size error can be fitted to the spec about the origin. Declarations
+are never changed. The original model recipe and fit factors are recorded, and
+the bundle audit replays the fit against the model receipt. All hard checks run
+on the fitted recipe, including scaled profile-edge thickness. Larger errors,
+bad metadata, rotations and jitter receive explicit measured per-part bounds
+in the correction prompt instead; they are not silently fitted.
+
 The first three bake-off runs were started before a subprocess `PWD` bug was
 fixed: their sessions ran in the worktree rather than the intended scratch
 location. Their JSONL transcripts contain **no tool calls**; the generator was

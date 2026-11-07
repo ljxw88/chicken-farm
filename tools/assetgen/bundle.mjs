@@ -3,6 +3,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { root } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
+import { fitGeneratedRecipe } from './fit-generated.mjs';
 
 export const hashText = (text) => createHash('sha256').update(text).digest('hex');
 export const hashRecipe = (recipe) => hashText(JSON.stringify(recipe));
@@ -27,7 +28,7 @@ function stable(value) {
 // Builder, validator and browser harness are all part of the verification source.
 export async function verifierSourceHash({ includeCalibration = true, readSource = readFile } = {}) {
   const paths = ['src/assets/buildRecipe.ts', 'src/assets/palette.ts', 'src/assets/types.ts', 'src/assets/index.ts', 'tsconfig.json',
-    'tools/assetgen/schema.mjs', 'tools/assetgen/geometry.mjs', 'tools/assetgen/render.js', 'tools/assetgen/color.js',
+    'tools/assetgen/schema.mjs', 'tools/assetgen/geometry.mjs', 'tools/assetgen/fit-generated.mjs', 'tools/assetgen/recipe-cheatsheet.md', 'tools/assetgen/render.js', 'tools/assetgen/color.js',
     'tools/assetgen/visual.mjs', 'tools/assetgen/bundle.mjs', 'tools/assetgen/config.mjs', 'tools/assetgen/cli.mjs',
     'tools/assetgen/fixtures.mjs', 'tools/assetgen/signed-fixtures.mjs', 'tools/assetgen/signed-baselines.json', 'tools/assetgen/a9-calibration.mjs',
     'tools/assetgen/golden/vision-probe.json',
@@ -83,7 +84,9 @@ export async function auditBundleEntry({ recipe, spec, recipeBytes, specBytes, r
   else {
     const generated = receipt(receipts.generator, report.generatorSession);
     const critiqued = receipt(receipts.critic, report.criticSession);
-    if (!generated.validSession || !critiqued.validSession || JSON.stringify(stable(generated.value)) !== JSON.stringify(stable(recipe)) ||
+    const fitted = generated.validSession ? fitGeneratedRecipe(generated.value, spec, bible.rules, environment) : null;
+    if (!generated.validSession || !critiqued.validSession || JSON.stringify(stable(fitted?.recipe)) !== JSON.stringify(stable(recipe)) ||
+        JSON.stringify(stable(fitted?.normalization ?? null)) !== JSON.stringify(stable(report?.best?.normalization ?? null)) ||
         JSON.stringify(stable(critiqued.value)) !== JSON.stringify(stable(report.critique))) {
       fail('RECEIPT', 'Session transcripts do not substantiate the current recipe and critique');
     }

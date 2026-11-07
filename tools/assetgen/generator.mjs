@@ -33,6 +33,23 @@ async function run(message, { cwd, attachment, timeout } = {}) {
   return { text, transcript: result.stdout, sessionId, durationMs: result.durationMs, ...metadata };
 }
 
+function sizeGuidance(spec, rules, previous) {
+  const axes = [['width', 'X', 0, spec.size.width], ['height', 'Y', 1, spec.size.height], ['depth', 'Z', 2, spec.size.depth]];
+  const format = (value) => Number(value.toFixed(6));
+  const lines = axes.map(([name, axis, , target]) =>
+    `${name} (${axis}): target ${target}, permitted ${format(target * (1 - rules.dimensionToleranceRelative))}–${format(target * (1 + rules.dimensionToleranceRelative))}`);
+  const bounds = previous?.hard?.bounds;
+  if (bounds && previous?.failures?.some((failure) => failure.code === 'H3')) {
+    lines.push('Previous built bounds, including the parts at each extreme (move/resize geometry, not just metadata):');
+    for (const [name, axis, index] of axes) {
+      const contributors = (edge) => (previous.hard.partBounds || []).filter((part) =>
+        Math.abs(part[edge][index] - bounds[edge][index]) <= 0.0001).map((part) => part.name).join(', ') || 'unknown';
+      lines.push(`${name} (${axis}): measured ${bounds[name]}, min ${bounds.min[index]} [${contributors('min')}], max ${bounds.max[index]} [${contributors('max')}]`);
+    }
+  }
+  return `H3 EXACT DIMENSIONS (built geometry AND declared footprint/height must independently fit these ranges):\n${lines.join('\n')}\nExtrudes are centred on at[2], extending depth/2 in both Z directions. Include every transformed part and keep the base at y=0.`;
+}
+
 export async function makePrompt(spec, bible, stage, current, previous, best) {
   const cheat = await readFile(join(root, 'tools/assetgen/recipe-cheatsheet.md'), 'utf8');
   const artBrief = await readFile(join(root, 'docs/asset-lookdev-brief.md'), 'utf8');
@@ -42,7 +59,8 @@ export async function makePrompt(spec, bible, stage, current, previous, best) {
     if (!path) throw new Error(`Unknown signed reference ${id}`);
     examples.push(`SIGNED REFERENCE ${id} (${path}; shapes only, not permission to copy legacy colours):\n${await readFile(join(root, path), 'utf8')}`);
   }
-  return `You are a game-art recipe generator. Do not call tools, edit files, use the network, or output TypeScript. Return ONE complete fenced JSON object. It is automatically built and independently checked.\n\nCURRENT STAGE: ${stage}. ${current ? 'Revise the current recipe only where this stage or the feedback requires; preserve successful geometry.' : 'Create the initial blockout, including a coarse but visible version of every identity feature.'} The six stages are blockout, form, material, detail, lighting and optimise. Every stage must already satisfy H1–H10, the 10% size tolerance, and render every identity feature; do not defer a missing feature to a later stage. No part, band or cleat thinner than 0.1. Round parts use 6–8 segments. Follow the exact spec dimensions. The standard material is already supplied by the builder. Never invent tokens or hexes.\n\nLOOK DEV BRIEF (PM recipe/4-round/no-animal rulings override format advice):\n${artBrief}\n\nSTYLE BIBLE:\n${bible.text}\n\nRECIPE CHEAT SHEET:\n${cheat}\n\nSPEC:\n${JSON.stringify(spec, null, 2)}\n\n${examples.join('\n\n')}\n\n${current ? `CURRENT RECIPE:\n${JSON.stringify(current, null, 2)}` : 'No current recipe.'}\n\n${previous ? `PREVIOUS VERIFICATION / CRITIQUE / CHANGE DIFF (fix the exact named failures):\n${JSON.stringify(previous, null, 2)}` : ''}\n\n${best ? `BEST CANDIDATE SO FAR:\n${JSON.stringify(best, null, 2)}` : ''}\n\nReturn exactly one complete JSON recipe in a fenced json block.`;
+  const dimensions = sizeGuidance(spec, bible.rules, previous);
+  return `You are a game-art recipe generator. Do not call tools, edit files, use the network, or output TypeScript. Return ONE complete fenced JSON object. It is automatically built and independently checked.\n\nCURRENT STAGE: ${stage}. ${current ? 'Revise the current recipe only where this stage or the feedback requires; preserve successful geometry.' : 'Create the initial blockout, including a coarse but visible version of every identity feature.'} The six stages are blockout, form, material, detail, lighting and optimise. Every stage must already satisfy H1–H10, the 10% size tolerance, and render every identity feature; do not defer a missing feature to a later stage. No part, band or cleat thinner than 0.1. Round parts use 6–8 segments. Follow the exact spec dimensions. The standard material is already supplied by the builder. Never invent tokens or hexes.\n\n${dimensions}\n\nLOOK DEV BRIEF (PM recipe/4-round/no-animal rulings override format advice):\n${artBrief}\n\nSTYLE BIBLE:\n${bible.text}\n\nRECIPE CHEAT SHEET:\n${cheat}\n\nSPEC:\n${JSON.stringify(spec, null, 2)}\n\n${examples.join('\n\n')}\n\n${current ? `CURRENT RECIPE:\n${JSON.stringify(current, null, 2)}` : 'No current recipe.'}\n\n${previous ? `PREVIOUS VERIFICATION / CRITIQUE / CHANGE DIFF (fix the exact named failures):\n${JSON.stringify(previous, null, 2)}` : ''}\n\n${best ? `BEST CANDIDATE SO FAR:\n${JSON.stringify(best, null, 2)}` : ''}\n\n${dimensions}\n\nReturn exactly one complete JSON recipe in a fenced json block.`;
 }
 
 export async function generateRecipe(prompt, cwd, attachment) {
