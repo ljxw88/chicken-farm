@@ -10,6 +10,7 @@ import { createDayNightCycle } from '/src/lighting/createDayNightCycle.ts';
 import { createWeatherSystem } from '/src/weather/createWeatherSystem.ts';
 import { createComposer } from '/src/postprocess/index.ts';
 import { deltaE76, luminanceRGB } from '/tools/assetgen/color.js';
+import { chooseContextPlacement } from '/tools/assetgen/context-placement.js';
 
 const id = new URLSearchParams(location.search).get('id');
 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id || '')) throw new Error('Invalid asset id');
@@ -56,6 +57,15 @@ function signedSubject(type) {
 }
 const subject = signedType ? signedSubject(signedType) : buildRecipe(recipe);
 scene.add(subject);
+const subjectBounds = new THREE.Box3().setFromObject(subject);
+const referenceObstacle = (object) => {
+  const box = new THREE.Box3().setFromObject(object);
+  return { kind: 'box', minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z };
+};
+const contextPlacement = chooseContextPlacement({ minX: subjectBounds.min.x, maxX: subjectBounds.max.x,
+  minZ: subjectBounds.min.z, maxZ: subjectBounds.max.z },
+  [...layout.obstacles, ...layout.splashExclusions, referenceObstacle(character), referenceObstacle(fence)],
+  { groundHalfSize: GROUND_SIZE / 2 });
 const composer = createComposer(renderer, scene, camera);
 resize();
 composer.resize(innerWidth, innerHeight, devicePixelRatio);
@@ -66,7 +76,8 @@ function setView(yaw, phase, surface, context = false) {
   layoutGroup.visible = context;
   fence.visible = context;
   character.visible = context;
-  subject.position.set(context ? 2.5 : 0, GROUND_HEIGHT, context ? 3 : 0);
+  if (context && !contextPlacement) throw new Error('No unobstructed ground for the signed-farm composite');
+  subject.position.set(context ? contextPlacement.x : 0, GROUND_HEIGHT, context ? contextPlacement.z : 0);
   ground.material.color.setHex(surface === 'path' ? FARM_PALETTE.dirt : FARM_PALETTE.grass);
   const target = new THREE.Vector3(0, GROUND_HEIGHT + 0.7, 0);
   const angle = yaw * Math.PI / 180;
@@ -295,7 +306,7 @@ window.__assetForge = {
     const height = (object) => new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3()).y;
     const key = directional.position.clone().normalize();
     if (window.__assetForgeWrongKey) key.negate(); // Compare to the intended key, not the injected fault.
-    return { pixel: composer.getState(), keyDirection: key.toArray(), subjectHeight: height(subject),
+    return { pixel: composer.getState(), keyDirection: key.toArray(), subjectHeight: height(subject), contextPlacement,
       references: { cottage: height(scene.getObjectByName('farm-cottage')), coop: height(scene.getObjectByName('farm-ramp-coop-1')),
         tree: height(scene.getObjectByName('farm-tree-2')), fence: height(fence), character: height(character) } };
   },

@@ -28,7 +28,7 @@ function stable(value) {
 // Builder, validator and browser harness are all part of the verification source.
 export async function verifierSourceHash({ includeCalibration = true, readSource = readFile } = {}) {
   const paths = ['src/assets/buildRecipe.ts', 'src/assets/palette.ts', 'src/assets/types.ts', 'src/assets/index.ts', 'tsconfig.json',
-    'tools/assetgen/schema.mjs', 'tools/assetgen/geometry.mjs', 'tools/assetgen/fit-generated.mjs', 'tools/assetgen/recipe-cheatsheet.md', 'tools/assetgen/render.js', 'tools/assetgen/color.js',
+    'tools/assetgen/schema.mjs', 'tools/assetgen/geometry.mjs', 'tools/assetgen/fit-generated.mjs', 'tools/assetgen/recipe-cheatsheet.md', 'tools/assetgen/render.js', 'tools/assetgen/context-placement.js', 'tools/assetgen/color.js',
     'tools/assetgen/visual.mjs', 'tools/assetgen/bundle.mjs', 'tools/assetgen/config.mjs', 'tools/assetgen/cli.mjs',
     'tools/assetgen/fixtures.mjs', 'tools/assetgen/signed-fixtures.mjs', 'tools/assetgen/signed-baselines.json', 'tools/assetgen/a9-calibration.mjs',
     'tools/assetgen/golden/vision-probe.json',
