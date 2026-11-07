@@ -332,6 +332,78 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
   }
 }
 
+/** Browser-side comparison of a new fold and its independently isolated feedback. */
+export async function compareFoldFeedbackFrame({ baseline, candidate, hiddenFold, hiddenFeature, hudRects = {} }) {
+  async function pixels(data) {
+    const image = new Image();
+    image.src = `data:image/png;base64,${data}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    return context.getImageData(0, 0, canvas.width, canvas.height);
+  }
+  const [original, visible, withoutFold, withoutFeature] = await Promise.all(
+    [baseline, candidate, hiddenFold, hiddenFeature].map(pixels),
+  );
+  const { width, height } = original;
+  if ([visible, withoutFold, withoutFeature].some((image) => image.width !== width || image.height !== height)) {
+    throw new Error('Frame dimensions differ');
+  }
+  const canvases = Object.fromEntries(['mask', 'fold', 'feedback', 'diff'].map((name) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d');
+    return [name, { canvas, context, image: context.createImageData(width, height) }];
+  }));
+  const differs = (a, b, i) => a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3];
+  let changed = 0; let masked = 0; let foldPixels = 0; let feedbackPixels = 0; let overlapPixels = 0;
+  let insideMask = 0; let outside = 0; let foldOnlyOutside = 0; let feedbackChangedOutsideFold = 0; let hiddenMismatch = 0;
+  let minX = width; let minY = height; let maxX = -1; let maxY = -1;
+  const hudChanged = Object.fromEntries(Object.keys(hudRects).map((name) => [name, 0]));
+  for (let i = 0; i < original.data.length; i += 4) {
+    const fold = differs(visible.data, withoutFold.data, i);
+    const feedback = differs(withoutFold.data, withoutFeature.data, i);
+    const allowed = fold || feedback;
+    const isChanged = differs(original.data, visible.data, i);
+    if (differs(original.data, withoutFeature.data, i)) hiddenMismatch++;
+    if (fold) { foldPixels++; canvases.fold.image.data[i] = canvases.fold.image.data[i + 1] = canvases.fold.image.data[i + 2] = 255; }
+    if (feedback) { feedbackPixels++; canvases.feedback.image.data[i] = canvases.feedback.image.data[i + 1] = canvases.feedback.image.data[i + 2] = 255; }
+    if (fold && feedback) overlapPixels++;
+    if (allowed) {
+      masked++;
+      const pixel = i / 4; const x = pixel % width; const y = Math.floor(pixel / width);
+      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+      canvases.mask.image.data[i] = canvases.mask.image.data[i + 1] = canvases.mask.image.data[i + 2] = 255;
+    }
+    if (isChanged) {
+      changed++;
+      if (allowed) insideMask++; else outside++;
+      if (!fold) {
+        foldOnlyOutside++;
+        if (feedback) feedbackChangedOutsideFold++;
+      }
+      const pixel = i / 4; const x = pixel % width; const y = Math.floor(pixel / width);
+      for (const [name, rect] of Object.entries(hudRects)) {
+        if (rect && x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom) hudChanged[name]++;
+      }
+      canvases.diff.image.data[i] = 255;
+      canvases.diff.image.data[i + 2] = 255;
+    }
+    canvases.mask.image.data[i + 3] = canvases.fold.image.data[i + 3] =
+      canvases.feedback.image.data[i + 3] = canvases.diff.image.data[i + 3] = 255;
+  }
+  const images = {};
+  for (const [name, value] of Object.entries(canvases)) {
+    value.context.putImageData(value.image, 0, 0);
+    images[name] = value.canvas.toDataURL('image/png').split(',')[1];
+  }
+  return { changed, masked, foldPixels, feedbackPixels, overlapPixels, insideMask, outside, foldOnlyOutside,
+    feedbackChangedOutsideFold, hiddenMismatch, hudChanged, bounds: masked ? [minX, minY, maxX, maxY] : null, ...images };
+}
+
 async function pixelDiff(page, frames) {
   return page.evaluate(async (frames) => {
     async function decode(data) {

@@ -1,9 +1,51 @@
+import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
-import { comparePlacementEnvironmentReplay } from '../../tools/placement-environment-replay.mjs';
+import { chromium } from 'playwright';
+import { compareFoldFeedbackFrame, comparePlacementEnvironmentReplay } from '../../tools/placement-environment-replay.mjs';
+
+test('fold and isolated placement feedback are allowed, but unrelated changes still fail', { timeout: 45000 }, async (t) => {
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  const fixtures = await page.evaluate(() => {
+    const black = [0, 0, 0, 255]; const red = [200, 0, 0, 255];
+    const green = [0, 200, 0, 255]; const blue = [0, 0, 200, 255];
+    function png(colors) {
+      const canvas = document.createElement('canvas'); canvas.width = 4; canvas.height = 1;
+      const context = canvas.getContext('2d'); const image = context.createImageData(4, 1);
+      colors.forEach((color, index) => image.data.set(color, index * 4));
+      context.putImageData(image, 0, 0);
+      return canvas.toDataURL('image/png').split(',')[1];
+    }
+    const baseline = png([black, black, black, black]);
+    const hudRects = { controls: { left: 1, top: 0, right: 3, bottom: 1 } };
+    return {
+      valid: { baseline, candidate: png([red, green, red, black]), hiddenFold: png([black, green, green, black]),
+        hiddenFeature: baseline, hudRects },
+      unexpected: { baseline, candidate: png([red, green, red, blue]), hiddenFold: png([black, green, green, blue]),
+        hiddenFeature: png([black, black, black, blue]), hudRects },
+      hiddenMismatch: { baseline, candidate: png([red, green, red, black]), hiddenFold: png([black, green, green, black]),
+        hiddenFeature: png([blue, black, black, black]), hudRects },
+    };
+  });
+  const valid = await page.evaluate(compareFoldFeedbackFrame, fixtures.valid);
+  assert.deepEqual({ changed: valid.changed, fold: valid.foldPixels, feedback: valid.feedbackPixels, overlap: valid.overlapPixels,
+    masked: valid.masked, outside: valid.outside, hiddenMismatch: valid.hiddenMismatch,
+    foldOnlyOutside: valid.foldOnlyOutside, feedbackChangedOutsideFold: valid.feedbackChangedOutsideFold,
+    bounds: valid.bounds, hudChanged: valid.hudChanged },
+  { changed: 3, fold: 2, feedback: 2, overlap: 1, masked: 3, outside: 0, hiddenMismatch: 0,
+    foldOnlyOutside: 1, feedbackChangedOutsideFold: 1, bounds: [0, 0, 2, 0], hudChanged: { controls: 2 } });
+  const unexpected = await page.evaluate(compareFoldFeedbackFrame, fixtures.unexpected);
+  assert.equal(unexpected.outside, 1, 'an unrelated pixel must remain outside the declared masks');
+  assert.equal(unexpected.hiddenMismatch, 1, 'the independently hidden frame must still match the reference');
+  const hiddenMismatch = await page.evaluate(compareFoldFeedbackFrame, fixtures.hiddenMismatch);
+  assert.equal(hiddenMismatch.outside, 0, 'the changed pixel is within the visible mask');
+  assert.equal(hiddenMismatch.hiddenMismatch, 1, 'an incorrect feature-hidden frame must not be blessed by the mask');
+});
 
 const references = [
   { label: 'dcbaf70', sha: 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214', env: 'EBR75_DCB_BASELINE_WORKTREE' },
