@@ -243,15 +243,15 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
 
   f.key('KeyP');
   f.pointer('pointermove', -3.75, -0.75);
-  assert.deepEqual(f.layer.getObjectByName('placement-ghost').children.map((part) => part.material.color.getHex()),
-    [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
+  assert.equal(f.layer.getObjectByName('placement-ghost').getObjectByName('garden-plot-soil').material.color.getHex(), 0x5f4630);
+  assert.equal(f.layer.getObjectByName('placement-ghost').getObjectByName('garden-plot-frame').material.color.getHex(), 0x8b5e3c);
   f.key('KeyR');
   f.pointer('pointerdown', -3.75, -0.75);
   assert.equal(f.count('placed-plot'), 1);
   assert.equal(f.obstacles.length, 3); // Dirt is walkable, not a solid box.
   assert.equal(f.layer.children.find((child) => child.name === 'placed-plot').rotation.y, Math.PI / 2);
-  assert.deepEqual(f.layer.children.find((child) => child.name === 'placed-plot').children.map((part) => part.material.color.getHex()),
-    [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
+  assert.equal(f.layer.getObjectByName('placed-plot').getObjectByName('garden-plot-soil').material.color.getHex(), 0x5f4630);
+  assert.equal(f.layer.getObjectByName('placed-plot').getObjectsByProperty('name', 'garden-plot-seedling').length, 8);
   const acrossDirt = moveWithFarmCollisions(-5, 0, 3, 0, 0.4, f.obstacles);
   assert.ok(Math.abs(acrossDirt.x + 2) < 1e-8);
 

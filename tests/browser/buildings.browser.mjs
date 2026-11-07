@@ -154,8 +154,8 @@ test('locked buildings render at day, sunset, night and rain with the practical 
     const crowns = tree.children.filter((child) => child.isMesh && child.geometry.type === 'IcosahedronGeometry');
     return { position: tree.position.toArray(), crownBoxesOverlappingRoof: crowns.map((crown) => worldBox(crown).intersectsBox(roofBox)) };
   });
-  near(tree4.position[0], 0.05);
-  near(tree4.position[2], -5.6);
+  near(tree4.position[0], -0.35);
+  near(tree4.position[2], -5.8);
   proof.tree4 = { ...tree4, meshProbe: await probeTreeRoofOverlap() }; // Report, do not assert this as a desired layout.
   assert.deepEqual(errors, []);
   await page.close();

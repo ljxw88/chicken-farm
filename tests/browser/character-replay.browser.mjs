@@ -44,7 +44,7 @@ for (const reference of references) test(`unchanged controls match ${reference.l
     t.diagnostic(`Changed same-pose pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
     t.diagnostic(`Intended route changes: ${JSON.stringify(report.intendedRouteChanges)}`);
     t.diagnostic(`With effects hidden: ${Object.entries(report.unaffectedFrameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
-    t.diagnostic('Outside body/effect masks and with body, effects and fold hidden: zero; character geometry and shader match.');
+    t.diagnostic('Outside body/effect masks with fold and intentional garden visuals isolated: zero; character geometry and shader match.');
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }
