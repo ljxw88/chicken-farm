@@ -174,10 +174,22 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
     backdrop: getComputedStyle(element).backdropFilter,
     glass: getComputedStyle(element).getPropertyValue('--hud-glass').trim(),
     rendering: getComputedStyle(element).imageRendering,
+    border: getComputedStyle(element).borderTopColor,
+    radius: getComputedStyle(element).borderRadius,
+    titleSize: getComputedStyle(element.querySelector('h1')).fontSize,
+    valueSize: getComputedStyle(element.querySelector('.hud-selector__value')).fontSize,
+    toggleSize: getComputedStyle(element.querySelector('.hud-toggle__label')).fontSize,
+    footerSize: getComputedStyle(element.querySelector('.hud-panel__footer')).fontSize,
+    artwork: element.querySelector('.hud-column__artwork svg').getBoundingClientRect().width,
   }));
-  assert.match(surface.backdrop, /blur\(16px\)/);
+  assert.equal(surface.backdrop, 'blur(16px) saturate(1.08)');
   assert.equal(surface.glass, 'rgba(40, 55, 36, 0.68)');
   assert.equal(surface.rendering, 'auto');
+  assert.equal(surface.border, 'rgba(255, 253, 238, 0.24)');
+  assert.equal(surface.radius, '22px');
+  assert.deepEqual([surface.titleSize, surface.valueSize, surface.toggleSize, surface.footerSize, surface.artwork],
+    ['20px', '22px', '14px', '13px', 120]);
+  assert.equal(await page.getByRole('button', { name: 'Sound unavailable' }).evaluate((node) => getComputedStyle(node).opacity), '0.45');
   const layout = await assertSeparated(page, { width: 1280, height: 720 });
   assert.ok(Math.abs(layout.panel.width - 536) < 1 && Math.abs(layout.panel.height - 365) < 8, JSON.stringify(layout.panel));
   assert.ok(Math.abs(layout.panel.y + layout.panel.height - 626) < 1, JSON.stringify(layout.panel));
