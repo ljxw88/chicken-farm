@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { evidenceDirectory } from './config.mjs';
-import { runOpenCode, sessionMetadata, textEvents } from './opencode.mjs';
+import { isolatedSessionDirectory, runOpenCode, sessionMetadata, textEvents } from './opencode.mjs';
 
 const colors = [
   { name: 'RED', css: 'rgb(225,25,35)' },
@@ -18,6 +18,7 @@ for (let i = colors.length - 1; i > 0; i--) {
 }
 const directory = join(evidenceDirectory, 'vision-probe-ebr83-85');
 await mkdir(directory, { recursive: true });
+const sessionDir = await isolatedSessionDirectory();
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 const trials = [];
 try {
@@ -33,12 +34,12 @@ try {
     let sessionId = null;
     let modelId = null;
     try {
-      const result = await runOpenCode(['run', '--format', 'json', '--file', image, prompt], { timeout: 120000 });
+      const result = await runOpenCode(['run', '--format', 'json', '--file', image, prompt], { cwd: sessionDir, timeout: 120000 });
       transcript = result.stdout;
       const { events, text } = textEvents(result.stdout);
       answer = text.trim().toUpperCase();
       sessionId = events.find((event) => event.sessionID)?.sessionID ?? null;
-      try { modelId = (await sessionMetadata(sessionId)).modelId; } catch { /* reported as unknown */ }
+      try { modelId = (await sessionMetadata(sessionId, sessionDir)).modelId; } catch { /* reported as unknown */ }
       const errors = events.filter((event) => event.type === 'error');
       if (errors.length) error = JSON.stringify(errors);
     } catch (failure) {
