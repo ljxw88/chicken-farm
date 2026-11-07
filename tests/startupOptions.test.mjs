@@ -78,3 +78,24 @@ test('a URL phase stays fixed until a valid console phase or cycle setter resume
   defaultCycle.controller.update(18);
   assert.equal(defaultCycle.hemisphere.color.getHex(), 0xa8d4f0);
 });
+
+test('following excludes paused time on resume and reports the public cycle state', () => {
+  const scene = new THREE.Scene();
+  const cycle = createDayNightCycle({ scene, character: new THREE.Group(), windows: [] });
+  let now = 0;
+  const controller = createStartupPhaseController(cycle, 'sunset', { cycleSeconds: 4, now: () => now });
+  assert.deepEqual(controller.getState(), { phase: 'sunset', following: false, cycleSeconds: 4 });
+  now = 5000; // five seconds spent paused before the next frame
+  controller.setFollowing(true);
+  now = 5100;
+  controller.update(5.1);
+  assert.equal(controller.getState().phase, 'sunset');
+  controller.update(0.9);
+  assert.equal(controller.getState().phase, 'night');
+  controller.setFollowing(false);
+  controller.update(100);
+  assert.equal(controller.getState().phase, 'night');
+  controller.setDayNightCycleSeconds(8);
+  assert.deepEqual(controller.getState(), { phase: 'night', following: true, cycleSeconds: 8 });
+  assert.throws(() => controller.setFollowing('true'), TypeError);
+});

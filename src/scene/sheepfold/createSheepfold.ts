@@ -119,5 +119,8 @@ export function createSheepfold(scene: THREE.Scene, seed: number = DEFAULT_SHEEP
     sheepShadowMaterial.opacity = ART_SLOTS.light.contact.sheepfoldSheepOpacity * strength;
   }
 
-  return { group, obstacles, update, updateShadows };
+  // Fence rails should not intercept a click intended for ground inside the
+  // pen; their obstacle footprints still block the resulting walking route.
+  const clickTargets = [shelter, ...sheep.map((animal) => animal.group)];
+  return { group, obstacles, clickTargets, update, updateShadows };
 }

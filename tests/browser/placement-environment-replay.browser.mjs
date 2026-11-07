@@ -70,6 +70,7 @@ const references = [
   { label: '5d9ba48', sha: '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff', env: 'EBR75_MAIN_BASELINE_WORKTREE' },
   { label: '6daf042', sha: '6daf042ad85882f020268baf53fc92fb09e921ad', env: 'EBR76_MAIN_BASELINE_WORKTREE' },
   { label: 'b41492e', sha: 'b41492ef04210b73c38c09379f6dfa4e42581d71', env: 'EBR76_B414_BASELINE_WORKTREE' },
+  { label: '843c242', sha: '843c242da5f3bc0e4c2b12ef5484113165c914c7', env: 'EBR76_MERGED_BASELINE_WORKTREE' },
 ];
 
 for (const reference of references) test(`placement and environment replay against clean main ${reference.label}`, { timeout: 300000 }, async (t) => {
@@ -97,13 +98,14 @@ for (const reference of references) test(`placement and environment replay again
       execFileSync('tar', ['-xf', archive, '-C', baseline]);
       await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
     }
-    const evidenceRoot = ['6daf042', 'b41492e'].includes(reference.label) ? process.env.EBR76_REPLAY_EVIDENCE_DIR : process.env.EBR75_REPLAY_EVIDENCE_DIR;
+    const exactVisual = ['b41492e', '843c242'].includes(reference.label);
+    const evidenceRoot = ['6daf042', 'b41492e', '843c242'].includes(reference.label) ? process.env.EBR76_REPLAY_EVIDENCE_DIR : process.env.EBR75_REPLAY_EVIDENCE_DIR;
     const report = await comparePlacementEnvironmentReplay({ baselineRoot: resolve(baseline), candidateRoot: root,
       baselineSha: reference.sha, archivedBaselineSha,
       evidenceDir: evidenceRoot && resolve(evidenceRoot, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
-    t.diagnostic(`${reference.label === 'b41492e' ? 'Unmasked frames' : 'Additional frames with the new fold hidden'}: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
-    t.diagnostic(`Raw frame differences: ${Object.values(report.rawVisualResults).filter((count) => count > 0).length} frames; ${reference.label === 'b41492e' ? 'all layers visible' : 'body, rain and effects isolated'}`);
+    t.diagnostic(`${exactVisual ? 'Unmasked frames' : 'Additional frames with the new fold hidden'}: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
+    t.diagnostic(`Raw frame differences: ${Object.values(report.rawVisualResults).filter((count) => count > 0).length} frames; ${exactVisual ? 'all layers visible' : 'body, rain and effects isolated'}`);
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }

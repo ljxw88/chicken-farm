@@ -216,15 +216,18 @@ test('all four island edges stop WASD at the character radius and allow sliding'
   assert.ok(character.position.z > 4.4);
 });
 
-test('clicking the void does nothing and clicking the rim stays on the top', (t) => {
+test('clicking the void approaches the nearest safe rim and clicking the rim stays on the top', (t) => {
   const { character, controls, click, follow, groundHeight } = fixture(t, true);
-  click(new THREE.Vector3(9.5, groundHeight, 0));
-  controls.update(10);
-  near(character.position.x, 0);
-  near(character.position.z, 0);
+  click(new THREE.Vector3(-9, groundHeight, 3));
+  for (let i = 0; i < 300; i++) controls.update(0.1);
+  near(character.position.x, -7.6, 0.01);
+  near(character.position.z, 3, 0.03);
+  near(character.position.y, groundHeight);
+  character.position.set(0, groundHeight, 0);
+  controls.update(0);
+  follow(character.position);
 
-  // Click-to-move has no pathfinding. Reach the other side via the bridge,
-  // rather than asking a straight click to cross the new water at z=0.
+  // Keep the explicit bridge approach to check the original rim boundary too.
   for (const [x, z] of [[2.5, -1.7], [3.4, -1.93], [4.3, -1.95], [5.15, -1.65], [6, -0.9]]) {
     click(new THREE.Vector3(x, groundHeight, z));
     controls.update(10);
@@ -232,8 +235,8 @@ test('clicking the void does nothing and clicking the rim stays on the top', (t)
   }
   click(new THREE.Vector3(7.95, groundHeight, 0));
   controls.update(10);
-  near(character.position.x, 7.6);
-  near(character.position.z, 0);
+  near(character.position.x, 7.6, 0.001);
+  near(character.position.z, 0, 0.03);
   near(character.position.y, groundHeight);
 });
 
@@ -261,6 +264,31 @@ test('click-to-walk reaches the foot pad and returns to the original island', (t
   near(character.position.z, 0.75, 0.01);
 });
 
+test('clicks at the stair mouth use its real support rather than the rectangular rim inset', (t) => {
+  const { character, controls, click, follow, groundHeight, stairs } = fixture(t, true);
+  function reset() {
+    character.position.set(7.2, groundHeight, 0.75);
+    controls.update(0);
+    follow(character.position);
+  }
+  reset();
+  assert.ok(stairs.supports(7.9, 0.75, 0.4));
+  click(new THREE.Vector3(7.9, groundHeight, 0.75));
+  for (let i = 0; i < 30; i++) controls.update(0.1);
+  near(character.position.x, 7.9, 0.01);
+  near(character.position.z, 0.75, 0.01);
+
+  // This click straddles the island/stair inside corner. Its nearest safe
+  // point is on the rounded support boundary, not at x=7.6.
+  reset();
+  click(new THREE.Vector3(7.95, groundHeight, 0.4));
+  for (let i = 0; i < 60; i++) controls.update(0.1);
+  const ideal = 0.4 - Math.hypot(0.05, 0.25);
+  assert.ok(Math.hypot(character.position.x - 7.95, character.position.z - 0.4) < ideal + 0.002,
+    `missed the nearest stair-mouth boundary: ${character.position.toArray()}`);
+  assert.ok(stairs.supports(character.position.x, character.position.z, 0.4));
+});
+
 test('WASD cannot tunnel through the front or side of the replacement buildings', (t) => {
   const { character, controls, key, groundHeight, obstacles } = fixture(t, true);
   const cottage = obstacles.find((obstacle) => obstacle.name === 'cottage');
@@ -282,30 +310,33 @@ test('WASD cannot tunnel through the front or side of the replacement buildings'
   assert.ok(character.position.x >= coop.maxX + 0.4 - 1e-8 && character.position.x < coop.maxX + 0.55);
 });
 
-test('click-to-move stops at a tree trunk, even with a long update', (t) => {
+test('click-to-move routes around a tree trunk and reaches both clear destinations', (t) => {
   const { character, controls, click } = fixture(t, true);
   character.position.set(-0.75, 0, 1.55);
   click(new THREE.Vector3(-3.65, 0, 1.55));
-  controls.update(10);
-  // The first trunk has radius 0.304; the character has radius 0.4.
-  assert.ok(character.position.x >= -2.15 + 0.704 - 1e-8);
-  assert.ok(character.position.x < -2.15 + 0.804);
-  const stopped = character.position.clone();
-  controls.update(10);
-  near(character.position.distanceTo(stopped), 0);
+  for (let i = 0; i < 300; i++) {
+    controls.update(0.1);
+    // The first trunk has radius 0.304; the character has radius 0.4.
+    assert.ok(Math.hypot(character.position.x + 2.15, character.position.z - 1.55) >= 0.704 - 1e-8);
+  }
+  near(character.position.x, -3.65, 0.01);
+  near(character.position.z, 1.55, 0.01);
   click(new THREE.Vector3(-0.75, 0, 1.55));
-  controls.update(10);
-  near(character.position.x, -0.75);
+  for (let i = 0; i < 300; i++) controls.update(0.1);
+  near(character.position.x, -0.75, 0.01);
+  near(character.position.z, 1.55, 0.01);
 });
 
-test('clicks also stop at the cottage and WASD also stops at trees', (t) => {
+test('a cottage click approaches the nearest wall and WASD still stops at trees', (t) => {
   const { character, controls, click, key, groundHeight, obstacles } = fixture(t, true);
   const cottage = obstacles.find((obstacle) => obstacle.name === 'cottage');
   const cottageX = (cottage.minX + cottage.maxX) / 2;
   character.position.set(cottageX, groundHeight, cottage.maxZ + 1.3);
   click(new THREE.Vector3(cottageX, groundHeight, (cottage.minZ + cottage.maxZ) / 2));
-  controls.update(10);
-  assert.ok(character.position.z >= cottage.maxZ + 0.4 - 1e-8 && character.position.z < cottage.maxZ + 0.55);
+  for (let i = 0; i < 300; i++) controls.update(0.1);
+  near(Math.hypot(character.position.x - cottageX,
+    character.position.z - (cottage.minZ + cottage.maxZ) / 2), 1.9, 0.02);
+  assert.ok(character.position.z >= cottage.maxZ + 0.4 - 1e-8 || character.position.z <= cottage.minZ - 0.4 + 1e-8);
 
   character.position.set(-0.75, 0, 1.55);
   key('keydown', 'KeyW');
@@ -317,14 +348,17 @@ test('clicks also stop at the cottage and WASD also stops at trees', (t) => {
   assert.ok(character.position.x < -2.15 + 0.804);
 });
 
-test('the pond water also blocks movement', (t) => {
-  const { character, controls, click } = fixture(t, true);
+test('a pond click approaches the nearest reachable bank without entering the water', (t) => {
+  const { character, controls, click, obstacles } = fixture(t, true);
   // The locked coop B ramp now occupies the old western approach.
   character.position.set(6.5, 0, -3.5);
   click(new THREE.Vector3(3, 0, -3.5));
-  controls.update(10);
-  assert.ok(character.position.x >= 6.0275 - 1e-8);
-  assert.ok(character.position.x < 6.1775);
+  for (let i = 0; i < 300; i++) controls.update(0.1);
+  assert.ok(Math.hypot(character.position.x - 3, character.position.z + 3.5) < 1.45);
+  const pond = obstacles.find((obstacle) => obstacle.name === 'pond');
+  const dx = character.position.x - Math.max(pond.minX, Math.min(pond.maxX, character.position.x));
+  const dz = character.position.z - Math.max(pond.minZ, Math.min(pond.maxZ, character.position.z));
+  assert.ok(Math.hypot(dx, dz) >= 0.4 - 1e-7);
 });
 
 test('a glancing movement slides along a solid wall', () => {

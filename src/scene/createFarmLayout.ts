@@ -10,7 +10,7 @@ export function createFarmLayout(scene: THREE.Scene, layout: FarmLayout = FARM_L
   group.name = 'farm-layout';
   scene.add(group);
   FARM_PROP_ASSETS[layout.path.assetId](group, layout.path);
-  const { windows, extraEmissives, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
+  const { windows, extraEmissives, clickTargets, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
   FARM_PROP_ASSETS[layout.treeAssetId](group, layout.trees);
   FARM_PROP_ASSETS[layout.pond.assetId](group, layout.pond);
   const water = FARM_PROP_ASSETS[layout.waterAssetId](group);
@@ -41,5 +41,6 @@ export function createFarmLayout(scene: THREE.Scene, layout: FarmLayout = FARM_L
     pondObstacle,
     ...water.splashExclusions,
   ];
-  return { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight: water.bridgeHeight, updateWaterfall: water.updateWaterfall };
+  return { windows, extraEmissives, clickTargets, obstacles, splashExclusions,
+    bridgeHeight: water.bridgeHeight, updateWaterfall: water.updateWaterfall };
 }

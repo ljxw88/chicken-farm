@@ -30,6 +30,7 @@ const comparisonOutput = resolve(process.env.PARITY_OUTPUT_DIR || evidence);
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
 const ticketBaseline = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
+const integratedBaseline = '843c242da5f3bc0e4c2b12ef5484113165c914c7';
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const scenarios = [
   { name: 'spawn', search: '?phase=daytime&weather=clear', setup: 'spawn' },
@@ -56,8 +57,8 @@ try {
   if (recordBaseline) {
     sourceSha = execFileSync('git', ['rev-parse', '--verify', `${baselineSha}^{commit}`], { encoding: 'utf8' }).trim();
     const currentMain = execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim();
-    assert.ok(sourceSha === currentMain || sourceSha === ticketBaseline,
-      'Baseline must be current origin/main or the explicitly pinned EBR-76 main');
+    assert.ok([currentMain, ticketBaseline, integratedBaseline].includes(sourceSha),
+      'Baseline must be current origin/main or an explicitly pinned EBR-76 main');
     try {
       temp = await mkdtemp('/tmp/opencode/ebr73-parity-');
     } catch (error) {
@@ -271,7 +272,9 @@ window.__ebr73Parity = typeof context !== 'undefined' ? context : { scene, camer
     } else if (scenario.setup === 'placement') {
       await page.keyboard.press('f');
       await page.mouse.move(449, placementY);
-      assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
+      const hasSheepfold = await page.evaluate(() => Boolean(window.__ebr73Parity.scene.getObjectByName('farm-sheepfold')));
+      assert.match(await page.locator('.placement-status').textContent(),
+        hasSheepfold && placementY === 381 ? /Blocked by a farm object/ : /Ready to place/);
       await page.evaluate(() => window.__ebr73Step(100));
       assert.equal(await page.evaluate(() => window.__ebr73Parity.scene.getObjectByName('placement-ghost')?.visible), true);
     } else if (scenario.setup === 'walk') {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -12,6 +12,7 @@ const historicalSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
 const mergedMainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const contentMainSha = '6daf042ad85882f020268baf53fc92fb09e921ad';
 const ticketMainSha = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
+const integratedMainSha = '843c242da5f3bc0e4c2b12ef5484113165c914c7';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb750001;
 const phases = ['morning', 'daytime', 'sunset', 'night'];
@@ -29,7 +30,7 @@ async function serverAt(root) {
   return { server, url: `http://${host}:${address.port}` };
 }
 
-async function open(browser, url, search) {
+async function open(browser, url, search, normalizeClock = false) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', hasTouch: true });
   const page = await context.newPage();
   const errors = [];
@@ -122,8 +123,12 @@ async function open(browser, url, search) {
 window.__ebr75 = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, stairs, dayNight, composer };
 ` });
   });
-  await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
+  // This is a scene/placement replay, so use the real HUD-free gate flag.
+  await page.goto(`${url}/${search}${search.includes('?') ? '&' : '?'}skyhud=0`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => window.__ebr75 && window.__ebr75RandomCalls > 0));
+  // The sky ticket intentionally changes the app default to 1440s. Compare
+  // invalid-URL behavior at the same explicit speed as the old baseline.
+  if (normalizeClock) await page.evaluate(() => window.setDayNightCycleSeconds(72));
   await page.evaluate(() => document.fonts.ready);
   const graphics = await page.evaluate(() => {
     const gl = document.querySelector('#scene').getContext('webgl2');
@@ -223,8 +228,8 @@ async function capture(fixture, { hideBody = false, hideRain = false, hideFold =
   }
 }
 
-async function recordScenario(browser, url, scenario, replayScript, historical, exactVisual) {
-  const fixture = await open(browser, url, scenario.search);
+async function recordScenario(browser, url, scenario, replayScript, historical, exactVisual, normalizeClock) {
+  const fixture = await open(browser, url, scenario.search, normalizeClock && scenario.name === 'invalid-url');
   const { page } = fixture;
   const script = [];
   const trace = [];
@@ -590,9 +595,12 @@ async function temporary(prefix) {
 export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
   baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.ok([historicalSha, mergedMainSha, contentMainSha, ticketMainSha].includes(baselineSha), 'Unknown replay reference');
+  assert.ok([historicalSha, mergedMainSha, contentMainSha, ticketMainSha, integratedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
-  const exactVisual = baselineSha === ticketMainSha;
+  const exactVisual = baselineSha === ticketMainSha || baselineSha === integratedMainSha;
+  // Only older baselines need the pre-HUD clock normalization. A current-main
+  // comparison must exercise the real 1440-second default on both sides.
+  const normalizeClock = baselineSha !== integratedMainSha;
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },
     { name: 'environment-cycle', search: '?phase=sunset&weather=clear' },
@@ -644,7 +652,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const referenceBothHidden = {};
     for (const scenario of scenarios) {
       const { frames, bodylessFrames, rainlessFrames, bothHiddenFrames, ...result } =
-        await recordScenario(browser, baseline.url, scenario, undefined, historical, exactVisual);
+        await recordScenario(browser, baseline.url, scenario, undefined, historical, exactVisual, normalizeClock);
       reference[scenario.name] = result;
       referenceFrames[scenario.name] = frames;
       referenceBodyless[scenario.name] = bodylessFrames;
@@ -671,7 +679,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     let maskWritten = false;
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const scenario of scenarios) {
-      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script, historical, exactVisual);
+      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script, historical, exactVisual, normalizeClock);
       const expected = saved.scenarios[scenario.name].trace;
       for (let i = 0; i < actual.trace.length; i++) {
         if (!isDeepStrictEqual(actual.trace[i], expected[i])) rawTraceDifferences.push(`${scenario.name}:${actual.trace[i].label}`);
@@ -779,11 +787,21 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/placement-environment-replay.mjs')) {
   const [option, reference, evidenceDir] = process.argv.slice(2);
-  if (option !== '--against-main' || !reference) {
-    throw new Error('Usage: node tools/placement-environment-replay.mjs --against-main <clean-b41492e-worktree> [evidence-dir]');
+  let options;
+  if (option === '--archive-main') {
+    options = { baselineSha: integratedMainSha, evidenceDir: reference && resolve(reference) };
+  } else if (option === '--against-main' && reference) {
+    const baselineRoot = resolve(reference);
+    const isWorktree = await access(join(baselineRoot, '.git')).then(() => true, () => false);
+    const baselineSha = isWorktree
+      ? execFileSync('git', ['-C', baselineRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+      : integratedMainSha;
+    options = { baselineRoot, baselineSha, archivedBaselineSha: isWorktree ? undefined : baselineSha,
+      evidenceDir: evidenceDir && resolve(evidenceDir) };
+  } else {
+    throw new Error('Usage: node tools/placement-environment-replay.mjs --against-main <clean-worktree-or-843-archive> [evidence-dir] | --archive-main [evidence-dir]');
   }
-  const report = await comparePlacementEnvironmentReplay({ baselineRoot: resolve(reference), candidateRoot: process.cwd(),
-    baselineSha: ticketMainSha, evidenceDir: evidenceDir && resolve(evidenceDir) });
+  const report = await comparePlacementEnvironmentReplay({ ...options, candidateRoot: process.cwd() });
   const samples = Object.values(report.results).reduce((sum, result) => sum + result.samples, 0);
   const pixels = Object.values(report.rawVisualResults).reduce((sum, count) => sum + count, 0);
   console.log(`${Object.keys(report.results).length} scenarios, ${samples} identical samples, ${Object.keys(report.rawVisualResults).length} unmasked frames, ${pixels} changed pixels`);

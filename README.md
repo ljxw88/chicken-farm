@@ -17,7 +17,7 @@ Open [http://localhost:5173](http://localhost:5173). If that port is already in 
 
 For a console-free weather and lighting check, open a URL such as `http://localhost:5173/?weather=cloudy&phase=night`. Weather accepts `clear`, `cloudy` or `rain`; phase accepts `morning`, `daytime`, `sunset` or `night`. The requested weather fades in over 1.75 seconds. A valid URL phase stays fixed for repeatable review; without one, the normal day/night cycle runs. Invalid parameters are ignored independently. Calling either day/night console setter resumes the cycle after a URL-pinned phase.
 
-Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the cottage and coops, or right past the pond to the stone stairs at the island rim. Click a tread or the small foot pad to walk down, or line up with the stairs and hold **S+D**; **W+A** climbs back up. The stair sides and pad edge stop at the void; there is no ground beyond the pad. The cottage, both coop bodies and ramps, tree trunks, pond water and the rest of the rim also block movement; the character can slide along them. Clicking the void does not start a walk. Click-to-move does not plan a route around obstacles, and keyboard input cancels a clicked destination.
+Use **WASD** to walk relative to the screen, or click/tap the grass to walk there. From spawn, follow the curved dirt path left toward the cottage and coops, or right past the pond to the stone stairs at the island rim. Click a tread or the small foot pad to walk down, or line up with the stairs and hold **S+D**; **W+A** climbs back up. The stair sides and pad edge stop at the void; there is no ground beyond the pad. The cottage, both coop bodies and ramps, tree trunks, pond water and the rest of the rim also block movement; the character can slide along them. Click-to-move routes around obstacles, or approaches the nearest reachable point for a blocked or off-island destination. Keyboard input cancels a clicked destination.
 
 The chicken, nest, sign and bin are static, nonblocking scenery. There are no feeding, collection, market or inventory actions in the playable build.
 
@@ -29,7 +29,9 @@ The grid uses 1.5-world-unit tiles to fit the fence's 1.47-unit footprint. A plo
 
 The debug grid is hidden by default. Open `?grid=1` (or add `&grid=1` to other URL options) to show its dirt-coloured hairlines. The world, including previews and the grid, goes through the default pixel pass.
 
-The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
+The island, soil/rock rim and void are visible on load. The full farm day takes 24 minutes by default. Open **A changing sky** with the toolbar's sun/moon button. The time chevrons choose a phase and pause it; **Follow the day** resumes the actual cycle. Weather chevrons choose **Clear skies**, **Cloudy**, or **Gentle rain**. **Let it change** cycles the real weather every quarter farm day, with at least 90 seconds between changes; choosing a weather manually turns automation off. Close the panel with **X** or the phase button. Sound and more options are unavailable; fullscreen is enabled only when the browser supports it. Focused HUD controls keep their keyboard input; click the canvas to use walking or placement shortcuts again. `?skyhud=0` hides the sky panel and toolbar for clean visual comparisons.
+
+To hold a phase without the panel or a console, open one of:
 
 ```text
 http://localhost:5173/?phase=morning
@@ -38,11 +40,13 @@ http://localhost:5173/?phase=sunset
 http://localhost:5173/?phase=night
 ```
 
-A valid phase URL holds that phase until you navigate away or use a day/night console setter; a missing or invalid phase keeps the normal cycle running. You can also use the browser console:
+A valid phase URL holds that phase until you navigate away, turn on **Follow the day**, or use a day/night console setter; a missing or invalid phase keeps the normal cycle running. You can also use the browser console:
 
 ```js
 setDayNightPhase('morning') // also: 'daytime', 'sunset', 'night'
 setDayNightCycleSeconds(12) // complete cycle in 12 seconds
+setDayNightFollowing(false) // pause, or true to resume
+getDayNightState()          // current phase, following and cycleSeconds
 ```
 
 The cycle keeps running after selecting a phase in the console. The top-left phase label follows the current lighting segment; Day 1 and Spring are placeholders. The island is surrounded by a fixed #101416 void; the phase fog and lighting still change over time. The cycle's `setDayNightCycleSeconds(seconds)` method accepts finite positive seconds and preserves the current phase when changed. The sun and moon share a fixed upper-left azimuth; their height, color and intensity change by phase. Intermediate phases are interpolated. Weather adjustments are separate from those presets; see `docs/lighting-audit.md` for the visual change and evidence.
@@ -75,6 +79,6 @@ npm run build
 
 The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the phase HUD, generic interaction utilities, pixel sizing, farm, collisions, camera, weather and lighting. For the Chromium playable-build checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
 
-The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. Historical lighting changes intentionally differ from that older reference. The EBR-76 comparison against `b41492e` allows no changed pixels; see `tools/PARITY.md` for the pinned reference and replay. Do not re-baseline the historical captures until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero historical result.
+The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. Historical lighting changes intentionally differ from that older reference. The EBR-76 data-only comparison against `b41492e` used an all-black mask; the merged build can be compared against clean `843c242` with the sky HUD disabled for the replay. See `tools/PARITY.md` for the pinned references. Do not re-baseline the historical captures until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero historical result.
 
-The entry point is `src/main.ts`, which registers the ordered feature modules in `src/app/`. Free placement is in `src/placement/`, pixel presentation in `src/postprocess/`, scene construction and the camera in `src/scene/`, and the character and controls in `src/character/`. Plain layout, dimensions, weather and lighting presets live in `src/content/`; Three.js asset factories are in `src/render/`. Cottage and coop data is in `src/content/buildings.ts`, and Look Dev farm colors are in `src/content/slots.ts`. Their windows and pop-holes follow the night lighting. The fixed-step loop, Miniplex world and input actions are described in `src/core/README.md`. `src/state/` describes JSON-friendly snapshots and a save/load hook shape; no persistence or auto-load is installed. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.
+The entry point is `src/main.ts`, which registers the ordered feature modules in `src/app/`. Free placement is in `src/placement/`, pixel presentation in `src/postprocess/`, scene construction and the camera in `src/scene/`, and the character and controls are in `src/character/`. The sky HUD and its public-scene adapter are in `src/ui/`. Plain layout, dimensions, weather and lighting presets live in `src/content/`; Three.js asset factories are in `src/render/`. Cottage and coop data is in `src/content/buildings.ts`, and Look Dev farm colors are in `src/content/slots.ts`. Their windows and pop-holes follow the night lighting. The fixed-step loop, Miniplex world and input actions are described in `src/core/README.md`. `src/state/` describes JSON-friendly snapshots and a save/load hook shape; no persistence or auto-load is installed. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.

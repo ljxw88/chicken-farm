@@ -29,7 +29,7 @@ after(async () => {
   await server?.close();
 });
 
-async function open(context, seed = 123, phase = 'daytime') {
+async function open(context, seed = 123, phase = 'daytime', hideSky = false) {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -69,7 +69,7 @@ async function open(context, seed = 123, phase = 'daytime') {
     await route.fulfill({ response, body: `${body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70RainRandom')}
 window.__ebr70 = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather, engine, environment, sheepfold };\n` });
   });
-  await page.goto(`${url}/?phase=${phase}&weather=clear&seed=${seed}`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/?phase=${phase}&weather=clear&seed=${seed}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr70)));
   await page.evaluate(() => window.__ebr70Step(0));
   return { page, errors };
@@ -195,6 +195,44 @@ test('visual seed reproduces independent sheep nods and both effects in the runn
   assert.notEqual(first.angles[0], first.angles[1]);
 });
 
+test('showing or hiding the sky HUD preserves the seeded sheepfold and effects', { timeout: 45000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  t.after(() => context.close());
+  const samples = [];
+  for (const hideSky of [false, true]) {
+    const { page, errors } = await open(context, 123, 'night', hideSky);
+    await page.evaluate(() => window.__ebr70Step(1000));
+    const sample = () => page.evaluate(() => {
+      const { scene, sheepfold, weather } = window.__ebr70;
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const flies = scene.getObjectByName('night-fireflies');
+      return { foldVisible: sheepfold.group.visible, obstacles: sheepfold.obstacles,
+        sheep: [1, 2].map((index) => ({
+          position: scene.getObjectByName(`sheep-${index}`).position.toArray(),
+          nod: scene.getObjectByName(`sheep-${index}-head-pivot`).rotation.x,
+          shadow: scene.getObjectByName(`sheep-${index}-shadow`).position.toArray(),
+        })), weather: weather.getWeather(),
+        smoke: smoke.children.map((puff) => [puff.visible, ...puff.position.toArray(), puff.material.opacity]),
+        fireflies: Array.from(flies.geometry.getAttribute('instanceOpacity').array) };
+    });
+    const before = await sample();
+    assert.equal(before.foldVisible, true);
+    assert.equal(before.obstacles.length, 13);
+    assert.equal(before.sheep.length, 2);
+    assert.equal(before.fireflies.filter((opacity) => opacity > 0).length, 14);
+    assert.equal(await page.locator('#hud').count(), hideSky ? 0 : 1);
+    if (!hideSky) {
+      await page.evaluate(() => document.querySelector('[data-action="sky"]').click());
+      assert.equal(await page.locator('#sky-panel').isVisible(), true);
+      assert.deepEqual(await sample(), before);
+    }
+    samples.push(before);
+    assert.deepEqual(errors, []);
+    await page.close();
+  }
+  assert.deepEqual(samples[0], samples[1]);
+});
+
 test('the engine owns every fold obstacle and advances sheep and shared environment shadows', { timeout: 45000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   t.after(() => context.close());
@@ -242,6 +280,7 @@ test('the engine owns every fold obstacle and advances sheep and shared environm
   assert.ok(Math.abs(reserve.minX + 6.95) < 1e-9 && Math.abs(reserve.maxX + 2.45) < 1e-9);
   assert.ok(Math.abs(reserve.minZ - 3.1) < 1e-9 && Math.abs(reserve.maxZ - 6.1) < 1e-9);
   assert.equal(day.clock.held, true);
+  assert.equal(day.clock.cycleSeconds, 1440);
 
   await page.evaluate(() => window.__ebr70Step(1000));
   const held = await sample();
@@ -255,7 +294,7 @@ test('the engine owns every fold obstacle and advances sheep and shared environm
   });
   const nightRain = await sample();
   assert.equal(nightRain.clock.held, false);
-  assert.ok(Math.abs(nightRain.clock.progress - (0.75 + 1.75 / 72)) < 1e-9);
+  assert.ok(Math.abs(nightRain.clock.progress - (0.75 + 1.75 / day.clock.cycleSeconds)) < 1e-9);
   assert.deepEqual(nightRain.weather, { mode: 'rain', rainAmount: 1, cloudyAmount: 0 });
   assert.match(nightRain.phase.toLowerCase(), /night/);
   for (const name of ['farmShadow', 'fenceShadow', 'shelterShadow', 'sheepShadow']) {
@@ -480,6 +519,9 @@ test('rendered wool remains below all-channel 250 across the day/night and weath
       }
       result.push({ label, pixels, blown, maxMinChannel, maxRgb });
     }
+    // Exercise the original full-cycle sampling at an explicit dev speed;
+    // the HUD's honest default remains 1440 seconds.
+    window.setDayNightCycleSeconds(72);
     dayNight.setDayNightPhase('morning');
     for (let sample = 0; sample < 16; sample++) {
       if (sample) dayNight.update(4.5); // 72-second cycle, including every anchor and midpoint.

@@ -13,6 +13,7 @@ export function createFarmBuildings(parent: THREE.Group,
   return {
     windows: cottage.windows,
     extraEmissives: [...cottage.extraEmissives, ...coops.flatMap((coop) => coop.extraEmissives)],
+    clickTargets: [cottage.group, ...coops.map((coop) => coop.group)],
     obstacles: [cottage.obstacle, ...coops.flatMap((coop) => coop.obstacles)],
     splashExclusions: [cottage.splashExclusion, ...coops.map((coop) => coop.splashExclusion)],
   };

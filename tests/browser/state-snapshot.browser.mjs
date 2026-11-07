@@ -41,19 +41,19 @@ test('snapshot describes the live browser world after placement and weather chan
 window.__stateTest = { ...context, snapshot: async () => (await import('/src/state/snapshot.ts')).snapshot(context.engine.world) };
 ` });
     });
-    await page.goto(`http://${host}:${address.port}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
+    await page.goto(`http://${host}:${address.port}/?phase=daytime&weather=clear&skyhud=0`, { waitUntil: 'networkidle' });
     assert.deepEqual(await page.evaluate(async () => {
       const main = await import('/src/main.ts');
-      const setters = ['setDayNightCycleSeconds', 'setDayNightPhase', 'setWeather', 'getWeather']
+      const setters = ['setDayNightCycleSeconds', 'setDayNightPhase', 'setDayNightFollowing', 'getDayNightState', 'setWeather', 'getWeather']
         .map((name) => main[name] === window[name]);
       const composer = window.__stateTest.composer;
       return [...setters, window.setPixelRendering === composer.setEnabled,
         window.setPixelSize === composer.setPixelSize, window.getPixelRendering === composer.getState];
-    }), [true, true, true, true, true, true, true], 'module exports and console setters keep the same function identities');
+    }), [true, true, true, true, true, true, true, true, true], 'module exports and console setters keep the same function identities');
     await page.evaluate(() => window.__stateStep(0));
     const initial = await page.evaluate(() => window.__stateTest.snapshot());
     assert.deepEqual(initial.player, { position: [0, 2.4, 0], yaw: 0 });
-    assert.deepEqual(initial.clock, { progress: 0.25, cycleSeconds: 72, held: true });
+    assert.deepEqual(initial.clock, { progress: 0.25, cycleSeconds: 1440, held: true });
     assert.deepEqual(initial.placed, []);
 
     await page.keyboard.press('f');

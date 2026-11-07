@@ -11,7 +11,7 @@ after(() => vite.close());
 
 function fixture(t, bindingOptions) {
   const dom = new JSDOM(`<!doctype html><body><canvas></canvas><input><textarea></textarea><select></select>
-    <div contenteditable><span>edit</span></div><a href="#">link</a>
+    <div contenteditable><span>edit</span></div><a href="#">link</a><div data-input-scope="ui"><button id="sky-control">Sky</button></div>
     <aside class="placement-controls"><button data-fence><span>Fence</span></button><button data-plot>Plot</button>
       <button data-rotate>Rotate</button><button data-confirm>Place</button><button data-remove>Remove</button>
       <button data-undo>Undo</button><button data-cancel>Cancel</button></aside></body>`);
@@ -87,6 +87,15 @@ test('owned movement resolves actions immediately, preserves placement priority 
   assert.equal(f.key('keydown', 'KeyW', f.document.querySelector('input')).defaultPrevented, false);
 });
 
+test('an arbitrary key cancels pointer movement immediately without consuming the key', (t) => {
+  const f = fixture(t, { ownMovement: true });
+  const movements = [];
+  f.input.onMovement((action) => movements.push(action));
+  f.pointer('pointerdown');
+  assert.equal(f.key('keydown', 'KeyQ').defaultPrevented, false);
+  assert.deepEqual(movements.map((action) => action.type), ['move-to', 'cancel-move-to']);
+});
+
 test('owned placement pointer actions use the context before synchronous removal', (t) => {
   let context;
   const f = fixture(t, { ownMovement: true, onPointerDown: () => { context.removing = false; return true; } });
@@ -159,6 +168,24 @@ test('editable focus, modifiers, composing, default prevention and focused butto
   assert.deepEqual(f.input.consume(), {
     move: { type: 'move', right: 0, forward: 0, active: false }, pointer: undefined, actions: [],
   });
+});
+
+test('focused sky controls keep game keys; the canvas still receives walking and placement', (t) => {
+  for (const ownPlacement of [false, true]) {
+    const f = fixture(t, { ownMovement: true, ownPlacement });
+    const sky = f.document.querySelector('#sky-control');
+    f.context.active = true;
+    for (const code of ['Escape', 'Enter', 'Space', 'KeyW', 'KeyF', 'KeyP', 'KeyR', 'KeyZ']) f.key('keydown', code, sky);
+    assert.deepEqual(f.input.consume().actions, []);
+    assert.equal(f.input.consume().move.active, false);
+    f.key('keydown', 'KeyW', f.document.body);
+    assert.equal(f.input.consume().move.forward, 1);
+    // Releasing a held game key still works if focus moved into the HUD.
+    f.key('keyup', 'KeyW', sky);
+    assert.equal(f.input.consume().move.active, false);
+    f.key('keydown', 'KeyF', f.document.body);
+    assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'fence' }]);
+  }
 });
 
 test('placement takes pointer priority; mouse confirms, touch/pen preview, and UI confirms', (t) => {
@@ -241,7 +268,8 @@ test('owned placement resolves immediately, respects target prevention, and stop
   assert.deepEqual(actions, [{ type: 'placement-select', kind: 'fence' }]);
   assert.equal(f.pointer('pointerdown', 'touch').defaultPrevented, true);
   assert.deepEqual(actions.slice(1), [{ type: 'placement-preview', point: { x: 123, y: 456, pointerType: 'touch' } }]);
-  assert.deepEqual(moves, []);
+  assert.deepEqual(moves.map((action) => action.type), ['cancel-move-to', 'cancel-move-to'],
+    'keys cancel routes, while placement pointers must not start movement');
   f.pointer('pointerdown', 'mouse');
   assert.deepEqual(actions.slice(-2).map((action) => action.type), ['placement-preview', 'placement-confirm']);
   unsubscribe();

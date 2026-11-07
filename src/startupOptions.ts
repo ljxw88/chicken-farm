@@ -1,4 +1,4 @@
-import { DAY_NIGHT_PHASES } from './content/dayNight';
+import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS } from './content/dayNight';
 import type { DayNightPhaseName } from './lighting';
 import { isWeatherMode } from './weather';
 import { STARTUP_OPTIONS } from './content/startup';
@@ -33,28 +33,67 @@ interface PhaseCycle {
   update: (deltaSeconds: number) => void;
   setDayNightPhase: (phase: DayNightPhaseName) => void;
   setDayNightCycleSeconds: (seconds: number) => void;
+  getPhase: () => DayNightPhaseName;
   setHeld: (held: boolean) => void;
   isHeld: () => boolean;
 }
 
-export function createStartupPhaseController(cycle: PhaseCycle, phase: DayNightPhaseName | undefined) {
+interface PhaseControllerOptions {
+  cycleSeconds?: number;
+  getCycleSeconds?: () => number;
+  now?: () => number;
+}
+
+export function createStartupPhaseController(
+  cycle: PhaseCycle,
+  phase: DayNightPhaseName | undefined,
+  options: PhaseControllerOptions = {},
+) {
   // A URL phase is held for repeatable Nest captures; ordinary sessions keep cycling.
+  let cycleSeconds = options.cycleSeconds ?? DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
+  let resumedAt: number | undefined;
   cycle.setHeld(phase !== undefined);
+  if (options.cycleSeconds !== undefined) cycle.setDayNightCycleSeconds(cycleSeconds);
   if (phase) cycle.setDayNightPhase(phase);
 
+  function frameDelta(deltaSeconds: number) {
+    if (cycle.isHeld()) return deltaSeconds;
+    // Do not count a suspended frame's paused time when following is resumed.
+    const elapsed = resumedAt === undefined || !options.now
+      ? deltaSeconds
+      : Math.min(deltaSeconds, Math.max(0, (options.now() - resumedAt) / 1000));
+    resumedAt = undefined;
+    return elapsed;
+  }
+
   function update(deltaSeconds: number) {
-    if (!cycle.isHeld()) cycle.update(deltaSeconds);
+    if (!cycle.isHeld()) cycle.update(frameDelta(deltaSeconds));
+  }
+
+  function setFollowing(following: boolean) {
+    if (typeof following !== 'boolean') throw new TypeError('Following must be a boolean');
+    if (following && cycle.isHeld()) resumedAt = options.now?.();
+    if (!following) resumedAt = undefined;
+    cycle.setHeld(!following);
   }
 
   function setDayNightPhase(next: DayNightPhaseName) {
     cycle.setDayNightPhase(next);
+    // Keep the existing console setter's event-time semantics.
+    resumedAt = undefined;
     cycle.setHeld(false);
   }
 
   function setDayNightCycleSeconds(seconds: number) {
     cycle.setDayNightCycleSeconds(seconds);
+    cycleSeconds = seconds;
+    resumedAt = undefined;
     cycle.setHeld(false);
   }
 
-  return { update, setDayNightPhase, setDayNightCycleSeconds };
+  function getState() {
+    return { phase: cycle.getPhase(), following: !cycle.isHeld(), cycleSeconds: options.getCycleSeconds?.() ?? cycleSeconds };
+  }
+
+  return { update, frameDelta, setDayNightPhase, setDayNightCycleSeconds, setFollowing, getState };
 }

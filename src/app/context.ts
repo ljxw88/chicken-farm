@@ -13,7 +13,7 @@ import type { createFarmShadows } from '../scene/createFarmShadows';
 import type { createScene } from '../scene/createScene';
 import type { createSheepfold } from '../scene/sheepfold/createSheepfold';
 import type { createStartupPhaseController } from '../startupOptions';
-import type { createFarmHud } from '../ui';
+import type { createFarmHud, createSkyHud, createSkyStateAdapter } from '../ui';
 import type { createWeatherSystem, WeatherMode } from '../weather';
 
 export interface GameComponents extends PlacementComponents, DayNightComponents, WeatherComponents {}
@@ -29,6 +29,7 @@ type Weather = ReturnType<typeof createWeatherSystem>;
 export interface AppContext extends SceneParts, FarmParts {
   canvas: HTMLCanvasElement;
   hudRoot: HTMLElement;
+  skyRoot: HTMLElement;
   character: ReturnType<typeof createCharacter>;
   sheepfold: ReturnType<typeof createSheepfold>;
   decorations: ReturnType<typeof createFarmDecorations>;
@@ -43,11 +44,15 @@ export interface AppContext extends SceneParts, FarmParts {
   phaseController: PhaseController;
   setDayNightCycleSeconds: PhaseController['setDayNightCycleSeconds'];
   setDayNightPhase: PhaseController['setDayNightPhase'];
+  setDayNightFollowing: PhaseController['setFollowing'];
+  getDayNightState: PhaseController['getState'];
   setWeather: Weather['setWeather'];
   getWeather: Weather['getWeather'];
   controls: ReturnType<typeof createCharacterController>;
   placement: ReturnType<typeof createPlacementAdapter>;
   farmHud: ReturnType<typeof createFarmHud>;
+  skyState: ReturnType<typeof createSkyStateAdapter> | undefined;
+  skyHud: ReturnType<typeof createSkyHud> | undefined;
   composer: ReturnType<typeof createComposer>;
   lastDevicePixelRatio: number;
   handleResize: () => void;
@@ -59,6 +64,8 @@ declare global {
   interface Window {
     setDayNightCycleSeconds: (seconds: number) => void;
     setDayNightPhase: (phase: DayNightPhaseName) => void;
+    setDayNightFollowing: (following: boolean) => void;
+    getDayNightState: () => { phase: DayNightPhaseName; following: boolean; cycleSeconds: number };
     setPixelRendering: (enabled: boolean) => void;
     setPixelSize: (cssPixels: number) => void;
     getPixelRendering: () => PixelRenderingState;

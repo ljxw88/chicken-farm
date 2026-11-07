@@ -43,7 +43,7 @@ export function registerEnvironment(context: AppContext) {
 }
 
 export function updateClockFrame(context: AppContext, world: EntityWorld<GameComponents>, deltaSeconds: number) {
-  updateDayNightSystem(world, deltaSeconds);
+  updateDayNightSystem(world, context.phaseController.frameDelta(deltaSeconds));
   if (!context.environment.dayNight!.held) context.dayNight.applyState();
   context.dayNight.updateCharacterShadow();
   context.farmHud.setPhase(context.dayNight.getPhase());

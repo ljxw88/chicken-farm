@@ -15,7 +15,7 @@ export interface FarmBounds {
 export type FarmBoundarySlide = (x: number, z: number, radius: number, distance: number, directionX: number) =>
   { x: number; z: number } | undefined;
 
-function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
+export function isBlocked(x: number, z: number, radius: number, obstacles: readonly FarmObstacle[]) {
   return obstacles.some((obstacle) => {
     // A walkable bridge still reserves placement tiles in this shared array.
     if (obstacle.blocksWalking === false) return false;

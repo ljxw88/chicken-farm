@@ -49,8 +49,11 @@ EBR-76 pins `b41492e` even if `origin/main` has since advanced. Its scene
 reference is an exact, pooled gzip fixture: `node tools/scene-data-dump.mjs
 --against-main <clean-b41492e-worktree>` reconstructs and compares all original
 JSON bytes. `node tools/placement-environment-replay.mjs --against-main
-<clean-b41492e-worktree> <evidence-dir>` compares full, unmasked replay frames
-and traces, including the fold and effects, with zero changed pixels allowed.
+<clean-main-worktree-or-843c242-archive> <evidence-dir>` compares full, unmasked
+replay frames and traces, including the fold and effects, with zero changed pixels
+allowed. `--archive-main <evidence-dir>` makes and verifies a clean `843c242` Git
+archive automatically; its actual default clock speed is not normalized away.
+The parity recorder also accepts this pinned `843c242` after `origin/main` advances.
 The evidence directory includes an all-black `mask/no-changes-1280x720.png`.
 
 For EBR-80, leave the signed `evidence/EBR-73/` files untouched. Copy its

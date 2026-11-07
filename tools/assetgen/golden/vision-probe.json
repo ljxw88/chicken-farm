@@ -1,0 +1,34 @@
+{
+  "imageReadingObserved": true,
+  "trials": [
+    {
+      "image": "probe-1.png",
+      "expected": "GREEN",
+      "answer": "GREEN",
+      "correct": true,
+      "error": null,
+      "sessionId": "ses_e4d6180f1ffeYU5ociwG1K4Pvk",
+      "modelId": "opencode/crouton-alpha-free"
+    },
+    {
+      "image": "probe-2.png",
+      "expected": "BLUE",
+      "answer": "BLUE",
+      "correct": true,
+      "error": null,
+      "sessionId": "ses_e4d617684ffeuHtzRLCdAjpCSo",
+      "modelId": "opencode/crouton-alpha-free"
+    },
+    {
+      "image": "probe-3.png",
+      "expected": "RED",
+      "answer": "RED",
+      "correct": true,
+      "error": null,
+      "sessionId": "ses_e4d616910ffeY7eDKf5luwMp1S",
+      "modelId": "opencode/crouton-alpha-free"
+    }
+  ],
+  "method": "Three shuffled dominant-colour PNGs; separate OpenCode run sessions; exact one-word answers.",
+  "caveat": "Colour recognition is a capability probe, not proof of reliable asset critique."
+}

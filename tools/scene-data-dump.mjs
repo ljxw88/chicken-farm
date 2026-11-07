@@ -94,7 +94,7 @@ async function open(browser, url, search) {
     const exposed = legacy ? '{ scene, camera, character, renderer, composer }' : 'context';
     await route.fulfill({ response, body: `${source}\nwindow.__ebr76Scene = ${exposed};\n` });
   });
-  await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/${search}${search.includes('?') ? '&' : '?'}skyhud=0`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr76Scene)), 'Expected the Vite source module');
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => window.__ebr76Step(0));

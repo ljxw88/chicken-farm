@@ -1,6 +1,7 @@
 import { createEngine } from '../core/loop';
 import { updateClockFrame, updateWeatherFrame } from './environment';
 import { updateEffectsFrame } from './effects';
+import { updateSkyHudFrame } from './hud';
 import type { AppContext, GameComponents } from './context';
 
 export function registerEngine(context: AppContext) {
@@ -16,6 +17,7 @@ export function registerEngine(context: AppContext) {
         context.placement.update();
         updateWeatherFrame(context, world, deltaSeconds);
         updateEffectsFrame(context, deltaSeconds);
+        updateSkyHudFrame(context, deltaSeconds);
         context.updateWaterfall(deltaSeconds);
         context.sheepfold.update(deltaSeconds);
       },

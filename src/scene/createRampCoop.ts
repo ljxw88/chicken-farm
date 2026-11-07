@@ -73,6 +73,7 @@ export function createRampCoop(parent: THREE.Group, spec: CoopSpec, materials: B
   const extraEmissives: EmissiveAccent[] = [{ material: glow.material, strength: 0.7 }];
 
   return {
+    group: coop,
     extraEmissives,
     obstacles: [
       buildingFootprint(`${name}-body`, x, z, width, depth),

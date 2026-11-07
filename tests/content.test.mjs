@@ -11,7 +11,8 @@ const { ISLAND, STAIR, GRID } = await vite.ssrLoadModule('/src/content/world.ts'
 const { PATH_GEOMETRY, TREE_GEOMETRY, POND_GEOMETRY, GRASS_GEOMETRY } = await vite.ssrLoadModule('/src/content/propGeometry.ts');
 const { CHICKEN_GEOMETRY, NEST_GEOMETRY, DECORATION_GEOMETRY } = await vite.ssrLoadModule('/src/content/decorationGeometry.ts');
 const { WATER_FEATURE } = await vite.ssrLoadModule('/src/content/waterFeature.ts');
-const { DAY_NIGHT_PHASES, WINDOW_LIGHT, LANTERN_LIGHT } = await vite.ssrLoadModule('/src/content/dayNight.ts');
+const { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, FOLLOW_DAY_NIGHT_CYCLE_SECONDS, WINDOW_LIGHT, LANTERN_LIGHT } =
+  await vite.ssrLoadModule('/src/content/dayNight.ts');
 const { RAIN_LOOK } = await vite.ssrLoadModule('/src/content/rainSettings.ts');
 const { CLOUDY_LOOK } = await vite.ssrLoadModule('/src/content/cloudySettings.ts');
 const { PIXEL_PRESENTATION } = await vite.ssrLoadModule('/src/content/presentation.ts');
@@ -49,7 +50,8 @@ function assertPlain(value) {
 test('content and slots are plain finite JSON data with separate dimensions and footprints', () => {
   const content = { ART_SLOTS, FARM_BUILDINGS, FARM_LAYOUT, FARM_DECORATIONS, ISLAND, STAIR, GRID,
     PATH_GEOMETRY, TREE_GEOMETRY, POND_GEOMETRY, GRASS_GEOMETRY, CHICKEN_GEOMETRY, NEST_GEOMETRY,
-    DECORATION_GEOMETRY, WATER_FEATURE, DAY_NIGHT_PHASES, WINDOW_LIGHT, LANTERN_LIGHT, RAIN_LOOK,
+    DECORATION_GEOMETRY, WATER_FEATURE, DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, FOLLOW_DAY_NIGHT_CYCLE_SECONDS,
+    WINDOW_LIGHT, LANTERN_LIGHT, RAIN_LOOK,
     CLOUDY_LOOK, PIXEL_PRESENTATION, COTTAGE_GEOMETRY, COOP_GEOMETRY, GABLE_GEOMETRY, PLAYER_GEOMETRY,
     PLACEMENT_GEOMETRY, KEY_LIGHT_GEOMETRY, PRACTICAL_LIGHT_GEOMETRY, FARM_SHADOW_GEOMETRY, CAMERA, RAIN_INITIAL_OPACITY,
     SHEEPFOLD, LEAN_TO, SHEEPFOLD_GEOMETRY, LEAN_TO_GEOMETRY, SHEEP_GEOMETRY, DEFAULT_SHEEP_SEED,
@@ -65,6 +67,8 @@ test('content and slots are plain finite JSON data with separate dimensions and 
   assert.equal('radius' in ART_SLOTS.palette.sheep, false);
   assert.equal('size' in ART_SLOTS.palette.firefly, false);
   assert.equal(DEFAULT_SHEEP_SEED, VISUAL_SEEDS.sheep);
+  assert.equal(DEFAULT_DAY_NIGHT_CYCLE_SECONDS, 72);
+  assert.equal(FOLLOW_DAY_NIGHT_CYCLE_SECONDS, 1440);
   assert.equal(typeof SHEEPFOLD_ASSETS[SHEEPFOLD.sheepAssetId], 'function');
   assert.equal(typeof SHEEPFOLD_ASSETS[SHEEPFOLD.shelterAssetId], 'function');
   assert.equal(typeof EFFECT_ASSETS[FIREFLIES.assetId], 'function');

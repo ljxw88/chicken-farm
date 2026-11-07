@@ -1,3 +1,99 @@
+ASSET FORGE — THREE-ASSET BAKE-OFF (INCOMPLETE)
+
+Branch: feat/assetgen, based on main 4ea8249. No push, PR or merge.
+Tested implementation: 1cccd8e1463c9f9e3d0f7f8411928a8693d40a4c.
+Evidence commit: c3358685fad2c21fbd61b8c9e7b4c85141e33609.
+Tip SHA: run `git rev-parse HEAD`; this handoff commit cannot contain its own
+hash. The exact tip is also in the final response. origin/main moved to
+c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa during this work; no rebase was made.
+The preceding EBR-73 handoff is preserved as DELIVER-EBR73.txt.
+
+OPEN
+- docs/asset-bakeoff.md — results, token use, limitations and why no winner
+  can yet be selected.
+- evidence/assetgen/{barrel,hay-bale,round-oak}-verified-sheet.png — corrected
+  fixed-camera contact sheets; *-recipe-sheet.png preserves the actual earlier
+  critic input. Renders use pre-EBR-80 lighting, not final Look Dev lighting.
+- tools/assetgen/bakeoff-manifest.json and runs/<id>/ — best recipes, per-stage
+  reports, prompts, separate critic sessions, 72 frame renders and hashes.
+- evidence/assetgen/img2threejs/summary.json and signed-fixtures.json — B-arm
+  partial evidence and the unresolved signed-golden compatibility findings.
+- No assets.html, showcase server, 24-asset bundle or runtime registry entries
+  were created. Do not use a gallery for Jiaxu's review before EBR-80 lands.
+
+ADD A NEW RECIPE FROM NOTHING (three commands; replace my-asset)
+  ${EDITOR:-vi} tools/assetgen/specs/my-asset.json
+  npm run asset:new -- my-asset
+  npm run asset:verify -- my-asset
+The first command creates a spec; use the documented fields, 3–5 identity
+features and 2–3 signed references, as in specs/barrel.json. The bounded loop
+requires configured OpenCode, Playwright Chromium and the installed deps.
+Candidates remain needs-human; `npm run asset:bundle` intentionally refuses
+to ship until EBR-80 and Look Dev signoff. `asset:new -- <id> --work-order`
+emits an agent work order when non-interactive generation is unavailable.
+
+EXACT CHECKS AND RESULTS
+- `npm run build`: PASS (Vite's existing >500 kB chunk advisory remains).
+- `npm test`: PASS, 122 tests, 0 failures. Includes H1–H10 negatives, a
+  5,000-triangle blob, thin plank, origin, floating part, near-coplanar quads,
+  NaN/below-ground, 10x scale, deterministic-build and collision failures;
+  a real browser catches a hidden identity feature and reversed key light.
+- `npm run asset:verify -- all`: PASS for the three best candidates' H1–H10
+  and implemented daytime pixel/identity/key-light floors. This is NOT a
+  complete visual pass: S1, S3, S5 and S7 remain unmeasured. Two earlier runs
+  hit Chromium ERR_NETWORK_CHANGED; bounded page-load retries were added and
+  the final run passed. Evidence: evidence/assetgen/verification-summary.json.
+- Signed tree, coop, fence and stair tread regression tests pass for finite,
+  nondegenerate, in-budget geometry. They do NOT all pass strict new-asset
+  rules: old small parts, transparent shadow, coplanar joins and interpolated
+  stair colours conflict with the requested golden gates. QA/Look Dev must
+  resolve this; the checker does not silently waive new assets.
+- Image capability probe: 3/3 blind dominant-colour PNGs correct. Critic and
+  generator use separate OpenCode sessions, but the same configured model;
+  repeated visual critiques disagree and are not human art-direction signoff.
+- `git diff 4ea8249 --check`: PASS. No src/main.ts or other existing game source
+  was changed. npm dependencies were installed from the local cache.
+
+THREE APPROACH-A CANDIDATES (all needs-human; no signed assets)
+Asset       Rounds  Stages  Tris/budget  Colours  Min day px  Notes
+barrel      3       0/6     400/600      3        58          critic disagrees on hoops/lid
+hay-bale    3       0/6      76/600      3        59          critic disagrees on bands/ends
+round-oak   5       3/6      88/900      4       188          critic disagrees on foliage tiers
+Each tagged part contributes at least two pixels in a fixed daytime view;
+this numeric check does not prove the labelled feature is recognisable.
+Barrel's original score used an older scoring rule and is not comparable to
+the others. The original oak sheet cropped its crown; it was re-rendered and
+re-critiqued, with old evidence retained. At equal scores the best candidate
+now prefers the later equally clean stage; oak's selection was corrected.
+
+APPROACH B AND TIME/COST
+img2threejs installer 0.2.0 / skill 2.0.1 (Apache-2.0) was installed only in
+/tmp/assetgen-img2threejs.REij4K. Local tools ran in an isolated network
+namespace; no downloaded art or tool code was committed. B's reference images
+were rendered from A, so the comparison is biased. Barrel's image admission
+was rejected and its local search cache was blocked by the read-only tool
+checkout; hay stopped in intake; neither produced a B model/contact sheet.
+Oak B did not start. Setup plus B stopped at about 31.5 minutes: an unintended
+~1.5-minute overrun of the requested 30-minute time box. No winner is claimed.
+API-reported B usage: barrel 3,541,382 input / 3,537 output tokens; hay
+564,463 / 1,919; both reported $0 (not a billing guarantee). Full A timings,
+tokens and separate re-critique usage are in docs/asset-bakeoff.md.
+
+NOT VERIFIED / KNOWN LIMITS
+- No EBR-80 lighting, Look Dev or Jiaxu signoff; no hardware GPU, real mobile
+  device or non-Chromium validation. No complete img2threejs comparison.
+- S1 rendered palette-cluster distance, S3 three-step value, S5 night
+  glow/highlights and S7 style distance are unmeasured; the loop blocks at
+  lighting rather than pretending they pass. H4 only checks declared +Z
+  facing; H8 may need more scrutiny for malformed custom meshes. Pixel masks
+  cannot prove semantic identity.
+- The first three A runs inherited the worktree PWD instead of the intended
+  locked scratch location. Their transcripts contain no tool calls. PWD and
+  stdin handling were fixed and tested; subsequent re-critiques were isolated.
+- The selected best recipes are review artifacts, not a shipped asset bundle.
+
+----- Preserved main handoff -----
+
 EBR-80 — lighting review handoff
 
 Branch: fix/lighting-direction
