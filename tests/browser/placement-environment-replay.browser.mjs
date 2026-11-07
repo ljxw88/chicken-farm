@@ -13,33 +13,34 @@ const references = [
 for (const reference of references) test(`placement and environment replay against clean main ${reference.label}`, { timeout: 300000 }, async (t) => {
   const root = process.cwd();
   let baseline = process.env[reference.env];
-  let temp;
-  let baselineArchive = false;
+  let archiveDir;
+  let archivedBaselineSha;
   try {
     if (!baseline) {
       try {
-        temp = await mkdtemp('/tmp/opencode/ebr75-main-');
+        archiveDir = await mkdtemp('/tmp/opencode/ebr75-main-');
       } catch (error) {
         if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
-        temp = await mkdtemp(join(tmpdir(), 'ebr75-main-'));
+        archiveDir = await mkdtemp(join(tmpdir(), 'ebr75-main-'));
       }
-      baseline = join(temp, 'archive');
-      await mkdir(baseline);
+      // A clean archive avoids creating or force-removing another Git worktree.
+      archivedBaselineSha = reference.sha;
       const resolved = execFileSync('git', ['rev-parse', `${reference.sha}^{commit}`], { cwd: root, encoding: 'utf8' }).trim();
       if (resolved !== reference.sha) throw new Error(`Unexpected baseline: ${resolved}`);
-      const archive = join(temp, 'baseline.tar');
+      baseline = join(archiveDir, 'checkout');
+      await mkdir(baseline);
+      const archive = join(archiveDir, 'baseline.tar');
       execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, reference.sha,
         'index.html', 'package.json', 'package-lock.json', 'src'], { cwd: root });
       execFileSync('tar', ['-xf', archive, '-C', baseline]);
       await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
-      baselineArchive = true;
     }
     const report = await comparePlacementEnvironmentReplay({ baselineRoot: resolve(baseline), candidateRoot: root,
-      baselineSha: reference.sha, baselineArchive,
+      baselineSha: reference.sha, archivedBaselineSha,
       evidenceDir: process.env.EBR75_REPLAY_EVIDENCE_DIR && resolve(process.env.EBR75_REPLAY_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
     t.diagnostic(`Additional frames with the new fold hidden: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
   } finally {
-    if (temp) await rm(temp, { recursive: true });
+    if (archiveDir) await rm(archiveDir, { recursive: true });
   }
 });

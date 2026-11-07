@@ -429,11 +429,13 @@ function historicalBehavior(trace) {
 }
 
 /** Record a verified main archive or clean worktree, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, baselineArchive = false, evidenceDir }) {
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
+  baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
-  if (baselineArchive) {
+  if (archivedBaselineSha || baselineArchive) {
+    if (archivedBaselineSha) assert.equal(archivedBaselineSha, baselineSha);
     // Check each archived source blob against the requested Git tree, just as
     // the character parity replay does for its worktree-free baseline.
     const entries = git(candidateRoot, 'ls-tree', '-r', baselineSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json');
@@ -549,7 +551,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       }
     }
     await diffPage.close();
-    const report = { baselineSha, baselineArchive, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
+    const report = { baselineSha, baselineArchive: Boolean(archivedBaselineSha || baselineArchive), candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--', 'src', 'index.html',
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,

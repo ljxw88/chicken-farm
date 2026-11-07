@@ -7,7 +7,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
-const baselineSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
+const historicalSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
+const stairBaselineSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb740001;
 const search = '?phase=daytime&weather=clear';
@@ -382,9 +383,12 @@ async function pixelDiff(page, reference, candidate, referenceBodyless, candidat
 }
 
 /** Replay the same events and frame times against a verified baseline. */
-export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, baselineArchive = false }) {
+export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, archivedBaselineSha,
+  baselineArchive = false, baselineSha = historicalSha }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  if (baselineArchive) {
+  assert.ok([historicalSha, stairBaselineSha].includes(baselineSha), 'Unknown replay reference');
+  if (archivedBaselineSha || baselineArchive) {
+    if (archivedBaselineSha) assert.equal(archivedBaselineSha, baselineSha);
     // Verify every archived source file against Git's blob ID without creating,
     // modifying or deleting a worktree or branch.
     const entries = git(candidateRoot, 'ls-tree', '-r', baselineSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json');
@@ -425,6 +429,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     const frameResults = {};
     const bodyIsolation = {};
     const traceMismatches = [];
+    const traces = {};
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
       const current = await recordScenario(browser, candidate.url, name, saved.scenarios[name].script);
@@ -432,6 +437,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       // compare every position, rotation, camera and shadow value exactly.
       const actualTrace = JSON.parse(JSON.stringify(current.trace));
       const expectedTrace = saved.scenarios[name].trace;
+      traces[name] = { baseline: expectedTrace, candidate: actualTrace };
       const mismatch = actualTrace.findIndex((frame, index) => !isDeepStrictEqual(frame, expectedTrace[index]));
       const identical = mismatch === -1 && actualTrace.length === expectedTrace.length;
       if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
@@ -497,8 +503,11 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      tracePath, results, traceMismatches, frameResults, bodyIsolation, marks };
-    if (evidenceDir) await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
+      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults, bodyIsolation, marks };
+    if (evidenceDir) {
+      await writeFile(join(evidenceDir, 'traces.json'), `${JSON.stringify(traces, null, 2)}\n`);
+      await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
+    }
     assert.deepEqual(traceMismatches, [], 'Character position / pose replay differs from main');
     assert.ok(Object.values(bodyIsolation).every(({ outsideBodyPixels, bodylessChangedPixels }) =>
       outsideBodyPixels === 0 && bodylessChangedPixels === 0), 'Route frames contain changes beyond the character body');
