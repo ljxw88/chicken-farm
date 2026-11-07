@@ -38,10 +38,18 @@ test('snapshot describes the live browser world after placement and weather chan
       const response = await route.fetch();
       const body = await response.text();
       await route.fulfill({ response, body: `${body}
-window.__stateTest = { engine, camera, character, snapshot: async () => (await import('/src/state/snapshot.ts')).snapshot(engine.world) };
+window.__stateTest = { ...context, snapshot: async () => (await import('/src/state/snapshot.ts')).snapshot(context.engine.world) };
 ` });
     });
     await page.goto(`http://${host}:${address.port}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
+    assert.deepEqual(await page.evaluate(async () => {
+      const main = await import('/src/main.ts');
+      const setters = ['setDayNightCycleSeconds', 'setDayNightPhase', 'setWeather', 'getWeather']
+        .map((name) => main[name] === window[name]);
+      const composer = window.__stateTest.composer;
+      return [...setters, window.setPixelRendering === composer.setEnabled,
+        window.setPixelSize === composer.setPixelSize, window.getPixelRendering === composer.getState];
+    }), [true, true, true, true, true, true, true], 'module exports and console setters keep the same function identities');
     await page.evaluate(() => window.__stateStep(0));
     const initial = await page.evaluate(() => window.__stateTest.snapshot());
     assert.deepEqual(initial.player, { position: [0, 2.4, 0], yaw: 0 });
@@ -52,7 +60,7 @@ window.__stateTest = { engine, camera, character, snapshot: async () => (await i
     const point = await page.evaluate(() => {
       const { camera, character } = window.__stateTest;
       camera.updateMatrixWorld();
-      const projected = character.position.clone().set(-4, 2.4, 5).project(camera);
+      const projected = character.position.clone().set(-0.75, 2.4, 3.75).project(camera);
       const rect = document.querySelector('#scene').getBoundingClientRect();
       return { x: rect.left + (projected.x + 1) * rect.width / 2, y: rect.top + (1 - projected.y) * rect.height / 2 };
     });

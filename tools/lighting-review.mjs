@@ -35,11 +35,18 @@ try {
       window.requestAnimationFrame = (callback) => { callbacks.set(++id, callback); return id; };
       window.cancelAnimationFrame = (handle) => callbacks.delete(handle);
     });
-    await page.route('**/src/main.ts*', async (route) => {
+    await page.route('**/src/app/environment.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
       if ((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length !== 1) throw new Error('Expected one weather initializer');
-      await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__reviewRandom,')}\nwindow.__lightingReview = { scene, camera, character, follow, renderer, composer, weather, dayNight };\n` });
+      await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__reviewRandom,') });
+    });
+    await page.route('**/src/main.ts*', async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+      if (!(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)))) throw new Error('Unknown Vite app entry point');
+      await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__reviewRandom,')}\nwindow.__lightingReview = typeof context !== 'undefined' ? context : { scene, camera, character, follow, renderer, composer, weather, dayNight };\n` });
     });
     await page.goto(`${url}/?phase=${phase}&weather=${mode}`, { waitUntil: 'networkidle' });
     try {

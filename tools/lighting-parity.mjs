@@ -186,11 +186,18 @@ async function capture(browser, url, scenario, path) {
         for (const callback of current) callback(time);
       };
     }, { seed });
-    await page.route('**/src/main.ts*', async (route) => {
+    await page.route('**/src/app/environment.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
       assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-      await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__parityRandom,')}\nwindow.__parity = { scene, camera, character, controls, follow, stairs, renderer, composer, placement };\n` });
+      await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__parityRandom,') });
+    });
+    await page.route('**/src/main.ts*', async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+      assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)));
+      await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__parityRandom,')}\nwindow.__parity = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, stairs, renderer, composer, placement };\n` });
     });
     await page.goto(`${url}/?phase=${scenario.phase}&weather=${scenario.weather}`, { waitUntil: 'networkidle' });
     assert.ok(await page.evaluate(() => Boolean(window.__parity)), 'A Vite source URL is required');

@@ -50,12 +50,19 @@ async function open(browser, url) {
       for (const callback of current) callback(time);
     };
   }, { seed });
-  await page.route('**/src/main.ts*', async (route) => {
+  await page.route('**/src/app/environment.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
+    await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr74Random,') });
+  });
+  await page.route('**/src/main.ts*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+    assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)));
     await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr74Random,')}
-window.__ebr74 = { scene, camera, character, controls, follow, stairs, obstacles, renderer, composer };
+window.__ebr74 = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, stairs, obstacles, renderer, composer };
 ` });
   });
   await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });

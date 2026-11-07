@@ -54,13 +54,20 @@ async function open(context, seed = 123, phase = 'daytime') {
       for (const callback of current) callback(time);
     };
   });
+  await page.route('**/src/app/environment.ts*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    assert.equal((body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? []).length, 1);
+    await route.fulfill({ response, body: body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70RainRandom') });
+  });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
-    assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-    assert.equal((body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? []).length, 1);
+    const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+    assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)));
+    if (legacy) assert.equal((body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? []).length, 1);
     await route.fulfill({ response, body: `${body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70RainRandom')}
-window.__ebr70 = { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather, engine, environment, sheepfold };\n` });
+window.__ebr70 = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather, engine, environment, sheepfold };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=clear&seed=${seed}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr70)));

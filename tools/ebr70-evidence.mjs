@@ -314,17 +314,24 @@ async function capture(browser, url, scenario, candidate) {
         for (const callback of current) callback(time);
       };
     }, { seed: rainSeed });
+    await page.route('**/src/app/environment.ts*', async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      assert.equal((body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? []).length, 1);
+      await route.fulfill({ response, body: body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70Random') });
+    });
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
-      assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
+      const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+      assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)));
       const seededWeather = body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? [];
       assert.ok(seededWeather.length <= 1, 'Unexpected seeded weather initialization');
-      const instrumented = seededWeather.length
+      const instrumented = !legacy ? body : seededWeather.length
         ? body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70Random')
         : body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr70Random,');
       await route.fulfill({ response, body: `${instrumented}
-window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obstacles, renderer, composer, placement };
+window.__ebr70Gate = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, stairs, obstacles, renderer, composer, placement };
 ` });
     });
     await page.goto(`${url}/?phase=${scenario.phase}&weather=${scenario.weather}&seed=${visualSeed}`, { waitUntil: 'networkidle' });
