@@ -12,9 +12,11 @@ const base = (process.env.EBR42_URL || 'http://100.88.150.21:5212').replace(/\/$
 const evidenceRoot = resolve(process.env.EBR42_EVIDENCE_ROOT || 'evidence/EBR-42');
 const output = resolve(process.env.EBR42_SMOKE_OUT || join(evidenceRoot, 'smoke-retune'));
 const maskDir = resolve(process.env.EBR42_SMOKE_MASK_DIR || join(evidenceRoot, 'mask/puff-bright'));
-const mergeFrames = join(evidenceRoot, 'merge-6daf042/luma-frames');
-const mergeMasks = join(evidenceRoot, 'merge-6daf042/luma-masks');
-const mergeNoSmoke = join(evidenceRoot, 'merge-6daf042/luma-no-smoke');
+const measurementDir = process.env.EBR42_MEASUREMENT_DIR || 'merge-6daf042';
+assert.match(measurementDir, /^[a-zA-Z0-9_-]+$/, 'Measurement directory must be a single folder name');
+const mergeFrames = join(evidenceRoot, measurementDir, 'luma-frames');
+const mergeMasks = join(evidenceRoot, measurementDir, 'luma-masks');
+const mergeNoSmoke = join(evidenceRoot, measurementDir, 'luma-no-smoke');
 const sourceSnapshot = captureSourceSnapshot();
 const { head, sourceStatus } = sourceSnapshot;
 const seed = 0xeb730001;
@@ -222,9 +224,9 @@ try {
         await writeFile(join(mergeMasks, name), screenMaskBytes);
         await writeFile(join(mergeNoSmoke, name), withoutSmoke);
         samples.push({ time: time / 1000, target, ...measurements, screenMask: screen,
-          frame: `merge-6daf042/luma-frames/${name}`, frameSha256: hash(frame),
-          screenMaskFile: `merge-6daf042/luma-masks/${name}`, screenMaskSha256: hash(screenMaskBytes),
-          noSmokeFrame: `merge-6daf042/luma-no-smoke/${name}`, noSmokeSha256: hash(withoutSmoke) });
+          frame: `${measurementDir}/luma-frames/${name}`, frameSha256: hash(frame),
+          screenMaskFile: `${measurementDir}/luma-masks/${name}`, screenMaskSha256: hash(screenMaskBytes),
+          noSmokeFrame: `${measurementDir}/luma-no-smoke/${name}`, noSmokeSha256: hash(withoutSmoke) });
         for (const mask of maskPngs) {
           await writeFile(join(maskDir, `${scenario.name}-${mask.name}.png`), Buffer.from(mask.png, 'base64'));
         }
@@ -298,7 +300,7 @@ try {
   report.independentVisibilityLimitations = limitations;
   const reportJson = `${JSON.stringify(report, null, 2)}\n`;
   await writeFile(join(output, 'readability.json'), reportJson);
-  await writeFile(join(evidenceRoot, 'merge-6daf042/readability.json'), reportJson);
+  await writeFile(join(evidenceRoot, measurementDir, 'readability.json'), reportJson);
   assert.deepEqual(failures, [], 'Smoke-mask peak, window or non-emission checks failed');
   console.log(`Smoke-mask peak checks PASS; ${limitations.length} samples have fewer than three exclusive or solo puffs (diagnostic only).`);
 } finally { await browser.close(); }
