@@ -15,6 +15,7 @@ import { captureSourceSnapshot } from './source-snapshot.mjs';
 const expectedMain = '6daf042ad85882f020268baf53fc92fb09e921ad';
 const signedHead = '9305bd41ed71f1d885646ac5d9b1bc145fb2594e';
 const previousHead = '468b4f3b2bc415d69ec0e52575de127c2035e1a8';
+const previousMergeEvidence = 'c6065f6aa3d2c214bc0eea238d0c109b68299fae';
 const seed = 0xeb730001;
 const timing = '3.0 s in 100 ms steps except stairs (real click route)';
 const candidateUrl = (process.env.EBR42_URL || 'http://100.88.150.21:5212').replace(/\/$/, '');
@@ -40,7 +41,7 @@ const canonical = (value) => JSON.parse(JSON.stringify(value));
 for (const name of ['baseline', 'candidate', 'no-effects', 'diff', 'mask/smoke', 'mask/fireflies', 'mask/combined',
   'mask/smoke-retune', 'smoke-retune/before', 'smoke-retune/diff', 'smoke-retune/crops', 'crops',
   'merge-6daf042/previous', 'merge-6daf042/candidate', 'merge-6daf042/diff',
-  'merge-6daf042/no-smoke', 'merge-6daf042/no-fireflies']) {
+  'merge-6daf042/no-smoke', 'merge-6daf042/no-fireflies', 'merge-6daf042/mask/smoke-retune']) {
   await mkdir(join(output, name), { recursive: true });
 }
 
@@ -50,13 +51,15 @@ execFileSync('git', ['diff', '--cached', '--quiet', sha, '--', 'package.json', '
 assert.equal(execFileSync('git', ['rev-parse', '--verify', `${signedHead}^{commit}`], { encoding: 'utf8' }).trim(), signedHead);
 assert.equal(execFileSync('git', ['rev-parse', '--verify', `${previousHead}^{commit}`], { encoding: 'utf8' }).trim(), previousHead);
 execFileSync('git', ['diff', '--cached', '--quiet', signedHead, '--', 'src/effects/createFireflies.ts', 'tests/fireflies.test.mjs']);
-execFileSync('git', ['diff', '--cached', '--quiet', previousHead, '--', 'src/effects', 'src/lighting/dayNightPhases.ts',
+execFileSync('git', ['diff', '--cached', '--quiet', previousHead, '--', 'src/effects/createFireflies.ts',
+  'src/effects/createVisualRandom.ts', 'src/lighting/dayNightPhases.ts',
   'src/lighting/createPracticalLights.ts', 'src/lighting/createSunsetWaterTint.ts', 'src/weather/createRainEffect.ts',
   'src/weather/rainSettings.ts', 'src/weather/cloudySettings.ts', 'src/scene', 'src/ui', 'src/character/createCharacter.ts',
-  'src/postprocess', 'src/style.css', 'tests/chimneySmoke.test.mjs', 'tests/fireflies.test.mjs']);
+  'src/postprocess', 'src/style.css', 'tests/fireflies.test.mjs']);
 const signedReport = JSON.parse(execFileSync('git', ['show', `${signedHead}:evidence/EBR-42/comparison.json`], { encoding: 'utf8' }));
 execFileSync('git', ['diff', '--quiet', signedReport.candidateHead, signedHead, '--', 'src', 'index.html', 'package.json', 'package-lock.json']);
 const previousReport = JSON.parse(execFileSync('git', ['show', `${previousHead}:evidence/EBR-42/comparison.json`], { encoding: 'utf8' }));
+const previousMergeReport = JSON.parse(execFileSync('git', ['show', `${previousMergeEvidence}:evidence/EBR-42/comparison.json`], { encoding: 'utf8' }));
 // The previous evidence commit changed no runtime inputs after its captured source tip.
 execFileSync('git', ['diff', '--quiet', previousReport.candidateHead, previousHead, '--',
   'src', 'index.html', 'package.json', 'package-lock.json']);
@@ -95,8 +98,8 @@ try {
   const report = { main: sha, signedHead, previousHead, candidateHead, sourceStatus, sourceSnapshot, candidateUrl, browser: browser.version(), viewport, deviceScaleFactor: 1,
     seed, time: timing, cases: {}, retuneCrops: {} };
   const samePose = { main: sha, previousHead, previousSourceTip: previousReport.candidateHead, candidateHead,
-    sourceStatus, sourceSnapshot, frozenLookPathsUnchanged: true, browser: browser.version(), viewport, deviceScaleFactor: 1, seed, time: timing,
-    method: 'Unmasked full-frame pixel comparison to the previous head’s committed, hash-verified capture; seed, browser, viewport, recorded pose/state and effect state are checked.',
+    sourceStatus, sourceSnapshot, nonSmokeLookPathsUnchanged: true, browser: browser.version(), viewport, deviceScaleFactor: 1, seed, time: timing,
+    method: 'Full-frame comparison to the previous head’s hash-verified capture. Allowed pixels are the union of old/new smoke masks; pose, fireflies and smoke-hidden frames must match.',
     frames: {}, failures: [] };
   const failures = [];
   const check = (condition, message) => { if (!condition) failures.push(message); };
@@ -122,13 +125,22 @@ try {
     const previousFrame = fromPrevious('candidate');
     assert.equal(hash(previousFrame), previous.candidateSha256, `${scenario.name}: previous frame hash differs`);
     const poseMatches = isDeepStrictEqual(canonical(after.state), previous.state);
-    const effectStateMatches = isDeepStrictEqual(canonical(after.effectState), previous.effectState);
+    const fireflyStateMatches = after.effectState.activeFireflies === previous.effectState.activeFireflies &&
+      isDeepStrictEqual(canonical(after.effectState.fireflyOpacity), previous.effectState.fireflyOpacity);
+    const smokeStateMatches = isDeepStrictEqual(canonical(after.effectState.smokePuffs), previous.effectState.smokePuffs);
     const mergeParity = await compareRetune(comparisonPage, previousFrame, after.image, fromPrevious('mask/smoke'),
       Buffer.from(result.smokePng, 'base64'), fromPrevious('mask/fireflies'), Buffer.from(result.firefliesPng, 'base64'));
+    const previousNoSmoke = execFileSync('git', ['show', `${previousMergeEvidence}:evidence/EBR-42/merge-6daf042/no-smoke/${scenario.name}.png`]);
+    assert.equal(hash(previousNoSmoke), previousMergeReport.cases[scenario.name].noSmokeSha256,
+      `${scenario.name}: previous smoke-hidden frame hash differs`);
+    const smokeHiddenChanged = (await compareRetune(comparisonPage, previousNoSmoke, after.noSmoke,
+      fromPrevious('mask/smoke'), Buffer.from(result.smokePng, 'base64'),
+      fromPrevious('mask/fireflies'), Buffer.from(result.firefliesPng, 'base64'))).changedPixels;
     if (!poseMatches) samePose.failures.push(`${scenario.name}: previous and merged pose/state differ`);
-    if (!effectStateMatches) samePose.failures.push(`${scenario.name}: previous and merged effect state differs`);
-    if (mergeParity.changedPixels) samePose.failures.push(`${scenario.name}: ${mergeParity.changedPixels} changed pixels vs previous`);
+    if (!fireflyStateMatches) samePose.failures.push(`${scenario.name}: previous and merged firefly state differs`);
+    if (mergeParity.outsideSmoke) samePose.failures.push(`${scenario.name}: ${mergeParity.outsideSmoke} changed pixels outside the smoke masks`);
     if (mergeParity.fireflyMaskChanged) samePose.failures.push(`${scenario.name}: firefly mask differs vs previous`);
+    if (smokeHiddenChanged) samePose.failures.push(`${scenario.name}: ${smokeHiddenChanged} pixels differ with smoke hidden`);
     let puffBrightMaskOutside = null;
     let measuredScreenMaskDisagreement = null;
     let measuredFrameChanged = null;
@@ -177,6 +189,7 @@ try {
     await save('merge-6daf042/previous', previousFrame);
     await save('merge-6daf042/candidate', after.image);
     await save('merge-6daf042/diff', Buffer.from(mergeParity.diffPng, 'base64'));
+    await save('merge-6daf042/mask/smoke-retune', Buffer.from(mergeParity.maskPng, 'base64'));
     await save('merge-6daf042/no-smoke', after.noSmoke);
     await save('merge-6daf042/no-fireflies', after.noFireflies);
     check(result.unmasked === 0, `${scenario.name}: changes outside rendered effect masks`);
@@ -195,10 +208,10 @@ try {
     const { diffPng, smokePng, firefliesPng, combinedPng, ...metrics } = result;
     const { diffPng: retuneDiff, maskPng: retuneMask, ...retuneMetrics } = retune;
     const { diffPng: mergeDiff, maskPng: mergeMask, ...mergeMetrics } = mergeParity;
-    samePose.frames[scenario.name] = { poseMatches, effectStateMatches, ...mergeMetrics,
+    samePose.frames[scenario.name] = { poseMatches, fireflyStateMatches, smokeStateMatches, smokeHiddenChanged, ...mergeMetrics,
       previousSha256: hash(previousFrame), candidateSha256: hash(after.image),
       ...(!poseMatches ? { previousState: previous.state, candidateState: after.state } : {}),
-      ...(!effectStateMatches ? { previousEffectState: previous.effectState, candidateEffectState: after.effectState } : {}) };
+      ...(!fireflyStateMatches ? { previousEffectState: previous.effectState, candidateEffectState: after.effectState } : {}) };
     report.cases[scenario.name] = { ...metrics, mainStateMatches, state: after.state, effectState: after.effectState,
       ...(!mainStateMatches ? { baselineState: before.state } : {}),
       retune: retuneMetrics, mergeParity: samePose.frames[scenario.name], puffBrightMaskOutside,
@@ -236,7 +249,7 @@ try {
   await comparisonPage.close();
   assert.deepEqual(failures, [], 'Main/signed effect-mask comparison failed');
   assert.deepEqual(samePose.failures, [], 'Previous-head same-pose comparison failed');
-  console.log(`Gate G PASS: ${scenarios.length} frames vs main ${sha}; zero pixels vs previous ${previousHead}`);
+  console.log(`Gate G PASS: ${scenarios.length} frames vs main ${sha}; smoke-only differences vs ${previousHead}`);
 } finally {
   await browser?.close();
   await server?.close();

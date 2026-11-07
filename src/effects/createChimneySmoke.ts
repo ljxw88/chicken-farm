@@ -4,6 +4,8 @@ import { createVisualRandom } from './createVisualRandom';
 const CAPACITY = 6;
 const SPAWN_INTERVAL = 0.55;
 const WIND = new THREE.Vector3(0.94, 0, -0.34).normalize().multiplyScalar(0.25);
+const SWAY_AMPLITUDE = 0.06;
+const SWAY_SPEED = Math.PI / 2;
 
 interface ChimneySmokeOptions {
   scene: THREE.Scene;
@@ -46,14 +48,18 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
     mesh.name = `chimney-smoke-${index + 1}`;
     mesh.raycast = () => {};
     root.add(mesh);
-    return { mesh, material, born: -index * SPAWN_INTERVAL, alive: true };
+    return { mesh, material, born: -index * SPAWN_INTERVAL, alive: true, sizeFactor: 1, swayPhase: 0 };
   });
 
-  function orient(puff: (typeof puffs)[number]) {
-    // Quarter turns retain the measured 0.28–0.65 bounding dimensions.
-    puff.mesh.rotation.y = Math.floor(random() * 4) * Math.PI / 2;
+  function initializePuff(puff: (typeof puffs)[number]) {
+    // Split the existing draw so orientation keeps its original random stream.
+    const draw = random();
+    const bits = Math.floor(draw * 0x100000000);
+    puff.mesh.rotation.y = Math.floor(draw * 4) * Math.PI / 2;
+    puff.sizeFactor = 0.85 + 0.3 * ((bits >>> 15) & 0x7fff) / 0x8000;
+    puff.swayPhase = 2 * Math.PI * (bits & 0x7fff) / 0x8000;
   }
-  puffs.forEach(orient);
+  puffs.forEach(initializePuff);
 
   const origin = new THREE.Vector3();
   let elapsed = 0;
@@ -77,7 +83,7 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
       if (available) {
         available.alive = true;
         available.born = birth;
-        orient(available);
+        initializePuff(available);
       }
     }
 
@@ -89,11 +95,11 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
       puff.mesh.visible = puff.alive;
       if (!puff.alive) continue;
       const progress = age / lifetime;
-      puff.mesh.position.set(origin.x + WIND.x * age, origin.y + 0.45 * age, origin.z + WIND.z * age);
-      puff.mesh.scale.setScalar(THREE.MathUtils.lerp(0.28, 0.65, Math.pow(progress, 1.5)));
-      // Hold the peak through 90% of life, then ease continuously to zero.
-      const eased = THREE.MathUtils.smoothstep(progress, 0.9, 1);
-      const fade = 1 - eased ** 4;
+      const sway = SWAY_AMPLITUDE * Math.sin(age * SWAY_SPEED + puff.swayPhase);
+      puff.mesh.position.set(origin.x + WIND.x * age + sway, origin.y + 0.45 * age, origin.z + WIND.z * age);
+      puff.mesh.scale.setScalar(THREE.MathUtils.lerp(0.28, 0.65, Math.pow(progress, 1.5)) * puff.sizeFactor);
+      // Hold the peak through 40% of life, then ease continuously to zero.
+      const fade = 1 - THREE.MathUtils.smoothstep(progress, 0.4, 1);
       // Both rain and night individually dim to 60%; together they do not
       // double-dim the plume below that floor.
       const dim = 1 - 0.4 * Math.max(rainAmount, nightAmount);

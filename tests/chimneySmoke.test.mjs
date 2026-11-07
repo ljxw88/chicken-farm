@@ -37,7 +37,8 @@ test('the visual seed is optional, bounded and repeatable without changing the d
 });
 
 test('six flat, non-emissive puffs use the actual chimney anchor and specified motion', (t) => {
-  const { scene, smoke, puffs } = fixture(t, () => 0);
+  // This draw selects the nominal size and a zero sway phase.
+  const { scene, smoke, puffs } = fixture(t, () => 0.625);
   const anchor = scene.getObjectByName('cottage-chimney-top').getWorldPosition(new THREE.Vector3());
   near(anchor.y, 6);
   assert.equal(puffs.length, 6);
@@ -59,7 +60,7 @@ test('six flat, non-emissive puffs use the actual chimney anchor and specified m
   smoke.update(1, 0, 0);
   near(born.position.y, anchor.y + 0.45);
   const wind = new THREE.Vector3(0.94, 0, -0.34).normalize().multiplyScalar(0.25);
-  near(born.position.x, anchor.x + wind.x);
+  near(born.position.x, anchor.x + wind.x + 0.06);
   near(born.position.z, anchor.z + wind.z);
   near(born.scale.x, 0.28 + (0.65 - 0.28) * (1 / 3.6) ** 1.5);
   near(born.material.opacity, 0.75);
@@ -68,14 +69,16 @@ test('six flat, non-emissive puffs use the actual chimney anchor and specified m
 });
 
 test('puffs hold, ease out and live 3.6 seconds without exceeding six slots', (t) => {
-  const { smoke, puffs } = fixture(t, () => 0.5);
+  const { smoke, puffs } = fixture(t, () => 0.625);
   const born = puffs[0];
-  smoke.update(3.24, 0, 0);
+  smoke.update(1.44, 0, 0); // 40% of life.
   assert.equal(born.visible, true);
   near(born.material.opacity, 0.75);
-  smoke.update(0.18, 0, 0); // 95% of life: halfway through the easing interval.
-  near(born.material.opacity, 0.75 * (1 - 0.5 ** 4));
-  smoke.update(0.17, 0, 0);
+  smoke.update(0.0001, 0, 0);
+  assert.ok(born.material.opacity < 0.75 && born.material.opacity > 0.7499999);
+  smoke.update(1.0799, 0, 0); // 70% of life: halfway through the easing interval.
+  near(born.material.opacity, 0.375);
+  smoke.update(1.07, 0, 0);
   assert.equal(born.visible, true);
   assert.ok(born.scale.x < 0.65 && born.scale.x > 0.64);
   assert.ok(born.material.opacity > 0 && born.material.opacity < 0.01);
@@ -93,7 +96,7 @@ test('puffs hold, ease out and live 3.6 seconds without exceeding six slots', (t
 });
 
 test('births follow 0.55-second ticks, except when all six puffs are still alive', (t) => {
-  const { smoke, puffs } = fixture(t, () => 0);
+  const { smoke, puffs } = fixture(t, () => 0.625);
   smoke.update(0.55, 0, 0);
   assert.equal(puffs.filter((puff) => puff.visible && Math.abs(puff.scale.x - 0.28) < 1e-8).length, 0);
   for (let tick = 2; tick <= 7; tick++) {
@@ -105,10 +108,10 @@ test('births follow 0.55-second ticks, except when all six puffs are still alive
 });
 
 test('rain and night each reduce opacity to 60% without double-dimming, and rain shortens life to 2.6 seconds', (t) => {
-  const clear = fixture(t, () => 0);
-  const rain = fixture(t, () => 0);
-  const night = fixture(t, () => 0);
-  const rainyNight = fixture(t, () => 0);
+  const clear = fixture(t, () => 0.625);
+  const rain = fixture(t, () => 0.625);
+  const night = fixture(t, () => 0.625);
+  const rainyNight = fixture(t, () => 0.625);
   clear.smoke.update(0, 0, 0);
   rain.smoke.update(0, 1, 0);
   night.smoke.update(0, 0, 1);
@@ -128,6 +131,41 @@ test('rain and night each reduce opacity to 60% without double-dimming, and rain
     const active = rain.puffs.filter((puff) => puff.visible);
     assert.ok(active.length >= 4 && active.length <= 5);
     assert.ok(active.every((puff) => puff.scale.x >= 0.28 && puff.scale.x < 0.65 && puff.material.opacity <= 0.45 + 1e-12));
+  }
+});
+
+test('seeded puff sizes vary by at most 15% and sway stays within 0.06 of the wind path', (t) => {
+  const seed = 3950182401 ^ 0x534d4f4b;
+  const minimum = fixture(t, () => 0);
+  const maximum = fixture(t, () => 0x3fffffff / 0x100000000);
+  near(minimum.puffs[0].scale.x, 0.28 * 0.85);
+  assert.ok(maximum.puffs[0].scale.x > 0.28 * 1.1499);
+  const { scene, smoke, puffs } = fixture(t, createVisualRandom(seed));
+  const originalStream = createVisualRandom(seed);
+  const originalOrientations = puffs.map(() => Math.floor(originalStream() * 4) * Math.PI / 2);
+  assert.deepEqual(puffs.map((puff) => puff.rotation.y), originalOrientations);
+  const anchor = scene.getObjectByName('cottage-chimney-top').getWorldPosition(new THREE.Vector3());
+  const wind = new THREE.Vector3(0.94, 0, -0.34).normalize().multiplyScalar(0.25);
+  const baseSize = (age) => 0.28 + 0.37 * (age / 3.6) ** 1.5;
+  const initialSizes = puffs.map((puff, index) => puff.scale.x / baseSize(index * 0.55));
+  const offsets = puffs.map((puff, index) => puff.position.x - anchor.x - wind.x * index * 0.55);
+  assert.ok(initialSizes.every((size) => size >= 0.85 && size <= 1.15));
+  assert.ok(offsets.every((offset) => Math.abs(offset) <= 0.06 + 1e-12));
+  assert.ok(new Set(initialSizes).size > 1, 'puffs must have individual sizes');
+  assert.ok(new Set(offsets.map((offset) => offset.toFixed(6))).size > 1, 'puffs must have individual sway phases');
+  smoke.update(1.1, 0, 0); // The oldest slot is reborn at this tick.
+  const rebornSize = puffs[5].scale.x / 0.28;
+  assert.ok(rebornSize >= 0.85 && rebornSize <= 1.15);
+  assert.notEqual(rebornSize, initialSizes[5]);
+  for (let step = 0; step < 200; step++) {
+    smoke.update(0.025, 0, 0);
+    for (const puff of puffs.filter((item) => item.visible)) {
+      const age = (puff.position.y - anchor.y) / 0.45;
+      const size = puff.scale.x / baseSize(age);
+      assert.ok(size >= 0.85 - 1e-12 && size <= 1.15 + 1e-12);
+      assert.ok(Math.abs(puff.position.x - anchor.x - wind.x * age) <= 0.06 + 1e-12);
+      near(puff.position.z, anchor.z + wind.z * age);
+    }
   }
 });
 
