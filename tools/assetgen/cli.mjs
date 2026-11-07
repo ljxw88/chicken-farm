@@ -6,6 +6,7 @@ import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, rec
 import { inspectRecipe } from './geometry.mjs';
 import { fitGeneratedRecipe } from './fit-generated.mjs';
 import { critiqueRecipe, generateRecipe, generatorAttachment, makePrompt, revisionFeedback } from './generator.mjs';
+import { loadPriorReview } from './prior-review.mjs';
 import { createVisualRunner } from './visual.mjs';
 import { isBetterCandidate } from './scoring.mjs';
 import { isolatedSessionDirectory } from './opencode.mjs';
@@ -93,7 +94,12 @@ function score(hard, visual, critic) {
 }
 
 async function newAsset(input, args) {
-  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--loop-off]');
+  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--loop-off|--prior-review <report.json>]');
+  const priorIndex = args.indexOf('--prior-review');
+  if (priorIndex !== -1 && (!args[priorIndex + 1] || args[priorIndex + 1].startsWith('--') ||
+      args.lastIndexOf('--prior-review') !== priorIndex || args.includes('--loop-off') || args.includes('--work-order'))) {
+    throw new Error('--prior-review needs one report path and cannot be combined with --loop-off or --work-order');
+  }
   const { spec, path: specPath } = await readSpec(input);
   if (spec.category === 'building') throw new Error('New buildings are out of scope; signed building fixtures remain auditable.');
   const run = join(runDirectory, spec.id);
@@ -124,9 +130,11 @@ async function newAsset(input, args) {
   const sessionDir = await isolatedSessionDirectory();
   try {
     const specBytes = await readFile(specPath, 'utf8');
+    const prior = priorIndex === -1 ? null : await loadPriorReview(args[priorIndex + 1], spec, specBytes, bible.text);
+    if (prior) await writeFile(join(run, 'prior-review.json'), json({ ...prior.provenance, feedback: prior.feedback }));
     const first = Date.now();
     let round = 1, corrections = 0, stageIndex = 0;
-    let current = null, previous = null, best = null, stopReason = null;
+    let current = prior?.recipe ?? null, previous = prior?.feedback ?? null, best = null, stopReason = null;
     let previousSheet = null;
     const verifierHash = await verifierSourceHash();
     const stageCorrections = {};

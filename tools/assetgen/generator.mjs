@@ -9,7 +9,7 @@ const references = {
   'signed-sign': 'src/scene/createFarmDecorations.ts', 'signed-stairs': 'src/scene/createStoneStairs.ts',
 };
 
-function parseJson(text) {
+export function parseJson(text) {
   const block = text.match(/```(?:json)?\s*\n([\s\S]*?)```/i)?.[1] ?? text;
   const start = block.indexOf('{'), end = block.lastIndexOf('}');
   if (start < 0 || end < start) throw new Error(`No JSON object in model response: ${text.slice(0, 1000)}`);

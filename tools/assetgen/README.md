@@ -65,6 +65,13 @@ runtime entries. A failed OpenCode call is retried with its
 error; exhausting generation retries writes a Herdr work order. `--work-order`
 emits it immediately without requiring Chromium or an OpenCode connection.
 
+An explicitly requested recipe-only trial can start from an earlier image
+critique using `--prior-review /absolute/path/to/stage/report.json`. The spec,
+bible, recipe and separate generator/critic receipts must match; the old critic
+verdict and fixes are supplied verbatim, never treated as a pass. The new run
+does not change the spec and still needs fresh verification and critique.
+`--prior-review` cannot be combined with `--loop-off` or `--work-order`.
+
 The render pack, report and transcripts go outside the repository, under
 `/home/michael/OpenBot/Shared/farm-evidence/EBR-85/<head>/runs/` by default.
 `ASSETGEN_EVIDENCE_DIR` and `ASSETGEN_RUN_DIR` select alternate locations. The
