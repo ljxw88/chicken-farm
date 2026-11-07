@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Compare unchanged HUD/void regions in seeded 1280x720 review frames."""
 import json
+import os
 from pathlib import Path
 from PIL import Image, ImageChops
+from evidence_paths import HISTORICAL, output_directory
 
-root = Path('evidence/lighting')
+root = Path(os.environ.get('LIGHTING_INPUT_DIR') or HISTORICAL / 'lighting')
+output = output_directory('compare-lighting-regions')
 cases = ['morning-clear', 'daytime-clear', 'sunset-clear', 'night-clear',
          'night-rain', 'daytime-cloudy', 'daytime-rain']
 panels = [(0, 0, 240, 90), (500, 0, 780, 90)]
@@ -55,5 +58,6 @@ for label in ['before', 'after']:
         ok = pixel['enabled'] and pixel['cssPixelSize'] == 4 and [pixel['canvasWidth'], pixel['canvasHeight']] == [320, 180]
         results[case][f'{label}PixelPass'] = ok
         failed |= not ok
-(root / 'region-proof.json').write_text(json.dumps(results, indent=2) + '\n')
+output.mkdir(parents=True, exist_ok=True)
+(output / 'region-proof.json').write_text(json.dumps(results, indent=2) + '\n')
 raise SystemExit(1 if failed else 0)

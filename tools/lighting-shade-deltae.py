@@ -4,9 +4,9 @@ import json
 import math
 import sys
 from pathlib import Path
+from evidence_paths import HISTORICAL
 
-source = Path(sys.argv[1] if len(sys.argv) > 1 else
-              'evidence/lighting/ruling-cde29baf/detector/ruling-phase-gate.json')
+source = Path(sys.argv[1]) if len(sys.argv) > 1 else HISTORICAL / 'lighting/ruling-cde29baf/detector/ruling-phase-gate.json'
 samples = json.loads(source.read_text())
 
 

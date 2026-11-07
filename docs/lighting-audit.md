@@ -1,5 +1,7 @@
 # Lighting and graphics audit
 
+> Historical `evidence/` and `DELIVER*.txt` references are under `/home/michael/OpenBot/Shared/farm-evidence/_main-archive-843c242/`, except required inputs retained in `tools/fixtures/historical/`.
+
 Baselines: `origin/main` at `c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa` (EBR-73 + EBR-48), and PR #17's preceding tip `bf8ac5f5702277f1d55aefbffe130e56e7ef8540` for the latest Look Dev comparison. The background is the signed `#101416` void; phase `sky` values are hemisphere/fog inputs, not the background. The current tip is `git rev-parse HEAD`; a commit cannot contain its own SHA.
 
 Sources: `lookdev-lighting/LIGHTING-BRIEF.md`, its `proto-v2.png` and `scratch-values.diff`, `ebr48-look-lock.md`, QA's `GRAPHICS-GATE.md`, `gfx-matrix.mjs`, `analyze-gate.py`, `gfx-audit.mjs`, `analyze-lighting.py`, supplied main frames, and the written rulings supplied for EBR-80. QA's v2.3 changelog records Look Dev rulings `9e8c543c` / `15a7cd92`; the latest supplied Look Dev ruling is `cde29baf`, with PM note `624878a1`. Linear comments were not independently accessible because this session has no Linear connector; the supplied rulings and QA record were used.

@@ -1,5 +1,0 @@
-[heavy] slot /tmp/farm-heavy.1.lock acquired (waits for QA gate lock if held): python3 evidence/EBR-92/analyze.py before
-before daytime-clear-away: mean 1.2080/dE 18.11; QA median 1.1097/dE 10.66; shade/lit 0.6972; K1 exact dE 30.647
-before daytime-cloudy-away: mean 1.2725/dE 16.48; QA median 1.0183/dE 8.18; shade/lit 0.7504; K1 exact dE 25.300
-before daytime-rain-away: mean 1.3044/dE 18.22; QA median 1.0128/dE 10.14; shade/lit 0.7710; K1 exact dE 27.294
-[heavy] released /tmp/farm-heavy.1.lock rc=0

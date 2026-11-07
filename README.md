@@ -69,7 +69,7 @@ setPixelSize(4)           // restore the locked default
 
 The device-pixel block size is rounded to an integer. Odd dimensions use centered partial blocks at the edges, rather than stretching the grid; fractional DPR may make the effective CSS size slightly different from the requested value. The camera projection and existing antialiasing remain unchanged, and the camera is not snapped to the pixel grid. `getPixelRendering().viewport` describes the planned pixel grid even in native comparison mode; `canvasWidth` and `canvasHeight` are the actual drawing buffer size.
 
-Only `#scene` is scaled. The HTML HUD is a separate, positioned sibling above the canvas, not a child of a transformed/pixelated container. For weather and HUD integration notes, see `DELIVER-EBR37.txt`.
+Only `#scene` is scaled. The HTML HUD is a separate, positioned sibling above the canvas, not a child of a transformed/pixelated container. For weather and HUD integration notes, see `/home/michael/OpenBot/Shared/farm-evidence/_main-archive-843c242/DELIVER-EBR37.txt`.
 
 ## Production build
 
@@ -78,6 +78,8 @@ npm run build
 ```
 
 The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the phase HUD, generic interaction utilities, pixel sizing, farm, collisions, camera, weather and lighting. For the Chromium playable-build checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
+
+For the clean-main PR pre-gate, see `docs/pregate.md`.
 
 The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. The lighting changes intentionally make lit frames differ. Do not re-baseline until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero result.
 

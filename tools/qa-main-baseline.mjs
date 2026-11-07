@@ -3,12 +3,13 @@ import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createServer } from 'vite';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Run the supplied Graphics Gate against a pristine archived main, without
 // touching this branch or re-recording the signed EBR-73 parity baseline.
 const ref = process.env.LIGHTING_BASELINE_REF || 'c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa';
 const gate = process.env.GRAPHICS_GATE_DIR || '/home/michael/OpenBot/Shared/qa-graphics-gate';
-const output = resolve(process.env.GRAPHICS_MAIN_OUTPUT || 'evidence/lighting/qa-main-c59');
+const output = outputDirectory('qa-main-baseline', 'GRAPHICS_MAIN_OUTPUT');
 const root = process.cwd();
 const sha = execFileSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], { encoding: 'utf8' }).trim();
 let temp;
@@ -36,7 +37,8 @@ try {
   const script = review ? resolve('tools/lighting-review.mjs') : join(gate, 'gfx-audit.mjs');
   const args = review ? [script] : [script, baseUrl, output, `${root}/`];
   const child = spawn(process.execPath, args, {
-    cwd: root, stdio: 'inherit', env: { ...process.env, LIGHTING_URL: baseUrl, LIGHTING_REVIEW_LABEL: 'before' },
+    cwd: root, stdio: 'inherit', env: { ...process.env, LIGHTING_URL: baseUrl, LIGHTING_REVIEW_LABEL: 'before',
+      LIGHTING_EVIDENCE_DIR: process.env.LIGHTING_EVIDENCE_DIR || output },
   });
   process.exitCode = await new Promise((resolveExit, reject) => {
     child.once('error', reject);

@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { resolve, join } from 'node:path';
+import { dirname, resolve, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
+import { verifyBaselineArchive } from './baseline-archive.mjs';
+import { historicalFixtures, outputDirectory } from './evidence-path.mjs';
+import { compareParityFrames } from './parity-diff.mjs';
 
 // The baseline is an archived commit, never the current working tree. Recording
 // it is explicit so a normal candidate run cannot silently bless a regression.
@@ -21,9 +25,15 @@ const option = (name) => {
 const recordBaseline = args.includes('--record-baseline');
 const baselineSha = option('--baseline-sha');
 const suppliedUrl = option('--url');
-// Allow a ticket to write candidate/diff evidence elsewhere without replacing
-// the checked-in, signed EBR-73 baseline or its historical candidate frames.
-const evidence = resolve(process.env.PARITY_EVIDENCE_DIR || 'evidence/EBR-73');
+const suppliedBaselineRoot = option('--baseline-root');
+const suppliedPortRange = option('--baseline-port-range');
+const masksPath = option('--masks');
+const evidence = outputDirectory('parity', 'PARITY_EVIDENCE_DIR');
+// Preserve the old PARITY_EVIDENCE_DIR convention of keeping the baseline and
+// output together. Otherwise fall back to the immutable historical fixture.
+const baselineDirectory = process.env.PARITY_BASELINE_DIR ? resolve(process.env.PARITY_BASELINE_DIR) :
+  (process.env.PARITY_EVIDENCE_DIR || existsSync(join(evidence, 'baseline.json'))) ? evidence :
+    join(historicalFixtures, 'EBR-73');
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -42,6 +52,38 @@ if (recordBaseline && (!baselineSha || suppliedUrl)) {
   throw new Error('Record a baseline from Git: --record-baseline --baseline-sha <commit> (no --url)');
 }
 if (!recordBaseline && baselineSha) throw new Error('--baseline-sha is only for --record-baseline');
+if (!recordBaseline && (suppliedBaselineRoot || suppliedPortRange)) throw new Error('--baseline-root and --baseline-port-range are only for recording');
+if (recordBaseline && masksPath) throw new Error('--masks is only for comparisons');
+let ports = [0];
+if (suppliedPortRange) {
+  const range = /^(\d+)-(\d+)$/.exec(suppliedPortRange);
+  if (!range || Number(range[1]) < 1 || Number(range[2]) > 65535 || Number(range[1]) > Number(range[2])) {
+    throw new Error('--baseline-port-range needs an inclusive port range, e.g. 5211-5229');
+  }
+  ports = Array.from({ length: Number(range[2]) - Number(range[1]) + 1 }, (_, i) => Number(range[1]) + i);
+}
+
+const masks = {};
+let masksManifest;
+if (masksPath) {
+  const path = resolve(masksPath);
+  const bytes = await readFile(path);
+  const manifest = JSON.parse(bytes.toString('utf8'));
+  assert.ok(manifest && typeof manifest === 'object' && !Array.isArray(manifest), 'Masks must be a JSON object');
+  const scenarioNames = new Set(scenarios.map(({ name }) => name));
+  for (const [name, file] of Object.entries(manifest)) {
+    assert.ok(scenarioNames.has(name), `Unknown mask scenario: ${name}`);
+    assert.ok(typeof file === 'string' && file.length > 0, `Mask for ${name} must be a PNG path`);
+    const maskPath = resolve(dirname(path), file);
+    const png = await readFile(maskPath);
+    assert.ok(png.length >= 24 && png.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')),
+      `Mask for ${name} is not a PNG`);
+    assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [viewport.width, viewport.height],
+      `Mask for ${name} must match the viewport`);
+    masks[name] = { path: maskPath, sha256: sha256(png), data: png.toString('base64') };
+  }
+  masksManifest = { path, sha256: sha256(bytes) };
+}
 
 let temp;
 let server;
@@ -53,30 +95,46 @@ try {
     sourceSha = execFileSync('git', ['rev-parse', '--verify', `${baselineSha}^{commit}`], { encoding: 'utf8' }).trim();
     assert.equal(sourceSha, execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim(),
       'Baseline must be origin/main at the time of recording');
-    try {
-      temp = await mkdtemp('/tmp/opencode/ebr73-parity-');
-    } catch (error) {
-      if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
-      temp = await mkdtemp(join(tmpdir(), 'ebr73-parity-'));
+    if (suppliedBaselineRoot) {
+      root = resolve(suppliedBaselineRoot);
+      await verifyBaselineArchive(root, sourceSha);
+    } else {
+      try {
+        temp = await mkdtemp('/tmp/opencode/ebr73-parity-');
+      } catch (error) {
+        if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
+        temp = await mkdtemp(join(tmpdir(), 'ebr73-parity-'));
+      }
+      const archive = join(temp, 'baseline.tar');
+      root = join(temp, 'checkout');
+      await mkdir(root);
+      execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, sourceSha, 'index.html', 'package.json', 'src']);
+      execFileSync('tar', ['-xf', archive, '-C', root]);
+      await symlink(resolve('node_modules'), join(root, 'node_modules'), 'dir');
     }
-    const archive = join(temp, 'baseline.tar');
-    root = join(temp, 'checkout');
-    await mkdir(root);
-    execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, sourceSha, 'index.html', 'package.json', 'src']);
-    execFileSync('tar', ['-xf', archive, '-C', root]);
-    await symlink(resolve('node_modules'), join(root, 'node_modules'), 'dir');
   }
 
   let baseUrl = suppliedUrl?.replace(/\/$/, '');
   if (!baseUrl) {
-    server = await createServer({
-      root, configFile: false, logLevel: 'error',
-      server: { host: '127.0.0.1', port: 0, hmr: false },
-    });
-    await server.listen();
+    for (const port of recordBaseline ? ports : [0]) {
+      const attempt = await createServer({
+        root, configFile: false, logLevel: 'error',
+        server: { host: '127.0.0.1', port, strictPort: true, hmr: false },
+      });
+      try {
+        await attempt.listen();
+        server = attempt;
+        break;
+      } catch (error) {
+        await attempt.close().catch(() => {});
+        if (error.code !== 'EADDRINUSE' && error.message !== `Port ${port} is already in use`) throw error;
+      }
+    }
+    assert.ok(server, 'No free baseline port in the requested range');
     const address = server.httpServer.address();
     assert.ok(address && typeof address !== 'string');
     baseUrl = `http://127.0.0.1:${address.port}`;
+    if (recordBaseline) console.log(`Serving archived baseline ${sourceSha} at ${baseUrl}`);
   }
 
   browser = await chromium.launch({
@@ -98,7 +156,7 @@ try {
     }, null, 2)}\n`);
     console.log(`Baseline: ${sourceSha}`);
   } else {
-    const baseline = JSON.parse(await readFile(join(evidence, 'baseline.json'), 'utf8'));
+    const baseline = JSON.parse(await readFile(join(baselineDirectory, 'baseline.json'), 'utf8'));
     assert.equal(browserVersion, baseline.browser, 'Use the same Chromium version as the baseline');
     assert.deepEqual(baseline.viewport, viewport);
     assert.equal(baseline.deviceScaleFactor, 1);
@@ -110,49 +168,20 @@ try {
     const results = {};
     const stateMismatches = [];
     for (const { name } of scenarios) {
-      const reference = await readFile(join(evidence, 'baseline', `${name}.png`));
+      const reference = await readFile(join(baselineDirectory, 'baseline', `${name}.png`));
       const candidate = await readFile(join(output, `${name}.png`));
       assert.equal(sha256(reference), baseline.frames[name].sha256, `Baseline image changed: ${name}`);
       for (const key of ['position', 'yaw', 'camera', 'cameraQuaternion', 'cameraZoom', 'pixel', 'weather', 'phase', 'buildings']) {
         if (!isDeepStrictEqual(frames[name][key], baseline.frames[name][key])) stateMismatches.push(`${name}: ${key}`);
       }
-      const diff = await diffPage.evaluate(async ({ reference, candidate }) => {
-        async function decode(data) {
-          const image = new Image();
-          image.src = `data:image/png;base64,${data}`;
-          await image.decode();
-          return image;
-        }
-        const [a, b] = await Promise.all([decode(reference), decode(candidate)]);
-        if (a.width !== b.width || a.height !== b.height) throw new Error('Frame dimensions differ');
-        const canvas = document.createElement('canvas');
-        canvas.width = a.width;
-        canvas.height = a.height;
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(a, 0, 0);
-        const original = context.getImageData(0, 0, a.width, a.height);
-        context.clearRect(0, 0, a.width, a.height);
-        context.drawImage(b, 0, 0);
-        const current = context.getImageData(0, 0, a.width, a.height);
-        const result = context.createImageData(a.width, a.height);
-        let changedPixels = 0;
-        for (let i = 0; i < original.data.length; i += 4) {
-          const changed = original.data[i] !== current.data[i] || original.data[i + 1] !== current.data[i + 1] ||
-            original.data[i + 2] !== current.data[i + 2] || original.data[i + 3] !== current.data[i + 3];
-          if (changed) {
-            changedPixels++;
-            result.data[i] = 255;
-            result.data[i + 2] = 255;
-          }
-          result.data[i + 3] = 255;
-        }
-        context.putImageData(result, 0, 0);
-        return { changedPixels, width: a.width, height: a.height, png: canvas.toDataURL('image/png').split(',')[1] };
-      }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
+      const diff = await diffPage.evaluate(compareParityFrames,
+        { reference: reference.toString('base64'), candidate: candidate.toString('base64'), mask: masks[name]?.data });
       assert.deepEqual([diff.width, diff.height], [viewport.width, viewport.height]);
       await writeFile(join(diffDir, `${name}.png`), Buffer.from(diff.png, 'base64'));
-      results[name] = { changedPixels: diff.changedPixels, width: diff.width, height: diff.height };
-      console.log(`${name}: ${diff.changedPixels} changed pixels`);
+      results[name] = { changedPixels: diff.changedPixels, outsideMaskPixels: diff.outsideMaskPixels,
+        width: diff.width, height: diff.height,
+        ...(masks[name] ? { mask: { path: masks[name].path, sha256: masks[name].sha256 } } : {}) };
+      console.log(`${name}: ${diff.changedPixels} changed pixels, ${diff.outsideMaskPixels} outside the mask`);
     }
     await diffPage.close();
     const candidateSha = suppliedUrl ? null : execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -161,9 +190,9 @@ try {
     ], { encoding: 'utf8' }).trim();
     await writeFile(join(evidence, 'parity.json'), `${JSON.stringify({
       baselineSha: baseline.sourceSha, candidateSha, candidateUrl: suppliedUrl ?? 'local Vite (working tree)',
-      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, results, stateMismatches, frames,
+      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, masksManifest, results, stateMismatches, frames,
     }, null, 2)}\n`);
-    assert.ok(Object.values(results).every((result) => result.changedPixels === 0), 'Gate G: pixel differences found');
+    assert.ok(Object.values(results).every((result) => result.outsideMaskPixels === 0), 'Gate G: pixel differences outside the mask');
     assert.deepEqual(stateMismatches, [], 'Gate G: pose, camera or environment differs from the baseline');
   }
 } finally {
