@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory, variantReferences } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { fitGeneratedRecipe } from './fit-generated.mjs';
-import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
+import { critiqueRecipe, generateRecipe, generatorAttachment, makePrompt } from './generator.mjs';
 import { createVisualRunner } from './visual.mjs';
 import { isBetterCandidate } from './scoring.mjs';
 import { isolatedSessionDirectory } from './opencode.mjs';
@@ -142,7 +142,7 @@ async function newAsset(input, args) {
       await writeFile(join(stageDir, 'prompt.txt'), prompt);
       let generated;
       try {
-        generated = await generateRecipe(prompt, sessionDir, probe?.imageReadingObserved ? previousSheet : null);
+        generated = await generateRecipe(prompt, sessionDir, generatorAttachment(probe, previousSheet));
         await writeFile(join(stageDir, 'generator.jsonl'), generated.transcript);
       } catch (error) {
         const message = String(error);

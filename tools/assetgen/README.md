@@ -18,6 +18,10 @@ On 2026-11-06, `opencode/crouton-alpha-free` answered all three correctly.
 Rerun it through the host heavy wrapper. A colour probe does not prove reliable
 artistic judgment. If it fails, is disabled, or is missing, the forge
 reports **visual critique not run** and never claims a visual pass.
+Set `ASSETGEN_CRITIC_MODEL` to probe and use a different explicit critic model;
+its recorded model must still match a passing fresh probe. If the default
+generator is text-only, set `ASSETGEN_GENERATOR_IMAGES=0` to keep image
+attachments away from it while retaining text feedback and the separate critic.
 
 ## How a candidate is built
 

@@ -16,8 +16,9 @@ function parseJson(text) {
   return JSON.parse(block.slice(start, end + 1));
 }
 
-async function run(message, { cwd, attachment, timeout } = {}) {
+async function run(message, { cwd, attachment, timeout, model } = {}) {
   const args = ['run', '--format', 'json'];
+  if (model) args.push('--model', model);
   if (attachment && process.env.ASSETGEN_IMAGES !== '0') args.push('--file', attachment);
   args.push(message);
   const result = await runOpenCode(args, { cwd, timeout });
@@ -31,6 +32,11 @@ async function run(message, { cwd, attachment, timeout } = {}) {
     catch { /* A missing endpoint is recorded as unknown, not estimated. */ }
   }
   return { text, transcript: result.stdout, sessionId, durationMs: result.durationMs, ...metadata };
+}
+
+// A probed visual critic does not imply the text generator can read images.
+export function generatorAttachment(probe, sheet) {
+  return process.env.ASSETGEN_GENERATOR_IMAGES === '0' ? null : probe?.imageReadingObserved ? sheet : null;
 }
 
 function sizeGuidance(spec, rules, previous) {
@@ -78,7 +84,7 @@ export async function critiqueRecipe(spec, bible, stage, report, sheet, cwd) {
     keyLight: visual?.metrics?.keyLight, referenceScale: visual?.metrics?.referenceScale, unmeasured: visual?.metrics?.unmeasured,
     daytimeSamples: visual?.metrics?.samples?.filter((sample) => sample.phase === 'daytime') } };
   const prompt = `You are an independent visual critic, not the generator. Look at the attached contact sheet: eight fixed yaws in each light phase, and signed-farm composites under the merged EBR-80 game lights. Do not claim human approval. The first three rows are 3x crops of the actual 320x180 game render. Judge the current ${stage} stage for recognisable identity, chunky shape, palette fit, value, scene scale and craft. Automated hard failures cannot be overridden. Every identity feature must be visible, not merely named in JSON. Apply every REJECT reason in the Look Dev brief, including wrong style, baked light, unreadable detail and recolour-only variants. Return ONLY JSON: {"imageReviewed":true|false,"scores":{"silhouette":1..5,"palette":1..5,"shapeLanguage":1..5,"valueStructure":1..5,"sceneFit":1..5,"craft":1..5},"features":{"feature-id":true|false,...},"blockers":["specific part and issue"],"fixes":["specific fix"],"action":"continue|refine-spec|refine-code|request-input|stop"}. If the image is not visible set imageReviewed false and do not invent visual claims. Scores are integers. A score below 4, any blocker or any absent identity feature must request revision.\nLOOK DEV BRIEF: ${artBrief}\nSTYLE BIBLE: ${bible.text}\nSPEC: ${JSON.stringify(spec)}\nDETERMINISTIC REPORT: ${JSON.stringify(compact)}`;
-  const result = await run(prompt, { cwd, attachment: sheet, timeout: 180000 });
+  const result = await run(prompt, { cwd, attachment: sheet, timeout: 180000, model: process.env.ASSETGEN_CRITIC_MODEL });
   const review = parseJson(result.text);
   if (process.env.ASSETGEN_IMAGES === '0') review.imageReviewed = false;
   const keys = ['silhouette', 'palette', 'shapeLanguage', 'valueStructure', 'sceneFit', 'craft'];

@@ -34,7 +34,10 @@ try {
     let sessionId = null;
     let modelId = null;
     try {
-      const result = await runOpenCode(['run', '--format', 'json', '--file', image, prompt], { cwd: sessionDir, timeout: 120000 });
+      const args = ['run', '--format', 'json'];
+      if (process.env.ASSETGEN_CRITIC_MODEL) args.push('--model', process.env.ASSETGEN_CRITIC_MODEL);
+      args.push('--file', image, prompt);
+      const result = await runOpenCode(args, { cwd: sessionDir, timeout: 120000 });
       transcript = result.stdout;
       const { events, text } = textEvents(result.stdout);
       answer = text.trim().toUpperCase();
