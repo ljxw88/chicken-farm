@@ -1,16 +1,22 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { verifyBaselineArchive } from './baseline-archive.mjs';
+import { outputDirectory } from './evidence-path.mjs';
 import { isolateHistoricalGarden, restoreHistoricalGarden } from './historical-garden-isolation.mjs';
 
 const historicalSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
 const mergedMainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+const contentMainSha = '6daf042ad85882f020268baf53fc92fb09e921ad';
+const ticketMainSha = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
+const integratedMainSha = '843c242da5f3bc0e4c2b12ef5484113165c914c7';
+const gardenMainSha = '8dd79b81bad7eec1d45a018715b357003f483f1c';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb750001;
 const phases = ['morning', 'daytime', 'sunset', 'night'];
@@ -18,12 +24,14 @@ const modes = ['clear', 'cloudy', 'rain'];
 const canonical = (value) => JSON.parse(JSON.stringify(value));
 
 async function serverAt(root) {
+  const host = process.env.EBR76_REPLAY_HOST || '127.0.0.1';
+  const port = Number(process.env.EBR76_REPLAY_PORT || 0);
   const server = await createServer({ root, configFile: false, logLevel: 'error',
-    server: { host: '127.0.0.1', port: 0, hmr: false, fs: { allow: [root, process.cwd()] } } });
+    server: { host, port, strictPort: Boolean(port), hmr: false, fs: { allow: [root, process.cwd()] } } });
   await server.listen();
   const address = server.httpServer.address();
   assert.ok(address && typeof address !== 'string');
-  return { server, url: `http://127.0.0.1:${address.port}` };
+  return { server, url: `http://${host}:${address.port}` };
 }
 
 async function open(browser, url, search, normalizeClock = false, normalizeGardenRain = false) {
@@ -104,18 +112,28 @@ async function open(browser, url, search, normalizeClock = false, normalizeGarde
       };
     };
   }, { seed });
-  await page.route('**/src/main.ts*', async (route) => {
+  await page.route('**/src/app/environment.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-    // The moved tree changes its rain shelter. Use the historic shelter only
-    // in this old seeded-weather replay, while separately testing the live tree.
+    // The historical weather replay retains the old tree's rain shelter.
+    const random = normalizeGardenRain
+      ? `random: (() => { const tree = context.splashExclusions.find((entry) => entry.name === 'tree-canopy-4');
+          if (tree) Object.assign(tree, { x: 0.05, z: -5.6, radius: 1.02 * 0.95 }); return window.__ebr75Random; })(),`
+      : 'random: window.__ebr75Random,';
+    await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, `createWeatherSystem({ ${random}`) });
+  });
+  await page.route('**/src/main.ts*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+    assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)), 'Unknown Vite app entry point');
     const random = normalizeGardenRain
       ? `random: (() => { const tree = splashExclusions.find((entry) => entry.name === 'tree-canopy-4');
           if (tree) Object.assign(tree, { x: 0.05, z: -5.6, radius: 1.02 * 0.95 }); return window.__ebr75Random; })(),`
       : 'random: window.__ebr75Random,';
     await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, `createWeatherSystem({ ${random}`)}
-window.__ebr75 = { scene, camera, character, obstacles, stairs, dayNight, composer };
+window.__ebr75 = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, stairs, dayNight, composer };
 ` });
   });
   // This is a scene/placement replay, so use the real HUD-free gate flag.
@@ -166,9 +184,10 @@ async function perform(fixture, action) {
   return { label: action.label, outcome, samples: [await page.evaluate(() => window.__ebr75Sample())] };
 }
 
-async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
-  const garden = await fixture.page.evaluate(isolateHistoricalGarden, { contextName: '__ebr75', hidePlots: true });
-  const visibility = await fixture.page.evaluate(({ hideBody, hideRain }) => {
+async function capture(fixture, { hideBody = false, hideRain = false, hideFold = true, isolateEffects = true, isolateGarden = true } = {}) {
+  const garden = isolateGarden
+    ? await fixture.page.evaluate(isolateHistoricalGarden, { contextName: '__ebr75', hidePlots: true }) : null;
+  const visibility = await fixture.page.evaluate(({ hideBody, hideRain, hideFold }) => {
     const { scene, character, composer } = window.__ebr75;
     const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
     const rain = scene.getObjectByName('weather-rain');
@@ -176,16 +195,17 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
     const previous = { body: body.visible, rain: rain.visible, fold: fold?.visible };
     // Keep the EBR-70 collision entities active, hiding only its new visual
     // group during these historical fold-free reference screenshots.
-    if (fold) fold.visible = false;
+    if (fold && hideFold) fold.visible = false;
     if (hideBody) body.visible = false;
     if (hideRain) rain.visible = false;
     composer.render(0);
     return previous;
-  }, { hideBody, hideRain });
+  }, { hideBody, hideRain, hideFold });
   const cdp = await fixture.context.newCDPSession(fixture.page);
   try {
     const screenshot = async () => Buffer.from((await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
     const image = await screenshot();
+    if (!isolateEffects) return { image, withoutEffects: image };
     const flags = await fixture.page.evaluate(() => {
       const { scene, composer } = window.__ebr75;
       const smoke = scene.getObjectByName('chimney-smoke');
@@ -220,13 +240,16 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
       if (fold && previous.fold !== undefined) fold.visible = previous.fold;
       composer.render(0);
     }, visibility);
-    await fixture.page.evaluate(restoreHistoricalGarden, { contextName: '__ebr75', state: garden });
-    await fixture.page.evaluate(() => window.__ebr75.composer.render(0));
+    if (garden) {
+      await fixture.page.evaluate(restoreHistoricalGarden, { contextName: '__ebr75', state: garden });
+      await fixture.page.evaluate(() => window.__ebr75.composer.render(0));
+    }
   }
 }
 
-async function recordScenario(browser, url, scenario, replayScript, historical) {
-  const fixture = await open(browser, url, scenario.search, scenario.name === 'invalid-url', Boolean(replayScript));
+async function recordScenario(browser, url, scenario, replayScript, historical, exactVisual, normalizeClock, baselineHasFold) {
+  const fixture = await open(browser, url, scenario.search, normalizeClock && scenario.name === 'invalid-url',
+    !exactVisual && Boolean(replayScript));
   const { page } = fixture;
   const script = [];
   const trace = [];
@@ -247,13 +270,14 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
   let time = 0;
   async function run(action) {
     if (action.type !== 'capture') return perform(fixture, action);
-    captures[action.label] = await capture(fixture);
-    bodylessCaptures[action.label] = await capture(fixture, { hideBody: true });
+    const isolation = { hideFold: !baselineHasFold, isolateGarden: !exactVisual };
+    captures[action.label] = await capture(fixture, { ...isolation, isolateEffects: !exactVisual });
+    bodylessCaptures[action.label] = exactVisual ? captures[action.label] : await capture(fixture, { ...isolation, hideBody: true });
     // The older EBR-75 reference predates EBR-88. Isolate its already-approved
     // rain layer as well as the EBR-92 body, without allowing other changes.
     if (historical && await page.evaluate(() => window.getWeather().rainAmount > 0)) {
-      rainlessCaptures[action.label] = await capture(fixture, { hideRain: true });
-      bothHiddenCaptures[action.label] = await capture(fixture, { hideBody: true, hideRain: true });
+      rainlessCaptures[action.label] = await capture(fixture, { ...isolation, hideRain: true });
+      bothHiddenCaptures[action.label] = await capture(fixture, { ...isolation, hideBody: true, hideRain: true });
     }
     return { label: action.label, outcome: null, samples: [await page.evaluate(() => window.__ebr75Sample())] };
   }
@@ -592,6 +616,12 @@ function withoutPlotParts(trace) {
   return copy;
 }
 
+// Current main must compare every trace field; only older references predate
+// the garden plot and receive the narrowly scoped historical normalization.
+export function replayComparisonTrace(trace, { historical, exactVisual }) {
+  return exactVisual ? trace : withoutPlotParts(historical ? historicalBehavior(trace) : trace);
+}
+
 async function temporary(prefix) {
   try { return await mkdtemp(`/tmp/opencode/${prefix}`); }
   catch (error) {
@@ -604,8 +634,13 @@ async function temporary(prefix) {
 export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
   baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
+  assert.ok([historicalSha, mergedMainSha, contentMainSha, ticketMainSha, integratedMainSha, gardenMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
+  const exactVisual = baselineSha === gardenMainSha;
+  const baselineHasFold = [ticketMainSha, integratedMainSha, gardenMainSha].includes(baselineSha);
+  // Only older baselines need the pre-HUD clock normalization. A current-main
+  // comparison must exercise the real 1440-second default on both sides.
+  const normalizeClock = ![integratedMainSha, gardenMainSha].includes(baselineSha);
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },
     { name: 'environment-cycle', search: '?phase=sunset&weather=clear' },
@@ -629,11 +664,13 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       assert.equal(archivedBaselineSha, undefined, 'An archive SHA needs a supplied reference directory');
       archiveRoot = await temporary('ebr75-archive-');
       const archive = join(archiveRoot, 'baseline.tar');
-      execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
-        baselineSha, 'src', 'index.html', 'package.json', 'package-lock.json']);
-      execFileSync('tar', ['-xf', archive, '-C', archiveRoot]);
-      await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
-      baselineRoot = archiveRoot;
+      const checkout = join(archiveRoot, 'checkout');
+      await mkdir(checkout);
+      const paths = baselineSha === gardenMainSha ? [] : ['src', 'index.html', 'package.json', 'package-lock.json'];
+      execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`, baselineSha, ...paths]);
+      execFileSync('tar', ['-xf', archive, '-C', checkout]);
+      await symlink(join(candidateRoot, 'node_modules'), join(checkout, 'node_modules'), 'dir');
+      baselineRoot = checkout;
       archivedBaselineSha = baselineSha;
     }
     if (archivedBaselineSha || baselineArchive) {
@@ -646,6 +683,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
         const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
         assert.equal(blob, match[1], `Archived baseline differs: ${match[2]}`);
       }
+      if (baselineSha === gardenMainSha) await verifyBaselineArchive(baselineRoot, baselineSha, candidateRoot);
     }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
@@ -657,7 +695,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const referenceBothHidden = {};
     for (const scenario of scenarios) {
       const { frames, bodylessFrames, rainlessFrames, bothHiddenFrames, ...result } =
-        await recordScenario(browser, baseline.url, scenario, undefined, historical);
+        await recordScenario(browser, baseline.url, scenario, undefined, historical, exactVisual, normalizeClock, baselineHasFold);
       reference[scenario.name] = result;
       referenceFrames[scenario.name] = frames;
       referenceBodyless[scenario.name] = bodylessFrames;
@@ -681,15 +719,17 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const intendedBodyChanges = [];
     const unexpectedVisualChanges = [];
     const rawTraceDifferences = [];
+    let maskWritten = false;
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const scenario of scenarios) {
-      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script, historical);
+      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script,
+        historical, exactVisual, normalizeClock, baselineHasFold);
       const expected = saved.scenarios[scenario.name].trace;
       for (let i = 0; i < actual.trace.length; i++) {
         if (!isDeepStrictEqual(actual.trace[i], expected[i])) rawTraceDifferences.push(`${scenario.name}:${actual.trace[i].label}`);
       }
-      const comparedActual = withoutPlotParts(historical ? historicalBehavior(actual.trace) : actual.trace);
-      const comparedExpected = withoutPlotParts(historical ? historicalBehavior(expected) : expected);
+      const comparedActual = replayComparisonTrace(actual.trace, { historical, exactVisual });
+      const comparedExpected = replayComparisonTrace(expected, { historical, exactVisual });
       const index = comparedActual.findIndex((entry, i) => !isDeepStrictEqual(entry, comparedExpected[i]));
       const identical = index === -1 && actual.trace.length === expected.length;
       if (!identical) mismatches.push({ scenario: scenario.name, action: index, expected: comparedExpected[index], actual: comparedActual[index],
@@ -729,21 +769,31 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
           outsideAllowedPixels: diff.outsideAllowedPixels, hiddenChangedPixels: diff.hiddenChangedPixels, protectedChangedPixels };
         if (diff.changedPixels && historical && captured.environment.weather.rainAmount > 0) expectedRainChanges.push(name);
         else if (diff.changedPixels) intendedBodyChanges.push(name);
-        if (diff.rawOutsideAllowedPixels || diff.outsideAllowedPixels || diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
+        if ((exactVisual && diff.rawChangedPixels) || diff.rawOutsideAllowedPixels || diff.outsideAllowedPixels ||
+          diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
         if (evidenceDir) {
-          for (const dir of ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff',
-            'body-mask', 'rain-mask', 'effect-mask']) {
+          const directories = exactVisual ? ['baseline', 'candidate', 'diff', 'raw-diff', 'mask'] :
+            ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff',
+              'body-mask', 'rain-mask', 'effect-mask'];
+          for (const dir of directories) {
             await mkdir(join(evidenceDir, dir), { recursive: true });
           }
           await writeFile(join(evidenceDir, 'baseline', `${name}.png`), original.image);
           await writeFile(join(evidenceDir, 'candidate', `${name}.png`), frame.image);
-          await writeFile(join(evidenceDir, 'baseline-no-effects', `${name}.png`), original.withoutEffects);
-          await writeFile(join(evidenceDir, 'candidate-no-effects', `${name}.png`), frame.withoutEffects);
           await writeFile(join(evidenceDir, 'diff', `${name}.png`), Buffer.from(diff.png, 'base64'));
           await writeFile(join(evidenceDir, 'raw-diff', `${name}.png`), Buffer.from(diff.rawPng, 'base64'));
-          await writeFile(join(evidenceDir, 'body-mask', `${name}.png`), Buffer.from(diff.bodyPng, 'base64'));
-          await writeFile(join(evidenceDir, 'rain-mask', `${name}.png`), Buffer.from(diff.rainPng, 'base64'));
-          await writeFile(join(evidenceDir, 'effect-mask', `${name}.png`), Buffer.from(diff.effectPng, 'base64'));
+          if (exactVisual) {
+            if (!maskWritten) {
+              await writeFile(join(evidenceDir, 'mask', 'no-changes-1280x720.png'), Buffer.from(diff.bodyPng, 'base64'));
+              maskWritten = true;
+            }
+          } else {
+            await writeFile(join(evidenceDir, 'baseline-no-effects', `${name}.png`), original.withoutEffects);
+            await writeFile(join(evidenceDir, 'candidate-no-effects', `${name}.png`), frame.withoutEffects);
+            await writeFile(join(evidenceDir, 'body-mask', `${name}.png`), Buffer.from(diff.bodyPng, 'base64'));
+            await writeFile(join(evidenceDir, 'rain-mask', `${name}.png`), Buffer.from(diff.rainPng, 'base64'));
+            await writeFile(join(evidenceDir, 'effect-mask', `${name}.png`), Buffer.from(diff.effectPng, 'base64'));
+          }
         }
       }
     }
@@ -753,17 +803,23 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
       baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
-      referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
-      visualComparison: 'The fold, new garden and old/new plot visuals are isolated only for historical screenshots; gameplay stays active.',
-      excludedHistoricalFields: [...(historical ? ['environment.rain except visible', 'environment.randomCalls'] : []), 'plot visual parts'],
+      referenceTrace: evidenceDir ? join(evidenceDir, 'reference-trace.json') : tracePath,
+      referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
+      visualComparison: exactVisual ? 'Full unmasked frames, including the fold, garden, plots and effects; zero changed pixels allowed.' :
+        'The garden and old/new plot visuals, and any absent fold, are isolated only for historical screenshots; gameplay stays active.',
+      mask: exactVisual ? { allowedPixels: 0, path: evidenceDir ? join(evidenceDir, 'mask', 'no-changes-1280x720.png') : null } : null,
+      excludedHistoricalFields: [...(historical ? ['environment.rain except visible', 'environment.randomCalls'] : []),
+        ...(exactVisual ? [] : ['plot visual parts'])],
       results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
       expectedRainChanges, unexpectedVisualChanges, mismatches };
     if (evidenceDir) {
       await mkdir(evidenceDir, { recursive: true });
+      await writeFile(join(evidenceDir, 'reference-trace.json'), `${JSON.stringify(saved)}\n`);
       await writeFile(join(evidenceDir, 'replay.json'), `${JSON.stringify(report, null, 2)}\n`);
     }
     assert.deepEqual(mismatches, [], 'Placement/environment replay differs from clean main');
-    assert.deepEqual(unexpectedVisualChanges, [], 'Placement/environment frames differ outside the isolated body and historical rain');
+    assert.deepEqual(unexpectedVisualChanges, [], exactVisual ? 'Gate G: unmasked replay frames differ' :
+      'Placement/environment frames differ outside the isolated body and historical rain');
     return report;
   } finally {
     await browser?.close();
@@ -772,4 +828,33 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     if (traceDir) await rm(traceDir, { recursive: true });
     if (archiveRoot) await rm(archiveRoot, { recursive: true });
   }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/placement-environment-replay.mjs')) {
+  const [option, reference, evidenceDir] = process.argv.slice(2);
+  const defaultEvidence = outputDirectory('EBR-76/placement-environment-replay', 'EBR76_REPLAY_EVIDENCE_DIR');
+  let options;
+  if (option === '--archive-main') {
+    options = { baselineSha: gardenMainSha, evidenceDir: reference ? resolve(reference) : defaultEvidence };
+  } else if (option === '--against-main' && reference) {
+    const baselineRoot = resolve(reference);
+    const isWorktree = await access(join(baselineRoot, '.git')).then(() => true, () => false);
+    let baselineSha;
+    if (isWorktree) baselineSha = execFileSync('git', ['-C', baselineRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    else {
+      const bytes = await readFile(join(baselineRoot, 'src/main.ts'));
+      const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+      baselineSha = [gardenMainSha, integratedMainSha, ticketMainSha, contentMainSha, mergedMainSha, historicalSha]
+        .find((sha) => execFileSync('git', ['rev-parse', `${sha}:src/main.ts`], { encoding: 'utf8' }).trim() === blob);
+      assert.ok(baselineSha, 'Archive entry point does not match a supported clean reference');
+    }
+    options = { baselineRoot, baselineSha, archivedBaselineSha: isWorktree ? undefined : baselineSha,
+      evidenceDir: evidenceDir ? resolve(evidenceDir) : defaultEvidence };
+  } else {
+    throw new Error('Usage: node tools/placement-environment-replay.mjs --against-main <clean-worktree-or-archive> [evidence-dir] | --archive-main [evidence-dir]');
+  }
+  const report = await comparePlacementEnvironmentReplay({ ...options, candidateRoot: process.cwd() });
+  const samples = Object.values(report.results).reduce((sum, result) => sum + result.samples, 0);
+  const pixels = Object.values(report.rawVisualResults).reduce((sum, count) => sum + count, 0);
+  console.log(`${Object.keys(report.results).length} scenarios, ${samples} identical samples, ${Object.keys(report.rawVisualResults).length} unmasked frames, ${pixels} changed pixels`);
 }

@@ -18,7 +18,7 @@ const page = await context.newPage();
 try {
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__graphicsAudit = { scene, camera, character, follow, renderer, composer };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__graphicsAudit = typeof context !== 'undefined' ? context : { scene, camera, character, follow, renderer, composer };\n` });
   });
   const phase = mode === 'path' ? 'daytime' : 'night';
   await page.goto(`${url}/?phase=${phase}&weather=clear`, { waitUntil: 'networkidle' });

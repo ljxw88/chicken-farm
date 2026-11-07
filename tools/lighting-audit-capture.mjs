@@ -32,7 +32,7 @@ try {
   const page = await context.newPage();
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__audit = { scene, camera, character, follow, renderer, composer };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__audit = typeof context !== 'undefined' ? context : { scene, camera, character, follow, renderer, composer };\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__audit));

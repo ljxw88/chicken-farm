@@ -42,7 +42,7 @@ async function open(phase, weather, seed = 3950182401, hideSky = false) {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr42 = { scene, camera, renderer, composer, dayNight, weather };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr42 = typeof context !== 'undefined' ? context : { scene, camera, renderer, composer, dayNight, weather };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr42));

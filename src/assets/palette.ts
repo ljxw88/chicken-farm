@@ -1,6 +1,5 @@
-import { FARM_PALETTE } from '../scene/farmPalette';
-import { BUILDING_PALETTE } from '../scene/farmBuildingMaterials';
-import { LANTERN_LIGHT } from '../lighting/dayNightPhases';
+import { ART_SLOTS, FARM_PALETTE } from '../content/slots';
+import { LANTERN_LIGHT } from '../content/dayNight';
 
 // Look Dev's approved named extensions (ASSET-BRIEF.md, 2026-11-06): flower
 // colours, pumpkins, existing lantern metal, and lantern glass. Wool and animal
@@ -14,18 +13,18 @@ export const ASSET_PALETTE = {
   'dirt.edge': FARM_PALETTE.dirtEdge,
   'dirt.hi': FARM_PALETTE.dirtHighlight,
   soil: FARM_PALETTE.soil,
-  'wood.light': BUILDING_PALETTE.coopWall,
+  'wood.light': ART_SLOTS.building.coop.wall,
   'wood.mid': FARM_PALETTE.barnWood,
   'wood.dark': FARM_PALETTE.treeTrunk,
   'wood.fence': FARM_PALETTE.barnTrim,
   trunk: FARM_PALETTE.treeTrunk,
   door: FARM_PALETTE.barnDoor,
-  timber: BUILDING_PALETTE.timber,
-  plaster: BUILDING_PALETTE.plaster,
+  timber: ART_SLOTS.building.cottage.timber,
+  plaster: ART_SLOTS.building.cottage.plaster,
   roof: FARM_PALETTE.barnRoof,
-  'roof.band': BUILDING_PALETTE.shingle,
-  stone: BUILDING_PALETTE.stone,
-  glass: BUILDING_PALETTE.glass,
+  'roof.band': ART_SLOTS.building.cottage.shingle,
+  stone: ART_SLOTS.building.cottage.stone,
+  glass: ART_SLOTS.building.cottage.glass,
   water: FARM_PALETTE.pondWater,
   'water.rim': FARM_PALETTE.pondRim,
   'water.deep': FARM_PALETTE.pondDepth,
@@ -34,7 +33,7 @@ export const ASSET_PALETTE = {
   'flower.blue': FARM_PALETTE.flowerBlue,
   'flower.orange': FARM_PALETTE.flowerOrange,
   pumpkin: 0xd9822b,
-  metal: 0x554433,
+  metal: ART_SLOTS.palette.lantern.metal,
   'lantern.glow': LANTERN_LIGHT.color,
 } as const;
 

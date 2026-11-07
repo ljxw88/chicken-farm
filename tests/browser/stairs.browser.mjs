@@ -144,7 +144,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   collectErrors(page, errors);
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = typeof context !== 'undefined' ? context : { scene, camera, character, stairs };\n` });
   });
   await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr46Test));
@@ -152,7 +152,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
 
   const geometry = await page.evaluate(async () => {
     const { scene, camera, stairs } = window.__ebr46Test;
-    const { FARM_PALETTE } = await import('/src/scene/farmPalette.ts');
+    const { FARM_PALETTE } = await import('/src/content/slots.ts');
     const rgb = (hex) => [hex >> 16 & 255, hex >> 8 & 255, hex & 255];
     const describe = (mesh) => {
       const p = mesh.getWorldPosition(mesh.position.clone());
@@ -321,7 +321,7 @@ for (const scenario of padSideScenarios) {
     collectErrors(page, errors);
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
-      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
+      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = typeof context !== 'undefined' ? context : { scene, camera, character, stairs };\n` });
     });
     await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => Boolean(window.__ebr46Test));
@@ -431,7 +431,7 @@ test('the longer QA stairs route can re-enter the top at the edge of the run', {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = typeof context !== 'undefined' ? context : { scene, camera, character, stairs };\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
   await page.evaluate(() => window.__ebr94Step(0));

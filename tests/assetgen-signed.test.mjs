@@ -11,7 +11,7 @@ import { readA9Calibration, resolveA9Calibration } from '../tools/assetgen/a9-ca
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
-const { createPlacementVisual } = await vite.ssrLoadModule('/src/placement/createPlacementVisual.ts');
+const { createPlacementAsset } = await vite.ssrLoadModule('/src/render/placementAssets.ts');
 const { createStoneStairs } = await vite.ssrLoadModule('/src/scene/createStoneStairs.ts');
 const { ASSET_PALETTE } = await vite.ssrLoadModule('/src/assets/palette.ts');
 const { rules } = await readBible();
@@ -21,7 +21,7 @@ const farm = new THREE.Scene();
 createFarmLayout(farm);
 const tree = farm.getObjectByName('farm-tree-2');
 const coop = farm.getObjectByName('farm-ramp-coop-1');
-const fence = createPlacementVisual('fence');
+const fence = createPlacementAsset('fence');
 const tread = createStoneStairs(new THREE.Group(), 16, 2.4, 0).treads[0];
 const fixtures = [
   ['tree', tree, 'flora', [2.09, 2.8, 1.7], 2.4],

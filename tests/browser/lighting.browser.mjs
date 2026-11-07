@@ -145,7 +145,7 @@ async function openPhase(context, phase) {
   // substitute materials/lights are used.
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightingTest = { scene, camera, character, stairs, controls, follow, renderer, composer, dayNight };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightingTest = typeof context !== 'undefined' ? context : { scene, camera, character, stairs, controls, follow, renderer, composer, dayNight };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=clear`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__lightingTest && window.getPixelRendering?.().canvasWidth));

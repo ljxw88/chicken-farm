@@ -57,3 +57,13 @@ test('retained vision probe bytes are part of the verifier source hash', async (
     ? `${await readFile(filename, encoding)} ` : readFile(filename, encoding) });
   assert.notEqual(modified, old);
 });
+
+test('content geometry and render factories invalidate the verifier source hash', async () => {
+  const original = await verifierSourceHash();
+  for (const path of ['src/content/placementGeometry.ts', 'src/render/placementAssets.ts']) {
+    const target = join(root, path);
+    const modified = await verifierSourceHash({ readSource: async (filename, encoding) => filename === target
+      ? `${await readFile(filename, encoding)} ` : readFile(filename, encoding) });
+    assert.notEqual(modified, original, path);
+  }
+});

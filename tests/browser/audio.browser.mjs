@@ -121,7 +121,7 @@ async function openPage(t, { unsupported = false, blocked = false, frozen = fals
   });
   if (!baseline) await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr38Test = { character, engine, audio };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr38Test = context;\n` });
   });
   await page.goto(`${baseline ? baselineUrl : url}/?phase=daytime&weather=clear&seed=123`, { waitUntil: 'networkidle' });
   if (!baseline) await page.waitForFunction(() => Boolean(window.__ebr38Test), null, { polling: 50 });

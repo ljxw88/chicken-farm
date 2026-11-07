@@ -1,8 +1,9 @@
 # Audio stubs
 
-`src/audio/` owns an in-memory audio controller. `src/main.ts` creates it and
-passes it to the sky HUD; it does not change the scene or the engine's render
-loop. There are no audio files, playback, network requests, or saved settings.
+`src/audio/` owns an in-memory audio controller. `src/app/audio.ts` registers it
+in the app context and `src/app/hud.ts` passes it to the sky HUD; it does not
+change the scene or the engine's render loop. There are no audio files, playback,
+network requests, or saved settings.
 
 The speaker starts off and dimmed. In a supported browser it remains focusable
 and can be activated by click, tap, Enter, or Space; it is not falsely marked

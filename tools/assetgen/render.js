@@ -3,8 +3,8 @@ import { buildRecipe, setRecipeNightAmount } from '/src/assets/buildRecipe.ts';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from '/src/scene/createScene.ts';
 import { createFarmLayout } from '/src/scene/createFarmLayout.ts';
 import { createStoneStairs } from '/src/scene/createStoneStairs.ts';
-import { FARM_PALETTE } from '/src/scene/farmPalette.ts';
-import { createPlacementVisual } from '/src/placement/createPlacementVisual.ts';
+import { FARM_PALETTE } from '/src/content/slots.ts';
+import { createPlacementAsset } from '/src/render/placementAssets.ts';
 import { createCharacter } from '/src/character/createCharacter.ts';
 import { createDayNightCycle } from '/src/lighting/createDayNightCycle.ts';
 import { createWeatherSystem } from '/src/weather/createWeatherSystem.ts';
@@ -25,7 +25,7 @@ const { scene, camera, renderer, ground, resize } = createScene(document.querySe
 const island = scene.getObjectByName('farm-island');
 const layout = createFarmLayout(scene);
 const layoutGroup = scene.getObjectByName('farm-layout');
-const fence = createPlacementVisual('fence');
+const fence = createPlacementAsset('fence');
 fence.position.set(0, GROUND_HEIGHT, 4.1);
 scene.add(fence);
 const character = createCharacter();
@@ -41,7 +41,7 @@ function signedSubject(type) {
   let original;
   if (type === 'tree') original = scene.getObjectByName('farm-tree-2');
   else if (type === 'coop') original = scene.getObjectByName('farm-ramp-coop-1');
-  else if (type === 'fence') original = createPlacementVisual('fence');
+  else if (type === 'fence') original = createPlacementAsset('fence');
   else if (type === 'tread') original = createStoneStairs(new THREE.Group(), 16, GROUND_HEIGHT, 0).treads[0];
   else throw new Error(`Unknown signed fixture: ${type}`);
   const copy = original.clone(true);

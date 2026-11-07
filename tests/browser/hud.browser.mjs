@@ -48,7 +48,7 @@ async function openPage(context, url, instrument = false) {
   if (instrument) {
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
-      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr36Test = { scene, camera, character, placement, skyState, skyHud, farmHud, dayNight, weather, follow, composer, engine };\n` });
+      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr36Test = typeof context !== 'undefined' ? context : { scene, camera, character, placement, skyState, skyHud, farmHud, dayNight, weather, follow, composer, engine };\n` });
     });
   }
   await page.goto(url, { waitUntil: 'networkidle' });

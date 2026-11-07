@@ -30,13 +30,16 @@ export function classifyS2(sample, limits) {
 }
 
 export async function createVisualRunner() {
-  const server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false } });
+  const host = process.env.ASSETGEN_HOST || '127.0.0.1';
+  const port = Number(process.env.ASSETGEN_PORT || 0);
+  const server = await createServer({ root, configFile: false, logLevel: 'error',
+    server: { host, port, strictPort: Boolean(port), hmr: false } });
   await server.listen();
   let browser;
   try {
     browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   } catch (error) { await server.close(); throw error; }
-  const url = `http://127.0.0.1:${server.httpServer.address().port}`;
+  const url = `http://${host}:${server.httpServer.address().port}`;
   let calibrationKey = null, calibrationCache = null;
 
   async function measureSignedA9(inputs, rules, name, directory) {

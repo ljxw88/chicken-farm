@@ -1,5 +1,5 @@
 import type { createDayNightCycle } from './createDayNightCycle';
-import { DAY_NIGHT_PHASES } from './dayNightPhases';
+import { DAY_NIGHT_PHASES } from '../content/dayNight';
 
 type DayNightCycle = Pick<ReturnType<typeof createDayNightCycle>, 'setDayNightPhase' | 'update'>;
 

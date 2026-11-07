@@ -3,7 +3,8 @@ import { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
 import type { FarmObstacle } from '../character/farmCollisions';
 import { createWaterfall } from './createWaterfall';
 import { bridgeHeight, createWoodenBridge } from './createWoodenBridge';
-import { WATER_FEATURE } from './waterFeatureSpec';
+import { WATER_FEATURE } from '../content/waterFeature';
+import { ART_SLOTS } from '../content/slots';
 
 type Box = Extract<FarmObstacle, { kind: 'box' }>;
 
@@ -21,12 +22,13 @@ function cutBox(box: Box, opening: Box): Box[] {
 }
 
 export function createWaterFeature(parent: THREE.Group) {
-  const { stream, bridge, palette } = WATER_FEATURE;
+  const { stream, bridge } = WATER_FEATURE;
+  const palette = ART_SLOTS.palette.water;
   const curve = new THREE.CatmullRomCurve3(stream.points.map(([x, z]) => new THREE.Vector3(x, 0, z)));
   const group = new THREE.Group();
   group.name = 'farm-water-feature';
   parent.add(group);
-  const segments = 200;
+  const segments = stream.segments;
   const half = GROUND_SIZE / 2;
 
   function ribbon(name: string, width: number, lift: number, color: number, wobble = 0) {
@@ -36,7 +38,7 @@ export function createWaterFeature(parent: THREE.Group) {
       const t = i / segments;
       const point = curve.getPointAt(t);
       const tangent = curve.getTangentAt(t);
-      const centerOffset = Math.sin(t * Math.PI * 6) * wobble;
+      const centerOffset = Math.sin(t * Math.PI * stream.wobblePeriods) * wobble;
       for (const side of [1, -1]) {
         const offset = centerOffset + side * width / 2;
         vertices.push(
@@ -60,7 +62,7 @@ export function createWaterFeature(parent: THREE.Group) {
 
   ribbon('farm-stream-rim', stream.rimWidth, stream.rimLift, palette.rim);
   ribbon('farm-stream-water', stream.width, stream.waterLift, palette.water);
-  ribbon('farm-stream-deep', stream.deepWidth, stream.deepLift, palette.deep, 0.08);
+  ribbon('farm-stream-deep', stream.deepWidth, stream.deepLift, palette.deep, stream.deepWobble);
 
   const foamMaterial = new THREE.MeshStandardMaterial({ color: palette.foam, roughness: 0.25 });
   const length = curve.getLength();
@@ -68,7 +70,7 @@ export function createWaterFeature(parent: THREE.Group) {
     const t = distance / length;
     const point = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
-    const offset = (index % 2 === 0 ? 1 : -1) * stream.width * 0.3;
+    const offset = (index % 2 === 0 ? 1 : -1) * stream.width * stream.foamOffsetFactor;
     const foam = new THREE.Mesh(new THREE.PlaneGeometry(stream.foamLength, stream.foamWidth), foamMaterial);
     foam.name = `farm-stream-foam-${index + 1}`;
     foam.rotation.x = -Math.PI / 2;

@@ -40,7 +40,7 @@ async function openPage(context, phase = 'daytime', weather = 'clear') {
   // placement use the real canvas, mouse and keyboard.
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr48Test = { scene, camera, character, obstacles, splashExclusions };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr48Test = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, splashExclusions };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=${weather}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr48Test && window.getPixelRendering?.().canvasWidth));

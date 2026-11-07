@@ -42,7 +42,7 @@ async function open(phase, weather = 'snow') {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__snowTest = { scene, renderer, composer, character, weather, dayNight };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__snowTest = typeof context !== 'undefined' ? context : { scene, renderer, composer, character, weather, dayNight };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=123`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__snowTest));

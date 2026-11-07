@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { LANTERN_LIGHT, WINDOW_LIGHT } from './dayNightPhases';
+import { LANTERN_LIGHT, WINDOW_LIGHT } from '../content/dayNight';
+import { ART_SLOTS } from '../content/slots';
+import { PRACTICAL_LIGHT_GEOMETRY as GEOMETRY } from '../content/lightGeometry';
 
 export type WindowPane = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 export interface EmissiveAccent {
@@ -14,7 +16,7 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
     const light = new THREE.PointLight(WINDOW_LIGHT.color, 0, WINDOW_LIGHT.distance, WINDOW_LIGHT.decay);
     light.name = `window-light-${index + 1}`;
     // The pane's local +Z points out of the cottage.
-    light.position.z = 0.7;
+    light.position.z = GEOMETRY.windowOffset;
     window.add(light);
     return light;
   });
@@ -25,19 +27,19 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
 
   const lantern = new THREE.Group();
   lantern.name = 'lantern';
-  lantern.position.set(0.72, 1.05, 0.5);
+  lantern.position.set(...GEOMETRY.lanternPosition);
   character.add(lantern);
 
   // A small wing connects the carried lantern to the existing character body.
-  const wingStart = new THREE.Vector3(-0.4, -0.05, -0.28);
-  const wingEnd = new THREE.Vector3(-0.08, -0.05, -0.06);
+  const wingStart = new THREE.Vector3(...GEOMETRY.wingStart);
+  const wingEnd = new THREE.Vector3(...GEOMETRY.wingEnd);
   const wingDirection = wingEnd.clone().sub(wingStart);
   // One world pixel at the default view was too thin to reliably connect the
   // cup to the body. Keep the same endpoints, but make the little wing legible.
-  const wingRadius = 0.08;
+  const wingRadius = GEOMETRY.wingRadius;
   const wing = new THREE.Mesh(
-    new THREE.CapsuleGeometry(wingRadius, wingDirection.length() - 2 * wingRadius, 4, 8),
-    new THREE.MeshStandardMaterial({ color: 0xffd477, roughness: 0.9 }),
+    new THREE.CapsuleGeometry(wingRadius, wingDirection.length() - 2 * wingRadius, GEOMETRY.wingCapSegments, GEOMETRY.wingRadialSegments),
+    new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.lantern.wing, roughness: 0.9 }),
   );
   wing.name = 'lantern-wing';
   wing.position.copy(wingStart).add(wingEnd).multiplyScalar(0.5);
@@ -50,19 +52,19 @@ export function createPracticalLights(character: THREE.Object3D, windows: readon
     emissiveIntensity: 0,
     roughness: 0.6,
   });
-  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.3, 8), glassMaterial);
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(...GEOMETRY.glass), glassMaterial);
   glass.name = 'lantern-glass';
   lantern.add(glass);
 
-  const metal = new THREE.MeshStandardMaterial({ color: 0x554433, roughness: 0.9 });
-  const capGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.04, 8);
-  for (const y of [-0.17, 0.17]) {
+  const metal = new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.lantern.metal, roughness: 0.9 });
+  const capGeometry = new THREE.CylinderGeometry(...GEOMETRY.cap);
+  for (const y of GEOMETRY.capYs) {
     const cap = new THREE.Mesh(capGeometry, metal);
     cap.position.y = y;
     lantern.add(cap);
   }
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.015, 6, 12, Math.PI), metal);
-  handle.position.y = 0.19;
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(...GEOMETRY.handle), metal);
+  handle.position.y = GEOMETRY.handleY;
   lantern.add(handle);
 
   const lanternLight = new THREE.PointLight(

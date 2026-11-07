@@ -18,9 +18,9 @@ test('verifier remeasures a changed signed fence and refuses edited calibration 
   for (const name of ['asset-style-bible.md', 'asset-lookdev-brief.md']) await cp(join(root, 'docs', name), join(copy, 'docs', name));
   for (const name of ['package.json', 'package-lock.json', 'tsconfig.json']) await cp(join(root, name), join(copy, name));
   await symlink(join(root, 'node_modules'), join(copy, 'node_modules'));
-  const source = join(copy, 'src/placement/createPlacementVisual.ts');
+  const source = join(copy, 'src/content/placementGeometry.ts');
   const before = await readFile(source, 'utf8');
-  const changed = before.replace('new THREE.BoxGeometry(0.17, 0.95, 0.17)', 'new THREE.BoxGeometry(0.19, 0.95, 0.17)');
+  const changed = before.replace('post: [0.17, 0.95, 0.17]', 'post: [0.19, 0.95, 0.17]');
   assert.notEqual(changed, before);
   await writeFile(source, changed);
   const fixtureDir = join(copy, 'fixture');

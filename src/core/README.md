@@ -40,6 +40,11 @@ for placed fences. Blocked targets, including void clicks, approach a reachable
 boundary without relaxing the support checks. The stair renderer and shadows
 delegate to the same surface calculations.
 
+The default farm records and appearance slots live in `src/content/`; asset IDs
+resolve to Three.js factories in `src/render/`. `src/state/snapshot.ts` describes
+the live ECS as detached, versioned JSON data. Its save/load interface is a
+contract only: no persistence or loading is installed.
+
 Pointer coordinates are CSS viewport coordinates. Placement handles a pointer
 first; touch/pen taps preview, mouse clicks can confirm, and the direct Place
 control confirms touch previews. Any key press and entering placement
