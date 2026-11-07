@@ -5,8 +5,7 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
-const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
-const { BUILDING_PALETTE } = await vite.ssrLoadModule('/src/scene/farmBuildingMaterials.ts');
+const { FARM_PALETTE } = await vite.ssrLoadModule('/src/content/slots.ts');
 const { GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
@@ -20,7 +19,7 @@ test('the original farm palette stays locked alongside the building palette', ()
   });
   const scene = new THREE.Scene();
   createFarmLayout(scene);
-  const allowed = new Set([...Object.values(FARM_PALETTE), ...Object.values(BUILDING_PALETTE)]);
+  const allowed = new Set([...Object.values(FARM_PALETTE), 0xefe3c8, 0x8b5e3c, 0xa94a30, 0x9a8a78, 0xc8956c, 0x3e2a1a]);
   scene.traverse((object) => {
     if (!object.isMesh) return;
     if (object.name.startsWith('farm-tree-shadow-')) {

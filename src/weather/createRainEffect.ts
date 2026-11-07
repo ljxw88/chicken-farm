@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { FarmObstacle } from '../character/farmCollisions';
-import { RAIN_LOOK } from './rainSettings';
+import { RAIN_LOOK } from '../content/rainSettings';
+import { RAIN_INITIAL_OPACITY } from '../content/weatherVisual';
 
 interface RainEffectOptions {
   scene: THREE.Scene;
@@ -42,7 +43,7 @@ export function createRainEffect({
   const attribute = new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('position', attribute);
   const material = new THREE.LineBasicMaterial({
-    color: RAIN_LOOK.color, transparent: true, opacity: 0, depthWrite: false,
+    color: RAIN_LOOK.color, transparent: true, opacity: RAIN_INITIAL_OPACITY, depthWrite: false,
   });
   const streaks = new THREE.LineSegments(geometry, material);
   streaks.name = 'rain-streaks';
@@ -53,7 +54,7 @@ export function createRainEffect({
   const ringGeometry = new THREE.RingGeometry(RAIN_LOOK.splashInnerRadiusRatio, 1, RAIN_LOOK.splashSegments);
   const splashes = Array.from({ length: RAIN_LOOK.splashCapacity }, (_, index) => {
     const ringMaterial = new THREE.MeshBasicMaterial({
-      color: RAIN_LOOK.color, transparent: true, opacity: 0, depthWrite: false,
+      color: RAIN_LOOK.color, transparent: true, opacity: RAIN_INITIAL_OPACITY, depthWrite: false,
     });
     const mesh = new THREE.Mesh(ringGeometry, ringMaterial);
     mesh.name = `rain-splash-${index + 1}`;

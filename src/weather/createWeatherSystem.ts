@@ -2,10 +2,14 @@ import * as THREE from 'three';
 import type { FarmObstacle } from '../character/farmCollisions';
 import { createVisualRandom } from '../effects/createVisualRandom';
 import { advanceWeather, createWeatherState, setWeatherMode, type WeatherMode, type WeatherState } from '../environment/weatherSystem';
-import { CLOUDY_LOOK } from './cloudySettings';
+import { CLOUDY_LOOK } from '../content/cloudySettings';
+import { RAIN_LOOK } from '../content/rainSettings';
+import { SNOW_LOOK } from '../content/snowSettings';
+import { VISUAL_SEEDS } from '../content/startup';
+import { SNOW_VISUAL } from '../content/weatherVisual';
+import { WEATHER_ASSETS } from '../render/weatherAssets';
 import { createRainEffect } from './createRainEffect';
-import { createSnow, SNOW_LOOK } from './createSnow';
-import { RAIN_LOOK } from './rainSettings';
+import type { createSnow } from './createSnow';
 
 export { WEATHER_MODES, isWeatherMode } from '../environment/weatherSystem';
 export type { WeatherMode } from '../environment/weatherSystem';
@@ -33,7 +37,7 @@ export function createWeatherSystem(options: WeatherSystemOptions) {
   const rain = createRainEffect({ ...options, random: () => {
     const value = random();
     if (!sampled) {
-      snowSeed = (Math.floor(value * 0x100000000) ^ 0x534e4f57) >>> 0;
+      snowSeed = (Math.floor(value * 0x100000000) ^ VISUAL_SEEDS.snow) >>> 0;
       sampled = true;
     }
     return value;
@@ -72,7 +76,7 @@ export function createWeatherSystem(options: WeatherSystemOptions) {
     );
     options.setShadowWeather?.(rainAmount, overcastAmount);
     rain.update(deltaSeconds, rainAmount);
-    if (!snow && snowAmount > 0) snow = createSnow({ ...options, random: createVisualRandom(snowSeed) });
+    if (!snow && snowAmount > 0) snow = WEATHER_ASSETS[SNOW_VISUAL.assetId]({ ...options, random: createVisualRandom(snowSeed) });
     snow?.update(deltaSeconds, snowAmount, nightAmount);
   }
 

@@ -1,25 +1,8 @@
 import * as THREE from 'three';
+import { SNOW_LOOK } from '../content/snowSettings';
+import { SNOW_VISUAL } from '../content/weatherVisual';
 
-// EBR-64 Look Dev targets. At the default pixel pass these widths are 1–2 pixels.
-export const SNOW_LOOK = {
-  flakeCount: 160,
-  sizeMin: 0.11,
-  sizeMax: 0.22,
-  fieldWidth: 19,
-  fieldHeight: 8,
-  fallSpeedMin: 0.8,
-  fallSpeedMax: 1.4,
-  swayAmplitude: 0.3,
-  swayPeriodMin: 3,
-  swayPeriodMax: 5,
-  windX: 0.8,
-  windZ: -0.6,
-  windDriftPerFall: 0.12,
-  color: 0xf2f6f8,
-  opacity: 0.8,
-  nightOpacityMultiplier: 0.7,
-  ambientBlueMultiplier: 1.03,
-} as const;
+export { SNOW_LOOK } from '../content/snowSettings';
 
 interface SnowOptions {
   scene: THREE.Scene;
@@ -47,9 +30,9 @@ export function createSnow({ scene, camera, anchor, groundHeight, random = Math.
     phase: between(0, Math.PI * 2),
   }));
 
-  const geometry = new THREE.PlaneGeometry(1, 1);
+  const geometry = new THREE.PlaneGeometry(...SNOW_VISUAL.plane);
   const material = new THREE.MeshBasicMaterial({
-    color: SNOW_LOOK.color, transparent: true, opacity: 0, depthWrite: false, toneMapped: false,
+    color: SNOW_LOOK.color, transparent: true, opacity: SNOW_VISUAL.initialOpacity, depthWrite: false, toneMapped: false,
   });
   const mesh = new THREE.InstancedMesh(geometry, material, flakes.length);
   mesh.name = 'snow-flakes';

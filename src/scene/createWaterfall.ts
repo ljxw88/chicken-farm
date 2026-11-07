@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
-import { WATER_FEATURE } from './waterFeatureSpec';
+import { WATER_FEATURE } from '../content/waterFeature';
+import { ART_SLOTS } from '../content/slots';
 
 /** Lit, non-emissive sheet with vertex alpha fading into the existing void. */
 export function createWaterfall(parent: THREE.Group) {
-  const { waterfall, stream, palette } = WATER_FEATURE;
+  const { waterfall, stream } = WATER_FEATURE;
+  const palette = ART_SLOTS.palette.water;
   const top = GROUND_HEIGHT;
   const bottom = waterfall.bottom;
   const fadeStart = bottom + waterfall.fadeHeight;
@@ -56,7 +58,7 @@ export function createWaterfall(parent: THREE.Group) {
   geometry.setIndex(indices);
   waterNormals(geometry);
   const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff, vertexColors: true, roughness: 0.25, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    color: ART_SLOTS.palette.vertexWhite, vertexColors: true, roughness: 0.25, transparent: true, depthWrite: false, side: THREE.DoubleSide,
   });
   brightenReflectedLight(material);
   const face = new THREE.Mesh(geometry, material);
@@ -71,7 +73,7 @@ export function createWaterfall(parent: THREE.Group) {
   brightenReflectedLight(streakMaterial);
   const streaks = new THREE.Mesh(streakGeometry, streakMaterial);
   streaks.name = 'farm-waterfall-streaks';
-  streaks.position.set(waterfall.x, 0, faceZ + 0.001);
+  streaks.position.set(waterfall.x, 0, faceZ + waterfall.streakLayerOffset);
   streaks.frustumCulled = false;
   parent.add(streaks);
 
@@ -85,8 +87,8 @@ export function createWaterfall(parent: THREE.Group) {
     const scroll = step * waterfall.step;
     const vertices: number[] = [];
     const vertexColors: number[] = [];
-    const period = 1.0; // Engineer: visible short streaks, scrolled in 0.1-unit steps.
-    const length = 0.6;
+    const period = waterfall.streakPeriod; // Engineer: visible short streaks, scrolled in 0.1-unit steps.
+    const length = waterfall.streakLength;
     const columns = Math.round(waterfall.width / waterfall.streakSpacing);
     function quad(left: number, right: number, upper: number, lower: number) {
       for (const [x, y] of [[left, upper], [left, lower], [right, upper], [right, upper], [left, lower], [right, lower]]) {
@@ -96,7 +98,7 @@ export function createWaterfall(parent: THREE.Group) {
     }
     for (let column = 0; column < columns; column++) {
       const center = -waterfall.width / 2 + (column + 0.5) * waterfall.streakSpacing;
-      const phase = (scroll + column * 0.2) % period;
+      const phase = (scroll + column * waterfall.streakColumnPhase) % period;
       for (let row = -1; row <= Math.ceil((top - bottom) / period); row++) {
         const upper = Math.min(top, top - row * period - phase);
         const lower = Math.max(bottom, top - row * period - phase - length);

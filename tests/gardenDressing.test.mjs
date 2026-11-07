@@ -7,15 +7,15 @@ import { inspectSignedGroup } from '../tools/assetgen/geometry.mjs';
 import { isolateHistoricalGarden, restoreHistoricalGarden } from '../tools/historical-garden-isolation.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
-const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
+const { FARM_PALETTE } = await vite.ssrLoadModule('/src/content/slots.ts');
 const { ASSET_PALETTE } = await vite.ssrLoadModule('/src/assets/palette.ts');
 const { createGardenDressing } = await vite.ssrLoadModule('/src/scene/gardenDressing/createGardenDressing.ts');
 const { createGardenPlot } = await vite.ssrLoadModule('/src/scene/gardenDressing/createGardenPlot.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
-const { createFarmDecorations } = await vite.ssrLoadModule('/src/scene/createFarmDecorations.ts');
+const { createFarmDecorations } = await vite.ssrLoadModule('/src/render/farmDecorations.ts');
 const { createIsland, GROUND_HEIGHT } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 const { createSheepfold } = await vite.ssrLoadModule('/src/scene/sheepfold/createSheepfold.ts');
-const { createPlacementVisual, makeGhost } = await vite.ssrLoadModule('/src/placement/createPlacementVisual.ts');
+const { createPlacementAsset: createPlacementVisual, makeGhost } = await vite.ssrLoadModule('/src/render/placementAssets.ts');
 const { createPlacementSystem } = await vite.ssrLoadModule('/src/placement/placementSystem.ts');
 const { intersectsFootprint } = await vite.ssrLoadModule('/src/placement/grid.ts');
 const { createEntityWorld } = await vite.ssrLoadModule('/src/core/ecs/createEntityWorld.ts');

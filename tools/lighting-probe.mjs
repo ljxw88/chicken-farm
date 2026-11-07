@@ -33,7 +33,7 @@ try {
       });
       await page.route('**/src/main.ts*', async (route) => {
         const response = await route.fetch();
-        await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightProbe = { scene, camera, character, controls, follow, renderer, composer, weather, dayNight };\n` });
+        await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightProbe = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, renderer, composer, weather, dayNight };\n` });
       });
       await page.goto(`${url}/?phase=${phase}&weather=${weatherName}&pixel=0`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => Boolean(window.__lightProbe));

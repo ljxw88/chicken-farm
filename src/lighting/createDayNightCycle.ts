@@ -3,7 +3,9 @@ import { CHARACTER_RADIUS, createCharacterCrownController } from '../character/c
 import { advanceDayNight, createDayNightState, setCycleSeconds, setPhase, type DayNightState } from '../environment/dayNightSystem';
 import { createPracticalLights, type EmissiveAccent, type WindowPane } from './createPracticalLights';
 import { createSunsetWaterTint } from './createSunsetWaterTint';
-import { DAY_NIGHT_PHASES, type DayNightPhaseName } from './dayNightPhases';
+import { DAY_NIGHT_PHASES, type DayNightPhaseName } from '../content/dayNight';
+import { KEY_LIGHT_GEOMETRY } from '../content/lightGeometry';
+import { ART_SLOTS } from '../content/slots';
 
 // THREE.Color converts the locked sRGB hex values to its linear working space.
 const phaseColors = DAY_NIGHT_PHASES.map((phase) => ({
@@ -15,9 +17,9 @@ const phaseColors = DAY_NIGHT_PHASES.map((phase) => ({
 }));
 // Engineer: use Look Dev's camera-side endpoint while retaining the original
 // horizontal radius, so rotating the azimuth does not change the elevation.
-const KEY_RADIUS = Math.hypot(11, 4);
-const KEY_X = -0.8 * KEY_RADIUS;
-const KEY_Z = 0.6 * KEY_RADIUS;
+const KEY_RADIUS = Math.hypot(...KEY_LIGHT_GEOMETRY.radiusComponents);
+const KEY_X = KEY_LIGHT_GEOMETRY.directionX * KEY_RADIUS;
+const KEY_Z = KEY_LIGHT_GEOMETRY.directionZ * KEY_RADIUS;
 
 interface DayNightCycleOptions {
   scene: THREE.Scene;
@@ -81,7 +83,8 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
   function applyFillIntensities() {
     // At night the weather also softens the fill, so the dimmed moon remains
     // the key in rain/cloud rather than an omnidirectional front light.
-    const scale = 1 - nightAmount * (0.2 * rainAmount + 0.18 * cloudyAmount);
+    const scale = 1 - nightAmount * (ART_SLOTS.light.weather.nightRainFill * rainAmount +
+      ART_SLOTS.light.weather.nightCloudFill * cloudyAmount);
     ambient.intensity = ambientBaseIntensity * scale;
     hemisphere.intensity = hemisphereBaseIntensity * scale;
   }
@@ -104,11 +107,13 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     }
     // Overcast contact shadows are half as long/strong; rain is nearly
     // centered and faint. The envelopes crossfade with the weather system.
-    let offset = shadowOffset * (1 - 0.5 * cloudyAmount - 0.51 * rainAmount);
+    let offset = shadowOffset * (1 - ART_SLOTS.light.weather.cloudShadowOffset * cloudyAmount -
+      ART_SLOTS.light.weather.rainShadowOffset * rainAmount);
     const awayX = -lightDirection.x / horizontal;
     const awayZ = -lightDirection.z / horizontal;
-    const opacity = shadowOpacity * (1 - 0.5 * cloudyAmount - 0.8 * rainAmount);
-    updateFarmShadows?.(awayX, awayZ, offset, opacity / 0.22);
+    const opacity = shadowOpacity * (1 - ART_SLOTS.light.weather.cloudShadowOpacity * cloudyAmount -
+      ART_SLOTS.light.weather.rainShadowOpacity * rainAmount);
+    updateFarmShadows?.(awayX, awayZ, offset, opacity / ART_SLOTS.light.contact.characterOpacity);
     if (shadowSupported) {
       character.getWorldPosition(characterWorldPosition);
       // The entire ellipse fits inside this conservative enclosing circle.
@@ -194,7 +199,8 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     const angle = progress * Math.PI * 2;
     const height = Math.sin(angle);
     const moonArc = Math.min(0, height) ** 2;
-    directional.position.set(KEY_X, 4 + 8 * Math.max(0, height) + 5 * moonArc, KEY_Z);
+    directional.position.set(KEY_X, KEY_LIGHT_GEOMETRY.baseHeight + KEY_LIGHT_GEOMETRY.sunHeight * Math.max(0, height) +
+      KEY_LIGHT_GEOMETRY.moonHeight * moonArc, KEY_Z);
     updateCharacterShadow();
   }
 

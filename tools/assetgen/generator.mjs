@@ -4,9 +4,12 @@ import { root } from './config.mjs';
 import { runOpenCode, sessionMetadata, textEvents } from './opencode.mjs';
 
 const references = {
-  'signed-tree': 'src/scene/createFarmLayout.ts', 'signed-cottage': 'src/scene/createCottage.ts',
-  'signed-coop': 'src/scene/createRampCoop.ts', 'signed-fence': 'src/placement/createPlacementVisual.ts',
-  'signed-sign': 'src/scene/createFarmDecorations.ts', 'signed-stairs': 'src/scene/createStoneStairs.ts',
+  'signed-tree': ['src/render/farmProps.ts', 'src/content/propGeometry.ts'],
+  'signed-cottage': ['src/scene/createCottage.ts', 'src/content/buildingGeometry.ts', 'src/content/buildings.ts'],
+  'signed-coop': ['src/scene/createRampCoop.ts', 'src/content/buildingGeometry.ts', 'src/content/buildings.ts'],
+  'signed-fence': ['src/render/placementAssets.ts', 'src/content/placementGeometry.ts'],
+  'signed-sign': ['src/render/farmDecorations.ts', 'src/content/decorationGeometry.ts'],
+  'signed-stairs': ['src/scene/createStoneStairs.ts', 'src/content/world.ts'],
 };
 
 function parseJson(text) {
@@ -38,9 +41,11 @@ export async function makePrompt(spec, bible, stage, current, previous, best) {
   const artBrief = await readFile(join(root, 'docs/asset-lookdev-brief.md'), 'utf8');
   const examples = [];
   for (const id of spec.referenceAssetIds.slice(0, 3)) {
-    const path = references[id];
-    if (!path) throw new Error(`Unknown signed reference ${id}`);
-    examples.push(`SIGNED REFERENCE ${id} (${path}; shapes only, not permission to copy legacy colours):\n${await readFile(join(root, path), 'utf8')}`);
+    const paths = references[id];
+    if (!paths) throw new Error(`Unknown signed reference ${id}`);
+    for (const path of paths) {
+      examples.push(`SIGNED REFERENCE ${id} (${path}; shapes only, not permission to copy legacy colours):\n${await readFile(join(root, path), 'utf8')}`);
+    }
   }
   return `You are a game-art recipe generator. Do not call tools, edit files, use the network, or output TypeScript. Return ONE complete fenced JSON object. It is automatically built and independently checked.\n\nCURRENT STAGE: ${stage}. ${current ? 'Revise the current recipe only where this stage or the feedback requires; preserve successful geometry.' : 'Create the initial blockout, including a coarse but visible version of every identity feature.'} The six stages are blockout, form, material, detail, lighting and optimise. Every stage must already satisfy H1–H10, the 10% size tolerance, and render every identity feature; do not defer a missing feature to a later stage. No part, band or cleat thinner than 0.1. Round parts use 6–8 segments. Follow the exact spec dimensions. The standard material is already supplied by the builder. Never invent tokens or hexes.\n\nLOOK DEV BRIEF (PM recipe/4-round/no-animal rulings override format advice):\n${artBrief}\n\nSTYLE BIBLE:\n${bible.text}\n\nRECIPE CHEAT SHEET:\n${cheat}\n\nSPEC:\n${JSON.stringify(spec, null, 2)}\n\n${examples.join('\n\n')}\n\n${current ? `CURRENT RECIPE:\n${JSON.stringify(current, null, 2)}` : 'No current recipe.'}\n\n${previous ? `PREVIOUS VERIFICATION / CRITIQUE / CHANGE DIFF (fix the exact named failures):\n${JSON.stringify(previous, null, 2)}` : ''}\n\n${best ? `BEST CANDIDATE SO FAR:\n${JSON.stringify(best, null, 2)}` : ''}\n\nReturn exactly one complete JSON recipe in a fenced json block.`;
 }

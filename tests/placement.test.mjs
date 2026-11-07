@@ -17,7 +17,7 @@ const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farm
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 after(() => vite.close());
 
-function fixture(t, { debugGrid = false, getBlockers, farm = false } = {}) {
+function fixture(t, { debugGrid = false, getBlockers, farm = false, tints } = {}) {
   const dom = new JSDOM('<!doctype html><body><canvas id="scene"></canvas></body>', { url: 'http://localhost/' });
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;
@@ -49,7 +49,7 @@ function fixture(t, { debugGrid = false, getBlockers, farm = false } = {}) {
   const controls = { ...characterControls, world, input };
   placement = createPlacementAdapter({
     world, input, scene, camera, canvas, ground, groundSize: 16, groundHeight: 2.4,
-    obstacles, syncObstacles: controls.syncObstacles, syncCharacter: controls.syncExternalPose, getBlockers, debugGrid,
+    obstacles, syncObstacles: controls.syncObstacles, syncCharacter: controls.syncExternalPose, getBlockers, debugGrid, tints,
     onActiveChange: (active) => { if (active) controls.cancelTarget(); },
   });
   const unbind = bindInputActions(input, window, canvas, { ownMovement: true, ownPlacement: true });
@@ -272,6 +272,27 @@ test('placement previews, validates, rotates only the ghost, and updates and rem
   f.key('KeyZ');
   assert.equal(f.count('placed-fence'), 0);
   assert.equal(f.obstacles.length, 1); // The pre-existing obstacle is untouched.
+});
+
+test('placement tint slots can be swapped without changing tile or fence footprints', (t) => {
+  const tints = { valid: 0x102030, invalid: 0xa04020, washOpacity: 0.25, ghostOpacity: 0.35,
+    grid: 0x203040, gridOpacity: 0.6 };
+  const f = fixture(t, { debugGrid: true, tints });
+  const grid = f.layer.getObjectByName('placement-debug-grid');
+  assert.equal(grid.material.color.getHex(), tints.grid);
+  assert.equal(grid.material.opacity, tints.gridOpacity);
+  f.key('KeyF');
+  f.pointer('pointermove', 3.75, 3.75);
+  const ghost = f.layer.getObjectByName('placement-ghost');
+  const wash = f.layer.getObjectByName('placement-wash');
+  assert.equal(wash.material.color.getHex(), tints.valid);
+  assert.equal(wash.material.opacity, tints.washOpacity);
+  assert.ok(ghost.children.every((part) => part.material.opacity === tints.ghostOpacity));
+  assert.deepEqual(wash.scale.toArray(), [1.5, 1.5, 1]);
+  f.pointer('pointerdown', 3.75, 3.75);
+  const fence = f.obstacles.find((obstacle) => obstacle.name === 'placed-fence-1');
+  assert.deepEqual([fence.minX, fence.maxX, fence.minZ, fence.maxZ], [3.75 - 0.735, 3.75 + 0.735, 3.75 - 0.13, 3.75 + 0.13]);
+  assert.equal(wash.material.color.getHex(), tints.invalid);
 });
 
 test('a placed fence blocks the character system immediately and undo removes its entity', (t) => {

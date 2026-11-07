@@ -6,8 +6,8 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
-const { createFarmDecorations } = await vite.ssrLoadModule('/src/scene/createFarmDecorations.ts');
-const { WATER_FEATURE } = await vite.ssrLoadModule('/src/scene/waterFeatureSpec.ts');
+const { createFarmDecorations } = await vite.ssrLoadModule('/src/render/farmDecorations.ts');
+const { WATER_FEATURE } = await vite.ssrLoadModule('/src/content/waterFeature.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 const { createGrid, intersectsFootprint, TILE_SIZE } = await vite.ssrLoadModule('/src/placement/grid.ts');
 const { createPlacementAdapter } = await vite.ssrLoadModule('/src/placement/createPlacementAdapter.ts');

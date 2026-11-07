@@ -13,7 +13,8 @@ The baseline is served from a temporary `git archive` of that exact commit, not
 the working tree. The candidate defaults to the current Vite source tree. To
 compare another running Vite source server, use `npm run parity -- --url
 http://host:port`. The test instruments its served `/src/main.ts` just like the
-existing browser tests; a minified production preview cannot expose this seam.
+existing browser tests and seeds weather in its registered environment module;
+a minified production preview cannot expose this seam.
 The URL option does not start or stop the supplied server.
 
 Both runs use the same headless Chromium/SwiftShader, 1280×720, DPR 1, pixel
@@ -21,6 +22,10 @@ pass, pinned phase/weather URLs, LCG seed, manual animation-frame timestamps,
 and input route/pose. The weather RNG is supplied at initialization, before
 rain particles are created. The stairs frame is reached by a real click and
 the day frame by WASD; placement uses the real selection and pointer path.
+The pinned EBR-76 placement pointer uses an open patch outside the sheepfold;
+fold-free historical captures retain their original target. For a new baseline,
+`PARITY_PLACEMENT_Y` can select another screen Y; it is recorded and reused for
+both sides of subsequent comparisons.
 Two extra day/night frames use a test-only camera focus and zoom, retaining the
 normal isometric front direction, to frame the cottage and both coops without
 moving the character. They use the existing composer and also check the window
@@ -40,6 +45,25 @@ or graphics changes can alter pixels even when application code does not.
 For an external `--url`, the server's source SHA is unknown rather than inferred
 from the local checkout. For a local run, `parity.json` records both HEAD and
 any source changes present during capture.
+
+`PARITY_HOST` and `PARITY_PORT` optionally select a local strict-port server.
+`PARITY_OUTPUT_DIR` writes candidate, diff and report there while still reading
+the selected baseline from `PARITY_BASELINE_DIR`, `PARITY_EVIDENCE_DIR` or the
+historical fixtures. `--baseline-root` verifies a full Git archive before
+recording; `--baseline-port-range` selects a strict baseline port range.
+
+EBR-76's scene reference pins `a75e8db` even if `origin/main` has since advanced.
+It is an exact, pooled gzip fixture: `node tools/scene-data-dump.mjs
+--against-main <clean-a75e8db-archive-or-worktree>` reconstructs and compares all
+original JSON bytes, including the garden, plot and snow transitions. The full
+archive is checked against Git before capture. `node tools/placement-environment-replay.mjs
+--against-main <clean-main-worktree-or-archive> <evidence-dir>` compares full,
+unmasked `8dd79b8` frames and traces, including the garden and effects, with zero
+changed pixels allowed. `--archive-main <evidence-dir>` creates and verifies the
+`8dd79b8` archive automatically. This earlier replay does not exercise snow.
+Older replay references isolate intentional garden changes; the `8dd79b8` reference
+does not. The parity recorder accepts
+the pinned EBR-76 commits after `origin/main` advances.
 
 For EBR-80, leave the signed `tools/fixtures/historical/EBR-73/` files untouched.
 Copy its `baseline.json` and `baseline/` into a separate external directory and
