@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, writeFile, copyFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory, variantReferences } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { fitGeneratedRecipe } from './fit-generated.mjs';
@@ -94,11 +94,15 @@ function score(hard, visual, critic) {
 }
 
 async function newAsset(input, args) {
-  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--loop-off|--prior-review <report.json>]');
+  if (!input) throw new Error('Usage: npm run asset:new -- <spec.json|id> [--work-order|--loop-off|--prior-review <report.json> [--review-plan <notes.md>]]');
   const priorIndex = args.indexOf('--prior-review');
   if (priorIndex !== -1 && (!args[priorIndex + 1] || args[priorIndex + 1].startsWith('--') ||
       args.lastIndexOf('--prior-review') !== priorIndex || args.includes('--loop-off') || args.includes('--work-order'))) {
     throw new Error('--prior-review needs one report path and cannot be combined with --loop-off or --work-order');
+  }
+  const planIndex = args.indexOf('--review-plan');
+  if (planIndex !== -1 && (priorIndex === -1 || !args[planIndex + 1] || args[planIndex + 1].startsWith('--') || args.lastIndexOf('--review-plan') !== planIndex)) {
+    throw new Error('--review-plan needs one notes path and --prior-review');
   }
   const { spec, path: specPath } = await readSpec(input);
   if (spec.category === 'building') throw new Error('New buildings are out of scope; signed building fixtures remain auditable.');
@@ -130,7 +134,9 @@ async function newAsset(input, args) {
   const sessionDir = await isolatedSessionDirectory();
   try {
     const specBytes = await readFile(specPath, 'utf8');
-    const prior = priorIndex === -1 ? null : await loadPriorReview(args[priorIndex + 1], spec, specBytes, bible.text);
+    const planPath = planIndex === -1 ? null : resolve(args[planIndex + 1]);
+    const prior = priorIndex === -1 ? null : await loadPriorReview(args[priorIndex + 1], spec, specBytes, bible.text,
+      planPath ? { planText: await readFile(planPath, 'utf8'), planPath } : {});
     if (prior) await writeFile(join(run, 'prior-review.json'), json({ ...prior.provenance, feedback: prior.feedback }));
     const first = Date.now();
     let round = 1, corrections = 0, stageIndex = 0;

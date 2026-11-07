@@ -34,14 +34,17 @@ async function fixture() {
 
 test('an authenticated prior critique reaches a recipe-only revision without overriding the critic', async () => {
   const { dir } = await fixture();
-  const prior = await loadPriorReview(join(dir, 'report.json'), spec, specBytes, bible.text);
+  const planText = 'Replace the solid hoop-top with a visible band; preserve the bulging stave-body.';
+  const prior = await loadPriorReview(join(dir, 'report.json'), spec, specBytes, bible.text, { planText, planPath: '/review-plan.md' });
   assert.equal(prior.provenance.priorCriticAction, 'refine-spec');
   assert.deepEqual(prior.feedback.critique, critique);
+  assert.equal(prior.provenance.reviewPlanHash, sha(planText));
   const prompt = await makePrompt(spec, bible, 'blockout', prior.recipe, prior.feedback, null);
   assert.match(prompt, /CURRENT RECIPE/);
   assert.match(prompt, /Narrow hoop-top and expose the stave-body/);
   assert.match(prompt, /Do not change the spec or disregard the prior verdict/);
   assert.match(prompt, /fresh independent critic/);
+  assert.ok(prompt.includes(planText));
 });
 
 test('prior feedback rejects changed receipts, changed specs and non-independent critiques', async () => {
@@ -50,6 +53,7 @@ test('prior feedback rejects changed receipts, changed specs and non-independent
   await assert.rejects(() => loadPriorReview(join(first.dir, 'report.json'), spec, specBytes, bible.text), /receipts do not match/);
   const second = await fixture();
   await assert.rejects(() => loadPriorReview(join(second.dir, 'report.json'), spec, `${specBytes} `, bible.text), /does not match/);
+  await assert.rejects(() => loadPriorReview(join(second.dir, 'report.json'), spec, specBytes, bible.text, { planText: ' ' }), /Review plan/);
   second.report.criticSession = second.report.generatorSession;
   await writeFile(join(second.dir, 'report.json'), JSON.stringify(second.report));
   await assert.rejects(() => loadPriorReview(join(second.dir, 'report.json'), spec, specBytes, bible.text), /independent image critique/);
