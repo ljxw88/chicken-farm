@@ -16,9 +16,9 @@ function prism(shape: THREE.Shape, width: number, material: THREE.Material, name
 export function createLeanTo(slots: SheepfoldSlots = ART_SLOTS.building.sheepfold) {
   const group = new THREE.Group();
   group.name = 'sheepfold-lean-to';
-  const wall = new THREE.MeshStandardMaterial({ color: slots.wall, roughness: 1 });
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: slots.roof, roughness: 1 });
-  const postMaterial = new THREE.MeshStandardMaterial({ color: slots.posts, roughness: 1 });
+  const wall = new THREE.MeshStandardMaterial({ color: slots.wall, roughness: slots.roughness });
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: slots.roof, roughness: slots.roughness });
+  const postMaterial = new THREE.MeshStandardMaterial({ color: slots.posts, roughness: slots.roughness });
   const { width, depth, height, rise, overhang } = LEAN_TO;
 
   function box(name: string, w: number, h: number, d: number, material: THREE.Material, x: number, y: number, z: number) {
@@ -40,7 +40,7 @@ export function createLeanTo(slots: SheepfoldSlots = ART_SLOTS.building.sheepfol
   sideShape.lineTo(-front, roofTop(front) - GEOMETRY.sideTopInset);
   sideShape.lineTo(-back, roofTop(back) - GEOMETRY.sideTopInset);
   sideShape.closePath();
-  for (const side of [-1, 1]) {
+  for (const side of GEOMETRY.sides) {
     const sideWall = prism(sideShape, GEOMETRY.sideThickness, wall, 'sheepfold-side-wall');
     sideWall.position.x = side * (width / 2 - GEOMETRY.sideXInset) - GEOMETRY.sideXInset;
     group.add(sideWall);

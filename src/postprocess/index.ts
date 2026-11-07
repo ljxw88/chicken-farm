@@ -5,12 +5,13 @@ import { presentPixelViewport } from './PixelPresentation';
 import { calculatePixelViewport, type PixelViewport } from './pixelViewport';
 import { ART_SLOTS } from '../content/slots';
 import { PIXEL_PRESENTATION } from '../content/presentation';
+import { STARTUP_OPTIONS } from '../content/startup';
 
 // Look Dev LOCKED: 4 CSS pixels per world pixel (about 320 wide at 1280x720).
 const DEFAULT_CSS_PIXEL_SIZE = PIXEL_PRESENTATION.cssPixelSize;
 
 export function isPixelRenderingEnabled(search: string) {
-  return new URLSearchParams(search).get('pixel') !== '0';
+  return new URLSearchParams(search).get(STARTUP_OPTIONS.pixelKey) !== STARTUP_OPTIONS.pixelDisabledValue;
 }
 
 export interface PixelRenderingState {

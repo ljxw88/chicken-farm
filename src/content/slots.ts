@@ -26,11 +26,11 @@ export interface BuildingSlots {
 }
 
 export interface SheepSlots {
-  woolTop: number; woolBase: number; woolShade: number; brown: number; detail: number; secondFaceGain: number;
+  woolTop: number; woolBase: number; woolShade: number; brown: number; detail: number; secondFaceGain: number; roughness: number;
 }
 
 export interface SheepfoldSlots {
-  wall: number; roof: number; posts: number;
+  wall: number; roof: number; posts: number; roughness: number;
 }
 
 export interface PlacementTintSlots {
@@ -63,7 +63,7 @@ export const ART_SLOTS = {
     lantern: { wing: 0xffd477, metal: 0x554433 },
     chicken: { feathers: 0xfff1d7, wing: 0xe4d1ae, comb: 0xc75b46, beak: 0xe9a048, eye: 0x332820 },
     sheep: { woolTop: 0xfff1d7, woolBase: FARM_PALETTE.wool, woolShade: 0xe4d1ae,
-      brown: FARM_PALETTE.treeTrunk, detail: FARM_PALETTE.dirtEdge, secondFaceGain: 0.86 } satisfies SheepSlots,
+      brown: FARM_PALETTE.treeTrunk, detail: FARM_PALETTE.dirtEdge, secondFaceGain: 0.86, roughness: 1 } satisfies SheepSlots,
     firefly: { core: 0xf2e27a },
     smoke: { color: 0xefe3c8, emissive: 0x000000 },
     nest: { straw: 0xb8925b, egg: 0xfff5db },
@@ -82,7 +82,7 @@ export const ART_SLOTS = {
       wall: 0xc8956c, timber: 0x8b5e3c, roof: 0xa94a30, posts: FARM_PALETTE.barnDoor,
       ramp: FARM_PALETTE.dirt, cleats: FARM_PALETTE.dirtEdge, popHole: 0x3e2a1a,
     },
-    sheepfold: { wall: 0xc8956c, roof: 0xa94a30, posts: FARM_PALETTE.barnDoor } satisfies SheepfoldSlots,
+    sheepfold: { wall: 0xc8956c, roof: 0xa94a30, posts: FARM_PALETTE.barnDoor, roughness: 1 } satisfies SheepfoldSlots,
   } satisfies BuildingSlots & { sheepfold: SheepfoldSlots },
   light: {
     morning: {
@@ -120,7 +120,7 @@ export const ART_SLOTS = {
   prop: {
     stair: { stoneMix: 0.18, treadMixes: [0.76, 0.82, 0.78, 0.84, 0.8], padMix: 0.78,
       edgeMix: 0.5, edgeBrightness: 1.1 } satisfies StairSlots,
-    character: { crownStrength: 0.15, dayCrownStrength: 0.28, dayBaseGain: 1.08 },
+    character: { crownStrength: 0.15, dayCrownStrength: 0.28, dayBaseGain: 1.08, bodyRoughness: 0.9, beakRoughness: 0.9 },
     firefly: { pulseFloor: 0.25, pulseRange: 0.75, rainDimming: 0.4 },
     smoke: { initialOpacity: 0, peakOpacity: 0.75, weatherNightDimming: 0.4, roughness: 1 },
   },

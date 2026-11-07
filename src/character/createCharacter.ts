@@ -47,7 +47,8 @@ export function createCharacter() {
   const positions = bodyGeometry.getAttribute('position');
   bodyGeometry.setAttribute('color', new THREE.Float32BufferAttribute(positions.count * 3, 3));
   applyCrownLift(bodyGeometry, CROWN_LIFT, 1);
-  const bodyMaterial = new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.body, roughness: 0.9, vertexColors: true });
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.body,
+    roughness: ART_SLOTS.prop.character.bodyRoughness, vertexColors: true });
   // Engineer: keep the signed base/crown and retune only key-away shading.
   // Warmer indirect bounce preserves directional contrast after the azimuth
   // change; at night the cool blue/green shade contribution is reduced.
@@ -88,7 +89,7 @@ export function createCharacter() {
 
   const beak = new THREE.Mesh(
     new THREE.SphereGeometry(...PLAYER_GEOMETRY.beak),
-    new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.beak, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.beak, roughness: ART_SLOTS.prop.character.beakRoughness }),
   );
   beak.scale.set(...PLAYER_GEOMETRY.beakScale);
   beak.position.set(...PLAYER_GEOMETRY.beakPosition);

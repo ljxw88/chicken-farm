@@ -8,8 +8,8 @@ export const SHEEP_WOOL = { top: ART_SLOTS.palette.sheep.woolTop, base: ART_SLOT
 export const SHEEP_NOD_PERIOD = SHEEP_GEOMETRY.nodPeriod;
 export const SHEEP_NOD_ANGLE = THREE.MathUtils.degToRad(SHEEP_GEOMETRY.nodDegrees);
 
-function woolMaterial(color: number) {
-  const material = new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true });
+function woolMaterial(color: number, roughness: number) {
+  const material = new THREE.MeshStandardMaterial({ color, roughness, flatShading: true });
   // Keep the approved albedo and directional shading, but roll back only
   // overexposed highlights before output conversion. 0.9 linear is ~243 sRGB.
   material.onBeforeCompile = (shader) => {
@@ -37,7 +37,8 @@ export function createSheep(variant: 0 | 1, phase: number, slots: SheepSlots = A
   // isometric pixel pass while remaining within the approved facing range.
   group.rotation.y = THREE.MathUtils.degToRad(SHEEP_GEOMETRY.turnDegrees[variant]);
 
-  const wool = [woolMaterial(slots.woolShade), woolMaterial(slots.woolBase), woolMaterial(slots.woolTop)];
+  const wool = [woolMaterial(slots.woolShade, slots.roughness), woolMaterial(slots.woolBase, slots.roughness),
+    woolMaterial(slots.woolTop, slots.roughness)];
   const lobeGeometry = new THREE.IcosahedronGeometry(...SHEEP_GEOMETRY.woolGeometry);
   // Three low-poly lobes form a long, shallow fleece above the visible legs.
   // Their offsets differ between the animals without recolouring the wool.
@@ -49,8 +50,8 @@ export function createSheep(variant: 0 | 1, phase: number, slots: SheepSlots = A
     group.add(lobe);
   });
 
-  const brown = new THREE.MeshStandardMaterial({ color: slots.brown, roughness: 1 });
-  const detail = new THREE.MeshStandardMaterial({ color: slots.detail, roughness: 1 });
+  const brown = new THREE.MeshStandardMaterial({ color: slots.brown, roughness: slots.roughness });
+  const detail = new THREE.MeshStandardMaterial({ color: slots.detail, roughness: slots.roughness });
   const legGeometry = new THREE.BoxGeometry(...SHEEP_GEOMETRY.leg);
   for (const x of SHEEP_GEOMETRY.legXs) for (const z of SHEEP_GEOMETRY.legZs) {
     const leg = new THREE.Mesh(legGeometry, brown);
@@ -71,7 +72,7 @@ export function createSheep(variant: 0 | 1, phase: number, slots: SheepSlots = A
     // Retain the trunk-brown token while shading the second face slightly darker.
     const color = new Float32Array(faceGeometry.getAttribute('position').count * 3).fill(slots.secondFaceGain);
     faceGeometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3));
-    faceMaterial = new THREE.MeshStandardMaterial({ color: slots.brown, roughness: 1, vertexColors: true });
+    faceMaterial = new THREE.MeshStandardMaterial({ color: slots.brown, roughness: slots.roughness, vertexColors: true });
   }
   const face = new THREE.Mesh(faceGeometry, faceMaterial);
   face.name = `sheep-${variant + 1}-face`;

@@ -20,6 +20,7 @@ export const SHEEPFOLD_GEOMETRY = {
 } as const;
 
 export const LEAN_TO_GEOMETRY = {
+  sides: [-1, 1],
   backWidthInset: 0.24, backHeight: 0.95, backDepth: 0.1, backY: 0.475, backZInset: 0.05,
   sideInset: 0.12, sideTopInset: 0.11, sideThickness: 0.1, sideXInset: 0.05,
   postZInset: 0.06, postTopInset: 0.1, postSize: 0.12, postXInset: 0.06,
