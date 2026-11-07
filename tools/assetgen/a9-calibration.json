@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "method": "game pixel-pass A9, eight grass yaws; floor = minimum signed prop",
+  "sourceHash": "7c497e8c619c585d46f1ff338f4c7dc4177efa78c0d903527dffae0ebe96c256",
+  "signedHashes": {
+    "coop": "2a395493bfc2232f6cfb70761476f7d7fa60d25cece3d58ea864b3429fb2d7f0",
+    "fence": "2a6598625d90a1f13afa630181061bfadf923284d4566bc628594b7f05a8efb4",
+    "tread": "35c3e9cc24f320c4393e6a296f544766c60bfa77434b4f1f179a9eb4d766c55e"
+  },
+  "measurements": {
+    "coop": {
+      "daytime": 0.297149289605608,
+      "morning": 0.31104884655983783,
+      "sunset": 0.355353477046958
+    },
+    "fence": {
+      "daytime": 0.3567643987808441,
+      "morning": 0.3530878961454534,
+      "sunset": 0.40878062082843153
+    },
+    "tread": {
+      "daytime": 0.22175896897053277,
+      "morning": 0.24354291910500747,
+      "sunset": 0.2940890597395208
+    }
+  },
+  "floors": {
+    "daytime": 0.22175896897053277,
+    "morning": 0.24354291910500747,
+    "sunset": 0.2940890597395208
+  }
+}
