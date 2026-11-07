@@ -20,6 +20,10 @@ changing world dimensions. Building, stair and placement-tint factories also acc
 explicit alternate slot bundles, as do the sheep, shelter, smoke and fireflies.
 Slots are defaults used at construction/build
 time, not a live asset-loading or hot-swap API.
+`palette.season` contains the spring and autumn crown slots. Only the four tree
+crowns use the selected season; shared `FARM_PALETTE` colours, including grass,
+garden dressing and seedlings, stay fixed. `?season=autumn` selects the autumn
+slots and biome label on startup; absent or invalid values keep spring.
 `node tools/content-inventory.mjs` lists every data/slot leaf key (`[]` denotes
 array elements).
 

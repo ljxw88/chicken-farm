@@ -1,6 +1,7 @@
 import type { AudioController } from '../audio';
 import type { createCharacter, createCharacterController } from '../character';
 import type { Entity } from '../core/ecs';
+import type { Season } from '../content/slots';
 import type { createEngine } from '../core/loop';
 import type { DayNightComponents, WeatherComponents } from '../environment';
 import type { createChimneySmoke } from '../effects/createChimneySmoke';
@@ -32,6 +33,7 @@ export interface AppContext extends SceneParts, FarmParts {
   canvas: HTMLCanvasElement;
   hudRoot: HTMLElement;
   skyRoot: HTMLElement;
+  season: Season;
   character: ReturnType<typeof createCharacter>;
   sheepfold: ReturnType<typeof createSheepfold>;
   garden: ReturnType<typeof createGardenDressing>;

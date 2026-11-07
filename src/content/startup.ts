@@ -1,6 +1,6 @@
 // Query keys and independent seeded streams; no startup loader or persistence.
 export const STARTUP_OPTIONS = {
-  phaseKey: 'phase', weatherKey: 'weather', seedKey: 'seed', maxVisualSeed: 0xffffffff,
+  phaseKey: 'phase', weatherKey: 'weather', seasonKey: 'season', seedKey: 'seed', maxVisualSeed: 0xffffffff,
   gridKey: 'grid', gridEnabledValue: '1', pixelKey: 'pixel', pixelDisabledValue: '0',
   skyHudKey: 'skyhud', skyHudDisabledValue: '0',
 } as const;

@@ -2,6 +2,12 @@ import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS } from './content/day
 import type { DayNightPhaseName } from './lighting';
 import { isWeatherMode } from './weather';
 import { STARTUP_OPTIONS } from './content/startup';
+import { DEFAULT_SEASON, type Season } from './content/slots';
+
+// The only alternate is selected at construction time; unknown values keep spring.
+export function parseSeason(search: string): Season {
+  return new URLSearchParams(search).get(STARTUP_OPTIONS.seasonKey) === 'autumn' ? 'autumn' : DEFAULT_SEASON;
+}
 
 // Preserve the sheepfold's signed integer seed and 32-bit wrap behavior.
 export function parseSheepSeed(search: string) {

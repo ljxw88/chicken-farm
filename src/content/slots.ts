@@ -26,6 +26,21 @@ export const FARM_PALETTE = {
   pondDepth: 0x3a6a7a,
 } as const;
 
+export interface CrownSlots {
+  mid: number;
+  light: number;
+  dark: number;
+}
+
+// Only tree crowns use these seasonal slots. FARM_PALETTE remains the fixed
+// palette for grass, garden dressing, seedlings and other shared consumers.
+export const SEASON_SLOTS = {
+  spring: { crown: { mid: FARM_PALETTE.treeFoliage, light: FARM_PALETTE.treeFoliageLight, dark: FARM_PALETTE.treeFoliageDark } },
+  autumn: { crown: { mid: 0xcf9a38, light: 0xe2b94e, dark: 0xa8722c } },
+} as const satisfies Record<string, { crown: CrownSlots }>;
+export type Season = keyof typeof SEASON_SLOTS;
+export const DEFAULT_SEASON: Season = 'spring';
+
 export interface BuildingSlots {
   cottage: { plaster: number; timber: number; door: number; roof: number; shingle: number; stone: number; glass: number };
   coop: { wall: number; timber: number; roof: number; posts: number; ramp: number; cleats: number; popHole: number };
@@ -59,6 +74,7 @@ export interface StairSlots {
 export const ART_SLOTS = {
   palette: {
     farm: FARM_PALETTE,
+    season: SEASON_SLOTS,
     void: 0x101416,
     soil: [0x573c31, 0x61422e, 0x4a3228, 0x5f3c2b],
     rock: [0x33454a, 0x334d53, 0x2f3745, 0x334548],
