@@ -10,7 +10,11 @@ const { createFarmDecorations } = await vite.ssrLoadModule('/src/scene/createFar
 const { WATER_FEATURE } = await vite.ssrLoadModule('/src/scene/waterFeatureSpec.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 const { createGrid, intersectsFootprint, TILE_SIZE } = await vite.ssrLoadModule('/src/placement/grid.ts');
-const { createPlacement } = await vite.ssrLoadModule('/src/placement/createPlacement.ts');
+const { createPlacementAdapter } = await vite.ssrLoadModule('/src/placement/createPlacementAdapter.ts');
+const { createEntityWorld } = await vite.ssrLoadModule('/src/core/ecs/createEntityWorld.ts');
+const { createInputActions } = await vite.ssrLoadModule('/src/core/input/actions.ts');
+const { bindInputActions } = await vite.ssrLoadModule('/src/core/input/bindInputActions.ts');
+const { createCharacterController } = await vite.ssrLoadModule('/src/character/createCharacterController.ts');
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
@@ -515,12 +519,21 @@ test('the placement ghost follows the relocated nest bounds instead of a stale o
   const { camera, follow, resize } = createIsometricCamera();
   resize(800, 600);
   follow(character.position);
-  const placement = createPlacement({
-    scene, camera, canvas, ground, groundSize: 16, groundHeight: GROUND_HEIGHT,
-    character, characterRadius: 0.4, obstacles: [], getBlockers: () => [nest],
+  const world = createEntityWorld();
+  let placement;
+  const input = createInputActions(() => ({ active: placement?.isActive() ?? false, removing: placement?.isRemoving() ?? false }));
+  const obstacles = [];
+  const controls = createCharacterController({ world, input, character, camera, canvas, ground,
+    groundSize: 16, groundHeight: GROUND_HEIGHT, characterRadius: 0.4, obstacles });
+  placement = createPlacementAdapter({
+    world, input, scene, camera, canvas, ground, groundSize: 16, groundHeight: GROUND_HEIGHT,
+    obstacles, syncObstacles: controls.syncObstacles, syncCharacter: controls.syncExternalPose, getBlockers: () => [nest],
   });
+  const unbind = bindInputActions(input, window, canvas, { ownMovement: true, ownPlacement: true });
   t.after(() => {
+    unbind();
     placement.dispose();
+    controls.dispose();
     dom.window.close();
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete globalThis[name];

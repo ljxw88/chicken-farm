@@ -12,6 +12,7 @@ export type InputAction =
   | { type: 'placement-undo' }
   | { type: 'placement-cancel' };
 export type MovementAction = Extract<InputAction, { type: 'move-to' | 'cancel-move-to' }>;
+export type PlacementAction = Extract<InputAction, { type: `placement-${string}` }>;
 
 export type InputFrame = {
   move: MoveAction;
@@ -43,19 +44,22 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
   let pending: InputAction[] = [];
   let pointer: PointerPoint | undefined;
   const movementListeners = new Set<(action: MovementAction) => void>();
+  const placementListeners = new Set<(action: PlacementAction) => void>();
 
   function notifyMovement(action: MovementAction) {
     for (const listener of movementListeners) listener(action);
   }
 
   function enqueue(action: InputAction) {
+    const enteringPlacement = action.type === 'placement-select' && !getPlacement().active;
     pending.push(action);
-    // The legacy placement controller cancels an outstanding walk target when
-    // a tool first becomes active, but not when switching active tools.
-    if (action.type === 'placement-select' && !getPlacement().active) pending.push({ type: 'cancel-move-to' });
+    if (enteringPlacement) pending.push({ type: 'cancel-move-to' });
+    if (action.type.startsWith('placement-')) {
+      for (const listener of placementListeners) listener(action as PlacementAction);
+    }
   }
 
-  function keyDown(event: KeyboardEvent) {
+  function keyDown(event: KeyboardEvent, deferPlacement = false) {
     if (modified(event) || editable(event.target)) return;
     // Focused sky controls own their input; game keys resume on the canvas.
     if (element(event.target)?.closest('[data-input-scope="ui"]')) return;
@@ -66,23 +70,38 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
       notifyMovement({ type: 'cancel-move-to' });
       return;
     }
-    if (event.defaultPrevented || event.repeat || event.isComposing || discreteHeld.has(event.code)) return;
+    if (!deferPlacement) placementKeyDown(event);
+  }
+
+  function placementKeyDown(event: KeyboardEvent) {
+    if (modified(event) || editable(event.target)) return;
+    if (element(event.target)?.closest('[data-input-scope="ui"]')) return;
+    if (event.defaultPrevented || event.repeat || event.isComposing) return;
+    const alreadyHeld = discreteHeld.has(event.code);
+    if (alreadyHeld && !placementListeners.size) return;
     const { active, removing } = getPlacement();
     const node = element(event.target);
     let action: InputAction | undefined;
     if (event.code === 'KeyF') action = { type: 'placement-select', kind: 'fence' };
     else if (event.code === 'KeyP') action = { type: 'placement-select', kind: 'plot' };
     else if (event.code === 'KeyZ') action = { type: 'placement-undo' };
-    else if (active && event.code === 'KeyR' && !removing) action = { type: 'placement-rotate' };
+    else if (active && event.code === 'KeyR' && (!removing || placementListeners.size)) action = { type: 'placement-rotate' };
     else if (active && event.code === 'Delete') action = { type: 'placement-remove', mode: 'hovered' };
     else if (active && event.code === 'Escape') action = { type: 'placement-cancel' };
-    else if (active && !removing && event.code === 'Enter' &&
+    else if (active && event.code === 'Enter' && (!removing || placementListeners.size) &&
       !(node && (['BUTTON', 'A'].includes(node.tagName) || node.closest('.placement-controls')))) {
       action = { type: 'placement-confirm' };
     }
     if (action) {
-      discreteHeld.add(event.code);
-      enqueue(action);
+      if (placementListeners.size) event.preventDefault();
+      if (alreadyHeld || (removing && (action.type === 'placement-rotate' || action.type === 'placement-confirm'))) {
+        // The former event-time handler accepted a second non-repeat keydown;
+        // fixed-tick observers still receive only one action per held key.
+        for (const listener of placementListeners) listener(action as PlacementAction);
+      } else {
+        discreteHeld.add(event.code);
+        enqueue(action);
+      }
     }
   }
 
@@ -106,17 +125,21 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
   function pointerMove(event: PointerEvent) {
     if (!event.isPrimary) return;
     pointer = point(event);
-    if (getPlacement().active) pending.push({ type: 'placement-preview', point: pointer });
+    const action: PlacementAction = { type: 'placement-preview', point: pointer };
+    if (getPlacement().active) enqueue(action);
+    // Remember hover before a tool is selected, without adding a fixed-tick action.
+    else for (const listener of placementListeners) listener(action);
   }
 
   function pointerDown(event: PointerEvent, movementBlocked = false, context = getPlacement()) {
     if (!event.isPrimary || event.button !== 0) return;
     if (context.active) {
       // Placement wins over click-to-move. Touch/pen preview without placing.
+      if (placementListeners.size) event.preventDefault();
       pointer = point(event);
-      pending.push({ type: 'placement-preview', point: pointer });
-      if (context.removing) pending.push({ type: 'placement-remove', mode: 'hovered' });
-      else if (!event.pointerType || event.pointerType === 'mouse') pending.push({ type: 'placement-confirm' });
+      enqueue({ type: 'placement-preview', point: pointer });
+      if (context.removing) enqueue({ type: 'placement-remove', mode: 'hovered' });
+      else if (!event.pointerType || event.pointerType === 'mouse') enqueue({ type: 'placement-confirm' });
     } else if (held.size === 0 && !movementBlocked) {
       pointer = point(event);
       const action: MovementAction = { type: 'move-to', point: pointer };
@@ -170,11 +193,16 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
     return () => movementListeners.delete(listener);
   }
 
+  function onPlacement(listener: (action: PlacementAction) => void) {
+    placementListeners.add(listener);
+    return () => placementListeners.delete(listener);
+  }
+
   function preventMovementDefault(event: KeyboardEvent) {
     if (MOVEMENT_KEYS.has(event.code) && !modified(event) && !editable(event.target)) event.preventDefault();
   }
 
-  return { keyDown, keyUp, blur, pointerMove, pointerDown, activate, movement, onMovement, preventMovementDefault,
+  return { keyDown, placementKeyDown, keyUp, blur, pointerMove, pointerDown, activate, movement, onMovement, onPlacement, preventMovementDefault,
     placementContext: getPlacement, consume, reset };
 }
 

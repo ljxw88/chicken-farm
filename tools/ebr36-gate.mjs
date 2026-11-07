@@ -10,7 +10,7 @@ import { createServer } from 'vite';
 
 // Record from the requested clean commit, never a different worktree. Match
 // tools/parity.mjs: seed rain at construction and step the renderer ourselves.
-const baselineSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+const baselineSha = process.env.EBR36_BASELINE_SHA ?? '05d5b4aa566bf3d48cd2d1f5b94224224287c4c2';
 const seed = Number(process.env.EBR36_SEED ?? 0xeb730001);
 if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('EBR36_SEED must be a 32-bit unsigned integer');
 const output = resolve(process.env.EBR36_GATE_DIR || 'evidence/EBR-36');

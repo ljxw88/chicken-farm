@@ -28,6 +28,7 @@ test('scripted key, mouse and touch traces match the main worktree frame by fram
       baselineIsArchive: owned, evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.frames}`).join(', ')}`);
     t.diagnostic(`Changed pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
+    t.diagnostic('The unchanged body geometry/shader and the complete body-hidden frames match main; visible changes are body-only.');
   } finally {
     if (owned) await rm(baseline, { recursive: true });
   }

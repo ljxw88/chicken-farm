@@ -1,0 +1,878 @@
+
+> chicken-farm@0.0.0 test
+> node --test --test-concurrency=1 tests/*.test.mjs
+
+TAP version 13
+# Subtest: movement system applies screen-relative keys, diagonal normalization and click targets to entities
+ok 1 - movement system applies screen-relative keys, diagonal normalization and click targets to entities
+  ---
+  duration_ms: 5.771175
+  type: 'test'
+  ...
+# Subtest: a frame between chord keydowns keeps the original single-key motion
+ok 2 - a frame between chord keydowns keeps the original single-key motion
+  ---
+  duration_ms: 0.815784
+  type: 'test'
+  ...
+# Subtest: obstacle entities slide a circular footprint along a wall rather than tunnelling
+ok 3 - obstacle entities slide a circular footprint along a wall rather than tunnelling
+  ---
+  duration_ms: 0.982014
+  type: 'test'
+  ...
+# Subtest: stair surface entities enforce the void, capsule height and pad-corner slide
+ok 4 - stair surface entities enforce the void, capsule height and pad-corner slide
+  ---
+  duration_ms: 1.745263
+  type: 'test'
+  ...
+# Subtest: actual cottage and water obstacle entities retain the bridge opening and graded height
+ok 5 - actual cottage and water obstacle entities retain the bridge opening and graded height
+  ---
+  duration_ms: 54.51586
+  type: 'test'
+  ...
+# Subtest: shared placement obstacle additions, mutations and removals immediately reach the ECS system
+ok 6 - shared placement obstacle additions, mutations and removals immediately reach the ECS system
+  ---
+  duration_ms: 2.003109
+  type: 'test'
+  ...
+# Subtest: all four phases keep the void and use the upper-left key with fill below it
+ok 7 - all four phases keep the void and use the upper-left key with fill below it
+  ---
+  duration_ms: 53.526453
+  type: 'test'
+  ...
+# Subtest: east window and coop glows follow the night ramp without adding point lights
+ok 8 - east window and coop glows follow the night ramp without adding point lights
+  ---
+  duration_ms: 19.268392
+  type: 'test'
+  ...
+# Subtest: the default 72-second cycle advances through all four phases and wraps
+ok 9 - the default 72-second cycle advances through all four phases and wraps
+  ---
+  duration_ms: 16.32242
+  type: 'test'
+  ...
+# Subtest: the current phase can be read as the existing lighting cycle advances or is set
+ok 10 - the current phase can be read as the existing lighting cycle advances or is set
+  ---
+  duration_ms: 15.705668
+  type: 'test'
+  ...
+# Subtest: colors, intensities, fog and practical lights blend smoothly between presets
+ok 11 - colors, intensities, fog and practical lights blend smoothly between presets
+  ---
+  duration_ms: 15.155946
+  type: 'test'
+  ...
+# Subtest: the night-to-morning wrap has no lighting or directional-position jump
+ok 12 - the night-to-morning wrap has no lighting or directional-position jump
+  ---
+  duration_ms: 12.799229
+  type: 'test'
+  ...
+# Subtest: sun and moon keep one upper-left azimuth with a low sunset
+ok 13 - sun and moon keep one upper-left azimuth with a low sunset
+  ---
+  duration_ms: 15.571883
+  type: 'test'
+  ...
+# Subtest: the character has a non-emissive, outward-normal body and a lighter crown
+ok 14 - the character has a non-emissive, outward-normal body and a lighter crown
+  ---
+  duration_ms: 12.31759
+  type: 'test'
+  ...
+# Subtest: sunset blue affects water only, fades between anchors, and keeps the locked material colors
+ok 15 - sunset blue affects water only, fades between anchors, and keeps the locked material colors
+  ---
+  duration_ms: 14.520199
+  type: 'test'
+  ...
+# Subtest: the lantern stays attached to the moving and turning character
+ok 16 - the lantern stays attached to the moving and turning character
+  ---
+  duration_ms: 12.024809
+  type: 'test'
+  ...
+# Subtest: the character shadow follows the key, not the character rotation, throughout the cycle
+ok 17 - the character shadow follows the key, not the character rotation, throughout the cycle
+  ---
+  duration_ms: 36.170514
+  type: 'test'
+  ...
+# Subtest: the directional shadow stays on the walkable landing rather than darkening the void
+ok 18 - the directional shadow stays on the walkable landing rather than darkening the void
+  ---
+  duration_ms: 7.32745
+  type: 'test'
+  ...
+# Subtest: changing cycle speed preserves progress and rejects invalid inputs
+ok 19 - changing cycle speed preserves progress and rejects invalid inputs
+  ---
+  duration_ms: 12.766325
+  type: 'test'
+  ...
+# Subtest: a valid phase URL selects and holds each phase without changing the void
+ok 20 - a valid phase URL selects and holds each phase without changing the void
+  ---
+  duration_ms: 50.187764
+  type: 'test'
+  ...
+# Subtest: missing or invalid phase URLs retain the normal running cycle
+ok 21 - missing or invalid phase URLs retain the normal running cycle
+  ---
+  duration_ms: 49.182403
+  type: 'test'
+  ...
+# Subtest: project IDs are stable, distinct, immutable, and not recycled
+ok 22 - project IDs are stable, distinct, immutable, and not recycled
+  ---
+  duration_ms: 3.929541
+  type: 'test'
+  ...
+# Subtest: Miniplex live queries follow component membership and removal
+ok 23 - Miniplex live queries follow component membership and removal
+  ---
+  duration_ms: 2.603492
+  type: 'test'
+  ...
+# Subtest: entities and component additions accept only plain finite data
+ok 24 - entities and component additions accept only plain finite data
+  ---
+  duration_ms: 0.822156
+  type: 'test'
+  ...
+# Subtest: WASD is a held action; a new key cancels click-to-move and blur releases it
+ok 25 - WASD is a held action; a new key cancels click-to-move and blur releases it
+  ---
+  duration_ms: 96.006534
+  type: 'test'
+  ...
+# Subtest: owned movement resolves actions immediately, preserves placement priority and prevents WASD defaults
+ok 26 - owned movement resolves actions immediately, preserves placement priority and prevents WASD defaults
+  ---
+  duration_ms: 12.366686
+  type: 'test'
+  ...
+# Subtest: owned placement pointer actions use the context before synchronous removal
+ok 27 - owned placement pointer actions use the context before synchronous removal
+  ---
+  duration_ms: 9.226078
+  type: 'test'
+  ...
+# Subtest: detaching owned and observing bindings removes every listener
+ok 28 - detaching owned and observing bindings removes every listener
+  ---
+  duration_ms: 0.692997
+  type: 'test'
+  ...
+# Subtest: placement keys are one-shot, ordered, repeat-safe, and consumed exactly once
+ok 29 - placement keys are one-shot, ordered, repeat-safe, and consumed exactly once
+  ---
+  duration_ms: 11.727915
+  type: 'test'
+  ...
+# Subtest: editable focus, modifiers, composing, default prevention and focused buttons do not steal shortcuts
+ok 30 - editable focus, modifiers, composing, default prevention and focused buttons do not steal shortcuts
+  ---
+  duration_ms: 13.462019
+  type: 'test'
+  ...
+# Subtest: placement takes pointer priority; mouse confirms, touch/pen preview, and UI confirms
+ok 31 - placement takes pointer priority; mouse confirms, touch/pen preview, and UI confirms
+  ---
+  duration_ms: 18.680245
+  type: 'test'
+  ...
+# Subtest: entering placement cancels an existing move-to, but switching active tools does not
+ok 32 - entering placement cancels an existing move-to, but switching active tools does not
+  ---
+  duration_ms: 9.278954
+  type: 'test'
+  ...
+# Subtest: direct controls map every placement command without changing browser events
+ok 33 - direct controls map every placement command without changing browser events
+  ---
+  duration_ms: 11.258096
+  type: 'test'
+  ...
+# Subtest: owned placement resolves immediately, respects target prevention, and stops movement on a placement pointer
+ok 34 - owned placement resolves immediately, respects target prevention, and stops movement on a placement pointer
+  ---
+  duration_ms: 14.589452
+  type: 'test'
+  ...
+# Subtest: a duplicate non-repeat placement key keeps the old event-time behavior without duplicating fixed actions
+ok 35 - a duplicate non-repeat placement key keeps the old event-time behavior without duplicating fixed actions
+  ---
+  duration_ms: 9.715323
+  type: 'test'
+  ...
+# Subtest: one second produces sixty identical ticks at different render rates
+ok 36 - one second produces sixty identical ticks at different render rates
+  ---
+  duration_ms: 1.949624
+  type: 'test'
+  ...
+# Subtest: catch-up is bounded, excess stall time is dropped, and fractional time survives
+ok 37 - catch-up is bounded, excess stall time is dropped, and fractional time survives
+  ---
+  duration_ms: 0.280876
+  type: 'test'
+  ...
+# Subtest: systems run in their fixed order for each tick, before a caller renders
+ok 38 - systems run in their fixed order for each tick, before a caller renders
+  ---
+  duration_ms: 0.758167
+  type: 'test'
+  ...
+# Subtest: custom non-integral catch-up limits cannot leave a backlog of whole ticks
+ok 39 - custom non-integral catch-up limits cannot leave a backlog of whole ticks
+  ---
+  duration_ms: 0.771292
+  type: 'test'
+  ...
+# Subtest: engine ticks once per fixed step, shares one-shots across systems, and preserves legacy frame timing
+ok 40 - engine ticks once per fixed step, shares one-shots across systems, and preserves legacy frame timing
+  ---
+  duration_ms: 2.197082
+  type: 'test'
+  ...
+# Subtest: frame systems run once before environment and render without stealing fixed-tick actions
+ok 41 - frame systems run once before environment and render without stealing fixed-tick actions
+  ---
+  duration_ms: 0.579018
+  type: 'test'
+  ...
+# Subtest: every URL phase and weather pins the engine clock while weather reaches its requested state
+ok 42 - every URL phase and weather pins the engine clock while weather reaches its requested state
+  ---
+  duration_ms: 39.445534
+  type: 'test'
+  ...
+# Subtest: invalid setters keep a URL hold; valid console-style setters release it without resetting progress
+ok 43 - invalid setters keep a URL hold; valid console-style setters release it without resetting progress
+  ---
+  duration_ms: 1.720196
+  type: 'test'
+  ...
+# Subtest: the engine clock performs a full 64-step cycle without fixed-tick truncation
+ok 44 - the engine clock performs a full 64-step cycle without fixed-tick truncation
+  ---
+  duration_ms: 2.062373
+  type: 'test'
+  ...
+# Subtest: engine weather reverses and crossfades continuously and drives the existing render adapter
+ok 45 - engine weather reverses and crossfades continuously and drives the existing render adapter
+  ---
+  duration_ms: 1.994604
+  type: 'test'
+  ...
+# Subtest: the original farm palette stays locked alongside the building palette
+ok 46 - the original farm palette stays locked alongside the building palette
+  ---
+  duration_ms: 55.31838
+  type: 'test'
+  ...
+# Subtest: the raised dirt route connects the cottage, spawn, pond and island edge
+ok 47 - the raised dirt route connects the cottage, spawn, pond and island edge
+  ---
+  duration_ms: 28.971399
+  type: 'test'
+  ...
+# Subtest: the four stacked trees use the locked dimensions
+ok 48 - the four stacked trees use the locked dimensions
+  ---
+  duration_ms: 18.224703
+  type: 'test'
+  ...
+# Subtest: the oval pond uses the locked water materials and blocks its water
+ok 49 - the oval pond uses the locked water materials and blocks its water
+  ---
+  duration_ms: 15.260297
+  type: 'test'
+  ...
+# Subtest: the locked cottage has the specified walls, stone, roof, chimney, doors and windows
+ok 50 - the locked cottage has the specified walls, stone, roof, chimney, doors and windows
+  ---
+  duration_ms: 83.295012
+  type: 'test'
+  ...
+# Subtest: both locked coops have raised bodies, posts, roof, pop-holes and cleated ramps
+ok 51 - both locked coops have raised bodies, posts, roof, pop-holes and cleated ramps
+  ---
+  duration_ms: 27.427207
+  type: 'test'
+  ...
+# Subtest: walking obstacles match only the visible wall, coop bodies and ramps, while roofs shelter rain
+ok 52 - walking obstacles match only the visible wall, coop bodies and ramps, while roofs shelter rain
+  ---
+  duration_ms: 28.00365
+  type: 'test'
+  ...
+# Subtest: locked gaps, walkable path surface, stairs and the +X keep-out remain verifiable
+ok 53 - locked gaps, walkable path surface, stairs and the +X keep-out remain verifiable
+  ---
+  duration_ms: 62.651863
+  type: 'test'
+  ...
+# Subtest: moving each table entry moves its rendered body, colliders, roof shelter and anchors together
+ok 54 - moving each table entry moves its rendered body, colliders, roof shelter and anchors together
+  ---
+  duration_ms: 35.326163
+  type: 'test'
+  ...
+# Subtest: tree, buildings, bridge, waterfall and chicken blobs follow the key and touch their bases
+ok 55 - tree, buildings, bridge, waterfall and chicken blobs follow the key and touch their bases
+  ---
+  duration_ms: 82.703916
+  type: 'test'
+  ...
+# Subtest: static shadows soften with weather, fade at night, and stay within the island
+ok 56 - static shadows soften with weather, fade at night, and stay within the island
+  ---
+  duration_ms: 39.816513
+  type: 'test'
+  ...
+# Subtest: the canvas-sibling HUD displays the current phase without sim or build controls
+ok 57 - the canvas-sibling HUD displays the current phase without sim or build controls
+  ---
+  duration_ms: 84.49538
+  type: 'test'
+  ...
+# Subtest: registry uses horizontal world distance, availability, stable ties and safe unregistration
+ok 58 - registry uses horizontal world distance, availability, stable ties and safe unregistration
+  ---
+  duration_ms: 3.125625
+  type: 'test'
+  ...
+# Subtest: crossing range only displays a prompt; holding E cannot trigger on entry or repeat
+ok 59 - crossing range only displays a prompt; holding E cannot trigger on entry or repeat
+  ---
+  duration_ms: 8.491708
+  type: 'test'
+  ...
+# Subtest: E ignores text entry, modifiers and IME input, and blur releases a held key
+ok 60 - E ignores text entry, modifiers and IME input, and blur releases a held key
+  ---
+  duration_ms: 1.758
+  type: 'test'
+  ...
+# Subtest: the prompt targets the nearest action and rechecks range and registration on click
+ok 61 - the prompt targets the nearest action and rechecks range and registration on click
+  ---
+  duration_ms: 2.17798
+  type: 'test'
+  ...
+# Subtest: an out-of-range object click walks normally and never auto-activates on arrival
+ok 62 - an out-of-range object click walks normally and never auto-activates on arrival
+  ---
+  duration_ms: 8.161375
+  type: 'test'
+  ...
+# Subtest: clicking a different nearby object selects the object actually clicked
+ok 63 - clicking a different nearby object selects the object actually clicked
+  ---
+  duration_ms: 1.54707
+  type: 'test'
+  ...
+# Subtest: interacting cancels click-to-move without cancelling held WASD
+ok 64 - interacting cancels click-to-move without cancelling held WASD
+  ---
+  duration_ms: 1.911532
+  type: 'test'
+  ...
+# Subtest: decorative click-excluded ground shapes do not turn ground clicks into interactions
+ok 65 - decorative click-excluded ground shapes do not turn ground clicks into interactions
+  ---
+  duration_ms: 1.544165
+  type: 'test'
+  ...
+# Subtest: disposing interaction controls removes both keyboard and prompt activation
+ok 66 - disposing interaction controls removes both keyboard and prompt activation
+  ---
+  duration_ms: 0.957587
+  type: 'test'
+  ...
+# Subtest: the raised grass top is finite, raycastable and surrounded by the specified void family
+ok 67 - the raised grass top is finite, raycastable and surrounded by the specified void family
+  ---
+  duration_ms: 12.746887
+  type: 'test'
+  ...
+# Subtest: grass, soil and rock form a closed cross-section on all four rim faces
+ok 68 - grass, soil and rock form a closed cross-section on all four rim faces
+  ---
+  duration_ms: 12.015057
+  type: 'test'
+  ...
+# Subtest: the existing farm, path and props all remain over the island top
+ok 69 - the existing farm, path and props all remain over the island top
+  ---
+  duration_ms: 42.863088
+  type: 'test'
+  ...
+# Subtest: the default desktop view frames the complete slab and surrounding void
+ok 70 - the default desktop view frames the complete slab and surrounding void
+  ---
+  duration_ms: 1.125626
+  type: 'test'
+  ...
+# Subtest: integer device-pixel blocks retain approximately the same CSS size at different DPRs
+ok 71 - integer device-pixel blocks retain approximately the same CSS size at different DPRs
+  ---
+  duration_ms: 1.453552
+  type: 'test'
+  ...
+# Subtest: the URL defaults to pixel rendering and permits a console-free native comparison
+ok 72 - the URL defaults to pixel rendering and permits a console-free native comparison
+  ---
+  duration_ms: 0.270527
+  type: 'test'
+  ...
+# Subtest: odd and fractional viewports are fully covered with centered partial edge blocks
+ok 73 - odd and fractional viewports are fully covered with centered partial edge blocks
+  ---
+  duration_ms: 0.389862
+  type: 'test'
+  ...
+# Subtest: the world draws to a low-resolution canvas and native comparison restores the original DPR cap
+ok 74 - the world draws to a low-resolution canvas and native comparison restores the original DPR cap
+  ---
+  duration_ms: 3.600064
+  type: 'test'
+  ...
+# Subtest: resize and optional scale changes update the presentation without leaking mutable state
+ok 75 - resize and optional scale changes update the presentation without leaking mutable state
+  ---
+  duration_ms: 1.057925
+  type: 'test'
+  ...
+# Subtest: invalid scale and toggle values are rejected without changing the active configuration
+ok 76 - invalid scale and toggle values are rejected without changing the active configuration
+  ---
+  duration_ms: 1.39427
+  type: 'test'
+  ...
+# Subtest: preview state and placed fence/plot entities contain plain data and own their collisions
+ok 77 - preview state and placed fence/plot entities contain plain data and own their collisions
+  ---
+  duration_ms: 5.601842
+  type: 'test'
+  ...
+# Subtest: validation uses player, obstacle and decorative keep-out entities and rechecks on confirm
+ok 78 - validation uses player, obstacle and decorative keep-out entities and rechecks on confirm
+  ---
+  duration_ms: 1.244427
+  type: 'test'
+  ...
+# Subtest: targeted removal and undo respect placement order even after Miniplex swap-removes an older entity
+ok 79 - targeted removal and undo respect placement order even after Miniplex swap-removes an older entity
+  ---
+  duration_ms: 0.959213
+  type: 'test'
+  ...
+# Subtest: complete tiles are centred on the island and plots rotate between two occupied cells
+ok 80 - complete tiles are centred on the island and plots rotate between two occupied cells
+  ---
+  duration_ms: 2.448883
+  type: 'test'
+  ...
+# Subtest: whole tiles reserve space around boxes and circles; fences collide only at their narrow physical footprint
+ok 81 - whole tiles reserve space around boxes and circles; fences collide only at their narrow physical footprint
+  ---
+  duration_ms: 0.455409
+  type: 'test'
+  ...
+# Subtest: fence and plot ghosts reject partial overlap with each wall, coop body and ramp in every rotation
+ok 82 - fence and plot ghosts reject partial overlap with each wall, coop body and ramp in every rotation
+  ---
+  duration_ms: 256.699426
+  type: 'test'
+  ...
+# Subtest: fence and plot ghosts reject partial water and walkable bridge tiles in every rotation
+ok 83 - fence and plot ghosts reject partial water and walkable bridge tiles in every rotation
+  ---
+  duration_ms: 62.00851
+  type: 'test'
+  ...
+# Subtest: placement previews, validates, rotates only the ghost, and updates and removes live walking collisions
+ok 84 - placement previews, validates, rotates only the ghost, and updates and removes live walking collisions
+  ---
+  duration_ms: 22.680954
+  type: 'test'
+  ...
+# Subtest: a placed fence blocks the character system immediately and undo removes its entity
+ok 85 - a placed fence blocks the character system immediately and undo removes its entity
+  ---
+  duration_ms: 15.774507
+  type: 'test'
+  ...
+# Subtest: selecting a placement tool cancels an existing click target before the next movement frame
+ok 86 - selecting a placement tool cancels an existing click target before the next movement frame
+  ---
+  duration_ms: 14.81443
+  type: 'test'
+  ...
+# Subtest: extra world objects and a moving player are rechecked before confirming; touch previews before Place
+ok 87 - extra world objects and a moving player are rechecked before confirming; touch previews before Place
+  ---
+  duration_ms: 14.332713
+  type: 'test'
+  ...
+# Subtest: Remove selects a target after the button is pressed and removes a whole plot from either tile
+ok 88 - Remove selects a target after the button is pressed and removes a whole plot from either tile
+  ---
+  duration_ms: 13.396858
+  type: 'test'
+  ...
+# Subtest: the optional debug grid uses the dirt hairline and disposal restores only placement collisions
+ok 89 - the optional debug grid uses the dirt hairline and disposal restores only placement collisions
+  ---
+  duration_ms: 11.333183
+  type: 'test'
+  ...
+# Subtest: QA trace comparison checks exact endpoints, placement and height while allowing bridge-z jitter
+ok 90 - QA trace comparison checks exact endpoints, placement and height while allowing bridge-z jitter
+  ---
+  duration_ms: 4.628864
+  type: 'test'
+  ...
+# Subtest: a path-width stone run and small foot pad join the unchanged slab
+ok 91 - a path-width stone run and small foot pad join the unchanged slab
+  ---
+  duration_ms: 66.48011
+  type: 'test'
+  ...
+# Subtest: stone derives from the barn and path, with subtle variations and non-emissive tread edges
+ok 92 - stone derives from the barn and path, with subtle variations and non-emissive tread edges
+  ---
+  duration_ms: 23.023196
+  type: 'test'
+  ...
+# Subtest: WASD descends to the pad and climbs without clipping or an off-edge escape
+ok 93 - WASD descends to the pad and climbs without clipping or an off-edge escape
+  ---
+  duration_ms: 70.08696
+  type: 'test'
+  ...
+# Subtest: climbing after pushing either pad side, or both sides in sequence, does not pin the character
+ok 94 - climbing after pushing either pad side, or both sides in sequence, does not pin the character
+  ---
+  duration_ms: 146.961503
+  type: 'test'
+  ...
+# Subtest: stair and pad sides, inside corners and the unrelated rim remain solid during long moves
+ok 95 - stair and pad sides, inside corners and the unrelated rim remain solid during long moves
+  ---
+  duration_ms: 21.268993
+  type: 'test'
+  ...
+# Subtest: clicking the pad and a tinted edge walks there; a vertical riser is not a destination
+ok 96 - clicking the pad and a tinted edge walks there; a vertical riser is not a destination
+  ---
+  duration_ms: 20.047449
+  type: 'test'
+  ...
+# Subtest: URL options accept every weather and day/night phase combination
+ok 97 - URL options accept every weather and day/night phase combination
+  ---
+  duration_ms: 2.770786
+  type: 'test'
+  ...
+# Subtest: missing and invalid URL options are ignored independently
+ok 98 - missing and invalid URL options are ignored independently
+  ---
+  duration_ms: 0.290575
+  type: 'test'
+  ...
+# Subtest: a URL phase stays fixed until a valid console phase or cycle setter resumes it
+ok 99 - a URL phase stays fixed until a valid console phase or cycle setter resumes it
+  ---
+  duration_ms: 13.364936
+  type: 'test'
+  ...
+# Subtest: nondegenerate path faces and their normals point upward through the tight bend
+ok 100 - nondegenerate path faces and their normals point upward through the tight bend
+  ---
+  duration_ms: 72.0495
+  type: 'test'
+  ...
+# Subtest: character, buildings and props have consistent face/vertex winding and no mirrored transforms
+ok 101 - character, buildings and props have consistent face/vertex winding and no mirrored transforms
+  ---
+  duration_ms: 34.463655
+  type: 'test'
+  ...
+# Subtest: the orthographic camera keeps its isometric angle and follows through resizing
+ok 102 - the orthographic camera keeps its isometric angle and follows through resizing
+  ---
+  duration_ms: 8.030241
+  type: 'test'
+  ...
+# Subtest: WASD is screen-relative and diagonal walking is not faster
+ok 103 - WASD is screen-relative and diagonal walking is not faster
+  ---
+  duration_ms: 3.894744
+  type: 'test'
+  ...
+# Subtest: clicking the ground reaches the selected point without overshooting
+ok 104 - clicking the ground reaches the selected point without overshooting
+  ---
+  duration_ms: 4.053198
+  type: 'test'
+  ...
+# Subtest: a click is raycast at event time, before a later camera follow
+ok 105 - a click is raycast at event time, before a later camera follow
+  ---
+  duration_ms: 1.916757
+  type: 'test'
+  ...
+# Subtest: keyboard input cancels a click destination and blur releases held keys
+ok 106 - keyboard input cancels a click destination and blur releases held keys
+  ---
+  duration_ms: 2.049052
+  type: 'test'
+  ...
+# Subtest: walking stays on the floor and within both ground edges
+ok 107 - walking stays on the floor and within both ground edges
+  ---
+  duration_ms: 1.12803
+  type: 'test'
+  ...
+# Subtest: the path can be followed from the cottage past the pond to the island rim
+ok 108 - the path can be followed from the cottage past the pond to the island rim
+  ---
+  duration_ms: 70.642492
+  type: 'test'
+  ...
+# Subtest: all four island edges stop WASD at the character radius and allow sliding
+ok 109 - all four island edges stop WASD at the character radius and allow sliding
+  ---
+  duration_ms: 27.961412
+  type: 'test'
+  ...
+# Subtest: clicking the void does nothing and clicking the rim stays on the top
+ok 110 - clicking the void does nothing and clicking the rim stays on the top
+  ---
+  duration_ms: 23.115297
+  type: 'test'
+  ...
+# Subtest: click-to-walk reaches the foot pad and returns to the original island
+ok 111 - click-to-walk reaches the foot pad and returns to the original island
+  ---
+  duration_ms: 23.280616
+  type: 'test'
+  ...
+# Subtest: WASD cannot tunnel through the front or side of the replacement buildings
+ok 112 - WASD cannot tunnel through the front or side of the replacement buildings
+  ---
+  duration_ms: 34.317663
+  type: 'test'
+  ...
+# Subtest: click-to-move stops at a tree trunk, even with a long update
+ok 113 - click-to-move stops at a tree trunk, even with a long update
+  ---
+  duration_ms: 14.794405
+  type: 'test'
+  ...
+# Subtest: clicks also stop at the cottage and WASD also stops at trees
+ok 114 - clicks also stop at the cottage and WASD also stops at trees
+  ---
+  duration_ms: 18.384502
+  type: 'test'
+  ...
+# Subtest: the pond water also blocks movement
+ok 115 - the pond water also blocks movement
+  ---
+  duration_ms: 15.43246
+  type: 'test'
+  ...
+# Subtest: a glancing movement slides along a solid wall
+ok 116 - a glancing movement slides along a solid wall
+  ---
+  duration_ms: 0.158098
+  type: 'test'
+  ...
+# Subtest: a diagonal step cannot bypass a prop by travelling outside the island
+ok 117 - a diagonal step cannot bypass a prop by travelling outside the island
+  ---
+  duration_ms: 0.164598
+  type: 'test'
+  ...
+# Subtest: the locked Catmull-Rom route, widths, layered elevations and water palette are exact
+ok 118 - the locked Catmull-Rom route, widths, layered elevations and water palette are exact
+  ---
+  duration_ms: 55.328036
+  type: 'test'
+  ...
+# Subtest: five locked planks, four gap lines and both three-post rails follow the graded deck
+ok 119 - five locked planks, four gap lines and both three-post rails follow the graded deck
+  ---
+  duration_ms: 24.458076
+  type: 'test'
+  ...
+# Subtest: the character capsule follows both grades continuously without clipping the visible planks
+ok 120 - the character capsule follows both grades continuously without clipping the visible planks
+  ---
+  duration_ms: 49.731721
+  type: 'test'
+  ...
+# Subtest: water boxes block the stream, the deck is crossable, and both sides stop the character
+ok 121 - water boxes block the stream, the deck is crossable, and both sides stop the character
+  ---
+  duration_ms: 25.298741
+  type: 'test'
+  ...
+# Subtest: the waterfall rim and neighbouring bank never permit walking into the void
+ok 122 - the waterfall rim and neighbouring bank never permit walking into the void
+  ---
+  duration_ms: 20.316169
+  type: 'test'
+  ...
+# Subtest: all 1.5-unit fence and plot footprints overlapping water or the full deck are reserved
+ok 123 - all 1.5-unit fence and plot footprints overlapping water or the full deck are reserved
+  ---
+  duration_ms: 12.945513
+  type: 'test'
+  ...
+# Subtest: stream and full deck exclude actual rain splashes, including the water beneath the bridge
+ok 124 - stream and full deck exclude actual rain splashes, including the water beneath the bridge
+  ---
+  duration_ms: 25.950398
+  type: 'test'
+  ...
+# Subtest: waterfall face, 0.8-unit alpha fade, foam lip and stepped 0.25-unit/s streaks match the lock
+ok 125 - waterfall face, 0.8-unit alpha fade, foam lip and stepped 0.25-unit/s streaks match the lock
+  ---
+  duration_ms: 12.004325
+  type: 'test'
+  ...
+# Subtest: only the two locked grass tufts are hidden; all other instance transforms stay in place
+ok 126 - only the two locked grass tufts are hidden; all other instance transforms stay in place
+  ---
+  duration_ms: 17.129709
+  type: 'test'
+  ...
+# Subtest: measure locked keep-out conflicts and relocated nest clearances
+ok 127 - measure locked keep-out conflicts and relocated nest clearances
+  ---
+  duration_ms: 64.934111
+  type: 'test'
+  ...
+# Subtest: water adds no lights or emissive materials in day, sunset, night or rain
+ok 128 - water adds no lights or emissive materials in day, sunset, night or rain
+  ---
+  duration_ms: 15.567058
+  type: 'test'
+  ...
+# Subtest: the placement ghost follows the relocated nest bounds instead of a stale old-position blocker
+ok 129 - the placement ghost follows the relocated nest bounds instead of a stale old-position blocker
+  ---
+  duration_ms: 101.316684
+  type: 'test'
+  ...
+# Subtest: clear and rain blend smoothly and reverse without a jump
+ok 130 - clear and rain blend smoothly and reverse without a jump
+  ---
+  duration_ms: 60.625725
+  type: 'test'
+  ...
+# Subtest: cloudy and rain fade the shadow length and opacity with the same weather envelope
+ok 131 - cloudy and rain fade the shadow length and opacity with the same weather envelope
+  ---
+  duration_ms: 18.745706
+  type: 'test'
+  ...
+# Subtest: rain tracks all current phases without accumulating or changing practical lights
+ok 132 - rain tracks all current phases without accumulating or changing practical lights
+  ---
+  duration_ms: 23.527321
+  type: 'test'
+  ...
+# Subtest: cloudy softens and cools every phase while preserving the environment and warm practical lights
+ok 133 - cloudy softens and cools every phase while preserving the environment and warm practical lights
+  ---
+  duration_ms: 21.38451
+  type: 'test'
+  ...
+# Subtest: the sun or moon remains stronger than the flat fill in every phase and weather
+ok 134 - the sun or moon remains stronger than the flat fill in every phase and weather
+  ---
+  duration_ms: 25.485269
+  type: 'test'
+  ...
+# Subtest: clear and cloudy blend smoothly and can reverse without a lighting jump
+ok 135 - clear and cloudy blend smoothly and can reverse without a lighting jump
+  ---
+  duration_ms: 14.019083
+  type: 'test'
+  ...
+# Subtest: rain and cloudy crossfade continuously, preserve particles and reverse midway
+ok 136 - rain and cloudy crossfade continuously, preserve particles and reverse midway
+  ---
+  duration_ms: 15.811696
+  type: 'test'
+  ...
+# Subtest: rapid weather reversals follow the moving phase and clear restores its exact lighting
+ok 137 - rapid weather reversals follow the moving phase and clear restores its exact lighting
+  ---
+  duration_ms: 45.65647
+  type: 'test'
+  ...
+# Subtest: disposing cloudy restores current-phase colors and intensity
+ok 138 - disposing cloudy restores current-phase colors and intensity
+  ---
+  duration_ms: 11.634589
+  type: 'test'
+  ...
+# Subtest: rain look keeps the specified field, tint, budget and fall speeds
+ok 139 - rain look keeps the specified field, tint, budget and fall speeds
+  ---
+  duration_ms: 0.419773
+  type: 'test'
+  ...
+# Subtest: rain actually fills both horizontal axes and the height with unchanged fall speeds
+ok 140 - rain actually fills both horizontal axes and the height with unchanged fall speeds
+  ---
+  duration_ms: 1.169804
+  type: 'test'
+  ...
+# Subtest: rain is readable, one pixel wide and tilts lower-right toward the specified world direction
+ok 141 - rain is readable, one pixel wide and tilts lower-right toward the specified world direction
+  ---
+  duration_ms: 18.798831
+  type: 'test'
+  ...
+# Subtest: rain follows engine-controlled movement without dragging world-space streaks
+ok 142 - rain follows engine-controlled movement without dragging world-space streaks
+  ---
+  duration_ms: 45.247919
+  type: 'test'
+  ...
+# Subtest: splash rings are occasional, short-lived and avoid buildings, water and ground edges
+ok 143 - splash rings are occasional, short-lived and avoid buildings, water and ground edges
+  ---
+  duration_ms: 112.583371
+  type: 'test'
+  ...
+# Subtest: disposing rain restores the current phase intensity and removes the effect
+ok 144 - disposing rain restores the current phase intensity and removes the effect
+  ---
+  duration_ms: 12.024119
+  type: 'test'
+  ...
+1..144
+# tests 144
+# suites 0
+# pass 144
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24703.394082
