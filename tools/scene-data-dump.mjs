@@ -10,8 +10,8 @@ import { verifyBaselineArchive } from './baseline-archive.mjs';
 
 // The reference comes from verified clean main, never the implementation under
 // test. The dump deliberately excludes Three UUIDs.
-export const REFERENCE_SHA = '8dd79b81bad7eec1d45a018715b357003f483f1c';
-export const REFERENCE_PATH = 'tests/fixtures/scene-8dd79b8.json.gz';
+export const REFERENCE_SHA = 'a75e8db0bbd865df2000f030912bb6910258432c';
+export const REFERENCE_PATH = 'tests/fixtures/scene-a75e8db.json.gz';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb760001;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -92,7 +92,7 @@ async function open(browser, url, search) {
     const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
     assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)), 'Unknown app entry point');
     const source = legacy ? body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr76Random,') : body;
-    const exposed = legacy ? '{ scene, camera, character, renderer, composer }' : 'context';
+    const exposed = legacy ? '{ scene, camera, character, renderer, composer, environment, weather }' : 'context';
     await route.fulfill({ response, body: `${source}\nwindow.__ebr76Scene = ${exposed};\n` });
   });
   await page.goto(`${url}/${search}${search.includes('?') ? '&' : '?'}skyhud=0`, { waitUntil: 'networkidle' });
@@ -107,7 +107,7 @@ async function open(browser, url, search) {
 // primitive dimensions; it is stronger than bounding boxes alone.
 async function sceneDump(page) {
   const dump = await page.evaluate(() => {
-    const { scene, camera, renderer } = window.__ebr76Scene;
+    const { scene, camera, renderer, environment, weather } = window.__ebr76Scene;
     scene.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
     const materials = [];
@@ -195,6 +195,7 @@ async function sceneDump(page) {
     const shelter = scene.getObjectByName('sheepfold-lean-to');
     const smoke = scene.getObjectByName('chimney-smoke');
     const fireflies = scene.getObjectByName('night-fireflies');
+    const snow = scene.getObjectByName('snow-flakes');
     const hives = [1, 2].map((index) => scene.getObjectByName(`beehive-${index}`));
     const flowers = [1, 2, 3, 4].map((index) => scene.getObjectByName(`flower-patch-${index}`));
     if (!fold || sheep.some((animal) => !animal) || !shelter || !smoke || !fireflies) {
@@ -214,13 +215,17 @@ async function sceneDump(page) {
         zoom: camera.zoom, near: camera.near, far: camera.far, left: camera.left, right: camera.right,
         top: camera.top, bottom: camera.bottom, projectionMatrix: camera.projectionMatrix.toArray() },
       pixel: window.getPixelRendering(),
+      weather: { ...window.getWeather(), snowAmount: weather.getSnowAmount(),
+        rainProgress: environment.weather.rainProgress, cloudyProgress: environment.weather.cloudyProgress,
+        snowProgress: environment.weather.snowProgress },
       canvas: { width: canvas.width, height: canvas.height, styleWidth: canvas.style.width, styleHeight: canvas.style.height,
         transform: canvas.style.transform, imageRendering: canvas.style.imageRendering },
       features: { sheep: sheep.length, foldChildren: fold.children.length,
         smokePuffs: smoke.children.length, fireflies: fireflies.count,
         hives: hives.length, flowerPatches: flowers.length,
         flowerHeads: scene.getObjectsByProperty('name', 'flower-head').length,
-        plotSeedlings: scene.getObjectsByProperty('name', 'garden-plot-seedling').length },
+        plotSeedlings: scene.getObjectsByProperty('name', 'garden-plot-seedling').length,
+        snowFlakes: snow?.count ?? 0, snowVisible: snow?.visible ?? false, snowOpacity: snow?.material.opacity ?? 0 },
       objects, materials, geometries,
     };
   });
@@ -269,14 +274,21 @@ export async function captureSceneData(root) {
       ['night', '?phase=night&weather=clear&grid=1', 0],
       ['cloudy', '?phase=daytime&weather=cloudy&grid=1', 1750],
       ['rain', '?phase=daytime&weather=rain&grid=1', 1750],
+      ['snow-transition', '?phase=daytime&weather=snow&grid=1', 875],
+      ['snow', '?phase=daytime&weather=snow&grid=1', 1750],
       ['night-effects', '?phase=night&weather=clear&grid=1', 1200],
       ['night-effects-rain', '?phase=night&weather=rain&grid=1', 1750],
       ['night-effects-cloudy', '?phase=night&weather=cloudy&grid=1', 1750],
+      ['night-effects-snow', '?phase=night&weather=snow&grid=1', 1750],
     ]) {
       const fixture = await open(browser, url, search);
       try {
         if (time) await fixture.page.evaluate((time) => window.__ebr76Step(time), time);
         snapshots[name] = await sceneDump(fixture.page);
+        if (search.includes('weather=snow')) {
+          assert.equal(snapshots[name].features.snowFlakes, 160, `${name} must contain the snow field`);
+          assert.equal(snapshots[name].features.snowVisible, true, `${name} must show the snow field`);
+        }
         assert.deepEqual(fixture.errors, []);
       } finally { await fixture.context.close(); }
     }
@@ -313,6 +325,20 @@ export async function captureSceneData(root) {
       assert.equal(snapshots['plot-placed'].features.plotSeedlings, 16, 'The placed plot and ghost must both be captured');
       assert.deepEqual(fixture.errors, []);
     } finally { await fixture.context.close(); }
+    const transition = await open(browser, url, '?phase=night&weather=snow&grid=1');
+    try {
+      const { page } = transition;
+      await page.evaluate(() => { window.__ebr76Step(1750); window.setWeather('rain'); window.__ebr76Step(2625); });
+      snapshots['snow-rain-crossfade'] = await sceneDump(page);
+      assert.deepEqual([snapshots['snow-rain-crossfade'].weather.snowAmount,
+        snapshots['snow-rain-crossfade'].weather.rainAmount], [0.5, 0.5]);
+      assert.equal(snapshots['snow-rain-crossfade'].features.snowFlakes, 160);
+      await page.evaluate(() => { window.setWeather('clear'); window.__ebr76Step(4375); });
+      snapshots['snow-return-clear'] = await sceneDump(page);
+      assert.equal(snapshots['snow-return-clear'].weather.snowAmount, 0);
+      assert.equal(snapshots['snow-return-clear'].features.snowVisible, false);
+      assert.deepEqual(transition.errors, []);
+    } finally { await transition.context.close(); }
     return { format: 1, viewport, deviceScaleFactor: 1, seed, snapshots };
   } finally {
     await browser?.close();

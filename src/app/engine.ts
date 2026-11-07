@@ -15,8 +15,8 @@ export function registerEngine(context: AppContext) {
         updateClockFrame(context, world, deltaSeconds);
         context.follow(context.character.position);
         context.placement.update();
-        updateWeatherFrame(context, world, deltaSeconds);
-        updateEffectsFrame(context, deltaSeconds);
+        const nightAmount = updateWeatherFrame(context, world, deltaSeconds);
+        updateEffectsFrame(context, deltaSeconds, nightAmount);
         updateSkyHudFrame(context, deltaSeconds);
         context.updateWaterfall(deltaSeconds);
         context.sheepfold.update(deltaSeconds);

@@ -78,12 +78,15 @@ window.__stateTest = { ...context, snapshot: async () => (await import('/src/sta
     });
     assert.equal(result.roundTrip.version, 1);
     assert.equal(result.roundTrip.contentId, 'farm-v1');
-    assert.deepEqual(result.roundTrip.weather, { mode: 'rain', rainProgress: 0.5, cloudyProgress: 0 });
+    assert.deepEqual(result.roundTrip.weather, { mode: 'rain', rainProgress: 0.5, cloudyProgress: 0, snowProgress: 0 });
     assert.equal(result.roundTrip.placed.length, 1);
     assert.equal(result.roundTrip.placed[0].kind, 'fence');
     assert.equal(result.roundTrip.placed[0].rotation, 1);
     assert.match(result.roundTrip.placed[0].id, /^entity-\d+$/);
     assert.deepEqual(result.roundTrip, result.again, 'snapshot mutations must not affect the live world');
+    await page.evaluate(() => { window.setWeather('snow'); window.__stateStep(1750); });
+    assert.deepEqual((await page.evaluate(() => window.__stateTest.snapshot())).weather,
+      { mode: 'snow', rainProgress: 0, cloudyProgress: 0, snowProgress: 0.5 });
     assert.deepEqual(errors, []);
   } finally {
     await browser?.close();

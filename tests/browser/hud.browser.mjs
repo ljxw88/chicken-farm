@@ -263,11 +263,13 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.evaluate(() => window.getDayNightState().phase), 'morning');
 
-  for (const [mode, label] of [['cloudy', 'Cloudy'], ['rain', 'Gentle rain'], ['clear', 'Clear skies']]) {
+  for (const [mode, label] of [['cloudy', 'Cloudy'], ['rain', 'Gentle rain'], ['snow', 'Soft snow'], ['clear', 'Clear skies']]) {
     await nextWeather.click();
     assert.equal(await page.evaluate(() => window.getWeather().mode), mode);
     assert.equal(await page.locator('.hud-column').nth(1).locator('.hud-selector__value').textContent(), label);
   }
+  await page.getByRole('button', { name: 'Previous weather' }).click();
+  assert.equal(await page.evaluate(() => window.getWeather().mode), 'snow');
   await page.getByRole('button', { name: 'Previous weather' }).click();
   await page.waitForFunction(() => window.getWeather().rainAmount > 0.2, null, { timeout: 10000 });
   await page.evaluate(() => { window.setWeather('cloudy'); window.setDayNightPhase('sunset'); });
@@ -326,7 +328,7 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   await page.keyboard.press('Escape');
   assert.equal(await panel.isHidden(), true);
   assert.deepEqual(errors, []);
-  proof.desktop = { surface, alignment, cycling: 'four phases, three real weather states, both automations', fullscreen: fullscreenResult, errors };
+  proof.desktop = { surface, alignment, cycling: 'four phases, four real weather states, both automations', fullscreen: fullscreenResult, errors };
 });
 
 test('desktop Woodland and placement bars stay unchanged unless placement state changes', { timeout: 60000 }, async (t) => {

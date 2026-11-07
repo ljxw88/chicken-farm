@@ -1,6 +1,6 @@
 // The HUD only knows the scene's public controls, not its engine or drivers.
 export type SkyPhase = 'morning' | 'daytime' | 'sunset' | 'night';
-export type SkyWeather = 'clear' | 'rain' | 'cloudy';
+export type SkyWeather = 'clear' | 'rain' | 'cloudy' | 'snow';
 
 export interface DayNightHudState {
   phase: SkyPhase;

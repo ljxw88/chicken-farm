@@ -234,7 +234,7 @@ test('cloudy softens and cools every phase while preserving the environment and 
 
 test('the sun or moon remains stronger than the flat fill in every phase and weather', (t) => {
   const { cycle, weather, ambient, hemisphere, directional } = fixture(t);
-  for (const mode of ['clear', 'cloudy', 'rain']) {
+  for (const mode of ['clear', 'cloudy', 'rain', 'snow']) {
     weather.setWeather(mode);
     weather.update(1.75);
     for (const phase of ['morning', 'daytime', 'sunset', 'night']) {
@@ -344,7 +344,7 @@ test('rapid weather reversals follow the moving phase and clear restores its exa
   farm.cycle.setDayNightPhase('sunset');
   reference.cycle.setDayNightPhase('sunset');
   for (let i = 0; i < 120; i++) {
-    if (i % 7 === 0) farm.weather.setWeather(['cloudy', 'rain', 'clear'][(i / 7) % 3]);
+    if (i % 7 === 0) farm.weather.setWeather(['cloudy', 'rain', 'snow', 'clear'][(i / 7) % 4]);
     const before = farm.weather.getWeather();
     farm.weather.update(0);
     assert.deepEqual(farm.weather.getWeather(), before);
@@ -352,7 +352,8 @@ test('rapid weather reversals follow the moving phase and clear restores its exa
     reference.cycle.update(0.13);
     farm.weather.update(0.13);
     const { rainAmount, cloudyAmount } = farm.weather.getWeather();
-    assert.ok(rainAmount >= 0 && cloudyAmount >= 0 && rainAmount + cloudyAmount <= 1 + 1e-12);
+    const snowAmount = farm.weather.getSnowAmount();
+    assert.ok(rainAmount >= 0 && cloudyAmount >= 0 && snowAmount >= 0 && rainAmount + cloudyAmount + snowAmount <= 1 + 1e-12);
     assert.ok(farm.directional.intensity <= reference.directional.intensity + 1e-12);
   }
   farm.weather.setWeather('clear');

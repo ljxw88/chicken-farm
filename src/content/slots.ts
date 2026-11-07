@@ -72,6 +72,7 @@ export const ART_SLOTS = {
       brown: FARM_PALETTE.treeTrunk, detail: FARM_PALETTE.dirtEdge, secondFaceGain: 0.86, roughness: 1 } satisfies SheepSlots,
     firefly: { core: 0xf2e27a },
     smoke: { color: 0xefe3c8, emissive: 0x000000 },
+    snow: { color: 0xf2f6f8 },
     nest: { straw: 0xb8925b, egg: 0xfff5db },
     decoration: { wood: 0x96714a, darkWood: 0x684a32, lettering: 0xf3dfb2 },
     water: {
@@ -117,7 +118,7 @@ export const ART_SLOTS = {
       sheepfoldFenceOpacity: 0.12, sheepfoldSheepOpacity: 0.18,
       beehiveOpacity: 0.12, flowerOpacity: 0.07 },
     weather: { nightRainFill: 0.2, nightCloudFill: 0.18, cloudShadowOffset: 0.5, rainShadowOffset: 0.51,
-      cloudShadowOpacity: 0.5, rainShadowOpacity: 0.8 },
+      cloudShadowOpacity: 0.5, rainShadowOpacity: 0.8, snowAmbientBlueMultiplier: 1.03 },
   },
   post: { pixel: { enabled: true, imageRendering: 'pixelated' } },
   tint: {
@@ -130,5 +131,6 @@ export const ART_SLOTS = {
     character: { crownStrength: 0.15, dayCrownStrength: 0.28, dayBaseGain: 1.08, bodyRoughness: 0.9, beakRoughness: 0.9 },
     firefly: { pulseFloor: 0.25, pulseRange: 0.75, rainDimming: 0.4 },
     smoke: { initialOpacity: 0, peakOpacity: 0.75, weatherNightDimming: 0.4, roughness: 1 },
+    snow: { opacity: 0.8, nightOpacityMultiplier: 0.7 },
   },
 } as const;

@@ -6,5 +6,5 @@ export const STARTUP_OPTIONS = {
 } as const;
 
 export const VISUAL_SEEDS = {
-  sheep: 0xeb700001, smoke: 0x534d4f4b, fireflies: 0x464c4945,
+  sheep: 0xeb700001, smoke: 0x534d4f4b, fireflies: 0x464c4945, snow: 0x534e4f57,
 } as const;

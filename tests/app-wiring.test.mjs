@@ -25,6 +25,7 @@ test('registered frame wiring preserves feature order and full environment timin
   globalThis.Node = dom.window.Node;
   const events = [];
   let frame;
+  let weatherArgs, smokeArgs, fireflyArgs;
   const context = {
     canvas: document.querySelector('#scene'),
     renderer: { setAnimationLoop(callback) { frame = callback; } },
@@ -41,11 +42,12 @@ test('registered frame wiring preserves feature order and full environment timin
     farmHud: { setPhase: () => events.push('hud') },
     follow: () => events.push('follow'),
     weather: {
-      render(delta) { events.push(`weather:${delta}`); },
+      render(...args) { weatherArgs = args; events.push(`weather:${args[0]}`); },
       getWeather() { events.push('weather-read'); return context.environment.weather; },
+      getSnowAmount() { events.push('snow-read'); return context.environment.weather.snowAmount; },
     },
-    smoke: { update(delta) { events.push(`smoke:${delta}`); } },
-    fireflies: { update(delta) { events.push(`fireflies:${delta}`); } },
+    smoke: { update(...args) { smokeArgs = args; events.push(`smoke:${args[0]}`); } },
+    fireflies: { update(...args) { fireflyArgs = args; events.push(`fireflies:${args[0]}`); } },
     skyState: { update: (delta) => events.push(`sky-state:${delta}`) },
     skyHud: { update: () => events.push('sky-hud') },
     updateWaterfall: (delta) => events.push(`waterfall:${delta}`),
@@ -56,6 +58,7 @@ test('registered frame wiring preserves feature order and full environment timin
   const clock = createDayNightState();
   const weather = createWeatherState();
   weather.mode = 'rain';
+  weather.snowProgress = 1;
   context.environment = context.engine.world.create({ dayNight: clock, weather });
   context.engine.start();
   t.after(() => { context.engine.stop(); Object.assign(globalThis, previous); dom.window.close(); });
@@ -65,11 +68,14 @@ test('registered frame wiring preserves feature order and full environment timin
   frame(500);
   assert.deepEqual(events, [
     'resize', 'movement:0.1', 'clock-delta:0.5', 'lighting', 'shadow', 'hud', 'follow', 'placement',
-    'weather:0.5', 'weather-read', 'night', 'smoke:0.5', 'fireflies:0.5',
+    'night', 'weather:0.5', 'weather-read', 'snow-read', 'smoke:0.5', 'fireflies:0.5',
     'sky-state:0.5', 'sky-hud', 'waterfall:0.5', 'sheep:0.5', 'render:0.5',
   ]);
   assert.equal(clock.progress, 0.25 / 72);
   assert.equal(weather.rainProgress, 0.5 / 1.75);
+  assert.deepEqual(weatherArgs, [0.5, 0.25]);
+  assert.deepEqual(smokeArgs, [0.5, weather.rainAmount, 0.25, weather.snowAmount]);
+  assert.deepEqual(fireflyArgs, [0.5, 0.25, weather.rainAmount, weather.cloudyAmount]);
 });
 
 test('farm and garden registration forwards targets and obstacles in main order', (t) => {

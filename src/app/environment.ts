@@ -52,5 +52,7 @@ export function updateClockFrame(context: AppContext, world: EntityWorld<GameCom
 
 export function updateWeatherFrame(context: AppContext, world: EntityWorld<GameComponents>, deltaSeconds: number) {
   updateWeatherSystem(world, deltaSeconds);
-  context.weather.render(deltaSeconds);
+  const nightAmount = context.dayNight.getNightAmount();
+  context.weather.render(deltaSeconds, nightAmount);
+  return nightAmount;
 }

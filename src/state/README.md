@@ -2,7 +2,7 @@
 
 `snapshot(world, contentId?)` describes one live engine world as a detached
 `SaveV1` plain-data object. It copies the player pose, stable placed entity IDs,
-cells and quarter-turn rotations, clock, and weather transition progress.
+cells and quarter-turn rotations, clock, and rain/cloud/snow transition progress.
 Placed items are ordered by their placement sequence, including after removals.
 The default content ID is `farm-v1`.
 

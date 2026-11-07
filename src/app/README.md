@@ -15,7 +15,8 @@ modules in order before starting the engine:
 
 The context is populated in that order; frame callbacks and input handlers run
 only after registration is complete. Each frame still performs movement, clock
-and shadow updates, HUD, camera follow, placement, weather, smoke, fireflies,
-sky state/HUD, waterfall and sheep updates in that order before rendering. The
+and shadow updates, HUD, camera follow, placement, weather state, night amount,
+weather rendering, smoke, fireflies, sky state/HUD, waterfall and sheep updates
+in that order before rendering. The
 movement delta remains capped; the clock excludes paused time on resuming follow,
 while weather and effects receive the full elapsed delta.

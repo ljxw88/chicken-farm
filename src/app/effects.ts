@@ -13,9 +13,8 @@ export function registerEffects(context: AppContext) {
     random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ VISUAL_SEEDS.fireflies) });
 }
 
-export function updateEffectsFrame(context: AppContext, deltaSeconds: number) {
+export function updateEffectsFrame(context: AppContext, deltaSeconds: number, nightAmount: number) {
   const { rainAmount, cloudyAmount } = context.weather.getWeather();
-  const nightAmount = context.dayNight.getNightAmount();
-  context.smoke.update(deltaSeconds, rainAmount, nightAmount);
+  context.smoke.update(deltaSeconds, rainAmount, nightAmount, context.weather.getSnowAmount());
   context.fireflies.update(deltaSeconds, nightAmount, rainAmount, cloudyAmount);
 }

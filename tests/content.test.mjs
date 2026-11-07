@@ -15,6 +15,7 @@ const { WATER_FEATURE } = await vite.ssrLoadModule('/src/content/waterFeature.ts
 const { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, FOLLOW_DAY_NIGHT_CYCLE_SECONDS, WINDOW_LIGHT, LANTERN_LIGHT } =
   await vite.ssrLoadModule('/src/content/dayNight.ts');
 const { RAIN_LOOK } = await vite.ssrLoadModule('/src/content/rainSettings.ts');
+const { SNOW_LOOK } = await vite.ssrLoadModule('/src/content/snowSettings.ts');
 const { CLOUDY_LOOK } = await vite.ssrLoadModule('/src/content/cloudySettings.ts');
 const { PIXEL_PRESENTATION } = await vite.ssrLoadModule('/src/content/presentation.ts');
 const { COTTAGE_GEOMETRY, COOP_GEOMETRY, GABLE_GEOMETRY } = await vite.ssrLoadModule('/src/content/buildingGeometry.ts');
@@ -22,7 +23,7 @@ const { PLAYER_GEOMETRY } = await vite.ssrLoadModule('/src/content/playerGeometr
 const { PLACEMENT_GEOMETRY } = await vite.ssrLoadModule('/src/content/placementGeometry.ts');
 const { KEY_LIGHT_GEOMETRY, PRACTICAL_LIGHT_GEOMETRY, FARM_SHADOW_GEOMETRY } = await vite.ssrLoadModule('/src/content/lightGeometry.ts');
 const { CAMERA } = await vite.ssrLoadModule('/src/content/camera.ts');
-const { RAIN_INITIAL_OPACITY } = await vite.ssrLoadModule('/src/content/weatherVisual.ts');
+const { RAIN_INITIAL_OPACITY, SNOW_VISUAL } = await vite.ssrLoadModule('/src/content/weatherVisual.ts');
 const { SHEEPFOLD, LEAN_TO, SHEEPFOLD_GEOMETRY, LEAN_TO_GEOMETRY, SHEEP_GEOMETRY, DEFAULT_SHEEP_SEED } =
   await vite.ssrLoadModule('/src/content/sheep.ts');
 const { FIREFLIES, CHIMNEY_SMOKE } = await vite.ssrLoadModule('/src/content/effects.ts');
@@ -38,6 +39,7 @@ const { createChimneySmoke } = await vite.ssrLoadModule('/src/effects/createChim
 const { SHEEPFOLD_ASSETS } = await vite.ssrLoadModule('/src/render/sheepfoldAssets.ts');
 const { EFFECT_ASSETS } = await vite.ssrLoadModule('/src/render/effectAssets.ts');
 const { GARDEN_ASSETS } = await vite.ssrLoadModule('/src/render/gardenAssets.ts');
+const { WEATHER_ASSETS } = await vite.ssrLoadModule('/src/render/weatherAssets.ts');
 after(() => vite.close());
 
 function assertPlain(value) {
@@ -54,7 +56,7 @@ test('content and slots are plain finite JSON data with separate dimensions and 
     BEEHIVE_GEOMETRY, FLOWER_GEOMETRY, ISLAND, STAIR, GRID,
     PATH_GEOMETRY, TREE_GEOMETRY, POND_GEOMETRY, GRASS_GEOMETRY, CHICKEN_GEOMETRY, NEST_GEOMETRY,
     DECORATION_GEOMETRY, WATER_FEATURE, DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, FOLLOW_DAY_NIGHT_CYCLE_SECONDS,
-    WINDOW_LIGHT, LANTERN_LIGHT, RAIN_LOOK,
+    WINDOW_LIGHT, LANTERN_LIGHT, RAIN_LOOK, SNOW_LOOK, SNOW_VISUAL,
     CLOUDY_LOOK, PIXEL_PRESENTATION, COTTAGE_GEOMETRY, COOP_GEOMETRY, GABLE_GEOMETRY, PLAYER_GEOMETRY,
     PLACEMENT_GEOMETRY, KEY_LIGHT_GEOMETRY, PRACTICAL_LIGHT_GEOMETRY, FARM_SHADOW_GEOMETRY, CAMERA, RAIN_INITIAL_OPACITY,
     SHEEPFOLD, LEAN_TO, SHEEPFOLD_GEOMETRY, LEAN_TO_GEOMETRY, SHEEP_GEOMETRY, DEFAULT_SHEEP_SEED,
@@ -78,6 +80,11 @@ test('content and slots are plain finite JSON data with separate dimensions and 
   assert.equal(typeof EFFECT_ASSETS[CHIMNEY_SMOKE.assetId], 'function');
   assert.equal(typeof GARDEN_ASSETS[GARDEN_DRESSING.hiveAssetId], 'function');
   assert.equal(typeof GARDEN_ASSETS[GARDEN_DRESSING.flowerAssetId], 'function');
+  assert.equal(typeof WEATHER_ASSETS[SNOW_VISUAL.assetId], 'function');
+  assert.deepEqual([SNOW_LOOK.flakeCount, SNOW_LOOK.sizeMin, SNOW_LOOK.sizeMax,
+    SNOW_LOOK.fallSpeedMin, SNOW_LOOK.fallSpeedMax], [160, 0.11, 0.22, 0.8, 1.4]);
+  assert.deepEqual([SNOW_LOOK.color, SNOW_LOOK.opacity, SNOW_LOOK.nightOpacityMultiplier, SNOW_LOOK.ambientBlueMultiplier],
+    [0xf2f6f8, 0.8, 0.7, 1.03]);
   assert.deepEqual(BEEHIVE_FOOTPRINT, { halfWidth: 0.35, halfDepth: 0.35 });
 });
 

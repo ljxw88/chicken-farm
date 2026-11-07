@@ -57,7 +57,7 @@ test('snapshot describes stable player, placed cells, clock and weather as detac
       { id: plot.id, kind: 'plot', cell: [2, 4], rotation: 0 },
     ],
     clock: { progress: 0.375, cycleSeconds: 96, held: true },
-    weather: { mode: 'rain', rainProgress: 0.5, cloudyProgress: 0 },
+    weather: { mode: 'rain', rainProgress: 0.5, cloudyProgress: 0, snowProgress: 0 },
   });
   assertJsonData(actual);
   assert.deepEqual(JSON.parse(JSON.stringify(actual)), actual);
@@ -75,6 +75,19 @@ test('snapshot describes stable player, placed cells, clock and weather as detac
   assert.equal(Object.is(canonical.player.yaw, 0), true);
   assert.deepEqual(JSON.parse(JSON.stringify(canonical)), canonical);
   assert.equal(canonical.contentId, 'custom-content');
+});
+
+test('snapshot preserves a partially crossfaded snow transition as detached JSON data', () => {
+  const { world, environment } = fixture();
+  setWeatherMode(environment.weather, 'snow');
+  advanceWeather(environment.weather, 0.4375);
+  const saved = snapshot(world);
+  assert.deepEqual(saved.weather, { mode: 'snow', rainProgress: 0.25, cloudyProgress: 0, snowProgress: 0.25 });
+  assert.deepEqual(JSON.parse(JSON.stringify(saved)), saved);
+  saved.weather.snowProgress = 1;
+  assert.equal(environment.weather.snowProgress, 0.25);
+  environment.weather.snowProgress = NaN;
+  assert.throws(() => snapshot(world), /snowProgress must be finite/);
 });
 
 test('snapshot preserves placement sequence after Miniplex swap-removal', () => {

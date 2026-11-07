@@ -52,16 +52,17 @@ the selected baseline from `PARITY_BASELINE_DIR`, `PARITY_EVIDENCE_DIR` or the
 historical fixtures. `--baseline-root` verifies a full Git archive before
 recording; `--baseline-port-range` selects a strict baseline port range.
 
-EBR-76 pins `8dd79b8` even if `origin/main` has since advanced. Its scene
-reference is an exact, pooled gzip fixture: `node tools/scene-data-dump.mjs
---against-main <clean-8dd79b8-archive-or-worktree>` reconstructs and compares all
-original JSON bytes, including the garden and plot. The full archive is checked
-against Git before capture. `node tools/placement-environment-replay.mjs
+EBR-76's scene reference pins `a75e8db` even if `origin/main` has since advanced.
+It is an exact, pooled gzip fixture: `node tools/scene-data-dump.mjs
+--against-main <clean-a75e8db-archive-or-worktree>` reconstructs and compares all
+original JSON bytes, including the garden, plot and snow transitions. The full
+archive is checked against Git before capture. `node tools/placement-environment-replay.mjs
 --against-main <clean-main-worktree-or-archive> <evidence-dir>` compares full,
 unmasked `8dd79b8` frames and traces, including the garden and effects, with zero
 changed pixels allowed. `--archive-main <evidence-dir>` creates and verifies the
-`8dd79b8` archive automatically. Older replay references isolate intentional
-garden changes; the current reference never does. The parity recorder accepts
+`8dd79b8` archive automatically. This earlier replay does not exercise snow.
+Older replay references isolate intentional garden changes; the `8dd79b8` reference
+does not. The parity recorder accepts
 the pinned EBR-76 commits after `origin/main` advances.
 
 For EBR-80, leave the signed `tools/fixtures/historical/EBR-73/` files untouched.

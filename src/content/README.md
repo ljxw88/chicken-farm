@@ -11,7 +11,8 @@ footprint separate from their palette and shadow-opacity slots. Plot geometry
 stays in `placementGeometry.ts`, while its tile footprint remains in `world.ts`.
 `effects.ts` supplies the `effect.fireflies` and `effect.chimney-smoke` IDs,
 positions, counts and motion parameters; `startup.ts` owns the default seeds and
-query keys. Placement entities likewise carry `fence` or `plot` asset IDs.
+query keys. `snowSettings.ts` and `weatherVisual.ts` supply snow settings and its
+render asset ID. Placement entities likewise carry `fence` or `plot` asset IDs.
 
 `slots.ts` holds the named palette, building, light, pixel, placement tint and
 stair appearance slots. A Look Dev change can replace slot values without

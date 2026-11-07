@@ -1,9 +1,15 @@
 import * as THREE from 'three';
 import type { FarmObstacle } from '../character/farmCollisions';
+import { createVisualRandom } from '../effects/createVisualRandom';
 import { advanceWeather, createWeatherState, setWeatherMode, type WeatherMode, type WeatherState } from '../environment/weatherSystem';
 import { CLOUDY_LOOK } from '../content/cloudySettings';
-import { createRainEffect } from './createRainEffect';
 import { RAIN_LOOK } from '../content/rainSettings';
+import { SNOW_LOOK } from '../content/snowSettings';
+import { VISUAL_SEEDS } from '../content/startup';
+import { SNOW_VISUAL } from '../content/weatherVisual';
+import { WEATHER_ASSETS } from '../render/weatherAssets';
+import { createRainEffect } from './createRainEffect';
+import type { createSnow } from './createSnow';
 
 export { WEATHER_MODES, isWeatherMode } from '../environment/weatherSystem';
 export type { WeatherMode } from '../environment/weatherSystem';
@@ -23,8 +29,21 @@ interface WeatherSystemOptions {
 }
 
 export function createWeatherSystem(options: WeatherSystemOptions) {
-  const rain = createRainEffect(options);
+  // Derive a separate snow stream from rain's first existing draw, without
+  // consuming any extra values or reshuffling seeded rain and splash positions.
+  const random = options.random ?? Math.random;
+  let snowSeed = 0;
+  let sampled = false;
+  const rain = createRainEffect({ ...options, random: () => {
+    const value = random();
+    if (!sampled) {
+      snowSeed = (Math.floor(value * 0x100000000) ^ VISUAL_SEEDS.snow) >>> 0;
+      sampled = true;
+    }
+    return value;
+  } });
   const state = options.state ?? createWeatherState();
+  let snow: ReturnType<typeof createSnow> | undefined;
   let disposed = false;
   options.setDirectionalIntensityMultiplier(1);
   options.setAmbientHemisphereColorMultiplier(1, 1, 1);
@@ -38,24 +57,27 @@ export function createWeatherSystem(options: WeatherSystemOptions) {
     return { mode, rainAmount, cloudyAmount };
   }
 
-  function update(deltaSeconds: number) {
+  function update(deltaSeconds: number, nightAmount = 0) {
     advanceWeather(state, deltaSeconds);
-    render(deltaSeconds);
+    render(deltaSeconds, nightAmount);
   }
 
-  function render(deltaSeconds: number) {
-    const { rainAmount, cloudyAmount } = state;
+  function render(deltaSeconds: number, nightAmount = 0) {
+    const { rainAmount, cloudyAmount, snowAmount } = state;
+    const overcastAmount = cloudyAmount + snowAmount;
     const directionalMultiplier = 1 + (RAIN_LOOK.directionalMultiplier - 1) * rainAmount +
-      (CLOUDY_LOOK.directionalMultiplier - 1) * cloudyAmount;
+      (CLOUDY_LOOK.directionalMultiplier - 1) * overcastAmount;
     options.setDirectionalIntensityMultiplier(directionalMultiplier);
     const gains = CLOUDY_LOOK.ambientHemisphereColorGains;
     options.setAmbientHemisphereColorMultiplier(
-      THREE.MathUtils.lerp(1, gains.red, cloudyAmount),
-      THREE.MathUtils.lerp(1, gains.green, cloudyAmount),
-      THREE.MathUtils.lerp(1, gains.blue, cloudyAmount),
+      THREE.MathUtils.lerp(1, gains.red, overcastAmount),
+      THREE.MathUtils.lerp(1, gains.green, overcastAmount),
+      THREE.MathUtils.lerp(1, gains.blue, cloudyAmount) + (gains.blue * SNOW_LOOK.ambientBlueMultiplier - 1) * snowAmount,
     );
-    options.setShadowWeather?.(rainAmount, cloudyAmount);
+    options.setShadowWeather?.(rainAmount, overcastAmount);
     rain.update(deltaSeconds, rainAmount);
+    if (!snow && snowAmount > 0) snow = WEATHER_ASSETS[SNOW_VISUAL.assetId]({ ...options, random: createVisualRandom(snowSeed) });
+    snow?.update(deltaSeconds, snowAmount, nightAmount);
   }
 
   function dispose() {
@@ -63,10 +85,11 @@ export function createWeatherSystem(options: WeatherSystemOptions) {
     disposed = true;
     Object.assign(state, createWeatherState());
     rain.dispose();
+    snow?.dispose();
     options.setDirectionalIntensityMultiplier(1);
     options.setAmbientHemisphereColorMultiplier(1, 1, 1);
     options.setShadowWeather?.(0, 0);
   }
 
-  return { setWeather, getWeather, update, render, dispose };
+  return { setWeather, getWeather, getSnowAmount: () => state.snowAmount, update, render, dispose };
 }

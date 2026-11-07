@@ -15,7 +15,7 @@ export interface SaveV1 {
   // Array order is placement/undo order; rotations are quarter turns.
   placed: Array<{ id: string; kind: PlacementKind; cell: [number, number]; rotation: number }>;
   clock: { progress: number; cycleSeconds: number; held: boolean };
-  weather: { mode: WeatherMode; rainProgress: number; cloudyProgress: number };
+  weather: { mode: WeatherMode; rainProgress: number; cloudyProgress: number; snowProgress: number };
 }
 
 // A future persistence adapter may implement this contract. Neither method is
@@ -83,6 +83,7 @@ export function snapshot(world: EntityWorld<SnapshotComponents>, contentId: stri
     placed,
     clock: { progress: progress(clock.progress, 'clock.progress', true), cycleSeconds, held: clock.held },
     weather: { mode: weather.mode, rainProgress: progress(weather.rainProgress, 'weather.rainProgress'),
-      cloudyProgress: progress(weather.cloudyProgress, 'weather.cloudyProgress') },
+      cloudyProgress: progress(weather.cloudyProgress, 'weather.cloudyProgress'),
+      snowProgress: progress(weather.snowProgress, 'weather.snowProgress') },
   };
 }

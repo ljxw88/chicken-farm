@@ -75,13 +75,13 @@ export function createChimneySmoke({ scene, random = createVisualRandom(VISUAL_S
   let elapsed = 0;
   let spawnIndex = 1;
 
-  function update(deltaSeconds: number, rainAmount: number, nightAmount: number) {
+  function update(deltaSeconds: number, rainAmount: number, nightAmount: number, snowAmount = 0) {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0 ||
-      [rainAmount, nightAmount].some((amount) => !Number.isFinite(amount) || amount < 0 || amount > 1)) {
-      throw new RangeError('Smoke needs non-negative elapsed time and valid rain/night amounts');
+      [rainAmount, nightAmount, snowAmount].some((amount) => !Number.isFinite(amount) || amount < 0 || amount > 1)) {
+      throw new RangeError('Smoke needs non-negative elapsed time and valid weather/night amounts');
     }
     elapsed += deltaSeconds;
-    const lifetime = THREE.MathUtils.lerp(...CHIMNEY_SMOKE.lifetime, rainAmount);
+    const lifetime = THREE.MathUtils.lerp(...CHIMNEY_SMOKE.lifetime, Math.min(1, rainAmount + snowAmount));
     while (spawnIndex * SPAWN_INTERVAL <= elapsed + 1e-9) {
       const birth = spawnIndex++ * SPAWN_INTERVAL;
       for (const puff of puffs) {
