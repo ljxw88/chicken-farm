@@ -12,6 +12,14 @@ export function parseStartupOptions(search: string) {
   };
 }
 
+// Optional visual seed: without it the existing weather keeps its default RNG.
+export function parseVisualSeed(search: string) {
+  const value = new URLSearchParams(search).get('seed');
+  if (value === null || !/^(?:\d+|0x[\da-f]+)$/i.test(value)) return undefined;
+  const seed = Number(value);
+  return Number.isSafeInteger(seed) && seed <= 0xffffffff ? seed : undefined;
+}
+
 interface PhaseCycle {
   update: (deltaSeconds: number) => void;
   setDayNightPhase: (phase: DayNightPhaseName) => void;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
@@ -14,7 +15,7 @@ const search = '?phase=daytime&weather=clear';
 
 async function serverAt(root) {
   const server = await createServer({ root, configFile: false, logLevel: 'error',
-    server: { host: '127.0.0.1', port: 0, hmr: false } });
+    server: { host: '127.0.0.1', port: 0, hmr: false, fs: { allow: [root, process.cwd()] } } });
   await server.listen();
   const address = server.httpServer.address();
   assert.ok(address && typeof address !== 'string');
@@ -84,8 +85,40 @@ async function capture(context, page) {
   }
 }
 
+// Preserve the visible frame, then render the exact same state without the
+// ticket's visual-only effects. This keeps the full-frame character gate
+// strict without mistaking the deliberately animated smoke/motes for drift.
+async function captureWithEffects(fixture) {
+  const { context, page } = fixture;
+  const image = await capture(context, page);
+  const flags = await page.evaluate(() => {
+    const { scene, composer } = window.__ebr74;
+    const smoke = scene.getObjectByName('chimney-smoke');
+    const fireflies = scene.getObjectByName('night-fireflies');
+    if (!smoke && !fireflies) return null;
+    const state = { smoke: smoke?.visible ?? null, fireflies: fireflies?.visible ?? null };
+    if (smoke) smoke.visible = false;
+    if (fireflies) fireflies.visible = false;
+    composer.render(0);
+    return state;
+  });
+  if (!flags) return { image, withoutEffects: image };
+  try {
+    return { image, withoutEffects: await capture(context, page) };
+  } finally {
+    await page.evaluate((state) => {
+      const { scene, composer } = window.__ebr74;
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const fireflies = scene.getObjectByName('night-fireflies');
+      if (smoke && state.smoke !== null) smoke.visible = state.smoke;
+      if (fireflies && state.fireflies !== null) fireflies.visible = state.fireflies;
+      composer.render(0);
+    }, flags);
+  }
+}
+
 async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
-  const { page, context } = fixture;
+  const { page } = fixture;
   if (action.type === 'frames') {
     const states = await page.evaluate((times) => times.map((time) => {
       window.__ebr74Step(time);
@@ -108,7 +141,7 @@ async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
   } else if (action.type === 'blur') {
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   } else if (action.type === 'capture') {
-    frames[action.name] = await capture(context, page);
+    frames[action.name] = await captureWithEffects(fixture);
     // A character-material ticket may change the visible capsule. Isolate that
     // mesh at the same frozen time so the replay can still demand exact parity
     // for the scene, face, lantern and every pixel outside the body.
@@ -121,7 +154,7 @@ async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
       return visible;
     });
     try {
-      bodylessFrames[action.name] = await capture(context, page);
+      bodylessFrames[action.name] = await captureWithEffects(fixture);
     } finally {
       await page.evaluate((visible) => {
         const { character, composer } = window.__ebr74;
@@ -326,74 +359,107 @@ async function recordScenario(browser, url, name, replayScript) {
   }
 }
 
-async function pixelDiff(page, reference, candidate, referenceBodyless, candidateBodyless) {
-  return page.evaluate(async ({ reference, candidate, referenceBodyless, candidateBodyless }) => {
+async function pixelDiff(page, frames) {
+  return page.evaluate(async (frames) => {
     async function decode(data) {
       const image = new Image();
       image.src = `data:image/png;base64,${data}`;
       await image.decode();
       return image;
     }
-    const images = await Promise.all([reference, candidate, referenceBodyless, candidateBodyless].map(decode));
-    const [a, b] = images;
+    const names = Object.keys(frames);
+    const images = await Promise.all(names.map((name) => decode(frames[name])));
+    const [a] = images;
     if (images.some((image) => image.width !== a.width || image.height !== a.height)) throw new Error('Frame dimensions differ');
     const canvas = document.createElement('canvas');
     canvas.width = a.width;
     canvas.height = a.height;
     const context = canvas.getContext('2d', { willReadFrequently: true });
-    const pixels = images.map((image) => {
+    const pixels = Object.fromEntries(images.map((image, index) => {
       context.clearRect(0, 0, a.width, a.height);
       context.drawImage(image, 0, 0);
-      return context.getImageData(0, 0, a.width, a.height).data;
-    });
-    const [original, current, withoutOriginal, withoutCurrent] = pixels;
+      return [names[index], context.getImageData(0, 0, a.width, a.height).data];
+    }));
+    const { reference, candidate, referenceNoEffects, candidateNoEffects, referenceBodyless, candidateBodyless } = pixels;
     const diff = context.createImageData(a.width, a.height);
-    const mask = context.createImageData(a.width, a.height);
+    const bodyMask = context.createImageData(a.width, a.height);
+    const effectMask = context.createImageData(a.width, a.height);
     let changedPixels = 0;
+    let withoutEffectsChanged = 0;
+    let effectMaskPixels = 0;
     let outsideBodyPixels = 0;
     let bodylessChangedPixels = 0;
+    let outsideAllowedPixels = 0;
     const differs = (x, y, i) => x[i] !== y[i] || x[i + 1] !== y[i + 1] || x[i + 2] !== y[i + 2] || x[i + 3] !== y[i + 3];
-    for (let i = 0; i < original.length; i += 4) {
-      const changed = differs(original, current, i);
-      const body = differs(original, withoutOriginal, i) || differs(current, withoutCurrent, i);
+    for (let i = 0; i < reference.length; i += 4) {
+      const changed = differs(reference, candidate, i);
+      const withoutEffects = differs(referenceNoEffects, candidateNoEffects, i);
+      const body = differs(referenceNoEffects, referenceBodyless, i) || differs(candidateNoEffects, candidateBodyless, i);
+      const effects = differs(reference, referenceNoEffects, i) || differs(candidate, candidateNoEffects, i);
       if (changed) { changedPixels++; diff.data[i] = 255; diff.data[i + 2] = 255; }
-      if (changed && !body) outsideBodyPixels++;
-      if (differs(withoutOriginal, withoutCurrent, i)) bodylessChangedPixels++;
-      if (body) mask.data[i] = mask.data[i + 1] = mask.data[i + 2] = 255;
-      diff.data[i + 3] = 255;
-      mask.data[i + 3] = 255;
+      if (withoutEffects) withoutEffectsChanged++;
+      if (effects) effectMaskPixels++;
+      if (withoutEffects && !body) outsideBodyPixels++;
+      if (changed && !body && !effects) outsideAllowedPixels++;
+      if (differs(referenceBodyless, candidateBodyless, i)) bodylessChangedPixels++;
+      if (body) bodyMask.data[i] = bodyMask.data[i + 1] = bodyMask.data[i + 2] = 255;
+      if (effects) effectMask.data[i] = effectMask.data[i + 1] = effectMask.data[i + 2] = 255;
+      diff.data[i + 3] = bodyMask.data[i + 3] = effectMask.data[i + 3] = 255;
     }
     context.putImageData(diff, 0, 0);
     const png = canvas.toDataURL('image/png').split(',')[1];
-    context.putImageData(mask, 0, 0);
-    return { changedPixels, outsideBodyPixels, bodylessChangedPixels, png, mask: canvas.toDataURL('image/png').split(',')[1] };
-  }, Object.fromEntries(Object.entries({ reference, candidate, referenceBodyless, candidateBodyless })
-    .map(([name, bytes]) => [name, bytes.toString('base64')])));
+    context.putImageData(bodyMask, 0, 0);
+    const bodyPng = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(effectMask, 0, 0);
+    return { changedPixels, withoutEffectsChanged, effectMaskPixels, outsideAllowedPixels, outsideBodyPixels,
+      bodylessChangedPixels, png, bodyPng, effectPng: canvas.toDataURL('image/png').split(',')[1] };
+  }, Object.fromEntries(Object.entries(frames).map(([name, bytes]) => [name, bytes.toString('base64')])));
 }
 
-/** Record clean main, then replay the same events and frame times on the candidate. */
+async function temporary(prefix) {
+  try { return await mkdtemp(`/tmp/opencode/${prefix}`); }
+  catch (error) {
+    if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
+    return mkdtemp(join(tmpdir(), prefix));
+  }
+}
+
+/** Replay a clean reference against the same candidate events and frame times. */
 export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, archivedBaselineSha, baselineSha = historicalSha }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, stairBaselineSha].includes(baselineSha), 'Unknown replay reference');
-  if (archivedBaselineSha) {
-    assert.equal(archivedBaselineSha, baselineSha);
-  } else {
-    assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
-    assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-      'The reference worktree must contain the unmodified baseline source');
-  }
   let baseline;
   let candidate;
   let browser;
+  let archiveRoot;
+  let traceDir;
   try {
+    assert.equal(git(candidateRoot, 'rev-parse', '--verify', `${baselineSha}^{commit}`), baselineSha);
+    if (!baselineRoot) {
+      assert.equal(archivedBaselineSha, undefined, 'An archive SHA needs a supplied reference directory');
+      archiveRoot = await temporary('ebr74-archive-');
+      const archive = join(archiveRoot, 'baseline.tar');
+      execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
+        baselineSha, 'src', 'index.html', 'package.json', 'package-lock.json']);
+      execFileSync('tar', ['-xf', archive, '-C', archiveRoot]);
+      await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
+      baselineRoot = archiveRoot;
+      archivedBaselineSha = baselineSha;
+    } else if (archivedBaselineSha) {
+      assert.equal(archivedBaselineSha, baselineSha);
+    } else {
+      assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
+      assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
+        'The reference worktree must contain the unmodified baseline source');
+    }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
     const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
-    // The reference is generated from the clean main worktree and stays there, never in the branch.
-    const traceDir = await mkdtemp(join(baselineRoot, '.ebr74-reference-'));
+    // The generated trace stays outside both the branch and any supplied worktree.
+    traceDir = await temporary('ebr74-reference-');
     const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed,
       scenarios: Object.fromEntries(names.map((name) => [name, {
@@ -405,6 +471,8 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     candidate = await serverAt(candidateRoot);
     const results = {};
     const frameResults = {};
+    const unaffectedFrameResults = {};
+    const effectMaskResults = {};
     const bodyIsolation = {};
     const traceMismatches = [];
     const traces = {};
@@ -428,18 +496,31 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
         traceMismatches.push({ scenario: name, body: 'geometry, material or shade shader differs' });
       }
       results[name] = { frames: current.trace.length, identical };
-      for (const [frameName, bytes] of Object.entries(current.frames)) {
+      for (const [frameName, frame] of Object.entries(current.frames)) {
         const original = reference[name].frames[frameName];
         assert.ok(original, `Missing baseline frame ${frameName}`);
-        const diff = await pixelDiff(diffPage, original, bytes, reference[name].bodylessFrames[frameName], current.bodylessFrames[frameName]);
+        const referenceBodyless = reference[name].bodylessFrames[frameName];
+        const candidateBodyless = current.bodylessFrames[frameName];
+        assert.ok(referenceBodyless && candidateBodyless, `Missing bodyless frame ${frameName}`);
+        const diff = await pixelDiff(diffPage, { reference: original.image, candidate: frame.image,
+          referenceNoEffects: original.withoutEffects, candidateNoEffects: frame.withoutEffects,
+          referenceBodyless: referenceBodyless.withoutEffects, candidateBodyless: candidateBodyless.withoutEffects });
         frameResults[frameName] = diff.changedPixels;
-        bodyIsolation[frameName] = { outsideBodyPixels: diff.outsideBodyPixels, bodylessChangedPixels: diff.bodylessChangedPixels };
+        unaffectedFrameResults[frameName] = diff.withoutEffectsChanged;
+        effectMaskResults[frameName] = diff.effectMaskPixels;
+        bodyIsolation[frameName] = { outsideAllowedPixels: diff.outsideAllowedPixels,
+          outsideBodyPixels: diff.outsideBodyPixels, bodylessChangedPixels: diff.bodylessChangedPixels };
         if (evidenceDir) {
-          for (const directory of ['baseline', 'candidate', 'diff', 'mask']) await mkdir(join(evidenceDir, directory), { recursive: true });
-          await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original);
-          await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), bytes);
+          for (const directory of ['baseline', 'candidate', 'diff', 'no-effects', 'bodyless-no-effects', 'body-mask', 'effect-mask']) {
+            await mkdir(join(evidenceDir, directory), { recursive: true });
+          }
+          await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original.image);
+          await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), frame.image);
           await writeFile(join(evidenceDir, 'diff', `${frameName}.png`), Buffer.from(diff.png, 'base64'));
-          await writeFile(join(evidenceDir, 'mask', `${frameName}.png`), Buffer.from(diff.mask, 'base64'));
+          await writeFile(join(evidenceDir, 'no-effects', `${frameName}.png`), frame.withoutEffects);
+          await writeFile(join(evidenceDir, 'bodyless-no-effects', `${frameName}.png`), candidateBodyless.withoutEffects);
+          await writeFile(join(evidenceDir, 'body-mask', `${frameName}.png`), Buffer.from(diff.bodyPng, 'base64'));
+          await writeFile(join(evidenceDir, 'effect-mask', `${frameName}.png`), Buffer.from(diff.effectPng, 'base64'));
         }
       }
     }
@@ -481,18 +562,24 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults, bodyIsolation, marks };
+      baselineSource: archivedBaselineSha ? 'git archive' : 'clean worktree',
+      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults,
+      unaffectedFrameResults, effectMaskResults, bodyIsolation, marks };
     if (evidenceDir) {
+      await mkdir(evidenceDir, { recursive: true });
       await writeFile(join(evidenceDir, 'traces.json'), `${JSON.stringify(traces, null, 2)}\n`);
       await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
     }
     assert.deepEqual(traceMismatches, [], 'Character position / pose replay differs from main');
-    assert.ok(Object.values(bodyIsolation).every(({ outsideBodyPixels, bodylessChangedPixels }) =>
-      outsideBodyPixels === 0 && bodylessChangedPixels === 0), 'Route frames contain changes beyond the character body');
+    assert.ok(Object.values(bodyIsolation).every(({ outsideAllowedPixels, outsideBodyPixels, bodylessChangedPixels }) =>
+      outsideAllowedPixels === 0 && outsideBodyPixels === 0 && bodylessChangedPixels === 0),
+    `Route frames differ outside body/effect masks: ${JSON.stringify(bodyIsolation)}`);
     return report;
   } finally {
     await browser?.close();
     await baseline?.server.close();
     await candidate?.server.close();
+    if (traceDir) await rm(traceDir, { recursive: true });
+    if (archiveRoot) await rm(archiveRoot, { recursive: true });
   }
 }

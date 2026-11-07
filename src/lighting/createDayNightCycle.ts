@@ -244,5 +244,6 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     setHeld: (held: boolean) => { state.held = held; },
     isHeld: () => state.held,
     getPhase: () => DAY_NIGHT_PHASES[Math.floor(state.progress * DAY_NIGHT_PHASES.length)].name,
+    getNightAmount: () => nightAmount,
   };
 }

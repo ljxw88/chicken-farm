@@ -29,7 +29,7 @@ for (const reference of references) test(`placement and environment replay again
       await mkdir(baseline);
       const archive = join(archiveDir, 'baseline.tar');
       execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, reference.sha,
-        'index.html', 'package.json', 'src'], { cwd: root });
+        'index.html', 'package.json', 'package-lock.json', 'src'], { cwd: root });
       execFileSync('tar', ['-xf', archive, '-C', baseline]);
       await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
     }
@@ -38,6 +38,7 @@ for (const reference of references) test(`placement and environment replay again
       evidenceDir: process.env.EBR75_REPLAY_EVIDENCE_DIR && resolve(process.env.EBR75_REPLAY_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
     t.diagnostic(`Additional frames: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
+    t.diagnostic(`Raw frame differences: ${Object.values(report.rawVisualResults).filter((count) => count > 0).length} frames; body, rain and effects isolated`);
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }
