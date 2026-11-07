@@ -280,12 +280,6 @@ body:has(.placement-controls.is-active) .hud-root {
 }
 
 @media (max-width: 719px) {
-  body.sky-panel-open .placement-controls {
-    top: max(80px, calc(env(safe-area-inset-top) + 68px));
-    bottom: auto;
-    left: 50%;
-  }
-
   .hud-root {
     --hud-top-limit: max(132px, calc(env(safe-area-inset-top) + 126px));
     --hud-panel-inset: 12px;
@@ -310,6 +304,14 @@ body:has(.placement-controls.is-active) .hud-root {
   }
 }
 
+@media (max-width: 680px) {
+  body.sky-panel-open .placement-controls {
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    bottom: auto;
+    left: 50%;
+  }
+}
+
 @media (max-width: 479px) {
   .hud-root {
     --hud-artwork-size: 72px;
@@ -319,7 +321,7 @@ body:has(.placement-controls.is-active) .hud-root {
 
 /* Main's bottom placement bar otherwise sits underneath the new toolbar in
    short landscape. Keep its original location when skyhud=0. */
-@media (max-width: 680px) and (max-height: 430px), (min-width: 681px) and (max-width: 719px) {
+@media (max-width: 680px) and (max-height: 430px) {
   body:has(.hud-root):not(.sky-panel-open) .placement-controls {
     top: max(80px, calc(env(safe-area-inset-top) + 68px));
     bottom: auto;

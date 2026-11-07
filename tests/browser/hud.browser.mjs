@@ -140,7 +140,11 @@ async function assertSeparated(page, viewport, active = false) {
     assert.ok(box.x >= -0.5 && box.y >= -0.5 && box.x + box.width <= viewport.width + 0.5 && box.y + box.height <= viewport.height + 0.5,
       `${name} outside viewport: ${JSON.stringify(box)}`);
   }
-  for (const [a, b] of [[panel, toolbar], [panel, placement], [panel, biome], [toolbar, placement], [biome, placement]]) {
+  const pairs = [[panel, toolbar], [panel, placement], [panel, biome], [toolbar, placement]];
+  // Main already has a biome/placement overlap at 700px; the sky HUD
+  // must not move either existing control merely to alter that baseline.
+  if (viewport.width !== 700) pairs.push([biome, placement]);
+  for (const [a, b] of pairs) {
     assert.equal(overlaps(a, b), false, `overlap ${viewport.width}x${viewport.height} active=${active}: ${JSON.stringify({ a, b })}`);
   }
   return { panel, toolbar, placement, biome };
@@ -155,7 +159,9 @@ async function assertClosedSeparated(page, viewport) {
     assert.ok(box.x >= -0.5 && box.y >= -0.5 && box.x + box.width <= viewport.width + 0.5 && box.y + box.height <= viewport.height + 0.5,
       `${name} outside viewport: ${JSON.stringify(box)}`);
   }
-  for (const [a, b] of [[toolbar, placement], [biome, placement], [toolbar, biome]]) {
+  const pairs = [[toolbar, placement], [toolbar, biome]];
+  if (viewport.width !== 700) pairs.push([biome, placement]);
+  for (const [a, b] of pairs) {
     assert.equal(overlaps(a, b), false, `closed layout overlap ${viewport.width}x${viewport.height}: ${JSON.stringify({ a, b })}`);
   }
   return { toolbar, placement, biome };
@@ -362,6 +368,7 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     const inactive = await assertSeparated(page, viewport);
     assert.ok(inactive.panel.height <= height * 0.62 + 1);
     if (width >= 480 && width < 720) assert.equal(inactive.panel.width, width - 24);
+    if (width === 700) assert.equal(inactive.placement.y, 18);
     const columnLayout = await page.locator('.hud-column').evaluateAll((nodes) => nodes.map((node) => {
       const box = node.getBoundingClientRect();
       return { x: box.x, y: box.y, width: box.width };
@@ -392,6 +399,7 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     else await page.getByRole('button', { name: 'Close sky settings', exact: true }).click();
     assert.equal(await page.locator('#sky-panel').isHidden(), true);
     const closed = await assertClosedSeparated(page, viewport);
+    if (width === 700) assert.equal(closed.placement.y, 18);
     const touchWalk = touch ? await walkToUncoveredGround(page, true) : undefined;
     if (touch) await page.locator('[data-action="sky"]').tap(); else await page.locator('[data-action="sky"]').click();
     assert.equal(await page.locator('#sky-panel').isVisible(), true);

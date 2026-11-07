@@ -92,6 +92,7 @@ test('automatic weather restarts its dwell after an external weather change', ()
   adapter.update(30); // This frame may include time before the external setter.
   adapter.update(89);
   assert.equal(weather.getState().label, 'Gentle rain');
+  assert.equal(weather.getState().automatic, true);
   adapter.update(1);
   assert.deepEqual(calls, [['weather', 'rain'], ['weather', 'clear']]);
 });
