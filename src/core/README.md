@@ -30,17 +30,19 @@ objects belong in adapters, not entities. Query with `world.with(...)` and
 queries; component values may be mutated normally. Extending the component
 schema uses `createEngine<MyComponents>` or `createEntityWorld<MyComponents>`.
 
-The player transform, movement target, stair surface, placement tool, placed
-items, collision footprints, clock and weather are plain Miniplex components.
-Three.js adapters resolve pointer rays and decorative bounds at event time,
-apply entity poses and retain the bridge height hook. Placed fences own their
-walking obstacle components; plots reserve tiles without blocking walking. The
-shared scene obstacle array remains a derived compatibility view for placed
-fences. The stair renderer and shadows delegate to the same surface calculations.
+The player transform, movement target and waypoints, stair surface, placement
+tool, placed items, collision footprints, clock and weather are plain Miniplex
+components. Three.js adapters resolve pointer rays, routes and decorative bounds
+at event time, apply entity poses and retain the bridge height hook. Placed fences
+own their walking obstacle components; plots reserve tiles without blocking
+walking. The shared scene obstacle array remains a derived compatibility view
+for placed fences. Blocked targets, including void clicks, approach a reachable
+boundary without relaxing the support checks. The stair renderer and shadows
+delegate to the same surface calculations.
 
 Pointer coordinates are CSS viewport coordinates. Placement handles a pointer
 first; touch/pen taps preview, mouse clicks can confirm, and the direct Place
-control confirms touch previews. Keyboard movement and entering placement
+control confirms touch previews. Any key press and entering placement
 cancel a move-to; key-up and window blur release held movement even if focus
 changed. Placement actions run immediately, preserving input priority and the
 existing event-time preview/confirm behavior. Fixed-tick action queues retain

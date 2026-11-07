@@ -361,6 +361,15 @@ async function recordScenario(browser, url, name, replayScript) {
         await emit({ type: 'mark', name: 'stream' });
         await key('s', false);
         await key('d', false);
+      } else if (name === 'single-click-pad') {
+        const pad = await page.evaluate(() => {
+          const { footPad } = window.__ebr74.stairs;
+          return [footPad.position.x, footPad.position.z, footPad.position.y + footPad.geometry.parameters.height / 2];
+        });
+        await click(pad[0], pad[1], pad[2]);
+        await advance(120, 100);
+        await emit({ type: 'capture', name: 'single-click-pad-end' });
+        await emit({ type: 'mark', name: 'end' });
       } else throw new Error(`Unknown scenario ${name}`);
     }
     assert.deepEqual(fixture.errors, []);
@@ -478,7 +487,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
-    const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
+    const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream', 'single-click-pad'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
     // The generated trace stays outside both the branch and any supplied worktree.
@@ -498,6 +507,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     const effectMaskResults = {};
     const bodyIsolation = {};
     const traceMismatches = [];
+    const intendedRouteChanges = [];
     const traces = {};
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
@@ -509,11 +519,25 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       traces[name] = { baseline: expectedTrace, candidate: actualTrace };
       const mismatch = actualTrace.findIndex((frame, index) => !isDeepStrictEqual(frame, expectedTrace[index]));
       const identical = mismatch === -1 && actualTrace.length === expectedTrace.length;
-      if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
-        baseline: expectedTrace[mismatch], candidate: actualTrace[mismatch],
-        baselineFrames: expectedTrace.length, candidateFrames: actualTrace.length });
-      if (!isDeepStrictEqual(current.marks, saved.scenarios[name].marks)) {
-        traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
+      if (name === 'single-click-pad') {
+        const baselineEnd = saved.scenarios[name].marks.end.position;
+        const candidateEnd = current.marks.end.position;
+        assert.equal(actualTrace.length, expectedTrace.length);
+        assert.ok(!identical && baselineEnd[0] > 0.1 && baselineEnd[0] < 3, `main did not stop at the stream: ${baselineEnd}`);
+        assert.ok(Math.hypot(candidateEnd[0] - 12.8, candidateEnd[2] - 0.75) < 0.03,
+          `one click did not reach the pad: ${candidateEnd}`);
+        assert.ok(actualTrace.some(({ position }) => position[0] > 2.9 && position[0] < 4.9 && position[1] > 2.5),
+          'the new route must cross the raised bridge');
+        intendedRouteChanges.push({ scenario: name, firstChangedFrame: mismatch,
+          changedFrames: actualTrace.filter((frame, i) => !isDeepStrictEqual(frame, expectedTrace[i])).length,
+          baselineEnd, candidateEnd, baselineFirstChange: expectedTrace[mismatch], candidateFirstChange: actualTrace[mismatch] });
+      } else {
+        if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
+          baseline: expectedTrace[mismatch], candidate: actualTrace[mismatch],
+          baselineFrames: expectedTrace.length, candidateFrames: actualTrace.length });
+        if (!isDeepStrictEqual(current.marks, saved.scenarios[name].marks)) {
+          traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
+        }
       }
       if (!isDeepStrictEqual(current.bodyShape, reference[name].bodyShape)) {
         traceMismatches.push({ scenario: name, body: 'geometry, material or shade shader differs' });
@@ -522,6 +546,16 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       for (const [frameName, frame] of Object.entries(current.frames)) {
         const original = reference[name].frames[frameName];
         assert.ok(original, `Missing baseline frame ${frameName}`);
+        if (name === 'single-click-pad') {
+          // Different moving player/camera poses are compared by trace, not as
+          // a static visual change. Keep both 1280x720 frames for review.
+          if (evidenceDir) {
+            for (const directory of ['baseline', 'candidate']) await mkdir(join(evidenceDir, directory), { recursive: true });
+            await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original.image);
+            await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), frame.image);
+          }
+          continue;
+        }
         const referenceBodyless = reference[name].bodylessFrames[frameName];
         const candidateBodyless = current.bodylessFrames[frameName];
         assert.ok(referenceBodyless && candidateBodyless, `Missing bodyless frame ${frameName}`);
@@ -586,7 +620,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
       baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
-      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults,
+      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, intendedRouteChanges, frameResults,
       unaffectedFrameResults, effectMaskResults, bodyIsolation, marks };
     if (evidenceDir) {
       await mkdir(evidenceDir, { recursive: true });

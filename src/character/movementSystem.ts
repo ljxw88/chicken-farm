@@ -11,6 +11,7 @@ export interface CharacterMotion {
   groundHeight: number;
   bounds: FarmBounds;
   target: [number, number, number] | null;
+  waypoints?: [number, number, number][];
   floorHeight: number;
 }
 
@@ -62,9 +63,7 @@ export function createMovementSystem(camera: THREE.Camera, bridgeHeight?: Bridge
           direction.multiplyScalar(1 / distance);
           step = Math.min(WALK_SPEED * deltaSeconds, distance);
           movingToTarget = true;
-        } else {
-          motion.target = null;
-        }
+        } else motion.target = motion.waypoints?.shift() ?? null;
       }
 
       const next = moveWithFarmCollisions(
@@ -84,9 +83,14 @@ export function createMovementSystem(camera: THREE.Camera, bridgeHeight?: Bridge
       const movedZ = coordinates[2] - startZ;
       const moving = Math.hypot(movedX, movedZ) > 0.000001;
       if (moving) transform.yaw = Math.atan2(movedX, movedZ);
-      if (movingToTarget && step > 0 && (
-        !moving || Math.hypot(target.x - coordinates[0], target.z - coordinates[2]) < 0.0001
-      )) motion.target = null;
+      if (movingToTarget && step > 0) {
+        if (!moving) {
+          motion.target = null;
+          motion.waypoints = [];
+        } else if (Math.hypot(target.x - coordinates[0], target.z - coordinates[2]) < 0.0001) {
+          motion.target = motion.waypoints?.shift() ?? null;
+        }
+      }
     }
   };
 }

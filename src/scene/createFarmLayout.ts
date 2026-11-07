@@ -221,7 +221,7 @@ export function createFarmLayout(scene: THREE.Scene) {
   group.name = 'farm-layout';
   scene.add(group);
   createPath(group);
-  const { windows, extraEmissives, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
+  const { windows, extraEmissives, clickTargets, obstacles: buildingObstacles, splashExclusions: buildingShelters } = createFarmBuildings(group);
   createTrees(group);
   createPond(group);
   const water = createWaterFeature(group);
@@ -250,5 +250,6 @@ export function createFarmLayout(scene: THREE.Scene) {
     pondObstacle,
     ...water.splashExclusions,
   ];
-  return { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight: water.bridgeHeight, updateWaterfall: water.updateWaterfall };
+  return { windows, extraEmissives, clickTargets, obstacles, splashExclusions,
+    bridgeHeight: water.bridgeHeight, updateWaterfall: water.updateWaterfall };
 }

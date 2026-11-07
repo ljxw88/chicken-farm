@@ -49,9 +49,10 @@ const character = createCharacter();
 character.position.y = GROUND_HEIGHT;
 scene.add(character);
 follow(character.position);
-const { windows, extraEmissives, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
+const { windows, extraEmissives, clickTargets, obstacles, splashExclusions, bridgeHeight, updateWaterfall } = createFarmLayout(scene);
 const sheepfold = createSheepfold(scene, parseSheepSeed(window.location.search));
 obstacles.push(...sheepfold.obstacles);
+clickTargets.push(...sheepfold.clickTargets);
 const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 const farmShadows = createFarmShadows(scene);
 const engine = createEngine<GameComponents>({
@@ -127,7 +128,7 @@ window.getWeather = getWeather;
 const controls = createCharacterController({
   world: engine.world, input: engine.input, character, camera, canvas, ground,
   groundSize: GROUND_SIZE, groundHeight: GROUND_HEIGHT, characterRadius: CHARACTER_RADIUS,
-  obstacles, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
+  obstacles, clickTargets, stairs, bridgeHeight, groundShadow: character.getObjectByName('character-shadow'),
 });
 const placement = createPlacementAdapter({
   world: engine.world, input: engine.input,
