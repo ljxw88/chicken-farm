@@ -12,7 +12,7 @@ const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIso
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { createRainEffect } = await vite.ssrLoadModule('/src/weather/createRainEffect.ts');
 const { createWeatherSystem } = await vite.ssrLoadModule('/src/weather/createWeatherSystem.ts');
-const { RAIN_LOOK } = await vite.ssrLoadModule('/src/weather/rainSettings.ts');
+const { RAIN_LOOK } = await vite.ssrLoadModule('/src/content/rainSettings.ts');
 const { GROUND_HEIGHT, GROUND_SIZE, VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
 
@@ -398,6 +398,18 @@ test('rain look keeps the specified field, tint, budget and fall speeds', () => 
   }, {
     count: 240, length: [0.4, 0.6], tilt: 15, direction: [0.94, -0.34],
     field: [19, 19, 8], color: 0xd6e8f2, opacity: 0.55, speed: [4, 5],
+  });
+});
+
+test('the entire EBR-88 rain preset remains unchanged', () => {
+  assert.deepEqual(RAIN_LOOK, {
+    transitionSeconds: 1.75, directionalMultiplier: 0.7, color: 0xd6e8f2, opacity: 0.55,
+    streakCount: 240, streakTiltDegrees: 15, streakDirectionX: 0.94, streakDirectionZ: -0.34,
+    streakLengthMin: 0.4, streakLengthMax: 0.6, fieldWidth: 19, fieldHeight: 8,
+    fallSpeedMin: 4, fallSpeedMax: 5, splashCapacity: 6, splashChancePerImpact: 0.035,
+    splashRadiusMin: 0.08, splashRadiusMax: 0.18, splashInnerRadiusRatio: 0.9, splashSegments: 16,
+    splashLifetimeMin: 0.25, splashLifetimeMax: 0.4, splashOpacity: 0.32, splashHeight: 0.036,
+    splashSafetyMargin: 0.05, maxSplashFrameSeconds: 0.5,
   });
 });
 

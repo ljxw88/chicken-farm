@@ -152,7 +152,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
 
   const geometry = await page.evaluate(async () => {
     const { scene, camera, stairs } = window.__ebr46Test;
-    const { FARM_PALETTE } = await import('/src/scene/farmPalette.ts');
+    const { FARM_PALETTE } = await import('/src/content/slots.ts');
     const rgb = (hex) => [hex >> 16 & 255, hex >> 8 & 255, hex & 255];
     const describe = (mesh) => {
       const p = mesh.getWorldPosition(mesh.position.clone());

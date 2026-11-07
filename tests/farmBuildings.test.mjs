@@ -4,8 +4,9 @@ import * as THREE from 'three';
 import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
-const { FARM_BUILDINGS } = await vite.ssrLoadModule('/src/scene/createFarmBuildings.ts');
-const { createFarmLayout, FARM_LAYOUT } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
+const { FARM_BUILDINGS } = await vite.ssrLoadModule('/src/content/buildings.ts');
+const { FARM_LAYOUT } = await vite.ssrLoadModule('/src/content/farm.ts');
+const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createIsland, GROUND_HEIGHT } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 const { moveWithFarmCollisions } = await vite.ssrLoadModule('/src/character/farmCollisions.ts');
 after(() => vite.close());

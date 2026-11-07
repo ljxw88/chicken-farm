@@ -24,6 +24,9 @@ const suppliedUrl = option('--url');
 // Allow a ticket to write candidate/diff evidence elsewhere without replacing
 // the checked-in, signed EBR-73 baseline or its historical candidate frames.
 const evidence = resolve(process.env.PARITY_EVIDENCE_DIR || 'evidence/EBR-73');
+// Final-tip verification can write transient results elsewhere while still
+// reading the immutable, checked-in QA baseline from the evidence directory.
+const comparisonOutput = resolve(process.env.PARITY_OUTPUT_DIR || evidence);
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -69,14 +72,16 @@ try {
 
   let baseUrl = suppliedUrl?.replace(/\/$/, '');
   if (!baseUrl) {
+    const host = process.env.PARITY_HOST || '127.0.0.1';
+    const port = Number(process.env.PARITY_PORT || 0);
     server = await createServer({
       root, configFile: false, logLevel: 'error',
-      server: { host: '127.0.0.1', port: 0, hmr: false },
+      server: { host, port, strictPort: Boolean(port), hmr: false },
     });
     await server.listen();
     const address = server.httpServer.address();
     assert.ok(address && typeof address !== 'string');
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    baseUrl = `http://${host}:${address.port}`;
   }
 
   browser = await chromium.launch({
@@ -84,7 +89,7 @@ try {
     args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'],
   });
   const browserVersion = browser.version();
-  const output = join(evidence, recordBaseline ? 'baseline' : 'candidate');
+  const output = join(recordBaseline ? evidence : comparisonOutput, recordBaseline ? 'baseline' : 'candidate');
   await mkdir(output, { recursive: true });
   const frames = {};
   for (const scenario of scenarios) {
@@ -104,7 +109,7 @@ try {
     assert.equal(baseline.deviceScaleFactor, 1);
     assert.equal(baseline.seed, seed);
     assert.deepEqual(baseline.scenarios, scenarios, 'Capture scenarios differ from the recorded baseline');
-    const diffDir = join(evidence, 'diff');
+    const diffDir = join(comparisonOutput, 'diff');
     await mkdir(diffDir, { recursive: true });
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     const results = {};
@@ -159,7 +164,7 @@ try {
     const sourceStatus = suppliedUrl ? null : execFileSync('git', [
       'status', '--porcelain=v1', '--untracked-files=all', '--', 'src', 'index.html', 'package.json', 'package-lock.json', 'tools/parity.mjs',
     ], { encoding: 'utf8' }).trim();
-    await writeFile(join(evidence, 'parity.json'), `${JSON.stringify({
+    await writeFile(join(comparisonOutput, 'parity.json'), `${JSON.stringify({
       baselineSha: baseline.sourceSha, candidateSha, candidateUrl: suppliedUrl ?? 'local Vite (working tree)',
       sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, results, stateMismatches, frames,
     }, null, 2)}\n`);

@@ -10,6 +10,7 @@ import { createServer } from 'vite';
 
 const historicalSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
 const mergedMainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+const contentMainSha = '6daf042ad85882f020268baf53fc92fb09e921ad';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb750001;
 const phases = ['morning', 'daytime', 'sunset', 'night'];
@@ -17,12 +18,14 @@ const modes = ['clear', 'cloudy', 'rain'];
 const canonical = (value) => JSON.parse(JSON.stringify(value));
 
 async function serverAt(root) {
+  const host = process.env.EBR76_REPLAY_HOST || '127.0.0.1';
+  const port = Number(process.env.EBR76_REPLAY_PORT || 0);
   const server = await createServer({ root, configFile: false, logLevel: 'error',
-    server: { host: '127.0.0.1', port: 0, hmr: false, fs: { allow: [root, process.cwd()] } } });
+    server: { host, port, strictPort: Boolean(port), hmr: false, fs: { allow: [root, process.cwd()] } } });
   await server.listen();
   const address = server.httpServer.address();
   assert.ok(address && typeof address !== 'string');
-  return { server, url: `http://127.0.0.1:${address.port}` };
+  return { server, url: `http://${host}:${address.port}` };
 }
 
 async function open(browser, url, search) {
@@ -578,7 +581,7 @@ async function temporary(prefix) {
 export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
   baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
+  assert.ok([historicalSha, mergedMainSha, contentMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },

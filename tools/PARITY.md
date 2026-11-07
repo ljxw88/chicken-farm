@@ -35,6 +35,11 @@ For an external `--url`, the server's source SHA is unknown rather than inferred
 from the local checkout. For a local run, `parity.json` records both HEAD and
 any source changes present during capture.
 
+`PARITY_HOST` and `PARITY_PORT` optionally select a local strict-port server.
+`PARITY_OUTPUT_DIR` writes candidate, diff and report there while still reading
+the immutable baseline from `PARITY_EVIDENCE_DIR`. This lets a final-tip check
+retain its exact SHA without modifying previously committed evidence.
+
 For EBR-80, leave the signed `evidence/EBR-73/` files untouched. Copy its
 `baseline.json` and `baseline/` into a separate directory and run, for example,
 `PARITY_EVIDENCE_DIR=evidence/lighting/gate-g npm run parity`. Do not re-record
