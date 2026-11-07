@@ -27,20 +27,31 @@ const recipe = { id: spec.id, category: spec.category, footprint: { w: 0.52, d: 
 const inspect = (value = recipe) => inspectRecipe(value, spec, bible.rules, environment);
 const fit = (value = recipe) => fitGeneratedRecipe(value, spec, bible.rules, environment);
 
-test('bounded fit corrects the built handle depth while retaining metadata and the original recipe', () => {
+test('bounded translation corrects handle depth without thinning it or changing metadata', () => {
   const before = structuredClone(recipe);
   assert.ok(inspect().failures.some((failure) => failure.code === 'H3' && failure.message.includes('depth: actual 0.55')));
   const { recipe: fitted, normalization } = fit();
-  assert.equal(normalization.method, 'axis-aligned-origin-v1');
-  assert.ok(Math.abs(normalization.factors[2] - 0.48 / 0.55) < 1e-6);
+  assert.equal(normalization.method, 'boundary-translation-v1');
+  assert.ok(normalization.offsets.handle[2] > 0 && normalization.offsets.handle[2] <= 0.03);
   assert.deepEqual(recipe, before);
   assert.deepEqual(fitted.footprint, recipe.footprint);
   assert.deepEqual(fitted.collision, recipe.collision);
-  assert.ok(Math.abs(fitted.anchors.grip[2] - recipe.anchors.grip[2] * normalization.factors[2]) < 1e-9);
+  assert.deepEqual(fitted.anchors, recipe.anchors);
   const checked = inspect(fitted);
-  assert.equal(checked.metrics.bounds.depth, 0.48);
+  assert.equal(checked.metrics.bounds.depth, 0.5232);
   assert.ok(!checked.failures.some((failure) => failure.code === 'H3'), JSON.stringify(checked.failures));
+  assert.ok(!checked.failures.some((failure) => failure.code === 'H5'), JSON.stringify(checked.failures));
   assert.deepEqual(fit(), { recipe: fitted, normalization });
+});
+
+test('axis-aligned scaling is used when an individual part cannot fit by translation', () => {
+  const input = structuredClone(recipe); input.parts[0].radiusTop = input.parts[0].radiusBottom = 0.28;
+  const { recipe: fitted, normalization } = fit(input);
+  assert.equal(normalization.method, 'axis-aligned-origin-v1');
+  assert.ok(Math.abs(normalization.factors[2] - 0.48 / 0.58) < 1e-6);
+  assert.ok(Math.abs(fitted.anchors.grip[2] - input.anchors.grip[2] * normalization.factors[2]) < 1e-9);
+  assert.equal(inspect(fitted).metrics.bounds.depth, 0.48);
+  assert.ok(!inspect(fitted).failures.some((failure) => failure.code === 'H3'));
 });
 
 test('fit never repairs wrong declarations or grossly wrong dimensions', () => {
@@ -52,11 +63,22 @@ test('fit never repairs wrong declarations or grossly wrong dimensions', () => {
   assert.ok(inspect(wrongScale).failures.some((failure) => failure.code === 'H3'));
 });
 
-test('fit leaves rotated or jittered geometry to an explicit correction', () => {
+test('fit leaves rotated or jittered geometry needing world scaling to an explicit correction', () => {
   for (const transform of [{ rot: [0, 1, 0] }, { seed: 1, jitter: { position: 0.01 } }]) {
-    const input = structuredClone(recipe); Object.assign(input.parts[2], transform);
+    const input = structuredClone(recipe); input.parts[0].radiusTop = input.parts[0].radiusBottom = 0.28;
+    Object.assign(input.parts[2], transform);
     assert.deepEqual(fit(input), { recipe: input, normalization: null });
     assert.ok(inspect(input).failures.some((failure) => failure.code === 'H3'));
+  }
+});
+
+test('translation can fit a rotated or seeded-jitter part without changing its thickness', () => {
+  for (const transform of [{ rot: [0, 1, 0] }, { seed: 1, jitter: { position: 0.001 } }]) {
+    const input = structuredClone(recipe); Object.assign(input.parts[2], transform);
+    const { recipe: fitted, normalization } = fit(input);
+    assert.equal(normalization?.method, 'boundary-translation-v1');
+    assert.deepEqual(fitted.parts[2].scale, input.parts[2].scale);
+    assert.ok(!inspect(fitted).failures.some((failure) => failure.code === 'H3'));
   }
 });
 
