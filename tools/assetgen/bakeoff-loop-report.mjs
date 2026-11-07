@@ -6,15 +6,17 @@ function describe(run) {
   const hardMeasured = Array.isArray(hard?.failures);
   const hardClear = hardMeasured && hard.failures.length === 0;
   const report = run?.stageReport;
+  const missingVerify = run?.verifyExit != null && run.verifyExit !== 0 && !run.verification;
   const gateClear = hardClear && report?.action === 'continue' && report?.visual && report?.critique?.imageReviewed === true &&
-    Array.isArray(report.blockers) && report.blockers.length === 0 && !(report.visual.failures || []).length;
+    Array.isArray(report.blockers) && report.blockers.length === 0 && !(report.visual.failures || []).length && !missingVerify;
   const history = run?.final?.history || [];
-  const fallbackBlockers = [...history.flatMap((item) => item.blockers || []), ...(history.some((item) => item.failure) ? ['GENERATOR'] : [])];
+  const errors = [...(run?.generatorExit != null && run.generatorExit !== 0 && !run.final ? ['GENERATOR_ERROR'] : []), ...(missingVerify ? ['VERIFY_ERROR'] : [])];
+  const fallbackBlockers = [...history.flatMap((item) => item.blockers || []), ...(history.some((item) => item.failure) ? ['GENERATOR'] : []), ...errors];
   const models = [...new Set(history.map((item) => item.generatorModelId).filter(Boolean))].join(', ') || 'unknown';
   return { status: run?.final?.status ?? 'not completed', rounds: run?.final?.roundsUsed ?? 'not recorded',
     stage: run?.final?.best?.stage ?? 'not generated', hardMeasured, hardClear: !!hardClear, gateClear: !!gateClear,
     hardCodes: hardMeasured ? codeList(hard.failures).join(', ') || 'none' : 'not measured',
-    blockers: report ? codeList(report.blockers).join(', ') || 'none' : codeList(fallbackBlockers).join(', ') || 'not measured',
+    blockers: report ? codeList([...(report.blockers || []), ...errors]).join(', ') || 'none' : codeList(fallbackBlockers).join(', ') || 'not measured',
     time: seconds(run?.elapsedMs), verifyTime: seconds(run?.verifyElapsedMs), models };
 }
 

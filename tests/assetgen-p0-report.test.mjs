@@ -8,8 +8,10 @@ test('P0 report combines real blocker codes and does not invent missing costs', 
       best: { blockers: [{ code: 'H3' }] }, history: [{ blockers: ['H5'] }], usage: { input: 100, output: 10, reasoning: 20, reportedCostUSD: 0 },
       visualCritiqueStatus: 'visual critique not run' }, spec: { variationSeed: 41 }, recipe: { parts: [{ seed: 41, jitter: { position: 0.01 } }] },
       verification: { hard: { failures: [{ code: 'H3' }] }, visual: 'not run' } },
-    { id: 'rock-b', final: null, verification: null },
+    { id: 'rock-b', final: null, verification: null, generatorExit: 1, verifyExit: 1 },
+    { id: 'rock-c', final: { status: 'needs-human', roundsUsed: 1, history: [], usage: { input: 4, output: 2, reasoning: 1, reportedCostUSD: null, complete: false } } },
   ] });
   assert.match(output, /\| rock-a \| 3 \| needs-human \| H3, H5 \| 41 \(used\) \| 100 \/ 10 \/ 20 \| \$0\.000000/);
-  assert.match(output, /\| rock-b \| 0 \| not completed \| NO_FINAL \| — \| unknown \| unknown \| not run/);
+  assert.match(output, /\| rock-b \| 0 \| not completed \| NO_FINAL, GENERATOR_ERROR, VERIFY_ERROR \| — \| unknown \| unknown \| not run/);
+  assert.match(output, /\| rock-c \| 1 \| needs-human \| none recorded \| — \| 4 \/ 2 \/ 1 \(partial\) \| unknown/);
 });

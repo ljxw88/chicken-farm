@@ -11,7 +11,7 @@ const readJson = async (path) => { try { return JSON.parse(await readFile(path, 
 async function timings(path) {
   try {
     const lines = (await readFile(path, 'utf8')).trim().split('\n').slice(1);
-    return Object.fromEntries(lines.map((line) => { const fields = line.split('\t'); return [fields[0], { elapsedMs: Number(fields[2]), verifyElapsedMs: Number(fields[4]) }]; }));
+    return Object.fromEntries(lines.map((line) => { const fields = line.split('\t'); return [fields[0], { generatorExit: Number(fields[1]), elapsedMs: Number(fields[2]), verifyExit: Number(fields[3]), verifyElapsedMs: Number(fields[4]) }]; }));
   } catch (error) { if (error.code === 'ENOENT') return {}; throw error; }
 }
 async function load(directory, id, duration) {

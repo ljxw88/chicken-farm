@@ -20,3 +20,11 @@ test('loop bake-off counts missing critique and unmeasured checks as no pass', (
   assert.match(output, /opencode\/test-free/);
   assert.match(output, /not six-stage completion, human signoff/);
 });
+
+test('a missing failed offline verification cannot be called a clear stage', () => {
+  const run = { final: { status: 'needs-human', roundsUsed: 1, best: { stage: 'blockout' } }, verifyExit: 1, verification: null,
+    stageReport: { action: 'continue', hard: { failures: [] }, visual: { failures: [] }, critique: { imageReviewed: true }, blockers: [] } };
+  const output = renderLoopBakeoff({ generatedAt: 'now', onDirectory: '/on', offDirectory: '/off', rows: [{ id: 'barrel', on: run, off: run }] });
+  assert.match(output, /\| ON \| 0\/1 \| 1\/1 \| 0\/1 \| 0 \|/);
+  assert.match(output, /VERIFY_ERROR/);
+});
