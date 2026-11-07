@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { isolateHistoricalGarden, restoreHistoricalGarden } from './historical-garden-isolation.mjs';
 
 const historicalSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
 const mergedMainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
@@ -25,7 +26,7 @@ async function serverAt(root) {
   return { server, url: `http://127.0.0.1:${address.port}` };
 }
 
-async function open(browser, url, search, normalizeClock = false) {
+async function open(browser, url, search, normalizeClock = false, normalizeGardenRain = false) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', hasTouch: true });
   const page = await context.newPage();
   const errors = [];
@@ -107,7 +108,13 @@ async function open(browser, url, search, normalizeClock = false) {
     const response = await route.fetch();
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-    await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr75Random,')}
+    // The moved tree changes its rain shelter. Use the historic shelter only
+    // in this old seeded-weather replay, while separately testing the live tree.
+    const random = normalizeGardenRain
+      ? `random: (() => { const tree = splashExclusions.find((entry) => entry.name === 'tree-canopy-4');
+          if (tree) Object.assign(tree, { x: 0.05, z: -5.6, radius: 1.02 * 0.95 }); return window.__ebr75Random; })(),`
+      : 'random: window.__ebr75Random,';
+    await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, `createWeatherSystem({ ${random}`)}
 window.__ebr75 = { scene, camera, character, obstacles, stairs, dayNight, composer };
 ` });
   });
@@ -160,6 +167,7 @@ async function perform(fixture, action) {
 }
 
 async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
+  const garden = await fixture.page.evaluate(isolateHistoricalGarden, { contextName: '__ebr75', hidePlots: true });
   const visibility = await fixture.page.evaluate(({ hideBody, hideRain }) => {
     const { scene, character, composer } = window.__ebr75;
     const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
@@ -212,11 +220,13 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
       if (fold && previous.fold !== undefined) fold.visible = previous.fold;
       composer.render(0);
     }, visibility);
+    await fixture.page.evaluate(restoreHistoricalGarden, { contextName: '__ebr75', state: garden });
+    await fixture.page.evaluate(() => window.__ebr75.composer.render(0));
   }
 }
 
 async function recordScenario(browser, url, scenario, replayScript, historical) {
-  const fixture = await open(browser, url, scenario.search, scenario.name === 'invalid-url');
+  const fixture = await open(browser, url, scenario.search, scenario.name === 'invalid-url', Boolean(replayScript));
   const { page } = fixture;
   const script = [];
   const trace = [];
@@ -570,6 +580,18 @@ function historicalBehavior(trace) {
   return copy;
 }
 
+// Plot geometry deliberately changed in EBR-49a. Compare every placement
+// state and transform as before, while its new parts have separate visual and
+// ghost tests rather than being required to equal the old furrows.
+function withoutPlotParts(trace) {
+  const copy = structuredClone(trace);
+  for (const entry of copy) for (const sample of entry.samples) {
+    if (sample.placement.buttons.plot.pressed === 'true' && sample.placement.ghost) delete sample.placement.ghost.parts;
+    for (const placed of sample.placement.placed) if (placed.name === 'placed-plot') delete placed.parts;
+  }
+  return copy;
+}
+
 async function temporary(prefix) {
   try { return await mkdtemp(`/tmp/opencode/${prefix}`); }
   catch (error) {
@@ -666,8 +688,8 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       for (let i = 0; i < actual.trace.length; i++) {
         if (!isDeepStrictEqual(actual.trace[i], expected[i])) rawTraceDifferences.push(`${scenario.name}:${actual.trace[i].label}`);
       }
-      const comparedActual = historical ? historicalBehavior(actual.trace) : actual.trace;
-      const comparedExpected = historical ? historicalBehavior(expected) : expected;
+      const comparedActual = withoutPlotParts(historical ? historicalBehavior(actual.trace) : actual.trace);
+      const comparedExpected = withoutPlotParts(historical ? historicalBehavior(expected) : expected);
       const index = comparedActual.findIndex((entry, i) => !isDeepStrictEqual(entry, comparedExpected[i]));
       const identical = index === -1 && actual.trace.length === expected.length;
       if (!identical) mismatches.push({ scenario: scenario.name, action: index, expected: comparedExpected[index], actual: comparedActual[index],
@@ -732,8 +754,8 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
       baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
       referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
-      visualComparison: 'The EBR-70 fold is hidden only during screenshot capture; its obstacle entities remain active.',
-      excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
+      visualComparison: 'The fold, new garden and old/new plot visuals are isolated only for historical screenshots; gameplay stays active.',
+      excludedHistoricalFields: [...(historical ? ['environment.rain except visible', 'environment.randomCalls'] : []), 'plot visual parts'],
       results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
       expectedRainChanges, unexpectedVisualChanges, mismatches };
     if (evidenceDir) {

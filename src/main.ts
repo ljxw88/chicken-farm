@@ -14,6 +14,7 @@ import { createFarmDecorations } from './scene/createFarmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
+import { createGardenDressing } from './scene/gardenDressing/createGardenDressing';
 import { createSheepfold } from './scene/sheepfold/createSheepfold';
 import { WATER_FEATURE } from './scene/waterFeatureSpec';
 import { createStartupPhaseController, parseSheepSeed, parseStartupOptions, parseVisualSeed } from './startupOptions';
@@ -59,6 +60,9 @@ const { windows, extraEmissives, clickTargets, obstacles, splashExclusions, brid
 const sheepfold = createSheepfold(scene, parseSheepSeed(window.location.search));
 obstacles.push(...sheepfold.obstacles);
 clickTargets.push(...sheepfold.clickTargets);
+const garden = createGardenDressing(scene);
+obstacles.push(...garden.obstacles);
+clickTargets.push(...garden.clickTargets);
 const decorations = createFarmDecorations(scene, GROUND_HEIGHT);
 const farmShadows = createFarmShadows(scene);
 const engine = createEngine<GameComponents>({
@@ -107,6 +111,7 @@ const dayNight = createDayNightCycle({
   updateFarmShadows(awayX, awayZ, offset, strength) {
     farmShadows.update(awayX, awayZ, offset, strength);
     sheepfold.updateShadows(awayX, awayZ, offset, strength);
+    garden.updateShadows(awayX, awayZ, offset, strength);
   },
 });
 const visualSeed = parseVisualSeed(window.location.search);

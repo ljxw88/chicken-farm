@@ -4,6 +4,12 @@ export const FARM_PALETTE = {
   dirt: 0xa67c52,
   dirtEdge: 0x7a5a3a,
   dirtHighlight: 0xc4a06a,
+  // Look Dev approved the garden soil and flower accents for EBR-49a.
+  soil: 0x5f4630,
+  flowerRed: 0xc75b46,
+  flowerYellow: 0xf2c94c,
+  flowerBlue: 0x6a8fd0,
+  flowerOrange: 0xe08a3c,
   barnWood: 0xd4a574,
   barnTrim: 0x8b6914,
   barnRoof: 0xc45a3a,
