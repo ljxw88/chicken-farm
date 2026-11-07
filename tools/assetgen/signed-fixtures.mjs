@@ -20,12 +20,12 @@ export function signedS2LegacyReason(name, hash) {
 }
 
 export async function createSignedFixtures(server) {
-  const [{ createFarmLayout }, { createPlacementVisual }, { createStoneStairs }] = await Promise.all([
-    server.ssrLoadModule('/src/scene/createFarmLayout.ts'), server.ssrLoadModule('/src/placement/createPlacementVisual.ts'),
+  const [{ createFarmLayout }, { createPlacementAsset }, { createStoneStairs }] = await Promise.all([
+    server.ssrLoadModule('/src/scene/createFarmLayout.ts'), server.ssrLoadModule('/src/render/placementAssets.ts'),
     server.ssrLoadModule('/src/scene/createStoneStairs.ts'),
   ]);
   function build(name) {
-    if (name === 'fence') return createPlacementVisual('fence');
+    if (name === 'fence') return createPlacementAsset('fence');
     if (name === 'tread') return createStoneStairs(new THREE.Group(), 16, 2.4, 0).treads[0];
     const scene = new THREE.Scene(); createFarmLayout(scene);
     return scene.getObjectByName(name === 'tree' ? 'farm-tree-2' : name === 'coop' ? 'farm-ramp-coop-1' : '');

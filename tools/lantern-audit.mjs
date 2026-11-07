@@ -16,7 +16,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, dev
 try {
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__lanternAudit = { scene, camera, character, controls, follow, renderer, composer };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__lanternAudit = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, renderer, composer };\n` });
   });
   await page.goto(`${url}/?phase=night&weather=clear&pixel=0`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__lanternAudit));

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createIsland, VOID_COLOR } from './createIsland';
 import { createIsometricCamera } from './createIsometricCamera';
+import { ISLAND } from '../content/world';
 
 export { GROUND_HEIGHT, GROUND_SIZE } from './createIsland';
 
@@ -11,7 +12,7 @@ export function createScene(canvas: HTMLCanvasElement) {
   const { camera, follow, resize: resizeCamera } = createIsometricCamera();
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setClearColor(VOID_COLOR, 1);
+  renderer.setClearColor(VOID_COLOR, ISLAND.clearAlpha);
 
   const { ground, stairs } = createIsland(scene);
 

@@ -10,7 +10,7 @@ const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayo
 const { createIsometricCamera } = await vite.ssrLoadModule('/src/scene/createIsometricCamera.ts');
 const { createCharacter, CHARACTER_RADIUS } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 const createCharacterControls = await loadCharacterFixture(vite);
-const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
+const { FARM_PALETTE } = await vite.ssrLoadModule('/src/content/slots.ts');
 after(() => vite.close());
 
 class FakeCanvas extends EventTarget {

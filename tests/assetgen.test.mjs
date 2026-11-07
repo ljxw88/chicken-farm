@@ -33,6 +33,14 @@ const expectCode = (recipe, code) => {
   return result;
 };
 
+test('signed building and lantern palette tokens retain their approved values', () => {
+  assert.deepEqual({ lightWood: ASSET_PALETTE['wood.light'], timber: ASSET_PALETTE.timber,
+    plaster: ASSET_PALETTE.plaster, roofBand: ASSET_PALETTE['roof.band'], stone: ASSET_PALETTE.stone,
+    glass: ASSET_PALETTE.glass, metal: ASSET_PALETTE.metal, lantern: ASSET_PALETTE['lantern.glow'] },
+  { lightWood: 0xc8956c, timber: 0x8b5e3c, plaster: 0xefe3c8, roofBand: 0xa94a30,
+    stone: 0x9a8a78, glass: 0x8aa0a8, metal: 0x554433, lantern: 0xffb060 });
+});
+
 test('a connected, centred, palette-only recipe passes all hard checks', () => {
   const result = check(clone());
   assert.deepEqual(result.failures, []);

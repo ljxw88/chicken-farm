@@ -47,7 +47,7 @@ async function openScene() {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr89 = { scene, camera, character, follow, renderer, composer, dayNight, weather };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr89 = context;\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear&seed=123`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr89 && window.getPixelRendering?.().canvasWidth)));

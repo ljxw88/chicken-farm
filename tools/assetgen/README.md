@@ -54,7 +54,9 @@ emits it immediately without requiring Chromium or an OpenCode connection.
 The render pack, report and transcripts go outside the repository, under
 `/home/michael/OpenBot/Shared/farm-evidence/EBR-85/<head>/runs/` by default.
 `ASSETGEN_EVIDENCE_DIR` and `ASSETGEN_RUN_DIR` select alternate locations. The
-old runs and all review outputs are archived at
+render server also accepts `ASSETGEN_HOST` and `ASSETGEN_PORT`; a supplied port
+is strict instead of selecting a different one. The old runs and all review
+outputs are archived at
 `/home/michael/OpenBot/Shared/farm-evidence/EBR-85/pr21-tracked/`; set
 `ASSETGEN_ARCHIVE_DIR` if the archive is elsewhere. Only the three historical
 recipes and three img2threejs input PNGs needed by the tools remain under

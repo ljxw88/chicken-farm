@@ -49,7 +49,7 @@ async function open(t, seed) {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = typeof context !== 'undefined' ? context : { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear${seed === undefined ? '' : `&seed=${seed}`}`, { waitUntil: 'networkidle' });
   await page.evaluate(() => window.__routeStep(0));
@@ -232,7 +232,7 @@ test('the running app follows a single live pad click across the bridge', { time
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = typeof context !== 'undefined' ? context : { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
   await page.evaluate(() => {
@@ -458,7 +458,7 @@ test('seed 123: the running app reaches the pen interior after the QA click', { 
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = typeof context !== 'undefined' ? context : { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear&seed=123`, { waitUntil: 'networkidle' });
   await page.evaluate(() => {

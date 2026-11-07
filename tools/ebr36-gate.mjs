@@ -99,7 +99,7 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
-      await route.fulfill({ response, body: `${body}\nwindow.__ebr36Gate = { scene, camera, character, dayNight, renderer, composer, sheepfold };\n` });
+      await route.fulfill({ response, body: `${body}\nwindow.__ebr36Gate = typeof context !== 'undefined' ? context : { scene, camera, character, dayNight, renderer, composer, sheepfold };\n` });
     });
     await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => Boolean(window.__ebr36Gate));

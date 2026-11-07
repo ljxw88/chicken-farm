@@ -34,18 +34,29 @@ after(async () => {
 async function openPage(context, phase = 'daytime', weather = 'clear') {
   const page = await context.newPage();
   const errors = [];
+  const failedRequests = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error' && !message.location().url.endsWith('/favicon.ico')) errors.push(message.text());
+  });
+  page.on('requestfailed', (request) => failedRequests.push(`${request.url()}: ${request.failure()?.errorText}`));
+  page.on('response', (response) => {
+    if (response.status() >= 400 && !response.url().endsWith('/favicon.ico')) failedRequests.push(`${response.status()}: ${response.url()}`);
   });
   // Expose scene state for measurement and projection only; interaction tests
   // still use the real canvas, mouse and keyboard.
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr47Test = { scene, camera, character, obstacles };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr47Test = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=${weather}`, { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => Boolean(window.__ebr47Test && window.getPixelRendering?.().canvasWidth));
+  try {
+    await page.waitForFunction(() => Boolean(window.__ebr47Test && window.getPixelRendering?.().canvasWidth));
+  } catch (cause) {
+    const state = await page.evaluate(() => ({ readyState: document.readyState, sceneExposed: Boolean(window.__ebr47Test),
+      pixelApi: typeof window.getPixelRendering, canvas: Boolean(document.querySelector('#scene')) })).catch(() => null);
+    throw new Error(`Building scene did not initialize: ${JSON.stringify({ phase, weather, errors, failedRequests, state })}`, { cause });
+  }
   if (weather === 'rain') await page.waitForFunction(() => window.getWeather().rainAmount > 0.99, null, { timeout: 15000 });
   return { page, errors };
 }

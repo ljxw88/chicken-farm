@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import { ART_SLOTS, type PlacementTintSlots } from '../content/slots';
+import { PLACEMENT_GEOMETRY } from '../content/placementGeometry';
 import type { FarmObstacle } from '../character/farmCollisions';
 import type { Entity, EntityWorld } from '../core/ecs';
 import type { InputActions, PlacementAction } from '../core/input';
 import { createPlacementControls } from './createPlacementControls';
-import { createPlacementVisual, disposePlacementVisual, makeGhost } from './createPlacementVisual';
+import { createPlacementAsset, disposePlacementVisual, makeGhost } from '../render/placementAssets';
 import { TILE_SIZE } from './grid';
 import { createPlacementSystem, type PlacementComponents, type PlacementHit } from './placementSystem';
 
@@ -23,18 +25,18 @@ interface PlacementAdapterOptions {
   syncCharacter: () => void;
   getBlockers?: () => readonly THREE.Object3D[];
   debugGrid?: boolean;
+  tints?: PlacementTintSlots;
   onActiveChange?: (active: boolean) => void;
 }
-
-const VALID_WASH = new THREE.Color(0x283724);
-const INVALID_WASH = new THREE.Color(0xc45a3a);
-const GHOST_LIFT = 0.08;
 
 /** Resolve pointer rays and render the placement entities, without owning gameplay state. */
 export function createPlacementAdapter({
   world, input, scene, camera, canvas, ground, groundSize, groundHeight,
-  obstacles, syncObstacles, syncCharacter, getBlockers = () => [], debugGrid = false, onActiveChange,
+  obstacles, syncObstacles, syncCharacter, getBlockers = () => [], debugGrid = false,
+  tints = ART_SLOTS.tint.placement, onActiveChange,
 }: PlacementAdapterOptions) {
+  const validWash = new THREE.Color(tints.valid);
+  const invalidWash = new THREE.Color(tints.invalid);
   const system = createPlacementSystem(world, groundSize, groundHeight);
   const { state, grid } = system;
   const layer = new THREE.Group();
@@ -44,20 +46,23 @@ export function createPlacementAdapter({
   const linePositions: number[] = [];
   for (let i = 0; i <= grid.count; i++) {
     const coordinate = grid.min + i * TILE_SIZE;
-    linePositions.push(coordinate, groundHeight + 0.035, grid.min, coordinate, groundHeight + 0.035, grid.max);
-    linePositions.push(grid.min, groundHeight + 0.035, coordinate, grid.max, groundHeight + 0.035, coordinate);
+    linePositions.push(coordinate, groundHeight + PLACEMENT_GEOMETRY.overlay.debugGridLift, grid.min,
+      coordinate, groundHeight + PLACEMENT_GEOMETRY.overlay.debugGridLift, grid.max);
+    linePositions.push(grid.min, groundHeight + PLACEMENT_GEOMETRY.overlay.debugGridLift, coordinate,
+      grid.max, groundHeight + PLACEMENT_GEOMETRY.overlay.debugGridLift, coordinate);
   }
   const gridGeometry = new THREE.BufferGeometry();
   gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-  const gridMaterial = new THREE.LineBasicMaterial({ color: 0xa67c52, transparent: true, opacity: 0.7, depthWrite: false });
+  const gridMaterial = new THREE.LineBasicMaterial({ color: tints.grid, transparent: true,
+    opacity: tints.gridOpacity, depthWrite: false });
   const gridLines = new THREE.LineSegments(gridGeometry, gridMaterial);
   gridLines.name = 'placement-debug-grid';
   gridLines.visible = debugGrid;
   layer.add(gridLines);
 
   const wash = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ color: VALID_WASH, transparent: true, opacity: 0.5, depthWrite: false }),
+    new THREE.PlaneGeometry(...PLACEMENT_GEOMETRY.overlay.washPlane),
+    new THREE.MeshBasicMaterial({ color: validWash, transparent: true, opacity: tints.washOpacity, depthWrite: false }),
   );
   wash.name = 'placement-wash';
   wash.rotation.x = -Math.PI / 2;
@@ -118,7 +123,7 @@ export function createPlacementAdapter({
   }
 
   function render() {
-    const items = [...world.with('placed', 'transform')].sort((a, b) => a.placed.sequence - b.placed.sequence);
+    const items = [...world.with('placed', 'transform', 'assetId')].sort((a, b) => a.placed.sequence - b.placed.sequence);
     const ids = new Set(items.map((item) => item.id));
     for (const [id, visual] of visuals) {
       if (!ids.has(id)) {
@@ -135,7 +140,7 @@ export function createPlacementAdapter({
     }
     for (const item of items) {
       if (!visuals.has(item.id)) {
-        const visual = createPlacementVisual(item.placed.kind);
+        const visual = createPlacementAsset(item.assetId);
         visual.name = `placed-${item.placed.kind}`;
         visual.position.set(...item.transform.position);
         visual.rotation.y = item.transform.yaw;
@@ -150,9 +155,9 @@ export function createPlacementAdapter({
 
     if (state.kind && ghostRevision !== state.ghostRevision) {
       if (ghost) disposePlacementVisual(ghost);
-      ghost = createPlacementVisual(state.kind);
+      ghost = createPlacementAsset(state.kind);
       ghost.name = 'placement-ghost';
-      makeGhost(ghost);
+      makeGhost(ghost, tints.ghostOpacity);
       layer.add(ghost);
       ghostRevision = state.ghostRevision;
     } else if (!state.kind && ghost) {
@@ -165,18 +170,18 @@ export function createPlacementAdapter({
       const item = state.hoveredId && world.get(state.hoveredId)?.placed;
       wash.visible = Boolean(item);
       if (item) {
-        wash.position.set(item.area.centerX, groundHeight + 0.17, item.area.centerZ);
+        wash.position.set(item.area.centerX, groundHeight + PLACEMENT_GEOMETRY.overlay.removeWashLift, item.area.centerZ);
         wash.scale.set(item.area.columns * TILE_SIZE, item.area.rows * TILE_SIZE, 1);
-        wash.material.color.copy(INVALID_WASH);
+        wash.material.color.copy(invalidWash);
       }
     } else if (state.kind && state.area && ghost) {
       const { area } = state;
-      ghost.position.set(area.centerX, groundHeight + GHOST_LIFT, area.centerZ);
+      ghost.position.set(area.centerX, groundHeight + PLACEMENT_GEOMETRY.overlay.ghostLift, area.centerZ);
       ghost.rotation.y = state.rotation * Math.PI / 2;
       ghost.visible = true;
-      wash.position.set(area.centerX, groundHeight + 0.06, area.centerZ);
+      wash.position.set(area.centerX, groundHeight + PLACEMENT_GEOMETRY.overlay.previewWashLift, area.centerZ);
       wash.scale.set(area.columns * TILE_SIZE, area.rows * TILE_SIZE, 1);
-      wash.material.color.copy(state.valid ? VALID_WASH : INVALID_WASH);
+      wash.material.color.copy(state.valid ? validWash : invalidWash);
       wash.visible = true;
     } else {
       if (ghost) ghost.visible = false;

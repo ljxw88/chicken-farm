@@ -1,32 +1,44 @@
 import * as THREE from 'three';
-import { FARM_PALETTE } from '../scene/farmPalette';
+import { ART_SLOTS, FARM_PALETTE } from '../content/slots';
+import { PLACEMENT_GEOMETRY as GEOMETRY } from '../content/placementGeometry';
+import type { PlacementKind } from '../placement/grid';
 import { createGardenPlot } from '../scene/gardenDressing/createGardenPlot';
-import type { PlacementKind } from './grid';
 
 // Both the ghost and the placed object come from this same geometry and palette.
-export function createPlacementVisual(kind: PlacementKind) {
+function createPlacementVisual(kind: PlacementKind) {
   if (kind === 'plot') return createGardenPlot();
   const group = new THREE.Group();
   group.name = `placement-${kind}-visual`;
-
   const wood = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnWood, roughness: 1 });
   const trim = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1 });
-  const postGeometry = new THREE.BoxGeometry(0.17, 0.95, 0.17);
-  for (const x of [-0.65, 0.65]) {
+  const postGeometry = new THREE.BoxGeometry(...GEOMETRY.fence.post);
+  for (const x of GEOMETRY.fence.postXs) {
     const post = new THREE.Mesh(postGeometry, trim);
-    post.position.set(x, 0.475, 0);
+    post.position.set(x, GEOMETRY.fence.postY, 0);
     group.add(post);
   }
-  const railGeometry = new THREE.BoxGeometry(1.4, 0.13, 0.1);
-  for (const y of [0.32, 0.67]) {
+  const railGeometry = new THREE.BoxGeometry(...GEOMETRY.fence.rail);
+  for (const y of GEOMETRY.fence.railYs) {
     const rail = new THREE.Mesh(railGeometry, wood);
-    rail.position.set(0, y, 0.08);
+    rail.position.set(0, y, GEOMETRY.fence.railZ);
     group.add(rail);
   }
   return group;
 }
 
-export function makeGhost(group: THREE.Group) {
+const PLACEMENT_ASSETS: Record<PlacementKind, () => THREE.Group> = {
+  fence: () => createPlacementVisual('fence'),
+  plot: () => createPlacementVisual('plot'),
+};
+
+/** Resolve the entity's plain asset ID to a render-only factory. */
+export function createPlacementAsset(assetId: string) {
+  if (!Object.hasOwn(PLACEMENT_ASSETS, assetId)) throw new Error(`Unknown placement asset: ${assetId}`);
+  const factory = PLACEMENT_ASSETS[assetId as PlacementKind];
+  return factory();
+}
+
+export function makeGhost(group: THREE.Group, opacity: number = ART_SLOTS.tint.placement.ghostOpacity) {
   const materials = new Set<THREE.MeshStandardMaterial>();
   group.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
@@ -35,7 +47,7 @@ export function makeGhost(group: THREE.Group) {
       if (!(material instanceof THREE.MeshStandardMaterial) || materials.has(material)) continue;
       materials.add(material);
       material.transparent = true;
-      material.opacity = 0.5;
+      material.opacity = opacity;
       material.depthWrite = false;
     }
     object.renderOrder = 2;

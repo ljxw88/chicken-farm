@@ -5,7 +5,8 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
-const { FARM_PALETTE } = await vite.ssrLoadModule('/src/scene/farmPalette.ts');
+const { ART_SLOTS, FARM_PALETTE } = await vite.ssrLoadModule('/src/content/slots.ts');
+const { PLAYER_GEOMETRY } = await vite.ssrLoadModule('/src/content/playerGeometry.ts');
 after(() => vite.close());
 
 function bodyAndDetails() {
@@ -28,6 +29,17 @@ function checkSurfaceContact(mesh) {
   assert.ok(distance + support > 0.4, `${mesh.name}: oval does not reach the surface`);
 }
 
+test('character detail content keeps the signed geometry, palette and roughness', () => {
+  assert.deepEqual(PLAYER_GEOMETRY.details, {
+    oval: [1, 12, 8],
+    combXs: [-0.1, 0, 0.1], combY: 0.62, combZ: 0.17, combScale: [0.07, 0.06, 0.07],
+    wingPositions: [[-0.36, 0.1, 0], [0.36, 0.1, 0]], wingScale: [0.05, 0.15, 0.11],
+  });
+  assert.equal(ART_SLOTS.palette.character.comb, 0xc75b46);
+  assert.equal(ART_SLOTS.palette.character.wing, 0xbd8b31);
+  assert.equal(ART_SLOTS.prop.character.detailRoughness, 0.9);
+});
+
 test('the comb has three chunky red bumps, centered across the forward crown', () => {
   const { body, comb } = bodyAndDetails();
   assert.equal(comb.parent, body);
@@ -35,12 +47,14 @@ test('the comb has three chunky red bumps, centered across the forward crown', (
   assert.deepEqual(comb.children.map((bump) => bump.name),
     ['character-comb-bump-1', 'character-comb-bump-2', 'character-comb-bump-3']);
   assert.equal(FARM_PALETTE.flowerRed, 0xc75b46);
+  assert.equal(ART_SLOTS.palette.character.comb, FARM_PALETTE.flowerRed);
+  assert.deepEqual(PLAYER_GEOMETRY.details.combXs, [-0.1, 0, 0.1]);
   for (const [index, bump] of comb.children.entries()) {
     assert.equal(bump.geometry.type, 'SphereGeometry');
     assert.deepEqual(bump.scale.toArray(), [0.07, 0.06, 0.07]);
     assert.equal(bump.position.x, [-0.1, 0, 0.1][index]);
     assert.ok(bump.position.z > 0 && bump.position.y > 0.3);
-    assert.equal(bump.material.color.getHex(), FARM_PALETTE.flowerRed);
+    assert.equal(bump.material.color.getHex(), ART_SLOTS.palette.character.comb);
     assert.equal(bump.material.emissive.getHex(), 0);
     checkSurfaceContact(bump);
   }
@@ -49,14 +63,15 @@ test('the comb has three chunky red bumps, centered across the forward crown', (
 
 test('both gold wing patches are flush with the body, non-emissive and symmetric', () => {
   const { body, wings } = bodyAndDetails();
-  assert.equal(FARM_PALETTE.characterWingGold, 0xbd8b31);
+  assert.equal(ART_SLOTS.palette.character.wing, 0xbd8b31);
+  assert.deepEqual(PLAYER_GEOMETRY.details.wingPositions, [[-0.36, 0.1, 0], [0.36, 0.1, 0]]);
   assert.equal(wings.length, 2);
   for (const [index, wing] of wings.entries()) {
     assert.equal(wing.parent, body);
     assert.equal(wing.geometry.type, 'SphereGeometry');
     assert.deepEqual(wing.scale.toArray(), [0.05, 0.15, 0.11]);
     assert.equal(wing.position.x, index === 0 ? -0.36 : 0.36);
-    assert.equal(wing.material.color.getHex(), FARM_PALETTE.characterWingGold);
+    assert.equal(wing.material.color.getHex(), ART_SLOTS.palette.character.wing);
     assert.equal(wing.material.emissive.getHex(), 0);
     checkSurfaceContact(wing);
   }

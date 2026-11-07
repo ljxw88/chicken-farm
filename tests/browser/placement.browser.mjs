@@ -71,7 +71,7 @@ async function openPage(context, url, instrument = false) {
     // test hooks, teleportation, or synthetic placement calls are in the app.
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
-      const body = `${await response.text()}\nwindow.__ebr56Test = { scene, camera, character, obstacles, stairs };\n`;
+      const body = `${await response.text()}\nwindow.__ebr56Test = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, stairs };\n`;
       await route.fulfill({ response, body });
     });
   }

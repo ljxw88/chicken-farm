@@ -4,7 +4,10 @@
 This is a proposal, not an implementation or a performance result.
 
 The baseline description below is historical. For the character, placement and
-environment ports, see [src/core/README.md](../src/core/README.md).
+environment ports, see [src/core/README.md](../src/core/README.md). The content
+and state slice is documented in [src/content/README.md](../src/content/README.md)
+and [src/state/README.md](../src/state/README.md); ordered app registration is in
+[src/app/README.md](../src/app/README.md).
 
 ## Where we are
 

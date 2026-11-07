@@ -29,6 +29,8 @@ const suppliedBaselineRoot = option('--baseline-root');
 const suppliedPortRange = option('--baseline-port-range');
 const masksPath = option('--masks');
 const evidence = outputDirectory('parity', 'PARITY_EVIDENCE_DIR');
+// Keep candidate and diff output separate from a selected immutable baseline.
+const comparisonOutput = resolve(process.env.PARITY_OUTPUT_DIR || evidence);
 // Preserve the old PARITY_EVIDENCE_DIR convention of keeping the baseline and
 // output together. Otherwise fall back to the immutable historical fixture.
 const baselineDirectory = process.env.PARITY_BASELINE_DIR ? resolve(process.env.PARITY_BASELINE_DIR) :
@@ -36,6 +38,9 @@ const baselineDirectory = process.env.PARITY_BASELINE_DIR ? resolve(process.env.
     join(historicalFixtures, 'EBR-73');
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
+const ticketBaseline = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
+const integratedBaseline = '843c242da5f3bc0e4c2b12ef5484113165c914c7';
+const gardenBaseline = '8dd79b81bad7eec1d45a018715b357003f483f1c';
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const scenarios = [
   { name: 'spawn', search: '?phase=daytime&weather=clear', setup: 'spawn' },
@@ -93,8 +98,9 @@ try {
   let sourceSha;
   if (recordBaseline) {
     sourceSha = execFileSync('git', ['rev-parse', '--verify', `${baselineSha}^{commit}`], { encoding: 'utf8' }).trim();
-    assert.equal(sourceSha, execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim(),
-      'Baseline must be origin/main at the time of recording');
+    const currentMain = execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim();
+    assert.ok([currentMain, ticketBaseline, integratedBaseline, gardenBaseline].includes(sourceSha),
+      'Baseline must be current origin/main or an explicitly pinned EBR-76 main');
     if (suppliedBaselineRoot) {
       root = resolve(suppliedBaselineRoot);
       await verifyBaselineArchive(root, sourceSha);
@@ -108,18 +114,36 @@ try {
       const archive = join(temp, 'baseline.tar');
       root = join(temp, 'checkout');
       await mkdir(root);
-      execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, sourceSha, 'index.html', 'package.json', 'src']);
+      // Older EBR-76 commits still contain bulky evidence. A fresh Git archive
+      // of their served source is sufficient; current main is verified in full.
+      const paths = [ticketBaseline, integratedBaseline].includes(sourceSha) ? ['index.html', 'package.json', 'src'] : [];
+      execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, sourceSha, ...paths]);
       execFileSync('tar', ['-xf', archive, '-C', root]);
       await symlink(resolve('node_modules'), join(root, 'node_modules'), 'dir');
+      if (!paths.length) await verifyBaselineArchive(root, sourceSha);
     }
   }
 
+  // Use one target for both sides of a comparison. Old signed baselines used
+  // y=381; the pinned EBR-76 reference already contains the sheepfold and uses
+  // y=340. New baselines can explicitly record another target if needed.
+  const baseline = recordBaseline ? undefined : JSON.parse(await readFile(join(baselineDirectory, 'baseline.json'), 'utf8'));
+  if (baseline) assert.match(baseline.sourceSha, /^[a-f0-9]{40}$/, 'Baseline must identify its Git commit');
+  const implicitPlacementY = (sourceSha ?? baseline?.sourceSha) === ticketBaseline ? 340 : 381;
+  const recordedPlacementY = baseline?.placementY ?? implicitPlacementY;
+  const placementY = process.env.PARITY_PLACEMENT_Y === undefined ? recordedPlacementY : Number(process.env.PARITY_PLACEMENT_Y);
+  assert.ok(Number.isFinite(placementY) && placementY >= 0 && placementY < viewport.height, 'Invalid placement target');
+  if (baseline) assert.equal(placementY, recordedPlacementY, 'Candidate must use the recorded placement target');
+
   let baseUrl = suppliedUrl?.replace(/\/$/, '');
   if (!baseUrl) {
-    for (const port of recordBaseline ? ports : [0]) {
+    const host = process.env.PARITY_HOST || '127.0.0.1';
+    const configuredPort = Number(process.env.PARITY_PORT || 0);
+    assert.ok(Number.isInteger(configuredPort) && configuredPort >= 0 && configuredPort <= 65535, 'Invalid PARITY_PORT');
+    for (const port of recordBaseline && suppliedPortRange ? ports : [configuredPort]) {
       const attempt = await createServer({
         root, configFile: false, logLevel: 'error',
-        server: { host: '127.0.0.1', port, strictPort: true, hmr: false },
+        server: { host, port, strictPort: Boolean(port), hmr: false },
       });
       try {
         await attempt.listen();
@@ -133,7 +157,7 @@ try {
     assert.ok(server, 'No free baseline port in the requested range');
     const address = server.httpServer.address();
     assert.ok(address && typeof address !== 'string');
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    baseUrl = `http://${host}:${address.port}`;
     if (recordBaseline) console.log(`Serving archived baseline ${sourceSha} at ${baseUrl}`);
   }
 
@@ -142,27 +166,27 @@ try {
     args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'],
   });
   const browserVersion = browser.version();
-  const output = join(evidence, recordBaseline ? 'baseline' : 'candidate');
+  const output = join(recordBaseline ? evidence : comparisonOutput, recordBaseline ? 'baseline' : 'candidate');
   await mkdir(output, { recursive: true });
   const frames = {};
   for (const scenario of scenarios) {
-    frames[scenario.name] = await captureScenario(browser, baseUrl, scenario, join(output, `${scenario.name}.png`));
+    frames[scenario.name] = await captureScenario(browser, baseUrl, scenario, join(output, `${scenario.name}.png`), placementY);
     console.log(`Captured ${recordBaseline ? 'baseline' : 'candidate'} ${scenario.name}`);
   }
 
   if (recordBaseline) {
     await writeFile(join(evidence, 'baseline.json'), `${JSON.stringify({
-      sourceSha, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, scenarios, frames,
+      sourceSha, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, placementY, scenarios, frames,
     }, null, 2)}\n`);
     console.log(`Baseline: ${sourceSha}`);
   } else {
-    const baseline = JSON.parse(await readFile(join(baselineDirectory, 'baseline.json'), 'utf8'));
+    assert.ok(baseline);
     assert.equal(browserVersion, baseline.browser, 'Use the same Chromium version as the baseline');
     assert.deepEqual(baseline.viewport, viewport);
     assert.equal(baseline.deviceScaleFactor, 1);
     assert.equal(baseline.seed, seed);
     assert.deepEqual(baseline.scenarios, scenarios, 'Capture scenarios differ from the recorded baseline');
-    const diffDir = join(evidence, 'diff');
+    const diffDir = join(comparisonOutput, 'diff');
     await mkdir(diffDir, { recursive: true });
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     const results = {};
@@ -188,9 +212,9 @@ try {
     const sourceStatus = suppliedUrl ? null : execFileSync('git', [
       'status', '--porcelain=v1', '--untracked-files=all', '--', 'src', 'index.html', 'package.json', 'package-lock.json', 'tools/parity.mjs',
     ], { encoding: 'utf8' }).trim();
-    await writeFile(join(evidence, 'parity.json'), `${JSON.stringify({
+    await writeFile(join(comparisonOutput, 'parity.json'), `${JSON.stringify({
       baselineSha: baseline.sourceSha, candidateSha, candidateUrl: suppliedUrl ?? 'local Vite (working tree)',
-      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, masksManifest, results, stateMismatches, frames,
+      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, placementY, masksManifest, results, stateMismatches, frames,
     }, null, 2)}\n`);
     assert.ok(Object.values(results).every((result) => result.outsideMaskPixels === 0), 'Gate G: pixel differences outside the mask');
     assert.deepEqual(stateMismatches, [], 'Gate G: pose, camera or environment differs from the baseline');
@@ -201,7 +225,7 @@ try {
   if (temp) await rm(temp, { recursive: true, force: true });
 }
 
-async function captureScenario(browser, baseUrl, scenario, path) {
+async function captureScenario(browser, baseUrl, scenario, path, placementY) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   const page = await context.newPage();
   const errors = [];
@@ -234,13 +258,19 @@ async function captureScenario(browser, baseUrl, scenario, path) {
     // Like the existing browser tests, instrument the served Vite module only.
     // Supplying random here reaches createRainEffect at construction, including
     // its initial particle positions; normal app initialization is unchanged.
+    await page.route('**/src/app/environment.ts*', async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
+      await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr73Random,') });
+    });
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
       const matches = body.match(/\bcreateWeatherSystem\(\{/g) ?? [];
-      assert.equal(matches.length, 1, 'Expected one weather initialization in the Vite main module');
+      assert.ok(matches.length === 1 || (matches.length === 0 && /\bconst context\s*=/.test(body)), 'Unknown Vite app entry point');
       await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr73Random,')}
-window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, renderer, composer, placement };
+window.__ebr73Parity = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, stairs, renderer, composer, placement };
 ` });
     });
     await page.goto(`${baseUrl}/${scenario.search}`, { waitUntil: 'networkidle' });
@@ -275,10 +305,10 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
       assert.ok(distance < 0.03, `Click-walk did not reach stairs pad: ${distance}`);
     } else if (scenario.setup === 'placement') {
       await page.keyboard.press('f');
-      await page.mouse.move(449, 381);
+      await page.mouse.move(449, placementY);
       const hasSheepfold = await page.evaluate(() => Boolean(window.__ebr73Parity.scene.getObjectByName('farm-sheepfold')));
       assert.match(await page.locator('.placement-status').textContent(),
-        hasSheepfold ? /Blocked by a farm object/ : /Ready to place/);
+        hasSheepfold && placementY === 381 ? /Blocked by a farm object/ : /Ready to place/);
       await page.evaluate(() => window.__ebr73Step(100));
       assert.equal(await page.evaluate(() => window.__ebr73Parity.scene.getObjectByName('placement-ghost')?.visible), true);
     } else if (scenario.setup === 'walk') {

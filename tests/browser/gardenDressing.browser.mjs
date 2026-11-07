@@ -12,11 +12,13 @@ let server, browser;
 before(async () => {
   if (evidence) await mkdir(evidence, { recursive: true });
   if (!url) {
-    server = await createServer({ configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false } });
+    const host = process.env.EBR49A_HOST || '127.0.0.1';
+    const port = Number(process.env.EBR49A_PORT || 0);
+    server = await createServer({ configFile: false, logLevel: 'error', server: { host, port, strictPort: Boolean(port), hmr: false } });
     await server.listen();
     const address = server.httpServer.address();
     assert.ok(address && typeof address !== 'string');
-    url = `http://127.0.0.1:${address.port}`;
+    url = `http://${host}:${address.port}`;
   }
   browser = await chromium.launch({ headless: true,
     args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
@@ -48,7 +50,7 @@ async function open(t) {
   });
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nwindow.__gardenTest = { scene, camera, character, obstacles, controls, engine };\n` });
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__gardenTest = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, controls, engine };\n` });
   });
   await page.goto(`${url}/?phase=daytime&weather=clear&seed=123&skyhud=0`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__gardenTest)));

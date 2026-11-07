@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { createBeehives } from './createBeehives';
-import { createFlowerPatches } from './createFlowerPatches';
+import { GARDEN_DRESSING } from '../../content/garden';
+import { GARDEN_ASSETS } from '../../render/gardenAssets';
 
 export function createGardenDressing(scene: THREE.Scene) {
-  const hives = createBeehives(scene);
-  const flowers = createFlowerPatches(scene);
+  const hives = GARDEN_ASSETS[GARDEN_DRESSING.hiveAssetId](scene);
+  const flowers = GARDEN_ASSETS[GARDEN_DRESSING.flowerAssetId](scene);
   return {
     obstacles: hives.obstacles,
     clickTargets: hives.clickTargets,

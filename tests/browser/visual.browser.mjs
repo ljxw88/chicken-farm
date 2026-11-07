@@ -54,7 +54,7 @@ async function openPage(context, url, inspectScene = false) {
     // Test-only access for positions and projection; no test globals ship in the app.
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
-      const body = `${await response.text()}\nwindow.__ebr71Test = { scene, camera, character, controls, follow, renderer, composer };\n`;
+      const body = `${await response.text()}\nwindow.__ebr71Test = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, renderer, composer };\n`;
       await route.fulfill({ response, body });
     });
   }

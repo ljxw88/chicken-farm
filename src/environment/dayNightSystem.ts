@@ -1,5 +1,5 @@
 import type { CoreComponents, EntityWorld } from '../core/ecs';
-import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, type DayNightPhaseName } from '../lighting/dayNightPhases';
+import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, type DayNightPhaseName } from '../content/dayNight';
 
 export interface DayNightState {
   progress: number;
