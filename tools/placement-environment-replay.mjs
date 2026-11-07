@@ -160,7 +160,11 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
     const { scene, character, composer } = window.__ebr75;
     const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
     const rain = scene.getObjectByName('weather-rain');
-    const previous = { body: body.visible, rain: rain.visible };
+    const fold = scene.getObjectByName('farm-sheepfold');
+    const previous = { body: body.visible, rain: rain.visible, fold: fold?.visible };
+    // Keep the EBR-70 collision entities active, hiding only its new visual
+    // group during these historical fold-free reference screenshots.
+    if (fold) fold.visible = false;
     if (hideBody) body.visible = false;
     if (hideRain) rain.visible = false;
     composer.render(0);
@@ -196,10 +200,12 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
     }
   } finally {
     await cdp.detach();
-    if (hideBody || hideRain) await fixture.page.evaluate((previous) => {
+    await fixture.page.evaluate((previous) => {
       const { scene, character, composer } = window.__ebr75;
       character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = previous.body;
       scene.getObjectByName('weather-rain').visible = previous.rain;
+      const fold = scene.getObjectByName('farm-sheepfold');
+      if (fold && previous.fold !== undefined) fold.visible = previous.fold;
       composer.render(0);
     }, visibility);
   }
@@ -267,10 +273,13 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
     } else {
       await emit({ type: 'frames', label: 'initial', times: [0] });
       if (scenario.name === 'placement') {
-        await pointer('click', 'walk-target', -4, 5);
+        // The original -4,5 and -5.25,3.75 tiles now belong to the fold.
+        // Use two still-valid tiles so all original placement actions remain
+        // exercised without removing the new collision/placement entities.
+        await pointer('click', 'walk-target', -0.75, 3.75);
         await key('select-fence', 'f');
         await frames('placement-cancels-walk', 2, 100);
-        await pointer('hover', 'valid-fence', -4, 5);
+        await pointer('hover', 'valid-fence', -0.75, 3.75);
         await shot('preview-valid');
         await key('rotated-fence', 'r');
         await shot('preview-rotated');
@@ -282,11 +291,11 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
         await shot('preview-water');
         await pointer('hover', 'blocked-cottage', -3.4, -3.4);
         await shot('preview-cottage');
-        await pointer('hover', 'valid-before-place', -4, 5);
-        await pointer('click', 'placed-fence', -4, 5);
+        await pointer('hover', 'valid-before-place', -0.75, 3.75);
+        await pointer('click', 'placed-fence', -0.75, 3.75);
         await shot('placed-fence-frame');
         await key('select-plot', 'p');
-        await pointer('touch', 'touch-preview-plot', -5.25, 3.75);
+        await pointer('touch', 'touch-preview-plot', -3.75, 0.75);
         await shot('touch-preview');
         await emit({ type: 'button', label: 'touch-rotate-plot', name: 'rotate' });
         await shot('touch-rotated');
@@ -298,8 +307,8 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
         await shot('undo-frame');
         await key('reselect-fence', 'f');
         await emit({ type: 'button', label: 'toggle-remove', name: 'remove' });
-        await pointer('hover', 'target-fence', -4, 5);
-        await pointer('touch', 'remove-fence', -4, 5);
+        await pointer('hover', 'target-fence', -0.75, 3.75);
+        await pointer('touch', 'remove-fence', -0.75, 3.75);
         await shot('remove-frame');
         await key('cancel-after-remove', 'Escape');
         await frames('placement-settled', 2, 100);
@@ -346,6 +355,108 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
   } finally {
     await fixture.context.close();
   }
+}
+
+/** Browser-side comparison of a fold, isolated feedback and optional visual effects. */
+export async function compareFoldFeedbackFrame({ baseline, candidate, hiddenFold, hiddenFeature, hudRects = {}, effects }) {
+  async function pixels(data) {
+    const image = new Image();
+    image.src = `data:image/png;base64,${data}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    return context.getImageData(0, 0, canvas.width, canvas.height);
+  }
+  const effectNames = ['baselineNoSmoke', 'candidateNoSmoke', 'baselineNoFireflies', 'candidateNoFireflies',
+    'baselineNoEffects', 'candidateNoEffects', 'candidateNoEffectsHiddenFold', 'candidateNoEffectsHiddenFeature', 'candidateNoNod'];
+  if (effects && effectNames.some((name) => !effects[name])) throw new Error('Incomplete effect isolation frames');
+  const names = ['baseline', 'candidate', 'hiddenFold', 'hiddenFeature', ...(effects ? effectNames : [])];
+  const sources = { baseline, candidate, hiddenFold, hiddenFeature, ...effects };
+  const decoded = Object.fromEntries(await Promise.all(names.map(async (name) => [name, await pixels(sources[name])])));
+  const { baseline: original, candidate: visible, hiddenFold: withoutFold, hiddenFeature: withoutFeature } = decoded;
+  const { width, height } = original;
+  if (Object.values(decoded).some((image) => image.width !== width || image.height !== height)) {
+    throw new Error('Frame dimensions differ');
+  }
+  const canvases = Object.fromEntries(['mask', 'fold', 'feedback', 'smoke', 'fireflies', 'nod', 'diff', 'effectsHiddenDiff'].map((name) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d');
+    return [name, { canvas, context, image: context.createImageData(width, height) }];
+  }));
+  const differs = (a, b, i) => a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3];
+  let changed = 0; let masked = 0; let foldPixels = 0; let feedbackPixels = 0; let overlapPixels = 0;
+  let insideMask = 0; let outside = 0; let foldOnlyOutside = 0; let feedbackChangedOutsideFold = 0; let hiddenMismatch = 0;
+  let smokePixels = 0; let fireflyPixels = 0; let nodPixels = 0;
+  let visibleHiddenMismatch = 0; let effectsHiddenChanged = 0; let effectsHiddenOutside = 0;
+  let minX = width; let minY = height; let maxX = -1; let maxY = -1;
+  const hudChanged = Object.fromEntries(Object.keys(hudRects).map((name) => [name, 0]));
+  for (let i = 0; i < original.data.length; i += 4) {
+    const fold = differs(visible.data, withoutFold.data, i);
+    const feedback = differs(withoutFold.data, withoutFeature.data, i);
+    const smoke = Boolean(effects) && (differs(original.data, decoded.baselineNoSmoke.data, i) ||
+      differs(visible.data, decoded.candidateNoSmoke.data, i));
+    const fireflies = Boolean(effects) && (differs(original.data, decoded.baselineNoFireflies.data, i) ||
+      differs(visible.data, decoded.candidateNoFireflies.data, i));
+    const nod = Boolean(effects) && differs(visible.data, decoded.candidateNoNod.data, i);
+    const allowed = fold || feedback || smoke || fireflies || nod;
+    const isChanged = differs(original.data, visible.data, i);
+    if (differs(original.data, withoutFeature.data, i)) visibleHiddenMismatch++;
+    if (effects) {
+      const noEffectsChanged = differs(decoded.baselineNoEffects.data, decoded.candidateNoEffects.data, i);
+      const noEffectsFold = differs(decoded.candidateNoEffects.data, decoded.candidateNoEffectsHiddenFold.data, i);
+      const noEffectsFeedback = differs(decoded.candidateNoEffectsHiddenFold.data, decoded.candidateNoEffectsHiddenFeature.data, i);
+      if (noEffectsChanged) {
+        effectsHiddenChanged++;
+        if (!noEffectsFold && !noEffectsFeedback) effectsHiddenOutside++;
+        canvases.effectsHiddenDiff.image.data[i] = 255;
+        canvases.effectsHiddenDiff.image.data[i + 2] = 255;
+      }
+      if (differs(decoded.baselineNoEffects.data, decoded.candidateNoEffectsHiddenFeature.data, i)) hiddenMismatch++;
+    } else if (differs(original.data, withoutFeature.data, i)) hiddenMismatch++;
+    if (fold) { foldPixels++; canvases.fold.image.data[i] = canvases.fold.image.data[i + 1] = canvases.fold.image.data[i + 2] = 255; }
+    if (feedback) { feedbackPixels++; canvases.feedback.image.data[i] = canvases.feedback.image.data[i + 1] = canvases.feedback.image.data[i + 2] = 255; }
+    if (smoke) { smokePixels++; canvases.smoke.image.data[i] = canvases.smoke.image.data[i + 1] = canvases.smoke.image.data[i + 2] = 255; }
+    if (fireflies) { fireflyPixels++; canvases.fireflies.image.data[i] = canvases.fireflies.image.data[i + 1] = canvases.fireflies.image.data[i + 2] = 255; }
+    if (nod) { nodPixels++; canvases.nod.image.data[i] = canvases.nod.image.data[i + 1] = canvases.nod.image.data[i + 2] = 255; }
+    if (fold && feedback) overlapPixels++;
+    if (allowed) {
+      masked++;
+      const pixel = i / 4; const x = pixel % width; const y = Math.floor(pixel / width);
+      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+      canvases.mask.image.data[i] = canvases.mask.image.data[i + 1] = canvases.mask.image.data[i + 2] = 255;
+    }
+    if (isChanged) {
+      changed++;
+      if (allowed) insideMask++; else outside++;
+      if (!fold) {
+        foldOnlyOutside++;
+        if (feedback) feedbackChangedOutsideFold++;
+      }
+      const pixel = i / 4; const x = pixel % width; const y = Math.floor(pixel / width);
+      for (const [name, rect] of Object.entries(hudRects)) {
+        if (rect && x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom) hudChanged[name]++;
+      }
+      canvases.diff.image.data[i] = 255;
+      canvases.diff.image.data[i + 2] = 255;
+    }
+    canvases.mask.image.data[i + 3] = canvases.fold.image.data[i + 3] =
+      canvases.feedback.image.data[i + 3] = canvases.smoke.image.data[i + 3] =
+      canvases.fireflies.image.data[i + 3] = canvases.nod.image.data[i + 3] =
+      canvases.diff.image.data[i + 3] = canvases.effectsHiddenDiff.image.data[i + 3] = 255;
+  }
+  const images = {};
+  for (const [name, value] of Object.entries(canvases)) {
+    value.context.putImageData(value.image, 0, 0);
+    images[name] = value.canvas.toDataURL('image/png').split(',')[1];
+  }
+  return { changed, masked, foldPixels, feedbackPixels, overlapPixels, insideMask, outside, foldOnlyOutside,
+    feedbackChangedOutsideFold, smokePixels, fireflyPixels, nodPixels, visibleHiddenMismatch,
+    effectsHiddenChanged, effectsHiddenOutside, hiddenMismatch, hudChanged,
+    bounds: masked ? [minX, minY, maxX, maxY] : null, ...images };
 }
 
 async function pixelDiff(page, frames) {
@@ -463,8 +574,9 @@ async function temporary(prefix) {
   }
 }
 
-/** Record a clean main snapshot first, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir, archivedBaselineSha }) {
+/** Record a verified main reference, then replay identical events and timestamps. */
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
+  baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
@@ -481,8 +593,8 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
   let traceDir;
   try {
     assert.equal(git(candidateRoot, 'rev-parse', `${baselineSha}^{commit}`), baselineSha);
-    if (baselineRoot && archivedBaselineSha) {
-      assert.equal(archivedBaselineSha, baselineSha);
+    if (baselineRoot && (archivedBaselineSha || baselineArchive)) {
+      if (archivedBaselineSha) assert.equal(archivedBaselineSha, baselineSha);
     } else if (baselineRoot) {
       assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
       assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
@@ -497,6 +609,17 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
       baselineRoot = archiveRoot;
       archivedBaselineSha = baselineSha;
+    }
+    if (archivedBaselineSha || baselineArchive) {
+      // Verify every archived source file against the requested Git tree.
+      const entries = git(candidateRoot, 'ls-tree', '-r', baselineSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json');
+      for (const entry of entries.split('\n')) {
+        const match = /^100644 blob ([0-9a-f]{40})\t(.+)$/.exec(entry);
+        assert.ok(match, `Unexpected baseline tree entry: ${entry}`);
+        const bytes = await readFile(join(baselineRoot, match[2]));
+        const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+        assert.equal(blob, match[1], `Archived baseline differs: ${match[2]}`);
+      }
     }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
@@ -599,12 +722,13 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       }
     }
     await diffPage.close();
-    const report = { baselineSha, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
+    const report = { baselineSha, baselineArchive: Boolean(archivedBaselineSha || baselineArchive), candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--', 'src', 'index.html',
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
-      baselineSource: archivedBaselineSha ? 'git archive' : 'clean worktree',
+      baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
       referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
+      visualComparison: 'The EBR-70 fold is hidden only during screenshot capture; its obstacle entities remain active.',
       excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
       results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
       expectedRainChanges, unexpectedVisualChanges, mismatches };

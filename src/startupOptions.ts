@@ -2,6 +2,14 @@ import { DAY_NIGHT_PHASES } from './lighting/dayNightPhases';
 import type { DayNightPhaseName } from './lighting';
 import { isWeatherMode } from './weather';
 
+// Preserve the sheepfold's signed integer seed and 32-bit wrap behavior.
+export function parseSheepSeed(search: string) {
+  const value = new URLSearchParams(search).get('seed');
+  if (value === null || !/^[+-]?\d+$/.test(value)) return undefined;
+  const seed = Number(value);
+  return Number.isSafeInteger(seed) ? seed >>> 0 : undefined;
+}
+
 export function parseStartupOptions(search: string) {
   const params = new URLSearchParams(search);
   const weather = params.get('weather');

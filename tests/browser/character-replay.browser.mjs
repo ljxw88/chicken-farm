@@ -20,6 +20,8 @@ for (const reference of references) test(`scripted key, mouse and touch traces m
       // A clean archive gives the replay its reference without creating or
       // removing a Git worktree on the shared host.
       archivedBaselineSha = reference.sha;
+      const resolved = execFileSync('git', ['rev-parse', `${reference.sha}^{commit}`], { cwd: root, encoding: 'utf8' }).trim();
+      if (resolved !== reference.sha) throw new Error(`Unexpected baseline: ${resolved}`);
       try {
         archiveDir = await mkdtemp('/tmp/opencode/ebr74-main-');
       } catch (error) {
@@ -38,9 +40,9 @@ for (const reference of references) test(`scripted key, mouse and touch traces m
       baselineSha: reference.sha, archivedBaselineSha,
       evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.frames}`).join(', ')}`);
-    t.diagnostic(`Raw changed pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
+    t.diagnostic(`Raw changed pixels with the new sheepfold hidden: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
     t.diagnostic(`With effects hidden: ${Object.entries(report.unaffectedFrameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
-    t.diagnostic('Outside body/effect masks and with both hidden: zero; character geometry and shader match.');
+    t.diagnostic('Outside body/effect masks and with body, effects and fold hidden: zero; character geometry and shader match.');
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }

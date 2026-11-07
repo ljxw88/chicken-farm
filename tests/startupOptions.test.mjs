@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
-const { createStartupPhaseController, parseStartupOptions } = await vite.ssrLoadModule('/src/startupOptions.ts');
+const { createStartupPhaseController, parseSheepSeed, parseStartupOptions, parseVisualSeed } = await vite.ssrLoadModule('/src/startupOptions.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
 const { VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
@@ -25,6 +25,22 @@ test('missing and invalid URL options are ignored independently', () => {
   assert.deepEqual(parseStartupOptions('?weather=storm&phase=night'), { weather: undefined, phase: 'night' });
   assert.deepEqual(parseStartupOptions('?weather=rain&phase=midnight'), { weather: 'rain', phase: undefined });
   assert.deepEqual(parseStartupOptions('?weather=Cloudy&phase='), { weather: undefined, phase: undefined });
+});
+
+test('the optional sheep seed accepts integer URLs without changing other startup options', () => {
+  assert.equal(parseSheepSeed(''), undefined);
+  assert.equal(parseSheepSeed('?seed=123'), 123);
+  assert.equal(parseSheepSeed('?seed=-1'), 0xffffffff);
+  assert.equal(parseSheepSeed('?seed=4294967296'), 0);
+  assert.equal(parseVisualSeed('?seed=123'), 123);
+  assert.equal(parseVisualSeed('?seed=-1'), undefined);
+  assert.equal(parseVisualSeed('?seed=4294967296'), undefined);
+  assert.equal(parseSheepSeed('?seed=0xeb730001'), undefined);
+  assert.equal(parseVisualSeed('?seed=0xeb730001'), 0xeb730001);
+  for (const seed of ['', '1.5', 'nan', '999999999999999999999']) {
+    assert.equal(parseSheepSeed(`?seed=${seed}`), undefined);
+  }
+  assert.deepEqual(parseStartupOptions('?seed=123&weather=rain&phase=night'), { weather: 'rain', phase: 'night' });
 });
 
 test('a URL phase stays fixed until a valid console phase or cycle setter resumes it', () => {

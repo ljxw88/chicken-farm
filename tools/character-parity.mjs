@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -141,26 +142,35 @@ async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
   } else if (action.type === 'blur') {
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   } else if (action.type === 'capture') {
-    frames[action.name] = await captureWithEffects(fixture);
-    // A character-material ticket may change the visible capsule. Isolate that
-    // mesh at the same frozen time so the replay can still demand exact parity
-    // for the scene, face, lantern and every pixel outside the body.
-    const wasVisible = await page.evaluate(() => {
-      const { character, composer } = window.__ebr74;
+    // The old reference has no fold. Hide only its visual group during both
+    // captures; collision data stays active during the complete replay.
+    const visibility = await page.evaluate((excludeSheepfold) => {
+      const { scene, character, composer } = window.__ebr74;
+      const fold = scene.getObjectByName('farm-sheepfold');
       const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
-      const visible = body.visible;
-      body.visible = false;
+      if (!body) throw new Error('Character body is missing');
+      const previous = { fold: fold?.visible, body: body.visible };
+      if (excludeSheepfold && fold) fold.visible = false;
       composer.render(0);
-      return visible;
-    });
+      return previous;
+    }, fixture.excludeSheepfold);
     try {
+      frames[action.name] = await captureWithEffects(fixture);
+      // EBR-92 may change the body, so also capture the same frame bodyless.
+      await page.evaluate(() => {
+        const { character, composer } = window.__ebr74;
+        character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = false;
+        composer.render(0);
+      });
       bodylessFrames[action.name] = await captureWithEffects(fixture);
     } finally {
-      await page.evaluate((visible) => {
-        const { character, composer } = window.__ebr74;
-        character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = visible;
+      await page.evaluate((previous) => {
+        const { scene, character, composer } = window.__ebr74;
+        character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = previous.body;
+        const fold = scene.getObjectByName('farm-sheepfold');
+        if (fold && previous.fold !== undefined) fold.visible = previous.fold;
         composer.render(0);
-      }, wasVisible);
+      }, visibility);
     }
   } else if (action.type === 'mark') {
     marks[action.name] = await page.evaluate(() => {
@@ -186,6 +196,7 @@ async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
 
 async function recordScenario(browser, url, name, replayScript) {
   const fixture = await open(browser, url);
+  fixture.excludeSheepfold = Boolean(replayScript);
   const { page } = fixture;
   const script = [];
   const trace = [];
@@ -424,8 +435,9 @@ async function temporary(prefix) {
   }
 }
 
-/** Replay a clean reference against the same candidate events and frame times. */
-export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, archivedBaselineSha, baselineSha = historicalSha }) {
+/** Replay a verified reference against the same candidate events and frame times. */
+export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, archivedBaselineSha,
+  baselineArchive = false, baselineSha = historicalSha }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, stairBaselineSha].includes(baselineSha), 'Unknown replay reference');
   let baseline;
@@ -445,12 +457,23 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
       baselineRoot = archiveRoot;
       archivedBaselineSha = baselineSha;
-    } else if (archivedBaselineSha) {
-      assert.equal(archivedBaselineSha, baselineSha);
+    } else if (archivedBaselineSha || baselineArchive) {
+      if (archivedBaselineSha) assert.equal(archivedBaselineSha, baselineSha);
     } else {
       assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
       assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
         'The reference worktree must contain the unmodified baseline source');
+    }
+    if (archivedBaselineSha || baselineArchive) {
+      // Verify every archived source file against the requested Git tree.
+      const entries = git(candidateRoot, 'ls-tree', '-r', baselineSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json');
+      for (const entry of entries.split('\n')) {
+        const match = /^100644 blob ([0-9a-f]{40})\t(.+)$/.exec(entry);
+        assert.ok(match, `Unexpected baseline tree entry: ${entry}`);
+        const bytes = await readFile(join(baselineRoot, match[2]));
+        const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+        assert.equal(blob, match[1], `Archived baseline differs: ${match[2]}`);
+      }
     }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
@@ -562,7 +585,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      baselineSource: archivedBaselineSha ? 'git archive' : 'clean worktree',
+      baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
       tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults,
       unaffectedFrameResults, effectMaskResults, bodyIsolation, marks };
     if (evidenceDir) {
