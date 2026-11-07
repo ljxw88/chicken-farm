@@ -18,7 +18,9 @@ export function diagnosticEligibility(recipe, schemaFailures, rules) {
     }
   }
   const allowed = schemaFailures.every((failure) => failure.code === 'VARIANT_SEED' || failure.code === 'H1' &&
-    (/^Invalid or duplicate part name [a-z0-9_-]+$/i.test(failure.message) || /^Part [a-z0-9_-]+ jitter requires an integer seed$/i.test(failure.message)));
+    (/^Invalid or duplicate part name [a-z0-9_-]+$/i.test(failure.message) ||
+      /^Part [a-z0-9_-]+ jitter requires an integer seed(?: on the part, beside jitter;.*)?$/i.test(failure.message) ||
+      /^part [a-z0-9_-]+ jitter: forbidden or unknown field (?:seed|max|rot)$/i.test(failure.message)));
   if (!allowed) return { safe: false, notes: [] };
   const notes = [];
   if (schemaFailures.length) notes.push('Schema or variant failures remain in force; this is a diagnostic render, not verification.');

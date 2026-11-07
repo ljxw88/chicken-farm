@@ -90,10 +90,12 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
     if (part.exception !== undefined && (!['band', 'cleat', 'twine'].includes(part.exception) || !new RegExp(part.exception === 'band' ? 'band|hoop' : part.exception).test(part.name))) fail(`Part ${part.name} has an invalid small-feature exception`);
     if (part.polygonOffset !== undefined && typeof part.polygonOffset !== 'boolean') fail(`Part ${part.name} has invalid polygonOffset`);
     if (part.jitter !== undefined) {
-      if (!object(part.jitter) || !Number.isInteger(part.seed)) fail(`Part ${part.name} jitter requires an integer seed`);
+      if (!object(part.jitter)) fail(`Part ${part.name} jitter must be an object containing only position and/or rotation`);
       else {
         keys(part.jitter, ['position', 'rotation'], `part ${part.name} jitter`);
-        for (const amount of Object.values(part.jitter)) if (!finite(amount) || amount < 0 || amount > rules.jitterMaximum) fail(`Part ${part.name} jitter exceeds ${rules.jitterMaximum}`);
+        if (!Number.isInteger(part.seed)) fail(`Part ${part.name} jitter requires an integer seed on the part, beside jitter; use "seed":123,"jitter":{"rotation":0.01}`);
+        for (const [field, amount] of Object.entries(part.jitter)) if (['position', 'rotation'].includes(field) &&
+            (!finite(amount) || amount < 0 || amount > rules.jitterMaximum)) fail(`Part ${part.name} jitter.${field} must be a scalar number from 0 to ${rules.jitterMaximum}`);
       }
     } else if (part.seed !== undefined && !Number.isInteger(part.seed)) fail(`Part ${part.name} seed must be an integer`);
     const size = part.size;

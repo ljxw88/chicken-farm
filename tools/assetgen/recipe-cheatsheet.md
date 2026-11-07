@@ -44,6 +44,18 @@ Euler **degrees**; dimensions are full widths):
 
 Each part needs `name`, `prim`, `mat`, `at`; optional `rot`, `scale`, `feature`,
 `exception` (`band`, `cleat` or `twine`; still at least 0.1), `polygonOffset`, and seeded `jitter`.
+Part names are unique lowercase kebab-case, e.g. `left-lobe`, not `left_lobe`
+or `leftLobe`. Seed belongs on the part, beside `jitter`, not inside it:
+
+```json
+{"name":"left-lobe","prim":"sphere","radius":0.3,"detail":1,"at":[0,1,0],"mat":"foliage.mid","feature":"lobes","seed":84001,"jitter":{"rotation":0.01}}
+```
+
+The only `jitter` keys are `position` and `rotation`; each is a scalar number
+from 0 to 0.03 (world units and radians respectively). Do not use nested `seed`,
+`max`, `rot`, or arrays. If the spec has `variationSeed`, put that exact integer
+in a part's `seed` and use nonzero `position` or `rotation` jitter on that part.
+Prefer rotation jitter for an above-ground part so the base stays grounded.
 No loops, calculations, expressions, URLs, comments, raw hexes, arbitrary keys,
 or code. Matte albedo tokens include `wood.mid`, `wood.light`, `timber`,
 `trunk`, `foliage.mid`, `foliage.light`, `foliage.dark`, `dirt.hi`, `stone`,

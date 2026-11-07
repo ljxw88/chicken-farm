@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory, variantReferences } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { fitGeneratedRecipe } from './fit-generated.mjs';
-import { critiqueRecipe, generateRecipe, generatorAttachment, makePrompt } from './generator.mjs';
+import { critiqueRecipe, generateRecipe, generatorAttachment, makePrompt, revisionFeedback } from './generator.mjs';
 import { createVisualRunner } from './visual.mjs';
 import { isBetterCandidate } from './scoring.mjs';
 import { isolatedSessionDirectory } from './opencode.mjs';
@@ -231,7 +231,7 @@ async function newAsset(input, args) {
         unmeasured: visual.metrics.unmeasured } : null;
       if (action === 'continue') { stageIndex++; previous = { action, diff: result.diff, hard, visual: visualSummary, critique: review }; continue; }
       if (['request-input', 'stop', 'refine-spec'].includes(action)) { stopReason = `Critic requested ${action}; spec is not silently changed`; break; }
-      previous = { action, diff: result.diff, failures: blockers.slice(0, 15), hard: hard.metrics, visual: visualSummary, critique: review };
+      previous = revisionFeedback({ action, diff: result.diff, hard, blockers, visual: visualSummary, critique: review });
       if ((stageCorrections[stage] || 0) >= bible.rules.loop.maxCorrectionsPerStage || corrections >= bible.rules.loop.maxCorrectionsGlobal || round >= roundLimit) {
         stopReason = 'Bounded correction limit reached'; break;
       }
