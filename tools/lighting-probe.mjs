@@ -213,7 +213,9 @@ try {
           const pos = light.getWorldPosition(vector());
           const direction = pos.clone().sub(character.getWorldPosition(vector())).normalize();
           const sr = direction.dot(right);
-          const grass = worldRgb(-5.3, 2.405, 3.4);
+          // EBR-70's shelter covers the old (-5.3, 3.4) grass sample. Keep the
+          // same lighting thresholds, but sample unobstructed grass east of it.
+          const grass = worldRgb(-1, 2.405, 5);
           const grassReferenceRgb = medianRgb(Array.from({ length: 13 * 13 }, (_, i) =>
             [Math.trunc(grass.screen[0]) + i % 13 - 6, Math.trunc(grass.screen[1]) + Math.floor(i / 13) - 6]));
           const shadeLab = lab(sr > 0 ? leftRgb : rightRgb); const grassLab = lab(grassReferenceRgb);
@@ -225,7 +227,7 @@ try {
             qa: { bodyRgb: qaBodyRgb, groundRgb: qaGroundRgb, contrast: qaContrast, deltaE: qaDeltaE },
             bodyColor: body.material.color.getHexString(),
             grass, cottageFront: worldRgb(-4.6, 2.95, -1.89), cottageSide: worldRgb(-1.19, 3.3, -3.4),
-            grassSamples: [[-6, -6], [6, -6], [-6, 6], [6, 6], [-5.3, 3.4], [-1, 5], [3, 5]]
+            grassSamples: [[-6, -6], [6, -6], [-1.5, 6.5], [6, 6], [-0.5, 3.7], [-1, 5], [3, 5]]
               .map(([x, z]) => worldRgb(x, 2.405, z)), pond: worldRgb(4.2, 2.431, -3.55),
             // This point is unobstructed by the foreground tree canopy.
             stream: scene.getObjectByName('farm-stream-water') ? worldRgb(2.85, 2.431, 2) : null,

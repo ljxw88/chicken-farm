@@ -7,6 +7,7 @@ const vite = await createServer({ configFile: false, server: { middlewareMode: t
 const { planWalkRoute } = await vite.ssrLoadModule('/src/character/walkRoute.ts');
 const { createStairSurface, stairSupports } = await vite.ssrLoadModule('/src/character/stairSurface.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
+const { createSheepfold } = await vite.ssrLoadModule('/src/scene/sheepfold/createSheepfold.ts');
 after(() => vite.close());
 
 const radius = 0.4;
@@ -165,4 +166,19 @@ test('a click just inside the stream collider still moves to its reachable bank'
   const route = planWalkRoute(start, goal, radius, surface.bounds, obstacles, surface);
   assert.ok(route.length && Math.hypot(route.at(-1).x - start.x, route.at(-1).z - start.z) > 0.2);
   assertRoute(start, route, obstacles, surface, surface.bounds);
+});
+
+test('the real sheepfold routes a pen-interior click through its front opening', () => {
+  const scene = new THREE.Scene();
+  const farm = createFarmLayout(scene);
+  const fold = createSheepfold(scene, 123);
+  const obstacles = [...farm.obstacles, ...fold.obstacles];
+  const surface = createStairSurface(16, 2.4, 0);
+  const start = { x: 0, z: 0 }, goal = { x: -4.7, z: 4.7 };
+  const route = planWalkRoute(start, goal, radius, surface.bounds, obstacles, surface);
+  near(route.at(-1).x, -4.7, 0.002);
+  near(route.at(-1).z, 4.9401, 0.002);
+  const samples = assertRoute(start, route, obstacles, surface, surface.bounds);
+  assert.ok(samples.some(({ x, z }) => x > -5.05 && x < -4.35 && z >= 5.87 && z <= 6.13),
+    'route must use the front opening without crossing a fence');
 });

@@ -22,7 +22,7 @@ before(async () => {
 });
 after(async () => { await browser?.close(); await server?.close(); });
 
-async function open(t) {
+async function open(t, seed) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   t.after(() => context.close());
   const page = await context.newPage(), errors = [];
@@ -51,7 +51,7 @@ async function open(t) {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
   });
-  await page.goto(`${url}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/?phase=daytime&weather=clear${seed === undefined ? '' : `&seed=${seed}`}`, { waitUntil: 'networkidle' });
   await page.evaluate(() => window.__routeStep(0));
   return { context, page, errors };
 }
@@ -69,6 +69,31 @@ async function pointAt(page, x, y, z) {
 async function click(page, point) {
   assert.equal(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.id, point), 'scene');
   await page.mouse.click(point.x, point.y);
+}
+
+// Independently identify the visible surface under a real pointer coordinate.
+async function surfaceAt(page, screen) {
+  return page.evaluate(async ({ x, y }) => {
+    const { Raycaster, Vector2 } = await import('/node_modules/three/build/three.module.js');
+    const { camera, ground, stairs, clickTargets } = window.__ebr87;
+    const rect = document.querySelector('#scene').getBoundingClientRect();
+    const ray = new Raycaster();
+    camera.updateMatrixWorld();
+    ray.setFromCamera(new Vector2((x - rect.left) / rect.width * 2 - 1,
+      -((y - rect.top) / rect.height * 2 - 1)), camera);
+    const hit = ray.intersectObjects([ground, ...stairs.treads, stairs.footPad, ...clickTargets], true)[0];
+    return hit && { name: hit.object.name, parent: hit.object.parent?.name, point: hit.point.toArray() };
+  }, screen);
+}
+
+function assertFrontGap(trace) {
+  assert.ok(trace.some(([x, , z], index) => {
+    const previous = trace[index - 1];
+    if (!previous || previous[2] < 6 || z > 6 || previous[2] === z) return false;
+    const crossingX = previous[0] + (x - previous[0]) * (previous[2] - 6) / (previous[2] - z);
+    return crossingX > -5.05 && crossingX < -4.35;
+  }),
+    'route must enter the pen through its front gap');
 }
 
 async function advance(page, count, stopAtBridge = false) {
@@ -363,7 +388,7 @@ test('any key cancels a route, and an active placement tool keeps pointer priori
   await page.keyboard.press('f');
   const before = await data(page);
   assert.equal(before.target, null, 'opening a placement tool must cancel the route');
-  const site = await pointAt(page, -4, 2.4, 5);
+  const site = await pointAt(page, -0.75, 2.4, 5.25);
   await page.mouse.move(site.x, site.y);
   await click(page, site);
   assert.equal(await page.evaluate(() => window.__ebr87.scene.getObjectsByProperty('name', 'placed-fence').length), 1);
@@ -377,7 +402,7 @@ test('any key cancels a route, and an active placement tool keeps pointer priori
 test('a newly placed ECS fence is avoided by the next click route', { timeout: 120000 }, async (t) => {
   const { page, context, errors } = await open(t);
   await page.keyboard.press('f');
-  const site = await pointAt(page, -3.75, 2.4, 3.75);
+  const site = await pointAt(page, -0.75, 2.4, 5.25);
   await page.mouse.move(site.x, site.y);
   await click(page, site);
   await page.keyboard.press('Escape');
@@ -387,7 +412,7 @@ test('a newly placed ECS fence is avoided by the next click route', { timeout: 1
   }));
   assert.equal(placed.entities.length, 1);
   assert.deepEqual(placed.mirrored, placed.entities);
-  const goal = [-3.75, 2.4, 5.0];
+  const goal = [-0.75, 2.4, 6.75];
   await click(page, await pointAt(page, ...goal));
   assert.ok((await data(page)).target, 'the click must route immediately after placement');
   assert.equal(await advance(page, 240), 'idle');
@@ -398,4 +423,163 @@ test('a newly placed ECS fence is avoided by the next click route', { timeout: 1
   assert.deepEqual(errors, []);
   await frame(context, '09-placed-fence-route');
   await save('09-placed-fence-route', { browser: browser.version(), url, goal, placed, ...result, errors });
+});
+
+test('seed 123: the QA pen-interior click goes through the gap instead of stopping at the east fence', { timeout: 120000 }, async (t) => {
+  const { page, context, errors } = await open(t, 123);
+  const destination = [-3.2, 2.4, 5.4];
+  assert.deepEqual((await data(page)).position, [0, 2.4, 0]);
+  const screen = await pointAt(page, ...destination);
+  const hit = await surfaceAt(page, screen);
+  assert.equal(hit.name, 'island-top', 'the click must actually select the pen interior');
+  assert.ok(Math.hypot(hit.point[0] - destination[0], hit.point[2] - destination[2]) < 0.001);
+  await click(page, screen);
+  const atEvent = await data(page);
+  assert.ok(atEvent.target, 'the pen click must create a route immediately');
+  assert.equal(await advance(page, 240), 'idle');
+  const result = await data(page);
+  assert.ok(Math.hypot(result.position[0] + 2, result.position[2] - 4.61) > 1,
+    `stopped at the old east-fence corner: ${result.position}`);
+  assert.ok(Math.hypot(result.position[0] - destination[0], result.position[2] - destination[2]) < 0.01,
+    `did not reach the walkable pen interior: ${result.position}`);
+  assertFrontGap(result.trace);
+  assertSafe(result);
+  assert.deepEqual(errors, []);
+  await frame(context, '10-pen-interior');
+  await save('10-pen-interior', { browser: browser.version(), seed: 123, destination, screen, hit, atEvent, ...result, errors });
+  t.diagnostic(`Pen click ${destination} reached ${result.position} via the front gap`);
+});
+
+test('seed 123: the running app reaches the pen interior after the QA click', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  t.after(() => context.close());
+  const page = await context.newPage(), errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.route('**/src/main.ts*', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr87 = { scene, camera, character, stairs, obstacles, controls, ground, bridgeHeight, clickTargets, engine };\n` });
+  });
+  await page.goto(`${url}/?phase=daytime&weather=clear&seed=123`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    window.__routeTrace = [];
+    function record() {
+      window.__routeTrace.push(window.__ebr87.character.position.toArray());
+      requestAnimationFrame(record);
+    }
+    requestAnimationFrame(record);
+  });
+  const destination = [-3.2, 2.4, 5.4];
+  const screen = await pointAt(page, ...destination);
+  const hit = await surfaceAt(page, screen);
+  assert.equal(hit.name, 'island-top');
+  await click(page, screen);
+  await page.waitForFunction(([x, , z]) => {
+    const { character, controls } = window.__ebr87;
+    return !controls.entity.character.target && Math.hypot(character.position.x - x, character.position.z - z) < 0.03;
+  }, destination, { timeout: 30000 });
+  const result = await data(page);
+  assertFrontGap(result.trace);
+  assertSafe(result);
+  assert.deepEqual(errors, []);
+  await frame(context, '10-live-pen-interior');
+  await save('10-live-pen-interior', { browser: browser.version(), seed: 123, destination, screen, hit, ...result, errors });
+  t.diagnostic(`Live pen click reached ${result.position} in ${result.trace.length} sampled frames`);
+});
+
+test('seed 123: a blocked central pen click approaches the lean-to from the front', { timeout: 120000 }, async (t) => {
+  const { page, context, errors } = await open(t, 123);
+  const destination = [-4.7, 2.4, 4.7];
+  const screen = await pointAt(page, ...destination);
+  const hit = await surfaceAt(page, screen);
+  assert.equal(hit.name, 'island-top');
+  await click(page, screen);
+  const atEvent = await data(page);
+  assert.ok(atEvent.target, 'the pen click must create a route immediately');
+  assert.equal(await advance(page, 240), 'idle');
+  const result = await data(page);
+  assert.ok(Math.abs(result.position[0] - destination[0]) < 0.01 && Math.abs(result.position[2] - 4.9401) < 0.01,
+    `did not reach the nearest lean-to boundary: ${result.position}`);
+  assertFrontGap(result.trace);
+  assertSafe(result);
+  assert.deepEqual(errors, []);
+  await frame(context, '10b-pen-lean-to-boundary');
+  await save('10b-pen-lean-to-boundary', { browser: browser.version(), seed: 123, destination, screen, hit, atEvent, ...result, errors });
+  t.diagnostic(`Blocked pen click ${destination} reached ${result.position} via the front gap`);
+});
+
+test('seed 123: clicking a sheep routes to its collision boundary', { timeout: 120000 }, async (t) => {
+  const { page, context, errors } = await open(t, 123);
+  const screen = await pointAt(page, -3.3, 2.9, 4.35);
+  const hit = await surfaceAt(page, screen);
+  assert.match(hit.name, /^sheep-2-/);
+  await click(page, screen);
+  const atEvent = await data(page);
+  assert.ok(atEvent.target, 'clicking the sheep must start a route');
+  assert.equal(await advance(page, 240), 'idle');
+  const result = await data(page);
+  const sheep = result.obstacles.find((obstacle) => obstacle.name === 'sheep-2');
+  const distance = Math.hypot(result.position[0] - sheep.x, result.position[2] - sheep.z);
+  assert.ok(distance >= 0.8 - 1e-6 && distance < 0.805, `did not approach the sheep: ${result.position}`);
+  assert.ok(result.position[2] > 5 && result.position[0] < -3, 'the player must approach from inside the pen');
+  assertSafe(result);
+  assert.deepEqual(errors, []);
+  await frame(context, '11-sheep-click');
+  await save('11-sheep-click', { browser: browser.version(), seed: 123, screen, hit, atEvent, distance, ...result, errors });
+  t.diagnostic(`Sheep click reached ${result.position}, ${distance} units from its center`);
+});
+
+test('seed 123: clicking the lean-to roof approaches its walking collider', { timeout: 120000 }, async (t) => {
+  const { page, context, errors } = await open(t, 123);
+  const screen = await pointAt(page, -4.7, 3.27, 3.94);
+  const hit = await surfaceAt(page, screen);
+  assert.equal(hit.name, 'sheepfold-roof');
+  await click(page, screen);
+  const atEvent = await data(page);
+  assert.ok(atEvent.target, 'clicking the roof must start a route');
+  assert.equal(await advance(page, 240), 'idle');
+  const result = await data(page);
+  const leanTo = result.obstacles.find((obstacle) => obstacle.name === 'sheepfold-lean-to');
+  assert.ok(Math.abs(result.position[0] - hit.point[0]) < 0.01 &&
+    Math.abs(result.position[2] - (leanTo.maxZ + 0.4)) < 0.01,
+  `did not reach the lean-to boundary: ${result.position}`);
+  assertFrontGap(result.trace);
+  assertSafe(result);
+  assert.deepEqual(errors, []);
+  await frame(context, '12-lean-to-roof-click');
+  await save('12-lean-to-roof-click', { browser: browser.version(), seed: 123, screen, hit, atEvent, ...result, errors });
+  t.diagnostic(`Roof click reached ${result.position}`);
+});
+
+test('seed 123: build-blocked grass south of the pen remains walkable', { timeout: 120000 }, async (t) => {
+  const { page, context, errors } = await open(t, 123);
+  const destination = [-3.75, 2.4, 6.75];
+  const screen = await pointAt(page, ...destination);
+  const hit = await surfaceAt(page, screen);
+  assert.equal(hit.name, 'island-top');
+  await page.keyboard.press('f');
+  await page.mouse.move(screen.x, screen.y);
+  const validation = await page.evaluate(() => {
+    const { engine, obstacles } = window.__ebr87;
+    const area = [...engine.world.with('placement')][0].placement.area;
+    const overlaps = obstacles.filter((obstacle) => obstacle.kind === 'box' &&
+      area.minX < obstacle.maxX && area.maxX > obstacle.minX && area.minZ < obstacle.maxZ && area.maxZ > obstacle.minZ);
+    return { status: document.querySelector('.placement-status').textContent, area, overlaps };
+  });
+  assert.match(validation.status, /Blocked by a farm object/);
+  assert.ok(validation.overlaps.some((obstacle) => obstacle.name === 'sheepfold-placement' && obstacle.blocksWalking === false));
+  assert.ok(validation.overlaps.some((obstacle) => obstacle.name === 'sheepfold-fence-5'));
+  await page.keyboard.press('Escape');
+  await click(page, screen);
+  const atEvent = await data(page);
+  assert.ok(atEvent.target, 'build-blocked grass must still start a walking route');
+  assert.equal(await advance(page, 240), 'idle');
+  const result = await data(page);
+  assert.ok(Math.hypot(result.position[0] - destination[0], result.position[2] - destination[2]) < 0.01,
+    `grass was treated as a walking blocker: ${result.position}`);
+  assertSafe(result);
+  assert.deepEqual(errors, []);
+  await frame(context, '13-build-blocked-grass');
+  await save('13-build-blocked-grass', { browser: browser.version(), seed: 123, destination, screen, hit, validation, atEvent, ...result, errors });
+  t.diagnostic(`Grass ${destination}: ${validation.status}; overlapping ${validation.overlaps.map((item) => item.name).join(', ')}; walked to ${result.position}`);
 });

@@ -247,7 +247,9 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
     } else if (scenario.setup === 'placement') {
       await page.keyboard.press('f');
       await page.mouse.move(449, 381);
-      assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
+      const hasSheepfold = await page.evaluate(() => Boolean(window.__ebr73Parity.scene.getObjectByName('farm-sheepfold')));
+      assert.match(await page.locator('.placement-status').textContent(),
+        hasSheepfold ? /Blocked by a farm object/ : /Ready to place/);
       await page.evaluate(() => window.__ebr73Step(100));
       assert.equal(await page.evaluate(() => window.__ebr73Parity.scene.getObjectByName('placement-ghost')?.visible), true);
     } else if (scenario.setup === 'walk') {

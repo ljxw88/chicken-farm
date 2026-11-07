@@ -20,6 +20,8 @@ for (const reference of references) test(`unchanged controls match ${reference.l
       // A clean archive gives the replay its reference without creating or
       // removing a Git worktree on the shared host.
       archivedBaselineSha = reference.sha;
+      const resolved = execFileSync('git', ['rev-parse', `${reference.sha}^{commit}`], { cwd: root, encoding: 'utf8' }).trim();
+      if (resolved !== reference.sha) throw new Error(`Unexpected baseline: ${resolved}`);
       try {
         archiveDir = await mkdtemp('/tmp/opencode/ebr74-main-');
       } catch (error) {
@@ -30,7 +32,7 @@ for (const reference of references) test(`unchanged controls match ${reference.l
       await mkdir(baseline);
       const archive = join(archiveDir, 'baseline.tar');
       execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, archivedBaselineSha,
-        'index.html', 'package.json', 'src'], { cwd: root });
+        'index.html', 'package.json', 'package-lock.json', 'src'], { cwd: root });
       execFileSync('tar', ['-xf', archive, '-C', baseline]);
       await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
     }
@@ -41,7 +43,8 @@ for (const reference of references) test(`unchanged controls match ${reference.l
       `${name}=${result.frames} (${result.identical ? 'identical' : 'intended route'})`).join(', ')}`);
     t.diagnostic(`Changed same-pose pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
     t.diagnostic(`Intended route changes: ${JSON.stringify(report.intendedRouteChanges)}`);
-    t.diagnostic('Historical visual differences are isolated to the signed character body; body-hidden frames match.');
+    t.diagnostic(`With effects hidden: ${Object.entries(report.unaffectedFrameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
+    t.diagnostic('Outside body/effect masks and with body, effects and fold hidden: zero; character geometry and shader match.');
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }

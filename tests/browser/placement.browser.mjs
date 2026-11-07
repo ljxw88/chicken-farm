@@ -130,7 +130,8 @@ test('production build: a fence is free, undoable, and rendered through the defa
   await assertNoSimUi(page);
   await page.keyboard.press('f');
   // An open patch makes the untinted wood silhouette easy to inspect.
-  const target = { x: 449, y: 381 };
+  // The old point at (449,381) is now in the sheepfold's reserved footprint.
+  const target = { x: 449, y: 340 };
   await page.mouse.move(target.x, target.y);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   const pixel = await page.evaluate(() => window.getPixelRendering());
@@ -225,7 +226,8 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
 
   await page.keyboard.press('p');
   assert.equal(await page.locator('[data-plot]').getAttribute('aria-pressed'), 'true');
-  const plotPoint = await moveWorld(page, -3.75, 3.75);
+  // The former (-3.75, 3.75) tile is now reserved by the sheepfold.
+  const plotPoint = await moveWorld(page, -3.75, 0.75);
   await page.keyboard.press('r');
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   await capture(page, '05-rotated-plot-preview.png');
@@ -337,11 +339,11 @@ test('the foot pad and corner slide remain climbable with a fence and plot place
   t.after(() => context.close());
   const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
   await page.keyboard.press('f');
-  const fencePoint = await moveWorld(page, -3.75, 3.75);
+  const fencePoint = await moveWorld(page, -0.75, 3.75);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   await page.mouse.click(fencePoint.x, fencePoint.y);
   await page.keyboard.press('p');
-  const plotPoint = await moveWorld(page, -5.25, 5.25);
+  const plotPoint = await moveWorld(page, 5.25, 5.25);
   assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
   await page.mouse.click(plotPoint.x, plotPoint.y);
   assert.equal(await count(page, 'placed-fence'), 1);

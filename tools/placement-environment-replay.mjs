@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
@@ -17,7 +18,7 @@ const canonical = (value) => JSON.parse(JSON.stringify(value));
 
 async function serverAt(root) {
   const server = await createServer({ root, configFile: false, logLevel: 'error',
-    server: { host: '127.0.0.1', port: 0, hmr: false } });
+    server: { host: '127.0.0.1', port: 0, hmr: false, fs: { allow: [root, process.cwd()] } } });
   await server.listen();
   const address = server.httpServer.address();
   assert.ok(address && typeof address !== 'string');
@@ -159,7 +160,11 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
     const { scene, character, composer } = window.__ebr75;
     const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
     const rain = scene.getObjectByName('weather-rain');
-    const previous = { body: body.visible, rain: rain.visible };
+    const fold = scene.getObjectByName('farm-sheepfold');
+    const previous = { body: body.visible, rain: rain.visible, fold: fold?.visible };
+    // Keep the EBR-70 collision entities active, hiding only its new visual
+    // group during these historical fold-free reference screenshots.
+    if (fold) fold.visible = false;
     if (hideBody) body.visible = false;
     if (hideRain) rain.visible = false;
     composer.render(0);
@@ -167,14 +172,40 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
   }, { hideBody, hideRain });
   const cdp = await fixture.context.newCDPSession(fixture.page);
   try {
-    const screenshot = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
-    return Buffer.from(screenshot.data, 'base64');
+    const screenshot = async () => Buffer.from((await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
+    const image = await screenshot();
+    const flags = await fixture.page.evaluate(() => {
+      const { scene, composer } = window.__ebr75;
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const fireflies = scene.getObjectByName('night-fireflies');
+      if (!smoke && !fireflies) return null;
+      const state = { smoke: smoke?.visible ?? null, fireflies: fireflies?.visible ?? null };
+      if (smoke) smoke.visible = false;
+      if (fireflies) fireflies.visible = false;
+      composer.render(0);
+      return state;
+    });
+    if (!flags) return { image, withoutEffects: image };
+    try {
+      return { image, withoutEffects: await screenshot() };
+    } finally {
+      await fixture.page.evaluate((state) => {
+        const { scene, composer } = window.__ebr75;
+        const smoke = scene.getObjectByName('chimney-smoke');
+        const fireflies = scene.getObjectByName('night-fireflies');
+        if (smoke && state.smoke !== null) smoke.visible = state.smoke;
+        if (fireflies && state.fireflies !== null) fireflies.visible = state.fireflies;
+        composer.render(0);
+      }, flags);
+    }
   } finally {
     await cdp.detach();
-    if (hideBody || hideRain) await fixture.page.evaluate((previous) => {
+    await fixture.page.evaluate((previous) => {
       const { scene, character, composer } = window.__ebr75;
       character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = previous.body;
       scene.getObjectByName('weather-rain').visible = previous.rain;
+      const fold = scene.getObjectByName('farm-sheepfold');
+      if (fold && previous.fold !== undefined) fold.visible = previous.fold;
       composer.render(0);
     }, visibility);
   }
@@ -242,10 +273,13 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
     } else {
       await emit({ type: 'frames', label: 'initial', times: [0] });
       if (scenario.name === 'placement') {
-        await pointer('click', 'walk-target', -4, 5);
+        // The original -4,5 and -5.25,3.75 tiles now belong to the fold.
+        // Use two still-valid tiles so all original placement actions remain
+        // exercised without removing the new collision/placement entities.
+        await pointer('click', 'walk-target', -0.75, 3.75);
         await key('select-fence', 'f');
         await frames('placement-cancels-walk', 2, 100);
-        await pointer('hover', 'valid-fence', -4, 5);
+        await pointer('hover', 'valid-fence', -0.75, 3.75);
         await shot('preview-valid');
         await key('rotated-fence', 'r');
         await shot('preview-rotated');
@@ -257,11 +291,11 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
         await shot('preview-water');
         await pointer('hover', 'blocked-cottage', -3.4, -3.4);
         await shot('preview-cottage');
-        await pointer('hover', 'valid-before-place', -4, 5);
-        await pointer('click', 'placed-fence', -4, 5);
+        await pointer('hover', 'valid-before-place', -0.75, 3.75);
+        await pointer('click', 'placed-fence', -0.75, 3.75);
         await shot('placed-fence-frame');
         await key('select-plot', 'p');
-        await pointer('touch', 'touch-preview-plot', -5.25, 3.75);
+        await pointer('touch', 'touch-preview-plot', -3.75, 0.75);
         await shot('touch-preview');
         await emit({ type: 'button', label: 'touch-rotate-plot', name: 'rotate' });
         await shot('touch-rotated');
@@ -273,8 +307,8 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
         await shot('undo-frame');
         await key('reselect-fence', 'f');
         await emit({ type: 'button', label: 'toggle-remove', name: 'remove' });
-        await pointer('hover', 'target-fence', -4, 5);
-        await pointer('touch', 'remove-fence', -4, 5);
+        await pointer('hover', 'target-fence', -0.75, 3.75);
+        await pointer('touch', 'remove-fence', -0.75, 3.75);
         await shot('remove-frame');
         await key('cancel-after-remove', 'Escape');
         await frames('placement-settled', 2, 100);
@@ -323,6 +357,108 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
   }
 }
 
+/** Browser-side comparison of a fold, isolated feedback and optional visual effects. */
+export async function compareFoldFeedbackFrame({ baseline, candidate, hiddenFold, hiddenFeature, hudRects = {}, effects }) {
+  async function pixels(data) {
+    const image = new Image();
+    image.src = `data:image/png;base64,${data}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    return context.getImageData(0, 0, canvas.width, canvas.height);
+  }
+  const effectNames = ['baselineNoSmoke', 'candidateNoSmoke', 'baselineNoFireflies', 'candidateNoFireflies',
+    'baselineNoEffects', 'candidateNoEffects', 'candidateNoEffectsHiddenFold', 'candidateNoEffectsHiddenFeature', 'candidateNoNod'];
+  if (effects && effectNames.some((name) => !effects[name])) throw new Error('Incomplete effect isolation frames');
+  const names = ['baseline', 'candidate', 'hiddenFold', 'hiddenFeature', ...(effects ? effectNames : [])];
+  const sources = { baseline, candidate, hiddenFold, hiddenFeature, ...effects };
+  const decoded = Object.fromEntries(await Promise.all(names.map(async (name) => [name, await pixels(sources[name])])));
+  const { baseline: original, candidate: visible, hiddenFold: withoutFold, hiddenFeature: withoutFeature } = decoded;
+  const { width, height } = original;
+  if (Object.values(decoded).some((image) => image.width !== width || image.height !== height)) {
+    throw new Error('Frame dimensions differ');
+  }
+  const canvases = Object.fromEntries(['mask', 'fold', 'feedback', 'smoke', 'fireflies', 'nod', 'diff', 'effectsHiddenDiff'].map((name) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d');
+    return [name, { canvas, context, image: context.createImageData(width, height) }];
+  }));
+  const differs = (a, b, i) => a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3];
+  let changed = 0; let masked = 0; let foldPixels = 0; let feedbackPixels = 0; let overlapPixels = 0;
+  let insideMask = 0; let outside = 0; let foldOnlyOutside = 0; let feedbackChangedOutsideFold = 0; let hiddenMismatch = 0;
+  let smokePixels = 0; let fireflyPixels = 0; let nodPixels = 0;
+  let visibleHiddenMismatch = 0; let effectsHiddenChanged = 0; let effectsHiddenOutside = 0;
+  let minX = width; let minY = height; let maxX = -1; let maxY = -1;
+  const hudChanged = Object.fromEntries(Object.keys(hudRects).map((name) => [name, 0]));
+  for (let i = 0; i < original.data.length; i += 4) {
+    const fold = differs(visible.data, withoutFold.data, i);
+    const feedback = differs(withoutFold.data, withoutFeature.data, i);
+    const smoke = Boolean(effects) && (differs(original.data, decoded.baselineNoSmoke.data, i) ||
+      differs(visible.data, decoded.candidateNoSmoke.data, i));
+    const fireflies = Boolean(effects) && (differs(original.data, decoded.baselineNoFireflies.data, i) ||
+      differs(visible.data, decoded.candidateNoFireflies.data, i));
+    const nod = Boolean(effects) && differs(visible.data, decoded.candidateNoNod.data, i);
+    const allowed = fold || feedback || smoke || fireflies || nod;
+    const isChanged = differs(original.data, visible.data, i);
+    if (differs(original.data, withoutFeature.data, i)) visibleHiddenMismatch++;
+    if (effects) {
+      const noEffectsChanged = differs(decoded.baselineNoEffects.data, decoded.candidateNoEffects.data, i);
+      const noEffectsFold = differs(decoded.candidateNoEffects.data, decoded.candidateNoEffectsHiddenFold.data, i);
+      const noEffectsFeedback = differs(decoded.candidateNoEffectsHiddenFold.data, decoded.candidateNoEffectsHiddenFeature.data, i);
+      if (noEffectsChanged) {
+        effectsHiddenChanged++;
+        if (!noEffectsFold && !noEffectsFeedback) effectsHiddenOutside++;
+        canvases.effectsHiddenDiff.image.data[i] = 255;
+        canvases.effectsHiddenDiff.image.data[i + 2] = 255;
+      }
+      if (differs(decoded.baselineNoEffects.data, decoded.candidateNoEffectsHiddenFeature.data, i)) hiddenMismatch++;
+    } else if (differs(original.data, withoutFeature.data, i)) hiddenMismatch++;
+    if (fold) { foldPixels++; canvases.fold.image.data[i] = canvases.fold.image.data[i + 1] = canvases.fold.image.data[i + 2] = 255; }
+    if (feedback) { feedbackPixels++; canvases.feedback.image.data[i] = canvases.feedback.image.data[i + 1] = canvases.feedback.image.data[i + 2] = 255; }
+    if (smoke) { smokePixels++; canvases.smoke.image.data[i] = canvases.smoke.image.data[i + 1] = canvases.smoke.image.data[i + 2] = 255; }
+    if (fireflies) { fireflyPixels++; canvases.fireflies.image.data[i] = canvases.fireflies.image.data[i + 1] = canvases.fireflies.image.data[i + 2] = 255; }
+    if (nod) { nodPixels++; canvases.nod.image.data[i] = canvases.nod.image.data[i + 1] = canvases.nod.image.data[i + 2] = 255; }
+    if (fold && feedback) overlapPixels++;
+    if (allowed) {
+      masked++;
+      const pixel = i / 4; const x = pixel % width; const y = Math.floor(pixel / width);
+      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+      canvases.mask.image.data[i] = canvases.mask.image.data[i + 1] = canvases.mask.image.data[i + 2] = 255;
+    }
+    if (isChanged) {
+      changed++;
+      if (allowed) insideMask++; else outside++;
+      if (!fold) {
+        foldOnlyOutside++;
+        if (feedback) feedbackChangedOutsideFold++;
+      }
+      const pixel = i / 4; const x = pixel % width; const y = Math.floor(pixel / width);
+      for (const [name, rect] of Object.entries(hudRects)) {
+        if (rect && x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom) hudChanged[name]++;
+      }
+      canvases.diff.image.data[i] = 255;
+      canvases.diff.image.data[i + 2] = 255;
+    }
+    canvases.mask.image.data[i + 3] = canvases.fold.image.data[i + 3] =
+      canvases.feedback.image.data[i + 3] = canvases.smoke.image.data[i + 3] =
+      canvases.fireflies.image.data[i + 3] = canvases.nod.image.data[i + 3] =
+      canvases.diff.image.data[i + 3] = canvases.effectsHiddenDiff.image.data[i + 3] = 255;
+  }
+  const images = {};
+  for (const [name, value] of Object.entries(canvases)) {
+    value.context.putImageData(value.image, 0, 0);
+    images[name] = value.canvas.toDataURL('image/png').split(',')[1];
+  }
+  return { changed, masked, foldPixels, feedbackPixels, overlapPixels, insideMask, outside, foldOnlyOutside,
+    feedbackChangedOutsideFold, smokePixels, fireflyPixels, nodPixels, visibleHiddenMismatch,
+    effectsHiddenChanged, effectsHiddenOutside, hiddenMismatch, hudChanged,
+    bounds: masked ? [minX, minY, maxX, maxY] : null, ...images };
+}
+
 async function pixelDiff(page, frames) {
   return page.evaluate(async (frames) => {
     async function decode(data) {
@@ -344,39 +480,50 @@ async function pixelDiff(page, frames) {
       context.drawImage(image, 0, 0);
       return [names[index], context.getImageData(0, 0, a.width, a.height).data];
     }));
-    const { reference, candidate, referenceBodyless, candidateBodyless,
+    const { reference, candidate, referenceBodyless, candidateBodyless, rawReference, rawCandidate,
       referenceRainless, candidateRainless, referenceBothHidden, candidateBothHidden } = pixels;
     const diff = context.createImageData(a.width, a.height);
+    const rawDiff = context.createImageData(a.width, a.height);
     const bodyMask = context.createImageData(a.width, a.height);
     const rainMask = context.createImageData(a.width, a.height);
+    const effectMask = context.createImageData(a.width, a.height);
     let changedPixels = 0;
+    let rawChangedPixels = 0;
+    let rawOutsideAllowedPixels = 0;
     let outsideAllowedPixels = 0;
     let hiddenChangedPixels = 0;
     let rainlessChangedPixels = 0;
     const differs = (x, y, i) => x[i] !== y[i] || x[i + 1] !== y[i + 1] || x[i + 2] !== y[i + 2] || x[i + 3] !== y[i + 3];
     for (let i = 0; i < reference.length; i += 4) {
       const changed = differs(reference, candidate, i);
+      const rawChanged = differs(rawReference, rawCandidate, i);
       const body = differs(reference, referenceBodyless, i) || differs(candidate, candidateBodyless, i);
+      const effects = differs(rawReference, reference, i) || differs(rawCandidate, candidate, i);
       const rain = Boolean(referenceRainless) && (differs(reference, referenceRainless, i) ||
         differs(candidate, candidateRainless, i) || differs(referenceBodyless, referenceBothHidden, i) ||
         differs(candidateBodyless, candidateBothHidden, i));
       if (changed) { changedPixels++; diff.data[i] = 255; diff.data[i + 2] = 255; }
+      if (rawChanged) { rawChangedPixels++; rawDiff.data[i] = 255; rawDiff.data[i + 2] = 255; }
       if (changed && !body && !rain) outsideAllowedPixels++;
+      if (rawChanged && !body && !rain && !effects) rawOutsideAllowedPixels++;
       if (differs(referenceBothHidden || referenceBodyless, candidateBothHidden || candidateBodyless, i)) hiddenChangedPixels++;
       if (referenceRainless && differs(referenceRainless, candidateRainless, i)) rainlessChangedPixels++;
       if (body) bodyMask.data[i] = bodyMask.data[i + 1] = bodyMask.data[i + 2] = 255;
       if (rain) rainMask.data[i] = rainMask.data[i + 1] = rainMask.data[i + 2] = 255;
-      diff.data[i + 3] = 255;
-      bodyMask.data[i + 3] = 255;
-      rainMask.data[i + 3] = 255;
+      if (effects) effectMask.data[i] = effectMask.data[i + 1] = effectMask.data[i + 2] = 255;
+      diff.data[i + 3] = rawDiff.data[i + 3] = bodyMask.data[i + 3] = rainMask.data[i + 3] = effectMask.data[i + 3] = 255;
     }
     context.putImageData(diff, 0, 0);
     const png = canvas.toDataURL('image/png').split(',')[1];
     context.putImageData(bodyMask, 0, 0);
     const bodyPng = canvas.toDataURL('image/png').split(',')[1];
     context.putImageData(rainMask, 0, 0);
-    return { changedPixels, outsideAllowedPixels, hiddenChangedPixels, rainlessChangedPixels, png, bodyPng,
-      rainPng: canvas.toDataURL('image/png').split(',')[1] };
+    const rainPng = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(rawDiff, 0, 0);
+    const rawPng = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(effectMask, 0, 0);
+    return { changedPixels, rawChangedPixels, rawOutsideAllowedPixels, outsideAllowedPixels, hiddenChangedPixels,
+      rainlessChangedPixels, png, rawPng, bodyPng, rainPng, effectPng: canvas.toDataURL('image/png').split(',')[1] };
   }, Object.fromEntries(Object.entries(frames).map(([name, bytes]) => [name, bytes.toString('base64')])));
 }
 
@@ -419,18 +566,20 @@ function historicalBehavior(trace) {
   return copy;
 }
 
-/** Record a clean main reference first, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir, archivedBaselineSha }) {
+async function temporary(prefix) {
+  try { return await mkdtemp(`/tmp/opencode/${prefix}`); }
+  catch (error) {
+    if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
+    return mkdtemp(join(tmpdir(), prefix));
+  }
+}
+
+/** Record a verified main reference, then replay identical events and timestamps. */
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
+  baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
-  if (archivedBaselineSha) {
-    assert.equal(archivedBaselineSha, baselineSha);
-  } else {
-    assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
-    assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-      'The reference must be a clean main worktree');
-  }
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },
     { name: 'environment-cycle', search: '?phase=sunset&weather=clear' },
@@ -440,7 +589,38 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
   let baseline;
   let candidate;
   let browser;
+  let archiveRoot;
+  let traceDir;
   try {
+    assert.equal(git(candidateRoot, 'rev-parse', `${baselineSha}^{commit}`), baselineSha);
+    if (baselineRoot && (archivedBaselineSha || baselineArchive)) {
+      if (archivedBaselineSha) assert.equal(archivedBaselineSha, baselineSha);
+    } else if (baselineRoot) {
+      assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
+      assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
+        'The reference must be a clean main worktree');
+    } else {
+      assert.equal(archivedBaselineSha, undefined, 'An archive SHA needs a supplied reference directory');
+      archiveRoot = await temporary('ebr75-archive-');
+      const archive = join(archiveRoot, 'baseline.tar');
+      execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
+        baselineSha, 'src', 'index.html', 'package.json', 'package-lock.json']);
+      execFileSync('tar', ['-xf', archive, '-C', archiveRoot]);
+      await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
+      baselineRoot = archiveRoot;
+      archivedBaselineSha = baselineSha;
+    }
+    if (archivedBaselineSha || baselineArchive) {
+      // Verify every archived source file against the requested Git tree.
+      const entries = git(candidateRoot, 'ls-tree', '-r', baselineSha, '--', 'src', 'index.html', 'package.json', 'package-lock.json');
+      for (const entry of entries.split('\n')) {
+        const match = /^100644 blob ([0-9a-f]{40})\t(.+)$/.exec(entry);
+        assert.ok(match, `Unexpected baseline tree entry: ${entry}`);
+        const bytes = await readFile(join(baselineRoot, match[2]));
+        const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+        assert.equal(blob, match[1], `Archived baseline differs: ${match[2]}`);
+      }
+    }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
@@ -459,7 +639,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       referenceBothHidden[scenario.name] = bothHiddenFrames;
     }
     assertReferenceCoverage(reference);
-    const traceDir = await mkdtemp(join(baselineRoot, '.ebr75-reference-'));
+    traceDir = await temporary('ebr75-reference-');
     const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed, scenarios: reference })}\n`);
     const saved = JSON.parse(await readFile(tracePath, 'utf8'));
@@ -469,6 +649,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const results = {};
     const mismatches = [];
     const visualResults = {};
+    const rawVisualResults = {};
     const visualIsolation = {};
     const expectedRainChanges = [];
     const intendedBodyChanges = [];
@@ -495,18 +676,20 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       }
       results[scenario.name] = { actions: actual.trace.length,
         samples: actual.trace.reduce((sum, entry) => sum + entry.samples.length, 0), identical };
-      for (const [name, bytes] of Object.entries(actual.frames)) {
+      for (const [name, frame] of Object.entries(actual.frames)) {
         const original = referenceFrames[scenario.name][name];
         assert.ok(original, `Missing reference frame: ${name}`);
         const captured = expected.find((entry) => entry.label === name)?.samples[0];
         assert.ok(captured, `Missing reference snapshot: ${name}`);
-        const frames = { reference: original, candidate: bytes,
-          referenceBodyless: referenceBodyless[scenario.name][name], candidateBodyless: actual.bodylessFrames[name] };
+        const frames = { reference: original.withoutEffects, candidate: frame.withoutEffects,
+          rawReference: original.image, rawCandidate: frame.image,
+          referenceBodyless: referenceBodyless[scenario.name][name]?.withoutEffects,
+          candidateBodyless: actual.bodylessFrames[name]?.withoutEffects };
         if (historical && captured.environment.weather.rainAmount > 0) {
-          frames.referenceRainless = referenceRainless[scenario.name][name];
-          frames.candidateRainless = actual.rainlessFrames[name];
-          frames.referenceBothHidden = referenceBothHidden[scenario.name][name];
-          frames.candidateBothHidden = actual.bothHiddenFrames[name];
+          frames.referenceRainless = referenceRainless[scenario.name][name]?.withoutEffects;
+          frames.candidateRainless = actual.rainlessFrames[name]?.withoutEffects;
+          frames.referenceBothHidden = referenceBothHidden[scenario.name][name]?.withoutEffects;
+          frames.candidateBothHidden = actual.bothHiddenFrames[name]?.withoutEffects;
         }
         assert.ok(Object.values(frames).every(Boolean), `Missing isolated render: ${name}`);
         const diff = await pixelDiff(diffPage, frames);
@@ -514,30 +697,41 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
         // anchors. Do not allow even body-only changes in those stills.
         const protectedAnchor = /^url-(morning|sunset|night)-/.test(name) || name === 'weather-night-rain';
         const protectedChangedPixels = protectedAnchor ? (frames.referenceRainless ? diff.rainlessChangedPixels : diff.changedPixels) : 0;
+        rawVisualResults[name] = diff.rawChangedPixels;
         visualResults[name] = diff.changedPixels;
-        visualIsolation[name] = { outsideAllowedPixels: diff.outsideAllowedPixels, hiddenChangedPixels: diff.hiddenChangedPixels,
-          protectedChangedPixels };
+        visualIsolation[name] = { rawOutsideAllowedPixels: diff.rawOutsideAllowedPixels,
+          outsideAllowedPixels: diff.outsideAllowedPixels, hiddenChangedPixels: diff.hiddenChangedPixels, protectedChangedPixels };
         if (diff.changedPixels && historical && captured.environment.weather.rainAmount > 0) expectedRainChanges.push(name);
         else if (diff.changedPixels) intendedBodyChanges.push(name);
-        if (diff.outsideAllowedPixels || diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
+        if (diff.rawOutsideAllowedPixels || diff.outsideAllowedPixels || diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
         if (evidenceDir) {
-          for (const dir of ['baseline', 'candidate', 'diff', 'body-mask', 'rain-mask']) await mkdir(join(evidenceDir, dir), { recursive: true });
-          await writeFile(join(evidenceDir, 'baseline', `${name}.png`), original);
-          await writeFile(join(evidenceDir, 'candidate', `${name}.png`), bytes);
+          for (const dir of ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff',
+            'body-mask', 'rain-mask', 'effect-mask']) {
+            await mkdir(join(evidenceDir, dir), { recursive: true });
+          }
+          await writeFile(join(evidenceDir, 'baseline', `${name}.png`), original.image);
+          await writeFile(join(evidenceDir, 'candidate', `${name}.png`), frame.image);
+          await writeFile(join(evidenceDir, 'baseline-no-effects', `${name}.png`), original.withoutEffects);
+          await writeFile(join(evidenceDir, 'candidate-no-effects', `${name}.png`), frame.withoutEffects);
           await writeFile(join(evidenceDir, 'diff', `${name}.png`), Buffer.from(diff.png, 'base64'));
+          await writeFile(join(evidenceDir, 'raw-diff', `${name}.png`), Buffer.from(diff.rawPng, 'base64'));
           await writeFile(join(evidenceDir, 'body-mask', `${name}.png`), Buffer.from(diff.bodyPng, 'base64'));
           await writeFile(join(evidenceDir, 'rain-mask', `${name}.png`), Buffer.from(diff.rainPng, 'base64'));
+          await writeFile(join(evidenceDir, 'effect-mask', `${name}.png`), Buffer.from(diff.effectPng, 'base64'));
         }
       }
     }
     await diffPage.close();
-    const report = { baselineSha, candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
+    const report = { baselineSha, baselineArchive: Boolean(archivedBaselineSha || baselineArchive), candidateSha: git(candidateRoot, 'rev-parse', 'HEAD'),
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--', 'src', 'index.html',
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
+      baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
       referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
+      visualComparison: 'The EBR-70 fold is hidden only during screenshot capture; its obstacle entities remain active.',
       excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
-      results, rawTraceDifferences, visualResults, visualIsolation, intendedBodyChanges, expectedRainChanges, unexpectedVisualChanges, mismatches };
+      results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
+      expectedRainChanges, unexpectedVisualChanges, mismatches };
     if (evidenceDir) {
       await mkdir(evidenceDir, { recursive: true });
       await writeFile(join(evidenceDir, 'replay.json'), `${JSON.stringify(report, null, 2)}\n`);
@@ -549,5 +743,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     await browser?.close();
     await baseline?.server.close();
     await candidate?.server.close();
+    if (traceDir) await rm(traceDir, { recursive: true });
+    if (archiveRoot) await rm(archiveRoot, { recursive: true });
   }
 }
