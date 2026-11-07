@@ -1,0 +1,19 @@
+[heavy] slot /tmp/farm-heavy.a.lock acquired: env EBR42_EXPECT_HEAD=114e2afa2cedfabc82c9d438eb27a3dfb8825232 EBR42_EVIDENCE_ROOT=/tmp/ebr42-final-zdaw3pm7/retune-evidence node /tmp/ebr42-final-zdaw3pm7/run-with-vite.mjs /tmp/ebr42-final-zdaw3pm7/retune-checkout node evidence/EBR-42/capture.mjs
+Clean checkout 114e2afa2cedfabc82c9d438eb27a3dfb8825232 served on http://127.0.0.1:5222
+morning-clear: 1040 vs main, 1056 vs signed, 1264 vs previous; 0/0 outside masks
+morning-cloudy: 1040 vs main, 1056 vs signed, 1264 vs previous; 0/0 outside masks
+morning-rain: 672 vs main, 720 vs signed, 672 vs previous; 0/0 outside masks
+daytime-clear: 1040 vs main, 1056 vs signed, 1280 vs previous; 0/0 outside masks
+daytime-cloudy: 1040 vs main, 1056 vs signed, 1264 vs previous; 0/0 outside masks
+daytime-rain: 672 vs main, 720 vs signed, 688 vs previous; 0/0 outside masks
+sunset-clear: 1040 vs main, 1056 vs signed, 1264 vs previous; 0/0 outside masks
+sunset-cloudy: 1040 vs main, 1056 vs signed, 1280 vs previous; 0/0 outside masks
+sunset-rain: 672 vs main, 720 vs signed, 688 vs previous; 0/0 outside masks
+night-clear: 2544 vs main, 1056 vs signed, 1264 vs previous; 0/0 outside masks
+night-cloudy: 2128 vs main, 1056 vs signed, 1264 vs previous; 0/0 outside masks
+night-rain: 1408 vs main, 720 vs signed, 704 vs previous; 0/0 outside masks
+walk-night-clear: 2560 vs main, 1120 vs signed, 1232 vs previous; 0/0 outside masks
+placement-night-clear: 2538 vs main, 1034 vs signed, 1263 vs previous; 0/0 outside masks
+stairs-daytime-clear: 0 vs main, 0 vs signed, 0 vs previous; 0/0 outside masks
+Gate G PASS: 15 frames vs main 6daf042ad85882f020268baf53fc92fb09e921ad; smoke-only differences vs 468b4f3b2bc415d69ec0e52575de127c2035e1a8
+[heavy] released /tmp/farm-heavy.a.lock rc=0
