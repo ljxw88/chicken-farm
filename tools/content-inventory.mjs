@@ -9,6 +9,8 @@ const modules = {
   garden: ['GARDEN_DRESSING', 'BEEHIVE_FOOTPRINT', 'BEEHIVE_GEOMETRY', 'FLOWER_GEOMETRY'],
   buildings: ['FARM_BUILDINGS'],
   world: ['ISLAND', 'STAIR', 'GRID'],
+  placeables: ['PLACEABLES'],
+  ground: ['GROUND'],
   propGeometry: ['PATH_GEOMETRY', 'TREE_GEOMETRY', 'POND_GEOMETRY', 'GRASS_GEOMETRY'],
   decorationGeometry: ['CHICKEN_GEOMETRY', 'NEST_GEOMETRY', 'DECORATION_GEOMETRY'],
   buildingGeometry: ['COTTAGE_GEOMETRY', 'COOP_GEOMETRY', 'GABLE_GEOMETRY'],

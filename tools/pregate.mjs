@@ -208,7 +208,8 @@ async function main() {
         const parityDir = join(runDir, 'parity');
         const env = { PARITY_EVIDENCE_DIR: parityDir, PARITY_BASELINE_DIR: '' };
         const recorded = await runStep('parityRecord', heavy, [process.execPath, 'tools/parity.mjs', '--record-baseline',
-          '--baseline-sha', report.mainSha, '--baseline-root', baseline, '--baseline-port-range', '5211-5229'], { env });
+          '--baseline-sha', report.mainSha, '--baseline-root', baseline, '--baseline-port-range',
+          process.env.PREGATE_BASELINE_PORT_RANGE || '5211-5229'], { env });
         if (recorded.rc === 0) {
           const args = [process.execPath, 'tools/parity.mjs', ...(masks ? ['--masks', masks] : [])];
           const compared = await runStep('parity', heavy, args, { env });

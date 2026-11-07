@@ -20,6 +20,9 @@ with its own `npm ci` dependencies linked inside the cache. All archived Git
 blobs and symlinks are verified before reuse; a modified or incomplete cache
 fails closed. The baseline capture uses the first free port in 5211–5229 and
 closes its server afterward. Exact commands and logs are retained with the run.
+To reserve a specific free port for both parity captures, set
+`PREGATE_BASELINE_PORT_RANGE=5220-5220 PARITY_PORT=5220`; the existing browser
+test port overrides can be set separately.
 
 Results are written to
 `/home/michael/OpenBot/Shared/farm-evidence/<EBR>/<short-sha>/pregate.json`;

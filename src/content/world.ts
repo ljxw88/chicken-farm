@@ -1,3 +1,5 @@
+import { PLACEABLES, rectangleDimensions } from './placeables';
+
 // All world dimensions and placement footprints are independent of art slots.
 export const ISLAND = {
   size: 16,
@@ -26,6 +28,6 @@ export const STAIR = {
 
 export const GRID = {
   tileSize: 1.5,
-  footprints: { fence: { columns: 1, rows: 1 }, plot: { columns: 2, rows: 1 } },
-  fenceCollision: { halfLength: 0.735, halfWidth: 0.13 },
+  footprints: { fence: rectangleDimensions(PLACEABLES.fence), plot: rectangleDimensions(PLACEABLES.plot) },
+  fenceCollision: { halfLength: PLACEABLES.fence.collider.width / 2, halfWidth: PLACEABLES.fence.collider.depth / 2 },
 } as const;

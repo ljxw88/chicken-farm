@@ -8,7 +8,10 @@ the data. `sheep.ts` separates the fold and shelter footprints, sheep geometry,
 and their `fence`, `building.sheepfold`, and `prop.sheep` IDs from appearance.
 `garden.ts` keeps the hive and flower positions, asset IDs, silhouettes and hive
 footprint separate from their palette and shadow-opacity slots. Plot geometry
-stays in `placementGeometry.ts`, while its tile footprint remains in `world.ts`.
+stays in `placementGeometry.ts`; `placeables.ts` declares the fence and plot
+cell masks, visual sizes and walking/placement rules. `world.ts` derives its
+legacy rectangle dimensions from that registry. `ground.ts` describes the first
+chunk and full-cell grid separately from the visible island edge strips.
 `effects.ts` supplies the `effect.fireflies` and `effect.chimney-smoke` IDs,
 positions, counts and motion parameters; `startup.ts` owns the default seeds and
 query keys. `snowSettings.ts` and `weatherVisual.ts` supply snow settings and its

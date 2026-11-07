@@ -17,6 +17,8 @@ import type { createSheepfold } from '../scene/sheepfold/createSheepfold';
 import type { createStartupPhaseController } from '../startupOptions';
 import type { createFarmHud, createSkyHud, createSkyStateAdapter } from '../ui';
 import type { createWeatherSystem, WeatherMode } from '../weather';
+import type { GroundGrid } from '../world/ground';
+import type { createFarmTerrain } from './farmTerrain';
 
 export interface GameComponents extends PlacementComponents, DayNightComponents, WeatherComponents {}
 
@@ -33,6 +35,8 @@ export interface AppContext extends SceneParts, FarmParts {
   hudRoot: HTMLElement;
   skyRoot: HTMLElement;
   character: ReturnType<typeof createCharacter>;
+  groundGrid: GroundGrid;
+  farmTerrain?: ReturnType<typeof createFarmTerrain>;
   sheepfold: ReturnType<typeof createSheepfold>;
   garden: ReturnType<typeof createGardenDressing>;
   decorations: ReturnType<typeof createFarmDecorations>;
