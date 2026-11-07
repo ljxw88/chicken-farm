@@ -4,24 +4,29 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from '../../tools/parity-bridge-route.mjs';
+import { captureSourceSnapshot } from './source-snapshot.mjs';
 
 // Gate G against an archived clean main: same seeded weather, controlled frame
 // times, camera, pose and pixel pass. All instrumentation is response-only.
-const expectedMain = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
+const expectedMain = '6daf042ad85882f020268baf53fc92fb09e921ad';
 const signedHead = '9305bd41ed71f1d885646ac5d9b1bc145fb2594e';
+const previousHead = '468b4f3b2bc415d69ec0e52575de127c2035e1a8';
 const seed = 0xeb730001;
+const timing = '3.0 s in 100 ms steps except stairs (real click route)';
 const candidateUrl = (process.env.EBR42_URL || 'http://100.88.150.21:5212').replace(/\/$/, '');
-const output = resolve('evidence/EBR-42');
-const candidateHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-const sourceStatus = execFileSync('git', ['status', '--porcelain', '--untracked-files=all', '--',
-  'src', 'index.html', 'package.json', 'package-lock.json'], { encoding: 'utf8' }).trim();
-assert.equal(sourceStatus, '', 'Commit the candidate source before capturing evidence');
+const output = resolve(process.env.EBR42_EVIDENCE_ROOT || 'evidence/EBR-42');
+const sourceSnapshot = captureSourceSnapshot();
+const { head: candidateHead, sourceStatus } = sourceSnapshot;
 const readability = JSON.parse(await readFile(join(output, 'smoke-retune/readability.json'), 'utf8'));
 assert.equal(readability.head, candidateHead, 'Regenerate per-puff measurements for this source tip first');
-assert.deepEqual(readability.failures, [], 'Smoke composite-contribution or selected independent checks failed');
+for (const key of ['srcTree', 'testsTree', 'toolsTree', 'indexHtml', 'packageJson', 'packageLock']) {
+  assert.equal(readability.sourceSnapshot?.[key], sourceSnapshot[key], `Regenerate per-puff measurements for the staged ${key}`);
+}
+assert.deepEqual(readability.failures, [], 'Smoke-mask peak, window or non-emission checks failed');
 const viewport = { width: 1280, height: 720 };
 const matrix = ['morning', 'daytime', 'sunset', 'night'].flatMap((phase) =>
   ['clear', 'cloudy', 'rain'].map((weather) => ({ name: `${phase}-${weather}`, phase, weather, setup: 'spawn' })));
@@ -31,17 +36,30 @@ const scenarios = [...matrix,
   { name: 'stairs-daytime-clear', phase: 'daytime', weather: 'clear', setup: 'stairs' },
 ];
 const hash = (data) => createHash('sha256').update(data).digest('hex');
+const canonical = (value) => JSON.parse(JSON.stringify(value));
 for (const name of ['baseline', 'candidate', 'no-effects', 'diff', 'mask/smoke', 'mask/fireflies', 'mask/combined',
-  'mask/smoke-retune', 'smoke-retune/before', 'smoke-retune/diff', 'smoke-retune/crops', 'crops']) {
+  'mask/smoke-retune', 'smoke-retune/before', 'smoke-retune/diff', 'smoke-retune/crops', 'crops',
+  'merge-6daf042/previous', 'merge-6daf042/candidate', 'merge-6daf042/diff',
+  'merge-6daf042/no-smoke', 'merge-6daf042/no-fireflies']) {
   await mkdir(join(output, name), { recursive: true });
 }
 
 const sha = execFileSync('git', ['rev-parse', '--verify', `${expectedMain}^{commit}`], { encoding: 'utf8' }).trim();
 assert.equal(sha, expectedMain);
+execFileSync('git', ['diff', '--cached', '--quiet', sha, '--', 'package.json', 'package-lock.json']);
 assert.equal(execFileSync('git', ['rev-parse', '--verify', `${signedHead}^{commit}`], { encoding: 'utf8' }).trim(), signedHead);
-execFileSync('git', ['diff', '--quiet', signedHead, 'HEAD', '--', 'src/effects/createFireflies.ts', 'tests/fireflies.test.mjs']);
+assert.equal(execFileSync('git', ['rev-parse', '--verify', `${previousHead}^{commit}`], { encoding: 'utf8' }).trim(), previousHead);
+execFileSync('git', ['diff', '--cached', '--quiet', signedHead, '--', 'src/effects/createFireflies.ts', 'tests/fireflies.test.mjs']);
+execFileSync('git', ['diff', '--cached', '--quiet', previousHead, '--', 'src/effects', 'src/lighting/dayNightPhases.ts',
+  'src/lighting/createPracticalLights.ts', 'src/lighting/createSunsetWaterTint.ts', 'src/weather/createRainEffect.ts',
+  'src/weather/rainSettings.ts', 'src/weather/cloudySettings.ts', 'src/scene', 'src/ui', 'src/character/createCharacter.ts',
+  'src/postprocess', 'src/style.css', 'tests/chimneySmoke.test.mjs', 'tests/fireflies.test.mjs']);
 const signedReport = JSON.parse(execFileSync('git', ['show', `${signedHead}:evidence/EBR-42/comparison.json`], { encoding: 'utf8' }));
 execFileSync('git', ['diff', '--quiet', signedReport.candidateHead, signedHead, '--', 'src', 'index.html', 'package.json', 'package-lock.json']);
+const previousReport = JSON.parse(execFileSync('git', ['show', `${previousHead}:evidence/EBR-42/comparison.json`], { encoding: 'utf8' }));
+// The previous evidence commit changed no runtime inputs after its captured source tip.
+execFileSync('git', ['diff', '--quiet', previousReport.candidateHead, previousHead, '--',
+  'src', 'index.html', 'package.json', 'package-lock.json']);
 let temp;
 try { temp = await mkdtemp('/tmp/opencode/ebr42-main-'); }
 catch (error) {
@@ -67,17 +85,30 @@ try {
   assert.equal(signedReport.seed, seed, 'Signed firefly seed differs');
   assert.deepEqual(signedReport.viewport, viewport);
   assert.equal(signedReport.deviceScaleFactor, 1);
+  assert.equal(browser.version(), previousReport.browser, 'Use the same Chromium version as the previous-head capture');
+  assert.equal(previousReport.seed, seed, 'Previous-head seed differs');
+  assert.deepEqual(previousReport.viewport, viewport);
+  assert.equal(previousReport.deviceScaleFactor, 1);
+  assert.equal(previousReport.time, timing, 'Previous-head capture timing differs');
+  assert.equal(previousReport.sourceStatus, '', 'Previous-head capture source was not clean');
   const comparisonPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
-  const report = { main: sha, signedHead, candidateHead, sourceStatus, candidateUrl, browser: browser.version(), viewport, deviceScaleFactor: 1,
-    seed, time: '3.0 s in 100 ms steps except stairs (real click route)', cases: {}, retuneCrops: {} };
+  const report = { main: sha, signedHead, previousHead, candidateHead, sourceStatus, sourceSnapshot, candidateUrl, browser: browser.version(), viewport, deviceScaleFactor: 1,
+    seed, time: timing, cases: {}, retuneCrops: {} };
+  const samePose = { main: sha, previousHead, previousSourceTip: previousReport.candidateHead, candidateHead,
+    sourceStatus, sourceSnapshot, frozenLookPathsUnchanged: true, browser: browser.version(), viewport, deviceScaleFactor: 1, seed, time: timing,
+    method: 'Unmasked full-frame pixel comparison to the previous head’s committed, hash-verified capture; seed, browser, viewport, recorded pose/state and effect state are checked.',
+    frames: {}, failures: [] };
+  const failures = [];
+  const check = (condition, message) => { if (!condition) failures.push(message); };
 
   for (const scenario of scenarios) {
     const before = await capture(mainUrl, scenario, false);
     const after = await capture(candidateUrl, scenario, true);
-    assert.deepEqual(after.state, before.state, `${scenario.name}: camera, gameplay, lights or weather changed`);
+    const mainStateMatches = isDeepStrictEqual(canonical(after.state), canonical(before.state));
+    check(mainStateMatches, `${scenario.name}: camera, gameplay, lights or weather changed vs main`);
     const signed = signedReport.cases[scenario.name];
-    assert.deepEqual(after.state, signed.state, `${scenario.name}: state differs from the signed head`);
-    assert.deepEqual(after.effectState.fireflyOpacity, signed.effectState.fireflyOpacity, `${scenario.name}: firefly opacity changed`);
+    check(isDeepStrictEqual(canonical(after.state), signed.state), `${scenario.name}: state differs from the signed head`);
+    check(isDeepStrictEqual(canonical(after.effectState.fireflyOpacity), signed.effectState.fireflyOpacity), `${scenario.name}: firefly opacity changed`);
     const result = await compare(comparisonPage, before.image, after);
     const fromSigned = (folder) => execFileSync('git', ['show', `${signedHead}:evidence/EBR-42/${folder}/${scenario.name}.png`]);
     const signedFrame = fromSigned('candidate');
@@ -85,17 +116,52 @@ try {
     const signedFlies = fromSigned('mask/fireflies');
     const retune = await compareRetune(comparisonPage, signedFrame, after.image, signedSmoke,
       Buffer.from(result.smokePng, 'base64'), signedFlies, Buffer.from(result.firefliesPng, 'base64'));
+    const previous = previousReport.cases[scenario.name];
+    assert.ok(previous, `Missing previous-head evidence: ${scenario.name}`);
+    const fromPrevious = (folder) => execFileSync('git', ['show', `${previousHead}:evidence/EBR-42/${folder}/${scenario.name}.png`]);
+    const previousFrame = fromPrevious('candidate');
+    assert.equal(hash(previousFrame), previous.candidateSha256, `${scenario.name}: previous frame hash differs`);
+    const poseMatches = isDeepStrictEqual(canonical(after.state), previous.state);
+    const effectStateMatches = isDeepStrictEqual(canonical(after.effectState), previous.effectState);
+    const mergeParity = await compareRetune(comparisonPage, previousFrame, after.image, fromPrevious('mask/smoke'),
+      Buffer.from(result.smokePng, 'base64'), fromPrevious('mask/fireflies'), Buffer.from(result.firefliesPng, 'base64'));
+    if (!poseMatches) samePose.failures.push(`${scenario.name}: previous and merged pose/state differ`);
+    if (!effectStateMatches) samePose.failures.push(`${scenario.name}: previous and merged effect state differs`);
+    if (mergeParity.changedPixels) samePose.failures.push(`${scenario.name}: ${mergeParity.changedPixels} changed pixels vs previous`);
+    if (mergeParity.fireflyMaskChanged) samePose.failures.push(`${scenario.name}: firefly mask differs vs previous`);
     let puffBrightMaskOutside = null;
+    let measuredScreenMaskDisagreement = null;
+    let measuredFrameChanged = null;
+    let measuredNoSmokeChanged = null;
     if (readability.cases[scenario.name]) {
       const measured = readability.cases[scenario.name].samples.find((sample) => sample.time === 3);
       assert.ok(measured, `Missing t=3 smoke measurement: ${scenario.name}`);
       const puffState = (puff) => ({ name: puff.name, position: puff.position, size: puff.size, opacity: puff.opacity });
-      assert.deepEqual(after.effectState.smokePuffs.map(puffState), measured.puffs.map(puffState),
+      check(isDeepStrictEqual(after.effectState.smokePuffs.map(puffState), measured.puffs.map(puffState)),
         `${scenario.name}: per-puff measurements do not match the captured frame`);
       const masks = await Promise.all(measured.puffs.map((puff) =>
         readFile(join(output, 'mask/puff-bright', `${scenario.name}-${puff.name}.png`))));
       puffBrightMaskOutside = await countMaskOutside(comparisonPage, Buffer.from(result.smokePng, 'base64'), masks);
-      assert.equal(puffBrightMaskOutside, 0, `${scenario.name}: bright-puff masks exceed the smoke mask`);
+      check(puffBrightMaskOutside === 0, `${scenario.name}: bright-puff masks exceed the smoke mask`);
+      const recordedMask = await readFile(join(output, measured.screenMaskFile));
+      const recordedFrame = await readFile(join(output, measured.frame));
+      const recordedNoSmoke = await readFile(join(output, measured.noSmokeFrame));
+      assert.equal(hash(recordedFrame), measured.frameSha256, `${scenario.name}: measured frame hash differs`);
+      assert.equal(hash(recordedMask), measured.screenMaskSha256, `${scenario.name}: measured mask hash differs`);
+      assert.equal(hash(recordedNoSmoke), measured.noSmokeSha256, `${scenario.name}: smoke-hidden frame hash differs`);
+      const capturedMask = Buffer.from(result.smokePng, 'base64');
+      measuredScreenMaskDisagreement = await countMaskOutside(comparisonPage, capturedMask, [recordedMask]) +
+        await countMaskOutside(comparisonPage, recordedMask, [capturedMask]);
+      check(measuredScreenMaskDisagreement === 0 && measured.screenMask.pixels === result.smoke.changed &&
+        Math.abs(measured.screenMask.peakLuminance - result.smoke.maximumLuminance) < 1e-9,
+      `${scenario.name}: measured screen mask or luma differs from the captured frame`);
+      const flyMask = Buffer.from(result.firefliesPng, 'base64');
+      measuredFrameChanged = (await compareRetune(comparisonPage, recordedFrame, after.image, recordedMask,
+        capturedMask, flyMask, flyMask)).changedPixels;
+      check(measuredFrameChanged === 0, `${scenario.name}: measured frame differs from the captured frame`);
+      measuredNoSmokeChanged = (await compareRetune(comparisonPage, recordedNoSmoke, after.noSmoke, recordedMask,
+        capturedMask, flyMask, flyMask)).changedPixels;
+      check(measuredNoSmokeChanged === 0, `${scenario.name}: measured smoke-hidden frame differs from the captured frame`);
     }
     const save = async (name, data) => writeFile(join(output, name, `${scenario.name}.png`), data);
     await save('baseline', before.image);
@@ -108,23 +174,37 @@ try {
     await save('mask/smoke-retune', Buffer.from(retune.maskPng, 'base64'));
     await save('smoke-retune/before', signedFrame);
     await save('smoke-retune/diff', Buffer.from(retune.diffPng, 'base64'));
-    assert.equal(result.unmasked, 0, `${scenario.name}: changes outside rendered effect masks`);
-    assert.equal(result.hiddenChanged, 0, `${scenario.name}: hiding effects did not restore clean main`);
-    assert.ok(result.fireflies.maximum.every((value) => value < 250), `${scenario.name}: firefly output reached 250`);
-    assert.equal(result.fireflies.voidBackground, 0, `${scenario.name}: firefly rendered over the void`);
-    assert.equal(retune.outsideSmoke, 0, `${scenario.name}: retune changed pixels outside old/new smoke masks`);
-    assert.equal(retune.fireflyMaskChanged, 0, `${scenario.name}: signed firefly pixels changed`);
+    await save('merge-6daf042/previous', previousFrame);
+    await save('merge-6daf042/candidate', after.image);
+    await save('merge-6daf042/diff', Buffer.from(mergeParity.diffPng, 'base64'));
+    await save('merge-6daf042/no-smoke', after.noSmoke);
+    await save('merge-6daf042/no-fireflies', after.noFireflies);
+    check(result.unmasked === 0, `${scenario.name}: changes outside rendered effect masks`);
+    check(result.hiddenChanged === 0, `${scenario.name}: hiding effects did not restore clean main`);
+    check(result.fireflies.maximum.every((value) => value < 250), `${scenario.name}: firefly output reached 250`);
+    check(result.fireflies.voidBackground === 0, `${scenario.name}: firefly rendered over the void`);
+    check(retune.outsideSmoke === 0, `${scenario.name}: retune changed pixels outside old/new smoke masks`);
+    check(retune.fireflyMaskChanged === 0, `${scenario.name}: signed firefly pixels changed`);
     if (scenario.setup === 'spawn') {
       const expected = scenario.phase !== 'night' ? 0 : { clear: 14, cloudy: 10, rain: 6 }[scenario.weather];
-      assert.equal(after.effectState.activeFireflies, expected, `${scenario.name}: wrong firefly count`);
-      assert.ok(result.smoke.changed > 0, `${scenario.name}: no smoke visible`);
-      if (expected) assert.ok(result.fireflies.changed > 0, `${scenario.name}: no fireflies visible`);
-      else assert.equal(result.fireflies.changed, 0);
+      check(after.effectState.activeFireflies === expected, `${scenario.name}: wrong firefly count`);
+      check(result.smoke.changed > 0, `${scenario.name}: no smoke visible`);
+      if (expected) check(result.fireflies.changed > 0, `${scenario.name}: no fireflies visible`);
+      else check(result.fireflies.changed === 0, `${scenario.name}: fireflies unexpectedly visible`);
     }
     const { diffPng, smokePng, firefliesPng, combinedPng, ...metrics } = result;
     const { diffPng: retuneDiff, maskPng: retuneMask, ...retuneMetrics } = retune;
-    report.cases[scenario.name] = { ...metrics, state: after.state, effectState: after.effectState,
-      retune: retuneMetrics, puffBrightMaskOutside, renderCalls: after.renderCalls, baselineSha256: hash(before.image), candidateSha256: hash(after.image),
+    const { diffPng: mergeDiff, maskPng: mergeMask, ...mergeMetrics } = mergeParity;
+    samePose.frames[scenario.name] = { poseMatches, effectStateMatches, ...mergeMetrics,
+      previousSha256: hash(previousFrame), candidateSha256: hash(after.image),
+      ...(!poseMatches ? { previousState: previous.state, candidateState: after.state } : {}),
+      ...(!effectStateMatches ? { previousEffectState: previous.effectState, candidateEffectState: after.effectState } : {}) };
+    report.cases[scenario.name] = { ...metrics, mainStateMatches, state: after.state, effectState: after.effectState,
+      ...(!mainStateMatches ? { baselineState: before.state } : {}),
+      retune: retuneMetrics, mergeParity: samePose.frames[scenario.name], puffBrightMaskOutside,
+      measuredScreenMaskDisagreement, measuredFrameChanged, measuredNoSmokeChanged,
+      renderCalls: after.renderCalls, baselineSha256: hash(before.image), candidateSha256: hash(after.image),
+      noSmokeSha256: hash(after.noSmoke), noFirefliesSha256: hash(after.noFireflies),
       errors: { baseline: before.errors, candidate: after.errors },
       faviconErrors: { baseline: before.faviconErrors, candidate: after.faviconErrors } };
     if (['daytime-clear', 'daytime-rain', 'sunset-clear', 'sunset-rain',
@@ -143,16 +223,20 @@ try {
       }
       report.crops = crops.rectangles;
     }
-    console.log(`${scenario.name}: ${result.rawChanged} vs main, ${retune.changedPixels} vs signed; ` +
-      `${result.unmasked}/${retune.outsideSmoke} outside masks, ${retune.fireflyMaskChanged} firefly-mask changes`);
+    console.log(`${scenario.name}: ${result.rawChanged} vs main, ${retune.changedPixels} vs signed, ` +
+      `${mergeParity.changedPixels} vs previous; ${result.unmasked}/${retune.outsideSmoke} outside masks`);
   }
 
   const replay = await capture(candidateUrl, matrix.find((item) => item.name === 'night-rain'), true);
   report.nightRainReplay = { sha256: hash(replay.image), matches: hash(replay.image) === report.cases['night-rain'].candidateSha256 };
-  assert.equal(report.nightRainReplay.matches, true, 'seeded night-rain frame did not replay exactly');
+  check(report.nightRainReplay.matches, 'seeded night-rain frame did not replay exactly');
+  report.failures = failures;
   await writeFile(join(output, 'comparison.json'), `${JSON.stringify(report, null, 2)}\n`);
+  await writeFile(join(output, 'merge-6daf042/same-pose.json'), `${JSON.stringify(samePose, null, 2)}\n`);
   await comparisonPage.close();
-  console.log(`Gate G PASS: ${scenarios.length} main and signed-head frames, exact masks, unchanged fireflies, seeded replay`);
+  assert.deepEqual(failures, [], 'Main/signed effect-mask comparison failed');
+  assert.deepEqual(samePose.failures, [], 'Previous-head same-pose comparison failed');
+  console.log(`Gate G PASS: ${scenarios.length} frames vs main ${sha}; zero pixels vs previous ${previousHead}`);
 } finally {
   await browser?.close();
   await server?.close();

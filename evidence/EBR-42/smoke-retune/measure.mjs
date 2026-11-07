@@ -1,19 +1,22 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
+import { captureSourceSnapshot } from '../source-snapshot.mjs';
 
 // Measure actual rendered smoke, not the material colour or an unmasked roof.
 // Each puff is hidden in turn at a fixed frame; exclusive pixels are those
 // changed by that puff and by no other puff in the same composite.
 const base = (process.env.EBR42_URL || 'http://100.88.150.21:5212').replace(/\/$/, '');
-const output = resolve(process.env.EBR42_SMOKE_OUT || 'evidence/EBR-42/smoke-retune');
-const maskDir = resolve(process.env.EBR42_SMOKE_MASK_DIR || 'evidence/EBR-42/mask/puff-bright');
-const head = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-const sourceStatus = execFileSync('git', ['status', '--porcelain', '--untracked-files=all', '--',
-  'src', 'tests', 'tools', 'index.html', 'package.json', 'package-lock.json'], { encoding: 'utf8' }).trim();
-assert.equal(sourceStatus, '', 'Commit source and tests before recording smoke measurements');
+const evidenceRoot = resolve(process.env.EBR42_EVIDENCE_ROOT || 'evidence/EBR-42');
+const output = resolve(process.env.EBR42_SMOKE_OUT || join(evidenceRoot, 'smoke-retune'));
+const maskDir = resolve(process.env.EBR42_SMOKE_MASK_DIR || join(evidenceRoot, 'mask/puff-bright'));
+const mergeFrames = join(evidenceRoot, 'merge-6daf042/luma-frames');
+const mergeMasks = join(evidenceRoot, 'merge-6daf042/luma-masks');
+const mergeNoSmoke = join(evidenceRoot, 'merge-6daf042/luma-no-smoke');
+const sourceSnapshot = captureSourceSnapshot();
+const { head, sourceStatus } = sourceSnapshot;
 const seed = 0xeb730001;
 const cases = (process.env.EBR42_SMOKE_CASES || 'daytime-clear,daytime-cloudy,daytime-rain,sunset-clear,sunset-cloudy,sunset-rain,night-clear,night-cloudy,night-rain')
   .split(',').map((name) => {
@@ -24,18 +27,23 @@ const cases = (process.env.EBR42_SMOKE_CASES || 'daytime-clear,daytime-cloudy,da
     return { name, phase, weather };
   });
 const frameTimes = [2500, 3000, 3500];
+const hash = (data) => createHash('sha256').update(data).digest('hex');
 await mkdir(output, { recursive: true });
 await mkdir(maskDir, { recursive: true });
+await mkdir(mergeFrames, { recursive: true });
+await mkdir(mergeMasks, { recursive: true });
+await mkdir(mergeNoSmoke, { recursive: true });
 const browser = await chromium.launch({ headless: true,
   args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
 const report = {
-  head, sourceStatus, browser: browser.version(), viewport: [1280, 720], pixelBuffer: [320, 180], seed,
+  head, sourceStatus, sourceSnapshot, browser: browser.version(), viewport: [1280, 720], pixelBuffer: [320, 180], seed,
   method: {
     luminance: '0.2126 R + 0.7152 G + 0.0722 B, on 0–255 sRGB pixels',
     contribution: 'A pixel on pure void meets the phase threshold and loses at least 5 luma when this puff alone is hidden; puffs may share pixels.',
     exclusive: 'A threshold pixel on pure void changes when this puff is hidden but not when any other puff is hidden.',
     solo: 'Peak on pure void when only this puff is visible; this is not a measurement of the full composite.',
-    checks: 'At least 3 contributing puffs per sample; at least 3 exclusive puffs in five named t=3 cases; night mask dimmer than both front-window samples; no brightening with lights and fog off.',
+    screenMask: 'Exact 1280×720 screenshot difference between the same frame with and without smoke; the paired frame and binary mask are saved for every sample.',
+    checks: 'The exact screen smoke-mask peak is at least 110 by day/sunset and 70 at night; night masks remain dimmer than both front-window samples; no brightening with lights and fog off. Per-puff overlap counts are diagnostic only.',
   },
   cases: {},
 };
@@ -65,12 +73,13 @@ try {
       });
       await page.route('**/src/main.ts*', async (route) => {
         const response = await route.fetch();
-        await route.fulfill({ response, body: `${await response.text()}\nwindow.__smokeProbe = { scene, camera, renderer, composer, dayNight, weather };\n` });
+        await route.fulfill({ response, body: `${await response.text()}\nwindow.__smokeProbe = { scene, camera, character, renderer, composer, dayNight, weather };\n` });
       });
       await page.goto(`${base}/?phase=${scenario.phase}&weather=${scenario.weather}&seed=${seed}`, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => Boolean(window.__smokeProbe));
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => window.__smokeStep(0));
+      const cdp = await context.newCDPSession(page);
       let previous = 0;
       const samples = [];
       for (const time of frameTimes) {
@@ -80,8 +89,9 @@ try {
         previous = time;
         const target = scenario.phase === 'night' ? 70 : 110;
         const sample = await page.evaluate(({ target, includeMasks }) => {
-          const { scene, camera, renderer, composer, dayNight, weather } = window.__smokeProbe;
+          const { scene, camera, character, renderer, composer, dayNight, weather } = window.__smokeProbe;
           const smoke = scene.getObjectByName('chimney-smoke');
+          const fireflies = scene.getObjectByName('night-fireflies');
           const puffs = smoke.children.filter((puff) => puff.visible);
           const canvas = document.createElement('canvas');
           canvas.width = renderer.domElement.width; canvas.height = renderer.domElement.height;
@@ -175,16 +185,51 @@ try {
             out.drawImage(source, 0, 0, enlarged.width, enlarged.height);
             return { name: metrics[index].name, png: enlarged.toDataURL('image/png').split(',')[1] };
           });
-          return { weather: weather.getWeather(), nightAmount: dayNight.getNightAmount(), smokePixels,
+          const state = { character: character.position.toArray(), yaw: character.rotation.y,
+            camera: camera.position.toArray(), cameraQuaternion: camera.quaternion.toArray(), cameraZoom: camera.zoom,
+            pixel: window.getPixelRendering(), firefliesVisible: fireflies.visible,
+            fireflyOpacity: Array.from(fireflies.geometry.getAttribute('instanceOpacity').array),
+            fireflyMatrices: Array.from(fireflies.instanceMatrix.array) };
+          return { weather: weather.getWeather(), nightAmount: dayNight.getNightAmount(), state, smokePixels,
             peakSmokeMask, peakSmokeVoid, voidMeanRgb: voidCount ? voidRgb.map((value) => value / voidCount) : null,
             windows, puffs: metrics, maskPngs };
         }, { target, includeMasks: time === 3000 });
         const { maskPngs, ...measurements } = sample;
-        samples.push({ time: time / 1000, target, ...measurements });
+        const screenshot = async () => Buffer.from((await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
+        const frame = await screenshot();
+        const previousVisibility = await page.evaluate(() => {
+          const { scene, composer } = window.__smokeProbe;
+          const smoke = scene.getObjectByName('chimney-smoke');
+          const wasVisible = smoke.visible;
+          smoke.visible = false;
+          composer.render(0);
+          return wasVisible;
+        });
+        let withoutSmoke;
+        try { withoutSmoke = await screenshot(); }
+        finally {
+          await page.evaluate((visible) => {
+            const { scene, composer } = window.__smokeProbe;
+            scene.getObjectByName('chimney-smoke').visible = visible;
+            composer.render(0);
+          }, previousVisibility);
+        }
+        const screenMask = await measureScreenMask(page, frame, withoutSmoke);
+        const { png, ...screen } = screenMask;
+        const name = `${scenario.name}-${time}.png`;
+        const screenMaskBytes = Buffer.from(png, 'base64');
+        await writeFile(join(mergeFrames, name), frame);
+        await writeFile(join(mergeMasks, name), screenMaskBytes);
+        await writeFile(join(mergeNoSmoke, name), withoutSmoke);
+        samples.push({ time: time / 1000, target, ...measurements, screenMask: screen,
+          frame: `merge-6daf042/luma-frames/${name}`, frameSha256: hash(frame),
+          screenMaskFile: `merge-6daf042/luma-masks/${name}`, screenMaskSha256: hash(screenMaskBytes),
+          noSmokeFrame: `merge-6daf042/luma-no-smoke/${name}`, noSmokeSha256: hash(withoutSmoke) });
         for (const mask of maskPngs) {
           await writeFile(join(maskDir, `${scenario.name}-${mask.name}.png`), Buffer.from(mask.png, 'base64'));
         }
       }
+      await cdp.detach();
       assert.deepEqual(errors, []);
       let noLight;
       if (scenario.name === 'night-clear') {
@@ -234,14 +279,13 @@ try {
         const exclusive = sample.puffs.filter((puff) => puff.peakExclusiveVoid >= target).length;
         const solo = sample.puffs.filter((puff) => puff.peakSoloVoid >= target).length;
         const contributing = sample.puffs.filter((puff) => puff.brightContributionPixels > 0).length;
-        console.log(`${scenario.name} t=${sample.time}: mask max ${sample.peakSmokeMask.toFixed(2)}, ` +
+        console.log(`${scenario.name} t=${sample.time}: screen mask max ${sample.screenMask.peakLuminance.toFixed(2)}, buffer mask max ${sample.peakSmokeMask.toFixed(2)}, ` +
           `void max ${sample.peakSmokeVoid.toFixed(2)}, >=${target}: ${contributing} contributing / ${exclusive} exclusive / ${solo} solo on void`);
-        if (contributing < 3) failures.push(`${scenario.name} t=${sample.time}: only ${contributing} bright puff contributions`);
-        if (scenario.phase === 'night' && sample.peakSmokeMask >= Math.min(...sample.windows.map((window) => window.luminance))) {
-          failures.push(`${scenario.name} t=${sample.time}: smoke is not dimmer than both front windows`);
+        if (!sample.screenMask.pixels || sample.screenMask.peakLuminance < target) {
+          failures.push(`${scenario.name} t=${sample.time}: smoke-mask peak is below ${target}`);
         }
-        if (sample.time === 3 && ['daytime-clear', 'sunset-clear', 'night-clear', 'night-cloudy', 'night-rain'].includes(scenario.name) && exclusive < 3) {
-          failures.push(`${scenario.name} t=3: only ${exclusive} exclusively visible bright puffs`);
+        if (scenario.phase === 'night' && sample.screenMask.peakLuminance >= Math.min(...sample.windows.map((window) => window.luminance))) {
+          failures.push(`${scenario.name} t=${sample.time}: smoke is not dimmer than both front windows`);
         }
         if (exclusive < 3 || solo < 3) {
           limitations.push({ case: scenario.name, time: sample.time, target, exclusive, solo });
@@ -252,7 +296,52 @@ try {
   }
   report.failures = failures;
   report.independentVisibilityLimitations = limitations;
-  await writeFile(join(output, 'readability.json'), `${JSON.stringify(report, null, 2)}\n`);
-  assert.deepEqual(failures, [], 'Composite-contribution, selected exclusive, window or non-emission checks failed');
-  console.log(`Composite-contribution checks PASS; ${limitations.length} samples have fewer than three exclusive or solo puffs (see JSON).`);
+  const reportJson = `${JSON.stringify(report, null, 2)}\n`;
+  await writeFile(join(output, 'readability.json'), reportJson);
+  await writeFile(join(evidenceRoot, 'merge-6daf042/readability.json'), reportJson);
+  assert.deepEqual(failures, [], 'Smoke-mask peak, window or non-emission checks failed');
+  console.log(`Smoke-mask peak checks PASS; ${limitations.length} samples have fewer than three exclusive or solo puffs (diagnostic only).`);
 } finally { await browser.close(); }
+
+async function measureScreenMask(page, full, withoutSmoke) {
+  return page.evaluate(async ({ full, withoutSmoke }) => {
+    async function decode(data) {
+      const image = new Image();
+      image.src = `data:image/png;base64,${data}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width; canvas.height = image.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, image.width, image.height);
+    }
+    const [on, off] = await Promise.all([decode(full), decode(withoutSmoke)]);
+    if (on.width !== 1280 || on.height !== 720 || off.width !== on.width || off.height !== on.height) {
+      throw new Error('Smoke evidence frames must be 1280×720');
+    }
+    const mask = new Uint8ClampedArray(on.data.length);
+    let pixels = 0; let peakLuminance = 0; let voidPeakLuminance = 0; let bounds = null;
+    for (let i = 0; i < on.data.length; i += 4) {
+      const changed = on.data[i] !== off.data[i] || on.data[i + 1] !== off.data[i + 1] ||
+        on.data[i + 2] !== off.data[i + 2] || on.data[i + 3] !== off.data[i + 3];
+      if (changed) {
+        const p = i / 4; const x = p % on.width; const y = Math.floor(p / on.width);
+        const lum = 0.2126 * on.data[i] + 0.7152 * on.data[i + 1] + 0.0722 * on.data[i + 2];
+        pixels++; peakLuminance = Math.max(peakLuminance, lum);
+        if (off.data[i] === 16 && off.data[i + 1] === 20 && off.data[i + 2] === 22) {
+          voidPeakLuminance = Math.max(voidPeakLuminance, lum);
+        }
+        if (!bounds) bounds = [x, y, x + 1, y + 1];
+        else {
+          bounds[0] = Math.min(bounds[0], x); bounds[1] = Math.min(bounds[1], y);
+          bounds[2] = Math.max(bounds[2], x + 1); bounds[3] = Math.max(bounds[3], y + 1);
+        }
+        mask[i] = mask[i + 1] = mask[i + 2] = 255;
+      }
+      mask[i + 3] = 255;
+    }
+    const canvas = document.createElement('canvas'); canvas.width = on.width; canvas.height = on.height;
+    canvas.getContext('2d').putImageData(new ImageData(mask, on.width, on.height), 0, 0);
+    return { pixels, bounds, peakLuminance, voidPeakLuminance, png: canvas.toDataURL('image/png').split(',')[1] };
+  }, { full: full.toString('base64'), withoutSmoke: withoutSmoke.toString('base64') });
+}

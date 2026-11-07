@@ -1,0 +1,76 @@
+[heavy] slot /tmp/farm-heavy.c.lock acquired: env EBR75_DCB_BASELINE_WORKTREE= EBR75_MAIN_BASELINE_WORKTREE= EBR75_REPLAY_EVIDENCE_DIR= node --test --test-concurrency=1 tests/browser/effects.browser.mjs tests/browser/placement-environment-replay.browser.mjs
+TAP version 13
+# Subtest: pixel-pass app renders smoke at every phase and the correct weather-dependent fireflies
+ok 1 - pixel-pass app renders smoke at every phase and the correct weather-dependent fireflies
+  ---
+  duration_ms: 24011.741435
+  type: 'test'
+  ...
+# Subtest: engine environment systems drive the sunset fade and rainy-night effects
+ok 2 - engine environment systems drive the sunset fade and rainy-night effects
+  ---
+  duration_ms: 1822.993662
+  type: 'test'
+  ...
+# Subtest: three smoke puffs contribute readable lit pixels across phase and weather
+ok 3 - three smoke puffs contribute readable lit pixels across phase and weather
+  ---
+  duration_ms: 33646.961294
+  type: 'test'
+  ...
+# Subtest: seeded rain and both visual effects replay exactly at a controlled frame
+ok 4 - seeded rain and both visual effects replay exactly at a controlled frame
+  ---
+  duration_ms: 10428.570715
+  type: 'test'
+  ...
+# Subtest: smoke has no self-emission when the scene lights and fog are removed
+ok 5 - smoke has no self-emission when the scene lights and fog are removed
+  ---
+  duration_ms: 4011.258656
+  type: 'test'
+  ...
+# Subtest: placement and environment replay against clean main dcbaf70
+not ok 6 - placement and environment replay against clean main dcbaf70
+  ---
+  duration_ms: 23.486074
+  type: 'test'
+  location: '/home/michael/Developer/chicken-farm/worktrees/ebr42/tests/browser/placement-environment-replay.browser.mjs:10:37'
+  failureType: 'testCodeFailure'
+  error: 'tmpdir is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    temporary (file:///home/michael/Developer/chicken-farm/worktrees/ebr42/tools/placement-environment-replay.mjs:389:20)
+    async comparePlacementEnvironmentReplay (file:///home/michael/Developer/chicken-farm/worktrees/ebr42/tools/placement-environment-replay.mjs:416:21)
+    async TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/ebr42/tests/browser/placement-environment-replay.browser.mjs:13:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: placement and environment replay against clean main 5d9ba48
+not ok 7 - placement and environment replay against clean main 5d9ba48
+  ---
+  duration_ms: 13.762935
+  type: 'test'
+  location: '/home/michael/Developer/chicken-farm/worktrees/ebr42/tests/browser/placement-environment-replay.browser.mjs:10:37'
+  failureType: 'testCodeFailure'
+  error: 'tmpdir is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    temporary (file:///home/michael/Developer/chicken-farm/worktrees/ebr42/tools/placement-environment-replay.mjs:389:20)
+    async comparePlacementEnvironmentReplay (file:///home/michael/Developer/chicken-farm/worktrees/ebr42/tools/placement-environment-replay.mjs:416:21)
+    async TestContext.<anonymous> (file:///home/michael/Developer/chicken-farm/worktrees/ebr42/tests/browser/placement-environment-replay.browser.mjs:13:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 5
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76234.380877
+[heavy] released /tmp/farm-heavy.c.lock rc=1

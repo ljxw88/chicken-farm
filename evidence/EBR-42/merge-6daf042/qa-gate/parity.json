@@ -1,0 +1,842 @@
+{
+  "main": "6daf042ad85882f020268baf53fc92fb09e921ad",
+  "baselineRoot": "/home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-baseline-6daf042",
+  "candidateUrl": "http://100.88.150.21:5212",
+  "sourceSnapshot": {
+    "head": "afb30f21b00d0612829b3297a9a93d7cf3af636e",
+    "indexTree": "01b0b9d70a144b3203c98948050c0939d8b485fc",
+    "srcTree": "b539e4d79ac52d612d475e8b00169d2d6ae75fed",
+    "testsTree": "5dd5a68a4f2efae7ab8c9ce75ffb786387f8c381",
+    "toolsTree": "24f37013091e0d5b0fb44aecfbefc5271d813c8f",
+    "indexHtml": "85e4f41ceb98a90c31d978e091daa3dd3435ab18",
+    "packageJson": "167f4a9d77bd4e6bb1e0be9a0a13b36083f16da7",
+    "packageLock": "183f410acc365b035c82bb45a4d79b1e34b1add8",
+    "sourceStatus": "M  tools/placement-environment-replay.mjs"
+  },
+  "browser": "153.0.8010.12",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1,
+  "seed": 3950182401,
+  "method": "The QA baseline used a seeded weather hook; the candidate uses its visual seed with the same LCG. Hook call counts are instrumentation-specific; weather state and effect-hidden pixels are compared.",
+  "frames": {
+    "spawn": {
+      "changedPixels": 880,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 880,
+        "bounds": [
+          692,
+          144,
+          728,
+          192
+        ],
+        "peakLuminance": 216.4598
+      },
+      "fireflies": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "yaw": 0,
+        "camera": [
+          12,
+          15.1,
+          12
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1,
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Daytime",
+        "time": 0
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 0,
+        "fireflyOpacity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baselineSha256": "164efa193a80f6490c0f81c123a6536ee59f5c930001e6646fa47499ee5f3275",
+      "candidateSha256": "ab53f42b10c1af9a24b99d9aa238252c309dda198a9bb51a1ac044174fed57ca",
+      "errors": []
+    },
+    "stairs-pad": {
+      "changedPixels": 0,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "fireflies": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          12.799999446278282,
+          0.34457575896654713,
+          0.749999515293794
+        ],
+        "yaw": 1.570796524526595,
+        "camera": [
+          24.79999944627828,
+          13.044575758966547,
+          12.749999515293794
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1,
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Daytime",
+        "time": 4400
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 0,
+        "fireflyOpacity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baselineSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
+      "candidateSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
+      "errors": []
+    },
+    "placement-ghost": {
+      "changedPixels": 912,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 912,
+        "bounds": [
+          692,
+          144,
+          732,
+          192
+        ],
+        "peakLuminance": 208.39279999999997
+      },
+      "fireflies": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "yaw": 0,
+        "camera": [
+          12,
+          15.1,
+          12
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1,
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Daytime",
+        "time": 100
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 0,
+        "fireflyOpacity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baselineSha256": "52722e198a1988334cb911f7a0998823fe6884a13d6a8f4de5e86ad0db75276c",
+      "candidateSha256": "4abfc57c2c647393644514cbc923f25f6d3f02011f42a574c66fb9963a8c0cbc",
+      "errors": []
+    },
+    "day": {
+      "changedPixels": 1120,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 1120,
+        "bounds": [
+          700,
+          80,
+          744,
+          128
+        ],
+        "peakLuminance": 216.95720000000003
+      },
+      "fireflies": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          1.806658046465012,
+          2.4,
+          1.979898987322335
+        ],
+        "yaw": 0.29145761199091264,
+        "camera": [
+          13.806658046465012,
+          15.1,
+          13.979898987322334
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1,
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Daytime",
+        "time": 800
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 0,
+        "fireflyOpacity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baselineSha256": "678b9f6e1221984575bffc3c88b7fab1aaa3d89ed164d92993c67625c98b6423",
+      "candidateSha256": "bbf35dc565130dbaaa4604e9f0e6145dedff7a68fd074594cbee0ada6c0fdacd",
+      "errors": []
+    },
+    "night": {
+      "changedPixels": 2320,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 880,
+        "bounds": [
+          692,
+          144,
+          728,
+          192
+        ],
+        "peakLuminance": 126.7152
+      },
+      "fireflies": {
+        "changed": 1440,
+        "bounds": [
+          416,
+          304,
+          896,
+          492
+        ],
+        "peakLuminance": 221.89280000000002
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "yaw": 0,
+        "camera": [
+          12,
+          15.1,
+          12
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1,
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Night",
+        "time": 0
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 14,
+        "fireflyOpacity": [
+          0.8065043687820435,
+          0.998248279094696,
+          0.9717972874641418,
+          0.7565869688987732,
+          0.8861318230628967,
+          0.9779331684112549,
+          0.6118782758712769,
+          0.8518801331520081,
+          0.8560097217559814,
+          0.9844200015068054,
+          0.9715558886528015,
+          0.25717267394065857,
+          0.9734323620796204,
+          0.9993776082992554
+        ]
+      },
+      "baselineSha256": "c392a5f6491f83425590c251fed6103d61a71bd0137323c97f517972f6b4d806",
+      "candidateSha256": "184fbb37c4eb54f0995d2a192dc51ef32effcf93505eeb682d094f5d1758d053",
+      "errors": []
+    },
+    "rain": {
+      "changedPixels": 912,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 912,
+        "bounds": [
+          692,
+          144,
+          732,
+          192
+        ],
+        "peakLuminance": 167.9022
+      },
+      "fireflies": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "yaw": 0,
+        "camera": [
+          12,
+          15.1,
+          12
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1,
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "rain",
+          "rainAmount": 1,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Daytime",
+        "time": 2500
+      },
+      "effects": {
+        "smokePuffs": 4,
+        "activeFireflies": 0,
+        "fireflyOpacity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baselineSha256": "f593d654f483304bb95e1e0ea4eaa4d44d956c925a4d4df93620e6ded98e7855",
+      "candidateSha256": "2bde43d979d36a1363c157ba2cc308a476156348920740c2b27035748b0a000e",
+      "errors": []
+    },
+    "cottage-coops-day": {
+      "changedPixels": 2560,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 2560,
+        "bounds": [
+          640,
+          100,
+          712,
+          184
+        ],
+        "peakLuminance": 220.7498
+      },
+      "fireflies": {
+        "changed": 0,
+        "bounds": null,
+        "peakLuminance": 0
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "yaw": 0,
+        "camera": [
+          10.55,
+          15.1,
+          8.6
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1.8,
+        "buildings": {
+          "centers": [
+            {
+              "name": "farm-cottage",
+              "visible": true,
+              "x": -0.13960939511051942,
+              "y": 0.1579920884095152
+            },
+            {
+              "name": "farm-ramp-coop-1",
+              "visible": true,
+              "x": 0.10023238623319274,
+              "y": -0.11757550765359226
+            },
+            {
+              "name": "farm-ramp-coop-2",
+              "visible": true,
+              "x": 0.3150160710186065,
+              "y": -0.07348469228349486
+            }
+          ],
+          "accents": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "windowLights": [
+            0,
+            0
+          ]
+        },
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Daytime",
+        "time": 0
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 0,
+        "fireflyOpacity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "baselineSha256": "af5111193cb0ec939c3395471e6636d00a3ce43638f99692e5da719bc352a8b2",
+      "candidateSha256": "4b19cf1fb86a5debdf385c5e0634ee1531c14a16ff0444c3e9b542507e4564b1",
+      "errors": []
+    },
+    "cottage-coops-night": {
+      "changedPixels": 5984,
+      "outsideAllowed": 0,
+      "hiddenChanged": 0,
+      "interactionPixels": 0,
+      "smoke": {
+        "changed": 2560,
+        "bounds": [
+          640,
+          100,
+          712,
+          184
+        ],
+        "peakLuminance": 137.85559999999998
+      },
+      "fireflies": {
+        "changed": 3424,
+        "bounds": [
+          152,
+          392,
+          1008,
+          720
+        ],
+        "peakLuminance": 221.89280000000002
+      },
+      "stateMismatches": [],
+      "state": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "yaw": 0,
+        "camera": [
+          10.55,
+          15.1,
+          8.6
+        ],
+        "cameraQuaternion": [
+          -0.2798481423331213,
+          0.3647051996310008,
+          0.11591689595929511,
+          0.8804762392171493
+        ],
+        "cameraZoom": 1.8,
+        "buildings": {
+          "centers": [
+            {
+              "name": "farm-cottage",
+              "visible": true,
+              "x": -0.13960939511051942,
+              "y": 0.1579920884095152
+            },
+            {
+              "name": "farm-ramp-coop-1",
+              "visible": true,
+              "x": 0.10023238623319274,
+              "y": -0.11757550765359226
+            },
+            {
+              "name": "farm-ramp-coop-2",
+              "visible": true,
+              "x": 0.3150160710186065,
+              "y": -0.07348469228349486
+            }
+          ],
+          "accents": [
+            0.85,
+            0.85,
+            0.85,
+            0.595,
+            0.595
+          ],
+          "windowLights": [
+            0.85,
+            0.85
+          ]
+        },
+        "pixel": {
+          "enabled": true,
+          "cssPixelSize": 4,
+          "devicePixelRatio": 1,
+          "rendererPixelRatio": 1,
+          "canvasWidth": 320,
+          "canvasHeight": 180,
+          "viewport": {
+            "displayWidth": 1280,
+            "displayHeight": 720,
+            "targetWidth": 320,
+            "targetHeight": 180,
+            "pixelSize": 4,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropBottom": 0,
+            "cropTop": 0
+          }
+        },
+        "weather": {
+          "mode": "clear",
+          "rainAmount": 0,
+          "cloudyAmount": 0
+        },
+        "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "phase": "Night",
+        "time": 0
+      },
+      "effects": {
+        "smokePuffs": 6,
+        "activeFireflies": 14,
+        "fireflyOpacity": [
+          0.8065043687820435,
+          0.998248279094696,
+          0.9717972874641418,
+          0.7565869688987732,
+          0.8861318230628967,
+          0.9779331684112549,
+          0.6118782758712769,
+          0.8518801331520081,
+          0.8560097217559814,
+          0.9844200015068054,
+          0.9715558886528015,
+          0.25717267394065857,
+          0.9734323620796204,
+          0.9993776082992554
+        ]
+      },
+      "baselineSha256": "bb0a0bfcbddcc0aa684800f706e288838b6631a091c1c6aab498b5f3fd7d9588",
+      "candidateSha256": "debbe18382a7bf51fa3fad731a01ea9a053a27847b8fb366d606a5c72ea700a7",
+      "errors": []
+    }
+  },
+  "failures": []
+}

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Make an unaltered, enlarged daytime chimney comparison from Gate G frames."""
 import json
+import os
 from pathlib import Path
 
 from PIL import Image
 
-root = Path(__file__).resolve().parent
+root = Path(os.environ.get('EBR42_EVIDENCE_ROOT', Path(__file__).resolve().parent)).resolve()
 report = json.loads((root / 'comparison.json').read_text())
 x, y, width, height = report['crops']['chimney']
 nearest = getattr(Image, 'Resampling', Image).NEAREST

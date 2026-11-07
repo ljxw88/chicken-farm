@@ -1,0 +1,11 @@
+[heavy] slot /tmp/farm-heavy.c.lock acquired: node evidence/EBR-42/merge-6daf042/qa-gate.mjs
+spawn: 880 changed; smoke 880, fireflies 0, 0 outside mask, 0 with effects hidden
+stairs-pad: 0 changed; smoke 0, fireflies 0, 0 outside mask, 0 with effects hidden
+placement-ghost: 912 changed; smoke 912, fireflies 0, 0 outside mask, 0 with effects hidden
+day: 1120 changed; smoke 1120, fireflies 0, 0 outside mask, 0 with effects hidden
+night: 2320 changed; smoke 880, fireflies 1440, 0 outside mask, 0 with effects hidden
+rain: 912 changed; smoke 912, fireflies 0, 0 outside mask, 0 with effects hidden
+cottage-coops-day: 2560 changed; smoke 2560, fireflies 0, 0 outside mask, 0 with effects hidden
+cottage-coops-night: 5984 changed; smoke 2560, fireflies 3424, 0 outside mask, 0 with effects hidden
+QA Gate G PASS: 8 frames against 6daf042ad85882f020268baf53fc92fb09e921ad, zero outside effect masks and zero with effects hidden
+[heavy] released /tmp/farm-heavy.c.lock rc=0

@@ -1,8 +1,20 @@
 {
-  "main": "5d9ba48f6bd9bfbc3974351b50d0ce89934380ff",
+  "main": "6daf042ad85882f020268baf53fc92fb09e921ad",
   "signedHead": "9305bd41ed71f1d885646ac5d9b1bc145fb2594e",
-  "candidateHead": "2dfc6689889a4bbca679b050fefbf77c13075b4c",
-  "sourceStatus": "",
+  "previousHead": "468b4f3b2bc415d69ec0e52575de127c2035e1a8",
+  "candidateHead": "afb30f21b00d0612829b3297a9a93d7cf3af636e",
+  "sourceStatus": "M  tools/placement-environment-replay.mjs",
+  "sourceSnapshot": {
+    "head": "afb30f21b00d0612829b3297a9a93d7cf3af636e",
+    "indexTree": "01b0b9d70a144b3203c98948050c0939d8b485fc",
+    "srcTree": "b539e4d79ac52d612d475e8b00169d2d6ae75fed",
+    "testsTree": "5dd5a68a4f2efae7ab8c9ce75ffb786387f8c381",
+    "toolsTree": "24f37013091e0d5b0fb44aecfbefc5271d813c8f",
+    "indexHtml": "85e4f41ceb98a90c31d978e091daa3dd3435ab18",
+    "packageJson": "167f4a9d77bd4e6bb1e0be9a0a13b36083f16da7",
+    "packageLock": "183f410acc365b035c82bb45a4d79b1e34b1add8",
+    "sourceStatus": "M  tools/placement-environment-replay.mjs"
+  },
   "candidateUrl": "http://100.88.150.21:5212",
   "browser": "153.0.8010.12",
   "viewport": {
@@ -89,6 +101,7 @@
           "luminance": 78.7188
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -641,7 +654,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "adb148c6a1f7ac9f5771f8dba15d3914c4e122346794c99f586cee509bad5464",
+        "candidateSha256": "adb148c6a1f7ac9f5771f8dba15d3914c4e122346794c99f586cee509bad5464"
+      },
       "puffBrightMaskOutside": null,
+      "measuredScreenMaskDisagreement": null,
+      "measuredFrameChanged": null,
+      "measuredNoSmokeChanged": null,
       "renderCalls": {
         "both": 251,
         "noSmoke": 245,
@@ -650,6 +676,8 @@
       },
       "baselineSha256": "a95ec7ef42177655c40b5cb024c0e1116b0bf18544930cb5d6a9f1a2ae76a511",
       "candidateSha256": "adb148c6a1f7ac9f5771f8dba15d3914c4e122346794c99f586cee509bad5464",
+      "noSmokeSha256": "a95ec7ef42177655c40b5cb024c0e1116b0bf18544930cb5d6a9f1a2ae76a511",
+      "noFirefliesSha256": "adb148c6a1f7ac9f5771f8dba15d3914c4e122346794c99f586cee509bad5464",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -735,6 +763,7 @@
           "luminance": 70.2346
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -1287,7 +1316,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "9dd1a7d62051eee6e0b7ed686b241cec2726fc745fe186cffd0940fdb972e428",
+        "candidateSha256": "9dd1a7d62051eee6e0b7ed686b241cec2726fc745fe186cffd0940fdb972e428"
+      },
       "puffBrightMaskOutside": null,
+      "measuredScreenMaskDisagreement": null,
+      "measuredFrameChanged": null,
+      "measuredNoSmokeChanged": null,
       "renderCalls": {
         "both": 251,
         "noSmoke": 245,
@@ -1296,6 +1338,8 @@
       },
       "baselineSha256": "e867e14c3737be1f572a3799ef4bd7e17aa923f8804f27958fe651e31cdb7a03",
       "candidateSha256": "9dd1a7d62051eee6e0b7ed686b241cec2726fc745fe186cffd0940fdb972e428",
+      "noSmokeSha256": "e867e14c3737be1f572a3799ef4bd7e17aa923f8804f27958fe651e31cdb7a03",
+      "noFirefliesSha256": "9dd1a7d62051eee6e0b7ed686b241cec2726fc745fe186cffd0940fdb972e428",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -1381,6 +1425,7 @@
           "luminance": 70.375
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -1913,7 +1958,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "37314e9d610cbd7f37daa9e317dc3a7fdaaed01c236979c017e2c6fe0b9c92ac",
+        "candidateSha256": "37314e9d610cbd7f37daa9e317dc3a7fdaaed01c236979c017e2c6fe0b9c92ac"
+      },
       "puffBrightMaskOutside": null,
+      "measuredScreenMaskDisagreement": null,
+      "measuredFrameChanged": null,
+      "measuredNoSmokeChanged": null,
       "renderCalls": {
         "both": 250,
         "noSmoke": 246,
@@ -1922,6 +1980,8 @@
       },
       "baselineSha256": "cb23a9bfe24d398ec3a2c53e80cf6a944721156e56fa4547c2ed17d6bf891d2c",
       "candidateSha256": "37314e9d610cbd7f37daa9e317dc3a7fdaaed01c236979c017e2c6fe0b9c92ac",
+      "noSmokeSha256": "cb23a9bfe24d398ec3a2c53e80cf6a944721156e56fa4547c2ed17d6bf891d2c",
+      "noFirefliesSha256": "37314e9d610cbd7f37daa9e317dc3a7fdaaed01c236979c017e2c6fe0b9c92ac",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -2007,6 +2067,7 @@
           "luminance": 72.1532
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -2559,7 +2620,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "89db1f60fee04b55d7163be0f70fa477fd149f88eaa06d13f066708100e42af3",
+        "candidateSha256": "89db1f60fee04b55d7163be0f70fa477fd149f88eaa06d13f066708100e42af3"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 251,
         "noSmoke": 245,
@@ -2568,6 +2642,8 @@
       },
       "baselineSha256": "90612eec2b98200952a81ca2d529d0c5fb92916328ba6938d6b31316b07b9589",
       "candidateSha256": "89db1f60fee04b55d7163be0f70fa477fd149f88eaa06d13f066708100e42af3",
+      "noSmokeSha256": "90612eec2b98200952a81ca2d529d0c5fb92916328ba6938d6b31316b07b9589",
+      "noFirefliesSha256": "89db1f60fee04b55d7163be0f70fa477fd149f88eaa06d13f066708100e42af3",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -2653,6 +2729,7 @@
           "luminance": 62.52859999999999
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -3205,7 +3282,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "27ac278a38006711eac031982e21cee0741e9710094688ff18af5bfa3ee22264",
+        "candidateSha256": "27ac278a38006711eac031982e21cee0741e9710094688ff18af5bfa3ee22264"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 251,
         "noSmoke": 245,
@@ -3214,6 +3304,8 @@
       },
       "baselineSha256": "0893308686541e26527a3922819c70717e83101239bcdc92b557ca09fb4f328a",
       "candidateSha256": "27ac278a38006711eac031982e21cee0741e9710094688ff18af5bfa3ee22264",
+      "noSmokeSha256": "0893308686541e26527a3922819c70717e83101239bcdc92b557ca09fb4f328a",
+      "noFirefliesSha256": "27ac278a38006711eac031982e21cee0741e9710094688ff18af5bfa3ee22264",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -3299,6 +3391,7 @@
           "luminance": 62.45639999999999
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -3831,7 +3924,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "2e1ef20240376507cabfdeec539675a09d40e20358e3f2a7bb2534e2930e9264",
+        "candidateSha256": "2e1ef20240376507cabfdeec539675a09d40e20358e3f2a7bb2534e2930e9264"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 250,
         "noSmoke": 246,
@@ -3840,6 +3946,8 @@
       },
       "baselineSha256": "7576ba917954f8cfb1944bc242aae7d23f2660a2035db9bd89cbd3feba07adfc",
       "candidateSha256": "2e1ef20240376507cabfdeec539675a09d40e20358e3f2a7bb2534e2930e9264",
+      "noSmokeSha256": "7576ba917954f8cfb1944bc242aae7d23f2660a2035db9bd89cbd3feba07adfc",
+      "noFirefliesSha256": "2e1ef20240376507cabfdeec539675a09d40e20358e3f2a7bb2534e2930e9264",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -3925,6 +4033,7 @@
           "luminance": 62.45639999999999
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -4477,7 +4586,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "7a911714340cfbb077d2761f42fa886d905fbdef0a89ebc23342e630fcb3b7ab",
+        "candidateSha256": "7a911714340cfbb077d2761f42fa886d905fbdef0a89ebc23342e630fcb3b7ab"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 251,
         "noSmoke": 245,
@@ -4486,6 +4608,8 @@
       },
       "baselineSha256": "aba99aa05c9cbab359c5cad5b28bc38481ad6416729f611e8dce241e1b089ce6",
       "candidateSha256": "7a911714340cfbb077d2761f42fa886d905fbdef0a89ebc23342e630fcb3b7ab",
+      "noSmokeSha256": "aba99aa05c9cbab359c5cad5b28bc38481ad6416729f611e8dce241e1b089ce6",
+      "noFirefliesSha256": "7a911714340cfbb077d2761f42fa886d905fbdef0a89ebc23342e630fcb3b7ab",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -4571,6 +4695,7 @@
           "luminance": 56.253
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -5123,7 +5248,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "6edbf8560b2e37cf9fff82d29b1ae0e6f10abc42f49e7c23a4d2a8d785037e50",
+        "candidateSha256": "6edbf8560b2e37cf9fff82d29b1ae0e6f10abc42f49e7c23a4d2a8d785037e50"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 251,
         "noSmoke": 245,
@@ -5132,6 +5270,8 @@
       },
       "baselineSha256": "03ccf9bc2347fbacb487139c1e8e51e321ce4a1df3cef38dd592a263c76f48a9",
       "candidateSha256": "6edbf8560b2e37cf9fff82d29b1ae0e6f10abc42f49e7c23a4d2a8d785037e50",
+      "noSmokeSha256": "03ccf9bc2347fbacb487139c1e8e51e321ce4a1df3cef38dd592a263c76f48a9",
+      "noFirefliesSha256": "6edbf8560b2e37cf9fff82d29b1ae0e6f10abc42f49e7c23a4d2a8d785037e50",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -5217,6 +5357,7 @@
           "luminance": 56.4656
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -5749,7 +5890,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "9fd356cbd32de52f38e5d4080d9f4402ad32974fbd31289493bae599999a5f86",
+        "candidateSha256": "9fd356cbd32de52f38e5d4080d9f4402ad32974fbd31289493bae599999a5f86"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 250,
         "noSmoke": 246,
@@ -5758,6 +5912,8 @@
       },
       "baselineSha256": "c8a01872e7084f9ad567103390d0ec41041c20809975670996df8a2d22824e2d",
       "candidateSha256": "9fd356cbd32de52f38e5d4080d9f4402ad32974fbd31289493bae599999a5f86",
+      "noSmokeSha256": "c8a01872e7084f9ad567103390d0ec41041c20809975670996df8a2d22824e2d",
+      "noFirefliesSha256": "9fd356cbd32de52f38e5d4080d9f4402ad32974fbd31289493bae599999a5f86",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -5848,6 +6004,7 @@
           "luminance": 33.876599999999996
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -6400,7 +6557,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "fd7a9530dc80ec4f1029c482c7e7e64b250980044642831a555a08bc3fcdda9b",
+        "candidateSha256": "fd7a9530dc80ec4f1029c482c7e7e64b250980044642831a555a08bc3fcdda9b"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 252,
         "noSmoke": 246,
@@ -6409,6 +6579,8 @@
       },
       "baselineSha256": "5dfef0b26aaf3880a897bd2e401ab5824d0d9194bf6df482628f2bad38727935",
       "candidateSha256": "fd7a9530dc80ec4f1029c482c7e7e64b250980044642831a555a08bc3fcdda9b",
+      "noSmokeSha256": "6b280c3c0388e4691b6d1ce861c88933ab58eb147f591fdfebb7566c64e5d493",
+      "noFirefliesSha256": "4dde610bf7fb226602de46120893d79be571492176a9654b246ab81423dfffd8",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -6499,6 +6671,7 @@
           "luminance": 29.0984
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -7051,7 +7224,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "428bdca09676b36d4fed86a55b421eb5239e10e5a0e8327e08f27377d7c13631",
+        "candidateSha256": "428bdca09676b36d4fed86a55b421eb5239e10e5a0e8327e08f27377d7c13631"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 252,
         "noSmoke": 246,
@@ -7060,6 +7246,8 @@
       },
       "baselineSha256": "1537dac957a0170568b70784ec71890741e6df92759dd153fb6de0e773229d58",
       "candidateSha256": "428bdca09676b36d4fed86a55b421eb5239e10e5a0e8327e08f27377d7c13631",
+      "noSmokeSha256": "35363d75aadf8f387681d2841394535008227be85a251c53daf9f4b6c1886df5",
+      "noFirefliesSha256": "2ead87a47042c5a9bd8ff47e84e9bc0eb73d4195805af3e3d4a206112bd94153",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -7150,6 +7338,7 @@
           "luminance": 29.311000000000003
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -7682,7 +7871,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "7b7e028d7575e066dee49807c4de1a2efd759118040dbd110c1e610946c3da53",
+        "candidateSha256": "7b7e028d7575e066dee49807c4de1a2efd759118040dbd110c1e610946c3da53"
+      },
       "puffBrightMaskOutside": 0,
+      "measuredScreenMaskDisagreement": 0,
+      "measuredFrameChanged": 0,
+      "measuredNoSmokeChanged": 0,
       "renderCalls": {
         "both": 251,
         "noSmoke": 247,
@@ -7691,6 +7893,8 @@
       },
       "baselineSha256": "f73919627ba59971a8c5ca41c350291431a133855ae172635ab12b7c2aa4b2f4",
       "candidateSha256": "7b7e028d7575e066dee49807c4de1a2efd759118040dbd110c1e610946c3da53",
+      "noSmokeSha256": "18e9a804bc61c20d49dfa6ea5ac8b1ea686c6b4fd813f6de99660731fe972849",
+      "noFirefliesSha256": "07404258c7eef7ed75c78494f2d5cabd0b764c2b101cd94cbc1387f013733ab7",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -7781,6 +7985,7 @@
           "luminance": 33.5236
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           1.806658046465012,
@@ -8333,7 +8538,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "695d754c614bddaca3d48197a3927579f0a4dfc20a9bbcdceadded2c2a7c47dc",
+        "candidateSha256": "695d754c614bddaca3d48197a3927579f0a4dfc20a9bbcdceadded2c2a7c47dc"
+      },
       "puffBrightMaskOutside": null,
+      "measuredScreenMaskDisagreement": null,
+      "measuredFrameChanged": null,
+      "measuredNoSmokeChanged": null,
       "renderCalls": {
         "both": 252,
         "noSmoke": 246,
@@ -8342,6 +8560,8 @@
       },
       "baselineSha256": "9991ba7f8bddbcb733fc2589da878b7e2ee2ebd9f98350cfa4e13e71af347cad",
       "candidateSha256": "695d754c614bddaca3d48197a3927579f0a4dfc20a9bbcdceadded2c2a7c47dc",
+      "noSmokeSha256": "6e85f741005acc420cc732f68a58de64d9c323fc35e34900ce7bcb33296c4225",
+      "noFirefliesSha256": "1489214c603bac8dc5e267b5b7fcb16cc0fce50ea98dc688b5e1a4f7a28fa677",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -8432,6 +8652,7 @@
           "luminance": 33.876599999999996
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           0,
@@ -8992,7 +9213,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "098412e3ef619bae8c1a5797c4bfd3de5f0089579d1654d2ba86fa506272b044",
+        "candidateSha256": "098412e3ef619bae8c1a5797c4bfd3de5f0089579d1654d2ba86fa506272b044"
+      },
       "puffBrightMaskOutside": null,
+      "measuredScreenMaskDisagreement": null,
+      "measuredFrameChanged": null,
+      "measuredNoSmokeChanged": null,
       "renderCalls": {
         "both": 257,
         "noSmoke": 251,
@@ -9001,6 +9235,8 @@
       },
       "baselineSha256": "caa8aa4a77cd917a8eea208094f3235ae34b47df910bc32cdcb9f1b5a9174356",
       "candidateSha256": "098412e3ef619bae8c1a5797c4bfd3de5f0089579d1654d2ba86fa506272b044",
+      "noSmokeSha256": "2f2feabd66bd06d8001c8bd9c68638e3c4c04466e1345eef12309cd210ef054b",
+      "noFirefliesSha256": "0fcce275074d3103c7834742bfdb65378088f32bbcb8f37799881c200d43ee70",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -9077,6 +9313,7 @@
           "luminance": 67.9814
         }
       ],
+      "mainStateMatches": true,
       "state": {
         "character": [
           12.799999446278282,
@@ -9624,7 +9861,20 @@
         "outsideSmoke": 0,
         "fireflyMaskChanged": 0
       },
+      "mergeParity": {
+        "poseMatches": true,
+        "effectStateMatches": true,
+        "changedPixels": 0,
+        "changedBounds": null,
+        "outsideSmoke": 0,
+        "fireflyMaskChanged": 0,
+        "previousSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
+        "candidateSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43"
+      },
       "puffBrightMaskOutside": null,
+      "measuredScreenMaskDisagreement": null,
+      "measuredFrameChanged": null,
+      "measuredNoSmokeChanged": null,
       "renderCalls": {
         "both": 240,
         "noSmoke": 240,
@@ -9633,6 +9883,8 @@
       },
       "baselineSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
       "candidateSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
+      "noSmokeSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
+      "noFirefliesSha256": "a7d9edd20117dae2a64b573e35160a0979151e86e369da89e36817163837ed43",
       "errors": {
         "baseline": [],
         "candidate": []
@@ -9706,5 +9958,6 @@
   "nightRainReplay": {
     "sha256": "7b7e028d7575e066dee49807c4de1a2efd759118040dbd110c1e610946c3da53",
     "matches": true
-  }
+  },
+  "failures": []
 }

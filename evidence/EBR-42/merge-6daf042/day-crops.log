@@ -1,0 +1,5 @@
+[heavy] slot /tmp/farm-heavy.d.lock acquired: python3 evidence/EBR-42/crop-day.py
+chimney-day-before: (644,84,144,156), 3x nearest-neighbour
+chimney-day-after: (644,84,144,156), 3x nearest-neighbour
+chimney-day-mask: (644,84,144,156), 3x nearest-neighbour
+[heavy] released /tmp/farm-heavy.d.lock rc=0

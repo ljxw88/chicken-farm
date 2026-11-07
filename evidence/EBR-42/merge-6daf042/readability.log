@@ -1,0 +1,30 @@
+[heavy] slot /tmp/farm-heavy.b.lock acquired: node evidence/EBR-42/smoke-retune/measure.mjs
+daytime-clear t=2.5: screen mask max 213.31, buffer mask max 213.31, void max 213.31, >=110: 5 contributing / 3 exclusive / 4 solo on void
+daytime-clear t=3: screen mask max 212.46, buffer mask max 212.46, void max 212.46, >=110: 6 contributing / 4 exclusive / 4 solo on void
+daytime-clear t=3.5: screen mask max 217.53, buffer mask max 217.53, void max 217.53, >=110: 5 contributing / 2 exclusive / 4 solo on void
+daytime-cloudy t=2.5: screen mask max 213.60, buffer mask max 213.60, void max 213.60, >=110: 5 contributing / 3 exclusive / 4 solo on void
+daytime-cloudy t=3: screen mask max 211.48, buffer mask max 211.48, void max 211.48, >=110: 6 contributing / 4 exclusive / 4 solo on void
+daytime-cloudy t=3.5: screen mask max 216.97, buffer mask max 216.97, void max 216.97, >=110: 5 contributing / 2 exclusive / 4 solo on void
+daytime-rain t=2.5: screen mask max 167.90, buffer mask max 167.90, void max 163.05, >=110: 4 contributing / 0 exclusive / 2 solo on void
+daytime-rain t=3: screen mask max 167.33, buffer mask max 167.33, void max 163.19, >=110: 4 contributing / 2 exclusive / 3 solo on void
+daytime-rain t=3.5: screen mask max 199.22, buffer mask max 199.22, void max 176.41, >=110: 4 contributing / 1 exclusive / 4 solo on void
+sunset-clear t=2.5: screen mask max 198.42, buffer mask max 198.42, void max 198.42, >=110: 5 contributing / 3 exclusive / 4 solo on void
+sunset-clear t=3: screen mask max 195.92, buffer mask max 195.92, void max 195.92, >=110: 6 contributing / 4 exclusive / 4 solo on void
+sunset-clear t=3.5: screen mask max 201.35, buffer mask max 201.35, void max 201.35, >=110: 5 contributing / 2 exclusive / 4 solo on void
+sunset-cloudy t=2.5: screen mask max 200.86, buffer mask max 200.86, void max 200.86, >=110: 5 contributing / 3 exclusive / 4 solo on void
+sunset-cloudy t=3: screen mask max 197.36, buffer mask max 197.36, void max 197.36, >=110: 6 contributing / 4 exclusive / 4 solo on void
+sunset-cloudy t=3.5: screen mask max 202.43, buffer mask max 202.43, void max 202.43, >=110: 5 contributing / 2 exclusive / 4 solo on void
+sunset-rain t=2.5: screen mask max 148.95, buffer mask max 148.95, void max 148.95, >=110: 4 contributing / 0 exclusive / 0 solo on void
+sunset-rain t=3: screen mask max 150.23, buffer mask max 150.23, void max 150.23, >=110: 4 contributing / 0 exclusive / 0 solo on void
+sunset-rain t=3.5: screen mask max 191.20, buffer mask max 191.20, void max 160.15, >=110: 4 contributing / 0 exclusive / 0 solo on void
+night-clear t=2.5: screen mask max 127.43, buffer mask max 127.43, void max 127.43, >=70: 5 contributing / 3 exclusive / 4 solo on void
+night-clear t=3: screen mask max 116.72, buffer mask max 116.72, void max 116.72, >=70: 6 contributing / 3 exclusive / 4 solo on void
+night-clear t=3.5: screen mask max 127.72, buffer mask max 127.72, void max 127.72, >=70: 5 contributing / 2 exclusive / 4 solo on void
+night-cloudy t=2.5: screen mask max 125.15, buffer mask max 125.15, void max 125.15, >=70: 5 contributing / 3 exclusive / 4 solo on void
+night-cloudy t=3: screen mask max 109.51, buffer mask max 109.51, void max 109.51, >=70: 6 contributing / 3 exclusive / 4 solo on void
+night-cloudy t=3.5: screen mask max 116.58, buffer mask max 116.58, void max 116.58, >=70: 5 contributing / 2 exclusive / 4 solo on void
+night-rain t=2.5: screen mask max 114.72, buffer mask max 114.72, void max 114.72, >=70: 4 contributing / 2 exclusive / 3 solo on void
+night-rain t=3: screen mask max 119.72, buffer mask max 119.72, void max 119.72, >=70: 4 contributing / 3 exclusive / 3 solo on void
+night-rain t=3.5: screen mask max 166.52, buffer mask max 166.52, void max 121.79, >=70: 4 contributing / 1 exclusive / 4 solo on void
+Smoke-mask peak checks PASS; 14 samples have fewer than three exclusive or solo puffs (diagnostic only).
+[heavy] released /tmp/farm-heavy.b.lock rc=0
