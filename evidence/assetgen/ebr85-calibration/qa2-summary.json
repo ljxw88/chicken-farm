@@ -1,0 +1,54 @@
+{
+  "fixtures_returned": 68,
+  "negative_cases": 58,
+  "negative_not_failed": [],
+  "known_bad_classes_covered": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "missing_expected_codes": [
+    {
+      "id": "f-sliver-coplanar-inside",
+      "expected": [
+        "H5",
+        "H7"
+      ],
+      "actual": [
+        "H5"
+      ],
+      "missing": [
+        "H7"
+      ]
+    },
+    {
+      "id": "f-vertexcolors-custom",
+      "expected": [
+        "BAKED_LIGHT"
+      ],
+      "actual": [
+        "H1"
+      ],
+      "missing": [
+        "BAKED_LIGHT"
+      ]
+    }
+  ],
+  "changed_named_codes_vs_e47": [],
+  "thin_011_unexpected_h5": []
+}

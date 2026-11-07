@@ -111,6 +111,23 @@ fresh temporary directory, never into the QA folder. Use either:
 /home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:verify -- --signed all
 ```
 
+A9's daytime/morning/sunset floors are the unrounded per-phase minima measured
+with the same renderer and A9 calculation on the signed coop, fence and tread.
+`tools/assetgen/a9-calibration.json` records the measurements and signed hashes;
+the report prints the active table. If those assets or the measurement inputs
+change, verification remeasures all three in memory. To explicitly refresh the
+checked-in table and its digest after a reviewed reference change, run:
+
+```sh
+/home/michael/OpenBot/Shared/farm-tools/heavy npm run asset:verify -- --calibrate
+```
+
+Tree-class flora (an `oak`, `pine`, `fir` or `tree` id token, or a spec
+`assetClass: "tree"`) has no numeric A9 floor and needs by-eye review; other
+flora still use the calibrated floors. The separate key-direction S4 check is
+not waived. Night and night-rain S2 contrast is advisory, but the existing
+minimum silhouette-pixel floor and every other check still apply.
+
 Verification makes no model calls. `asset:bundle` rechecks exact source-file bytes,
 spec, bible and verifier hashes and reruns offline checks; it refuses any
 `needs-human`, stale or forged result and never changes the runtime registry.

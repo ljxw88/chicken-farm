@@ -5,8 +5,9 @@ import { join } from 'node:path';
 import * as THREE from 'three';
 import { createServer } from 'vite';
 import { readBible, root } from '../tools/assetgen/config.mjs';
-import { inspectSignedGroup } from '../tools/assetgen/geometry.mjs';
+import { geometryHash, inspectSignedGroup } from '../tools/assetgen/geometry.mjs';
 import { createSignedFixtures, inspectSignedFixture } from '../tools/assetgen/signed-fixtures.mjs';
+import { readA9Calibration, resolveA9Calibration } from '../tools/assetgen/a9-calibration.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
@@ -67,4 +68,17 @@ test('the signed path does not allow altered geometry to inherit a golden exempt
   const changed = signed.build('fence'); changed.children[0].position.x += 0.02;
   const result = inspectSignedFixture('fence', changed, changed.clone(true), rules, ASSET_PALETTE, baseline);
   assert.ok(result.failures.some((failure) => failure.code === 'SIGNED_CHANGED'));
+});
+
+test('a changed real signed mesh invalidates the A9 table and remeasures every prop', async () => {
+  const signed = await createSignedFixtures(vite);
+  const stored = await readA9Calibration();
+  const changed = signed.build('fence');
+  changed.children[0].position.x += 0.02;
+  const inputs = { sourceHash: stored.sourceHash, signedHashes: { ...stored.signedHashes, fence: geometryHash(changed) } };
+  assert.notEqual(inputs.signedHashes.fence, stored.signedHashes.fence);
+  const calls = [];
+  const result = await resolveA9Calibration({ stored, inputs, measure: async (name) => { calls.push(name); return stored.measurements[name]; } });
+  assert.equal(result.source, 'recomputed');
+  assert.deepEqual(calls, ['coop', 'fence', 'tread']);
 });

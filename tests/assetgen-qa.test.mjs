@@ -9,6 +9,7 @@ import { createServer } from 'vite';
 import { readBible, root } from '../tools/assetgen/config.mjs';
 import { inspectRecipe } from '../tools/assetgen/geometry.mjs';
 import { auditBundleEntry, hashRecipe, hashText, verifierSourceHash } from '../tools/assetgen/bundle.mjs';
+import { calibrationDigestPath, calibrationPath } from '../tools/assetgen/a9-calibration.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
 const { buildRecipe } = await vite.ssrLoadModule('/src/assets/buildRecipe.ts');
@@ -157,6 +158,8 @@ test('QA can verify one external fixture without modifying its folder', { timeou
     catch (error) { output = error.stdout; assert.notEqual(error.status, 0); }
     assert.match(output, /"code": "H1"/);
     assert.match(output, /palette token/);
+    assert.match(output, /"a9Calibration"/);
+    assert.match(output, /"floors"/);
     assert.equal(await readFile(join(target, 'spec.json'), 'utf8'), specText);
     assert.equal(await readFile(join(target, 'recipe.json'), 'utf8'), recipeText);
   } finally {
@@ -192,6 +195,31 @@ test('bundle recomputes checks and rejects stale hashes, needs-human and forged 
   assert.ok((await auditBundleEntry({ ...input, recipe: bad, report: forged, signoff: forgedSignoff })).failures.some((f) => f.code === 'H1'));
   assert.ok((await auditBundleEntry({ ...input, signoff: null })).failures.some((f) => f.code === 'SIGNOFF'));
   assert.ok((await auditBundleEntry({ ...input, receipts: { ...receipts, critic: `${receipts.critic} ` } })).failures.some((f) => f.code === 'RECEIPT'));
+});
+
+test('editing calibration and its digest invalidates the original bundle receipt', async () => {
+  const sourceHash = await verifierSourceHash();
+  const forged = JSON.parse(await readFile(calibrationPath, 'utf8'));
+  forged.measurements.tread.daytime = 0.0001;
+  forged.floors.daytime = 0.0001;
+  const changedTable = `${JSON.stringify(forged, null, 2)}\n`;
+  const changedHash = await verifierSourceHash({ readSource: async (path, encoding) => path === calibrationPath ? changedTable
+    : path === calibrationDigestPath ? `${hashText(changedTable)}\n` : readFile(path, encoding) });
+  assert.notEqual(changedHash, sourceHash);
+  const hashes = { recipeHash: hashRecipe(recipe), specHash: hashRecipe(spec), bibleHash: hashText(bible.text), verifierHash: sourceHash };
+  const critique = { imageReviewed: true, blockers: [], features: { body: true, cap: true, top: true },
+    scores: { silhouette: 4, palette: 4, shapeLanguage: 4, valueStructure: 4, sceneFit: 4, craft: 4 } };
+  const makeReceipt = (sessionID, value) => `${JSON.stringify({ type: 'step_start', sessionID })}\n${JSON.stringify({ type: 'text', sessionID, part: { text: JSON.stringify(value) } })}\n`;
+  const receipts = { generator: makeReceipt('generator', recipe), critic: makeReceipt('critic', critique) };
+  const report = { status: 'PASSED', roundsUsed: 1, completedStages: rules.loop.stages, best: { stage: 'optimise' },
+    generatorSession: 'generator', criticSession: 'critic', criticModelId: 'test/model', critique,
+    generatorReceiptHash: hashText(receipts.generator), criticReceiptHash: hashText(receipts.critic), ...hashes };
+  const signoff = { reviewer: 'look-dev', ...hashes, reportHash: hashText(JSON.stringify(report)) };
+  const input = { recipe: copy(), spec, bible, report, signoff, receipts, environment, sourceHash,
+    render: async () => ({ failures: [], metrics: { unmeasured: [] } }) };
+  assert.equal((await auditBundleEntry(input)).status, 'PASSED');
+  const tampered = await auditBundleEntry({ ...input, sourceHash: changedHash });
+  assert.ok(tampered.failures.some((failure) => failure.code === 'HASH_MISMATCH' && failure.message.includes('verifierHash')));
 });
 
 test('bundle CLI refuses a forged PASS even with matching hashes and signoff fixture', { timeout: 90000 }, async () => {

@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "id": "g3-hay-bale",
+    "category": "prop",
+    "brief": "A chunky golden hay bale with two dark twine bands and a raised top tuft (QA fixture).",
+    "size": { "width": 0.9, "depth": 0.7, "height": 0.6 },
+    "paletteHints": ["wood.mid"],
+    "referenceAssetIds": ["signed-fence"],
+    "identityFeatures": [
+      { "id": "body", "description": "Main body" },
+      { "id": "frame", "description": "Corner frame" },
+      { "id": "top", "description": "Top boards" }
+    ]
+  },
+  "recipe": {
+    "id": "g3-hay-bale",
+    "category": "prop",
+    "footprint": { "w": 0.9, "d": 0.7 },
+    "height": 0.6,
+    "origin": "base-center",
+    "facing": "+Z",
+    "parts": [
+      { "name": "bale", "prim": "box", "size": [0.9, 0.498, 0.7], "at": [0, 0.249, 0], "mat": "dirt.hi", "feature": "body" },
+      { "name": "twine-front", "prim": "box", "size": [0.12, 0.5, 0.72], "at": [-0.2, 0.27, 0], "mat": "wood.dark", "feature": "frame", "exception": "twine" },
+      { "name": "twine-back", "prim": "box", "size": [0.12, 0.5, 0.72], "at": [0.2, 0.27, 0], "mat": "wood.dark", "feature": "frame", "exception": "twine" },
+      { "name": "top-tuft", "prim": "box", "size": [0.5, 0.2, 0.4], "at": [0, 0.5, 0], "mat": "dirt", "feature": "top" }
+    ],
+    "anchors": {},
+    "emissive": [],
+    "collision": { "type": "box", "w": 0.9, "d": 0.7, "h": 0.6 },
+    "slots": {},
+    "tags": []
+  }
+}

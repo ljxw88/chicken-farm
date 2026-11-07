@@ -1,13 +1,29 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { root } from './config.mjs';
 import { checkKeyLightAgreement } from './geometry.mjs';
+import { A9_PHASES, a9FloorFailures, currentA9Inputs, isTreeClass, measureA9Calibration, readA9Calibration,
+  resolveA9Calibration, writeA9Calibration } from './a9-calibration.mjs';
 
 const digest = (data) => createHash('sha256').update(data).digest('hex');
 const escape = (text) => String(text).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+
+export function classifyS2(sample, limits) {
+  const failures = [], warnings = [];
+  const tooSmall = sample.pixels < limits.minimumSilhouettePixels;
+  const lowContrast = sample.meanContrastRatio < limits.minimumContrastRatio && sample.meanDeltaE < limits.minimumDeltaE;
+  const night = sample.phase === 'night' || sample.phase === 'night-rain';
+  const label = `${sample.phase}/${sample.yaw}°/${sample.surface}`;
+  const detail = `${sample.pixels} pixels, contrast ${sample.meanContrastRatio.toFixed(2)}, CIE76 ΔE ${sample.meanDeltaE.toFixed(1)}`;
+  if (tooSmall || (!night && lowContrast)) failures.push({ code: 'S2', message: night && tooSmall
+    ? `${label}: ${sample.pixels} pixels below the ${limits.minimumSilhouettePixels}-pixel floor` : `${label}: ${detail}` });
+  if (night && lowContrast) warnings.push({ code: 'S2', message: `${label}: advisory night contrast: ${detail}` });
+  return { failures, warnings };
+}
 
 export async function createVisualRunner() {
   const server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, hmr: false } });
@@ -17,6 +33,58 @@ export async function createVisualRunner() {
     browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   } catch (error) { await server.close(); throw error; }
   const url = `http://127.0.0.1:${server.httpServer.address().port}`;
+  let calibrationKey = null, calibrationCache = null;
+
+  async function measureSignedA9(inputs, rules, name, directory) {
+    const target = inputs.signed.expected[name];
+    const spec = { id: `signed-${name}`, category: target.category,
+      size: { width: target.size[0], height: target.size[1], depth: target.size[2] }, identityFeatures: [] };
+    const visual = await capture(spec, rules, join(directory, name), null, { signedFixture: name, calibrationPass: true });
+    if (visual.failures.some((failure) => ['BROWSER', 'PIXEL_RENDER'].includes(failure.code))) {
+      throw new Error(`A9_CALIBRATION_UNMEASURED: ${name}: ${JSON.stringify(visual.failures)}`);
+    }
+    return Object.fromEntries(A9_PHASES.map((phase) => {
+      const measurement = visual.metrics.phaseLighting?.[phase];
+      if (measurement?.status !== 'pass' || !Number.isFinite(measurement.shadeLitRatio)) {
+        throw new Error(`A9_CALIBRATION_UNMEASURED: ${name}/${phase}`);
+      }
+      return [phase, measurement.shadeLitRatio];
+    }));
+  }
+
+  const inputsKey = (inputs) => JSON.stringify({ sourceHash: inputs.sourceHash, signedHashes: inputs.signedHashes });
+  async function calibration(rules) {
+    const stored = await readA9Calibration();
+    const inputs = await currentA9Inputs(server, rules, browser.version());
+    const key = `${JSON.stringify(stored)}\0${inputsKey(inputs)}`;
+    if (key !== calibrationKey) {
+      calibrationKey = key;
+      calibrationCache = (async () => {
+        let directory;
+        const resolved = await resolveA9Calibration({ stored, inputs, measure: async (name) => {
+          directory ??= await mkdtemp(join(tmpdir(), 'assetgen-a9-calibration-'));
+          return measureSignedA9(inputs, rules, name, directory);
+        } });
+        if (inputsKey(await currentA9Inputs(server, rules, browser.version())) !== inputsKey(inputs)) {
+          throw new Error('A9_CALIBRATION_CHANGED: signed references or measurement source changed during calibration');
+        }
+        return directory ? { ...resolved, evidence: directory } : resolved;
+      })().catch((error) => { calibrationKey = null; calibrationCache = null; throw error; });
+    }
+    return calibrationCache;
+  }
+
+  async function recalibrate(rules) {
+    const inputs = await currentA9Inputs(server, rules, browser.version());
+    const directory = await mkdtemp(join(tmpdir(), 'assetgen-a9-calibration-'));
+    const table = await measureA9Calibration(inputs, (name) => measureSignedA9(inputs, rules, name, directory));
+    if (inputsKey(await currentA9Inputs(server, rules, browser.version())) !== inputsKey(inputs)) {
+      throw new Error('A9_CALIBRATION_CHANGED: signed references or measurement source changed during calibration');
+    }
+    await writeA9Calibration(table);
+    calibrationKey = null; calibrationCache = null;
+    return { source: 'written', ...table, evidence: directory };
+  }
 
   async function contactSheet(spec, frames, composites, destination) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
@@ -36,6 +104,7 @@ export async function createVisualRunner() {
   }
 
   async function capture(spec, rules, directory, fixture, options = {}) {
+    const activeCalibration = options.calibrationPass ? null : await calibration(rules);
     await mkdir(directory, { recursive: true });
     const page = await browser.newPage({ viewport: { width: rules.render.width, height: rules.render.height }, deviceScaleFactor: 1 });
     if (fixture) await page.addInitScript((recipe) => { window.__assetForgeFixture = recipe; }, fixture);
@@ -136,7 +205,7 @@ export async function createVisualRunner() {
       const state = await page.evaluate(() => window.__assetForge.state());
       await contactSheet(spec, contactFrames, composites, join(directory, 'sheet.png'));
       frameIndex.push({ file: 'sheet.png', sha256: digest(await readFile(join(directory, 'sheet.png'))), surface: 'contact-sheet' });
-      const failures = [];
+      const failures = [], warnings = [];
       if (options.jitter) {
         const checked = jitter.reduce((sum, item) => sum + item.checkedPixels, 0);
         const candidates = jitter.reduce((sum, item) => sum + item.flickerCandidates, 0);
@@ -147,10 +216,9 @@ export async function createVisualRunner() {
         failures.push({ code: 'PIXEL_RENDER', message: 'The real game pixel pass did not render at 320×180 / 4 CSS pixels' });
       }
       for (const sample of samples) {
-        if (sample.pixels < rules.render.minimumSilhouettePixels ||
-            (sample.meanContrastRatio < rules.render.minimumContrastRatio && sample.meanDeltaE < rules.render.minimumDeltaE)) {
-          failures.push({ code: 'S2', message: `${sample.phase}/${sample.yaw}°/${sample.surface}: ${sample.pixels} pixels, contrast ${sample.meanContrastRatio.toFixed(2)}, CIE76 ΔE ${sample.meanDeltaE.toFixed(1)}` });
-        }
+        const s2 = classifyS2(sample, rules.render);
+        failures.push(...s2.failures);
+        warnings.push(...s2.warnings);
         if ((sample.phase === 'night' || sample.phase === 'night-rain') && sample.blownHighlights > 0) {
           failures.push({ code: 'S5_HIGHLIGHT', message: `${sample.phase}/${sample.yaw}°/${sample.surface}: ${sample.blownHighlights} blown highlights` });
         }
@@ -181,25 +249,22 @@ export async function createVisualRunner() {
         { ...checkKeyLightAgreement(values, keyByPhase[phase]), sampleCount: values.length }]));
       for (const [phase, measurement] of Object.entries(phaseLighting)) {
         if (measurement.status === 'fail') failures.push({ code: 'S4', message: `${phase}: ${measurement.message}` });
-        const floor = rules.render.phaseShadeFloors?.[phase];
-        if (floor !== undefined && measurement.status === 'unmeasured') failures.push({ code: 'A9_UNMEASURED', message: `${phase}: insufficient key/shade samples for a ratio estimate` });
-        if (floor !== undefined && Number.isFinite(measurement.shadeLitRatio) && measurement.shadeLitRatio < floor) {
-          failures.push({ code: 'A9_SHADE_RATIO', message: `${phase}: estimated shade/lit ${measurement.shadeLitRatio.toFixed(3)} is below ${floor}` });
-        }
       }
+      if (activeCalibration) failures.push(...a9FloorFailures(spec, phaseLighting, activeCalibration));
       if (errors.length) failures.push({ code: 'BROWSER', message: errors.join('; ') });
-      const result = { failures, metrics: { browser: browser.version(), loadAttempts: attempts, renderer: 'game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1',
+      const result = { failures, warnings, metrics: { browser: browser.version(), loadAttempts: attempts, renderer: 'game createScene + createDayNightCycle + createComposer; SwiftShader, DPR 1',
         lightingStatus: 'merged EBR-80; preliminary', pixel: state.pixel, references: state.references, keyDirection: state.keyDirection,
         referenceScale: { actual: state.subjectHeight / state.references.character, target: spec.size.height / state.references.character },
         samples, identityVisibility: featureVisibility, identityPartVisibility: partVisibility, featureByPhase, partByPhase,
-        jitter, keyLight: { ...light, sampleCount: lightSamples.length }, phaseLighting,
+        jitter, keyLight: { ...light, sampleCount: lightSamples.length }, phaseLighting, a9Calibration: activeCalibration,
+        a9FloorMode: isTreeClass(spec) ? 'tree-by-eye' : 'calibrated',
         unmeasured: ['S1 rendered palette-cluster distance after lighting', 'S3 three-step value structure / QA G2 phase-band method', 'S5 unlit-face glow beyond material and highlight checks', 'S7 style-reference distance',
           ...(options.jitter ? ['A7 excluded silhouette-edge pixels'] : ['A7 empirical jitter not run'])],
         frameIndex } };
       await writeFile(join(directory, 'frames.json'), `${JSON.stringify(frameIndex, null, 2)}\n`);
       return result;
     } catch (error) {
-      return { failures: [{ code: 'BROWSER', message: [String(error), ...errors].join('; ') }], metrics: {} };
+      return { failures: [{ code: 'BROWSER', message: [String(error), ...errors].join('; ') }], warnings: [], metrics: {} };
     } finally { await page.close(); }
   }
 
@@ -214,5 +279,5 @@ export async function createVisualRunner() {
     } finally { await page.close(); }
   }
 
-  return { server, browser, capture, reference, close: async () => { await browser.close(); await server.close(); } };
+  return { server, browser, capture, reference, calibration, recalibrate, close: async () => { await browser.close(); await server.close(); } };
 }

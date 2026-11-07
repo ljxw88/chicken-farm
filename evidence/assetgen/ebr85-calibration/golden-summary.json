@@ -1,0 +1,277 @@
+{
+  "output": "/tmp/ebr85-goldens-1tnsrU",
+  "calibration": {
+    "source": "checked-in",
+    "version": 1,
+    "method": "game pixel-pass A9, eight grass yaws; floor = minimum signed prop",
+    "sourceHash": "e780729bc08c395e313c04a5cd27f5f4e84bd6f3ab98b0c50526a027f71ee19f",
+    "signedHashes": {
+      "coop": "2a395493bfc2232f6cfb70761476f7d7fa60d25cece3d58ea864b3429fb2d7f0",
+      "fence": "2a6598625d90a1f13afa630181061bfadf923284d4566bc628594b7f05a8efb4",
+      "tread": "35c3e9cc24f320c4393e6a296f544766c60bfa77434b4f1f179a9eb4d766c55e"
+    },
+    "measurements": {
+      "coop": {
+        "daytime": 0.297149289605608,
+        "morning": 0.31104884655983783,
+        "sunset": 0.355353477046958
+      },
+      "fence": {
+        "daytime": 0.3567643987808441,
+        "morning": 0.3530878961454534,
+        "sunset": 0.40878062082843153
+      },
+      "tread": {
+        "daytime": 0.22175896897053277,
+        "morning": 0.24354291910500747,
+        "sunset": 0.2940890597395208
+      }
+    },
+    "floors": {
+      "daytime": 0.22175896897053277,
+      "morning": 0.24354291910500747,
+      "sunset": 0.2940890597395208
+    }
+  },
+  "results": {
+    "qa2-barrel": {
+      "hard": [],
+      "a7": {
+        "views": 24,
+        "candidates": 0,
+        "excludedEdges": 816
+      },
+      "otherFailures": [],
+      "phases": {
+        "daytime": {
+          "a9": 0.33953202187768433,
+          "floor": 0.22175896897053277,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "morning": {
+          "a9": 0.2987602127730863,
+          "floor": 0.24354291910500747,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "sunset": {
+          "a9": 0.350276023133112,
+          "floor": 0.2940890597395208,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "night": {
+          "a9": 0.5458877101476316,
+          "floor": null,
+          "a9Pass": null,
+          "failures": [
+            {
+              "code": "S2",
+              "message": "night/0°/path: 35 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night/270°/path: 34 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night/315°/path: 36 pixels below the 40-pixel floor"
+            }
+          ],
+          "warnings": 8,
+          "a9Frames": []
+        },
+        "night-rain": {
+          "a9": 0.5875541118730058,
+          "floor": null,
+          "a9Pass": null,
+          "failures": [
+            {
+              "code": "S2",
+              "message": "night-rain/0°/path: 31 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/45°/path: 38 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/225°/path: 37 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/270°/path: 28 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/315°/path: 31 pixels below the 40-pixel floor"
+            }
+          ],
+          "warnings": 20,
+          "a9Frames": []
+        }
+      }
+    },
+    "g2-wooden-crate": {
+      "hard": [],
+      "a7": {
+        "views": 24,
+        "candidates": 0,
+        "excludedEdges": 940
+      },
+      "otherFailures": [],
+      "phases": {
+        "daytime": {
+          "a9": 0.372633813056891,
+          "floor": 0.22175896897053277,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "morning": {
+          "a9": 0.3669977961396851,
+          "floor": 0.24354291910500747,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "sunset": {
+          "a9": 0.4232639481741259,
+          "floor": 0.2940890597395208,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "night": {
+          "a9": 0.5814197462848412,
+          "floor": null,
+          "a9Pass": null,
+          "failures": [],
+          "warnings": 2,
+          "a9Frames": []
+        },
+        "night-rain": {
+          "a9": 0.8479788219158438,
+          "floor": null,
+          "a9Pass": null,
+          "failures": [],
+          "warnings": 11,
+          "a9Frames": []
+        }
+      }
+    },
+    "g3-hay-bale": {
+      "hard": [],
+      "a7": {
+        "views": 24,
+        "candidates": 0,
+        "excludedEdges": 794
+      },
+      "otherFailures": [],
+      "phases": {
+        "daytime": {
+          "a9": 0.2610212419816387,
+          "floor": 0.22175896897053277,
+          "a9Pass": true,
+          "failures": [
+            {
+              "code": "S2",
+              "message": "daytime/0°/path: 35 pixels, contrast 1.34, CIE76 ΔE 9.1"
+            }
+          ],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "morning": {
+          "a9": 0.3236888304214476,
+          "floor": 0.24354291910500747,
+          "a9Pass": true,
+          "failures": [],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "sunset": {
+          "a9": 0.37722772496783685,
+          "floor": 0.2940890597395208,
+          "a9Pass": true,
+          "failures": [
+            {
+              "code": "S2",
+              "message": "sunset/0°/path: 39 pixels, contrast 1.32, CIE76 ΔE 8.4"
+            }
+          ],
+          "warnings": 0,
+          "a9Frames": []
+        },
+        "night": {
+          "a9": 0.46966020867599023,
+          "floor": null,
+          "a9Pass": null,
+          "failures": [
+            {
+              "code": "S2",
+              "message": "night/0°/path: 35 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night/45°/path: 37 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night/90°/path: 30 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night/270°/path: 32 pixels below the 40-pixel floor"
+            }
+          ],
+          "warnings": 9,
+          "a9Frames": []
+        },
+        "night-rain": {
+          "a9": 0.5221945500979458,
+          "floor": null,
+          "a9Pass": null,
+          "failures": [
+            {
+              "code": "S2",
+              "message": "night-rain/0°/path: 21 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/45°/path: 27 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/90°/path: 30 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/135°/path: 39 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/270°/path: 32 pixels below the 40-pixel floor"
+            },
+            {
+              "code": "S2",
+              "message": "night-rain/315°/path: 33 pixels below the 40-pixel floor"
+            }
+          ],
+          "warnings": 19,
+          "a9Frames": []
+        }
+      }
+    }
+  }
+}

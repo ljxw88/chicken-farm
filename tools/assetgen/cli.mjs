@@ -26,6 +26,7 @@ async function verifySigned(name, runner, environment, bible, output) {
   if (!fixtures.names.includes(name)) throw new Error(`Unknown signed fixture ${name}`);
   const baseline = JSON.parse(await readFile(join(root, 'tools/assetgen/signed-baselines.json'), 'utf8'));
   const result = inspectSignedFixture(name, fixtures.build(name), fixtures.build(name), bible.rules, environment.palette, baseline);
+  result.metrics.a9Calibration = await runner.calibration(bible.rules);
   if (result.failures.length) return result;
   const target = fixtures.expected[name];
   const spec = { id: `signed-${name}`, category: target.category,
@@ -44,10 +45,21 @@ async function verifySigned(name, runner, environment, bible, output) {
   result.status = result.failures.length ? 'FAIL' : 'PASS';
   result.metrics.empiricalJitter = { views: jitter.length, checkedPixels: checked, skippedEdgePixels: skippedEdges, flickerCandidates: flicker,
     differingViews: jitter.filter((item) => item.flickerCandidates) };
+  result.metrics.a9Calibration = visual.metrics?.a9Calibration;
+  result.metrics.a9FloorMode = visual.metrics?.a9FloorMode;
+  result.metrics.phaseLighting = visual.metrics?.phaseLighting;
+  if (visual.metrics?.samples) {
+    result.metrics.s2ByPhase = Object.fromEntries([...new Set(visual.metrics.samples.map((sample) => sample.phase))].map((phase) => {
+      const samples = visual.metrics.samples.filter((sample) => sample.phase === phase);
+      return [phase, { minimumContrastRatio: Math.min(...samples.map((sample) => sample.meanContrastRatio)),
+        minimumDeltaE: Math.min(...samples.map((sample) => sample.meanDeltaE)), minimumPixels: Math.min(...samples.map((sample) => sample.pixels)) }];
+    }));
+  }
   for (const warning of result.warnings) if (warning.code === 'A7_ANALYTIC_WARNING') {
     warning.message += `; 24-yaw interior jitter found ${flicker} candidates, with ${skippedEdges} edge pixels excluded`;
   }
   result.warnings.push(...visual.failures.filter((failure) => failure.code !== 'BROWSER').map((failure) => ({ ...failure, code: `SIGNED_${failure.code}_WARNING` })));
+  result.warnings.push(...(visual.warnings || []).map((warning) => ({ ...warning, code: `SIGNED_${warning.code}_WARNING` })));
   result.notChecked = ['A7 excluded silhouette-edge pixels', 'A11 placement', 'A12 walking shimmer', 'A13 Look Dev'];
   result.evidence = join(output, name);
   return result;
@@ -56,11 +68,14 @@ async function verifySigned(name, runner, environment, bible, output) {
 async function setup() {
   const bible = await readBible();
   const runner = await createVisualRunner();
-  const { buildRecipe } = await runner.server.ssrLoadModule('/src/assets/buildRecipe.ts');
-  const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
-  let probe = null;
-  try { probe = JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe-ebr83-85/result.json'), 'utf8')); } catch { /* no probe */ }
-  return { bible, runner, environment: { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS }, probe };
+  try {
+    const calibration = await runner.calibration(bible.rules);
+    const { buildRecipe } = await runner.server.ssrLoadModule('/src/assets/buildRecipe.ts');
+    const { ASSET_PALETTE, ACCENT_TOKENS } = await runner.server.ssrLoadModule('/src/assets/palette.ts');
+    let probe = null;
+    try { probe = JSON.parse(await readFile(join(evidenceDirectory, 'vision-probe-ebr83-85/result.json'), 'utf8')); } catch { /* no probe */ }
+    return { bible, runner, calibration, environment: { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS }, probe };
+  } catch (error) { await runner.close(); throw error; }
 }
 
 function score(hard, visual, critic) {
@@ -92,7 +107,7 @@ async function newAsset(input, args) {
     return;
   }
   const context = await setup();
-  const { bible, runner, environment, probe } = context;
+  const { bible, runner, calibration, environment, probe } = context;
   if (spec.variantOf) {
     try {
       const reference = JSON.parse(await readFile(join(runDirectory, spec.variantOf, 'best.json'), 'utf8'));
@@ -183,6 +198,7 @@ async function newAsset(input, args) {
       if (review && ['request-input', 'stop', 'refine-spec', 'refine-code'].includes(review.action)) action = review.action;
       if (blockers.some((blocker) => blocker.code === 'LIGHTING_UNMEASURED')) action = 'request-input';
       const result = { id: spec.id, round, stage, action, score: stageScore,
+        a9Calibration: visual?.metrics?.a9Calibration ?? calibration, warnings: visual?.warnings ?? [],
         specHash: hash(specBytes), bibleHash: hash(bible.text), recipeHash: hash(json(current)), verifierHash, hard, visual, critique: review,
         critiqueStatus: criticError || (review?.imageReviewed ? 'independent visual critique recorded' : 'visual critique not run'),
         generatorSession: generated.sessionId, generatorModelId: generated.modelId, criticSession, criticModelId,
@@ -235,6 +251,7 @@ async function newAsset(input, args) {
     if (best) await writeFile(join(run, 'best.json'), json({ status, ...best }));
     const bestReport = best ? JSON.parse(await readFile(join(root, best.report), 'utf8')) : null;
     const final = { id: spec.id, category: spec.category, status, signedBy: null, roundsUsed: round,
+      a9Calibration: bestReport?.a9Calibration ?? calibration,
       loopMode: loopOff ? 'off-one-generation' : 'on-bounded',
       specHash: hash(specBytes), bibleHash: hash(bible.text), recipeHash: best ? hash(json(best.recipe)) : null, verifierHash,
       generatorSession: bestReport?.generatorSession ?? null, criticSession: bestReport?.criticSession ?? null,
@@ -257,12 +274,12 @@ async function verifyExternal(directory, selectedId) {
   const references = Object.fromEntries(fixtures.filter((item) => item.spec && item.recipe).map((item) => [item.spec.id, item.recipe]));
   const selected = selectedId ? fixtures.filter((item) => item.name === selectedId || item.spec?.id === selectedId) : fixtures;
   if (!selected.length) throw new Error(`Fixture not found: ${selectedId}`);
-  const { bible, runner, environment } = await setup();
+  const { bible, runner, calibration, environment } = await setup();
   const output = await mkdtemp(join(tmpdir(), 'assetgen-external-verify-'));
   try {
     for (const fixture of selected) {
       if (fixture.error) {
-        console.log(json({ id: fixture.name, status: 'FAIL', failures: [fixture.error] }));
+        console.log(json({ id: fixture.name, status: 'FAIL', failures: [fixture.error], a9Calibration: calibration }));
         process.exitCode = 1;
         continue;
       }
@@ -278,6 +295,7 @@ async function verifyExternal(directory, selectedId) {
       if (!hard.failures.length) visual = await runner.capture(spec, bible.rules, join(output, spec.id), recipe, { jitter: true });
       const failures = [...hard.failures, ...(visual?.failures || [])];
       const result = { id: spec.id, status: failures.length ? 'FAIL' : 'PASS_HARD_AND_MEASURED_VISUAL', failures,
+        warnings: visual?.warnings ?? [], a9Calibration: visual?.metrics?.a9Calibration ?? calibration,
         hard: { failures: hard.failures, metrics: hard.metrics }, visual, output: visual ? join(output, spec.id) : null,
         note: 'No model call or Look Dev signoff; unmeasured checks do not become passes.' };
       console.log(json(result));
@@ -288,6 +306,14 @@ async function verifyExternal(directory, selectedId) {
 
 async function verifyCommand(input, args) {
   const options = [input, ...args].filter(Boolean);
+  if (options.includes('--calibrate')) {
+    if (options.length !== 1) throw new Error('--calibrate does not accept other arguments');
+    const bible = await readBible();
+    const runner = await createVisualRunner();
+    try { console.log(json({ a9Calibration: await runner.recalibrate(bible.rules) })); }
+    finally { await runner.close(); }
+    return;
+  }
   if (options.includes('--signed')) {
     const name = options[options.indexOf('--signed') + 1];
     if (!name || name.startsWith('--')) throw new Error('--signed requires tree, coop, fence, tread or all');
@@ -311,7 +337,7 @@ async function verifyCommand(input, args) {
   if (input === '--id') input = args[0];
   if (!input) throw new Error('Usage: npm run asset:verify -- <id|all>');
   const candidates = input === 'all' ? await listSpecs() : [await readSpec(input)];
-  const { bible, runner, environment } = await setup();
+  const { bible, runner, calibration, environment } = await setup();
   try {
     environment.referenceRecipes = {};
     for (const { spec } of candidates) if (spec.variantOf) {
@@ -334,15 +360,15 @@ async function verifyCommand(input, args) {
       await mkdir(join(runDirectory, spec.id), { recursive: true });
       const result = inspectRecipe(recipe, spec, bible.rules, environment);
       const provenance = { specHash: hash(await readFile(specPath, 'utf8')), bibleHash: hash(bible.text), recipeHash: hash(recipeBytes), verifierHash: await verifierSourceHash() };
-      console.log(json({ id: spec.id, hard: { failures: result.failures, metrics: result.metrics } }));
+      console.log(json({ id: spec.id, a9Calibration: calibration, hard: { failures: result.failures, metrics: result.metrics } }));
       const verificationDir = join(runDirectory, spec.id, 'verify');
       await mkdir(verificationDir, { recursive: true });
       if (result.failures.length) {
-        await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
+        await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, a9Calibration: calibration, hard: { failures: result.failures, metrics: result.metrics }, visual: 'not run; hard gate failed' }));
         process.exitCode = 1; continue;
       }
       const visual = await runner.capture(spec, bible.rules, verificationDir, recipe, { jitter: true });
-      await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, hard: { failures: result.failures, metrics: result.metrics }, visual,
+      await writeFile(join(verificationDir, 'report.json'), json({ id: spec.id, status: 'needs-human', ...provenance, a9Calibration: visual.metrics?.a9Calibration ?? calibration, hard: { failures: result.failures, metrics: result.metrics }, visual,
         critiqueStatus: 'not rerun by asset:verify; see the original independent critic session' }));
       console.log(json({ id: spec.id, visual }));
       if (visual.failures.length) process.exitCode = 1;
@@ -388,7 +414,7 @@ async function bundleCommand(args) {
     }
   }
   if (!fixtures.length) throw new Error('No candidates; nothing can be bundled');
-  const { bible, runner, environment } = await setup();
+  const { bible, runner, calibration, environment } = await setup();
   const sourceHash = await verifierSourceHash();
   const references = Object.fromEntries(fixtures.filter((item) => item.spec && item.recipe).map((item) => [item.spec.id, item.recipe]));
   const output = await mkdtemp(join(tmpdir(), 'assetgen-bundle-check-'));
@@ -400,7 +426,8 @@ async function bundleCommand(args) {
       const result = await auditBundleEntry({ ...item, bible, environment: { ...environment, referenceRecipes: references }, sourceHash,
         render: (recipe, spec) => runner.capture(spec, bible.rules, join(output, spec.id), recipe, { jitter: true }) });
       if (!result.failures.length) auditedInputs.push(item);
-      console.log(json({ id: item.spec.id, status: result.status, failures: result.failures, hashes: result.hashes }));
+      console.log(json({ id: item.spec.id, status: result.status, failures: result.failures, hashes: result.hashes,
+        a9Calibration: result.visual?.metrics?.a9Calibration ?? calibration }));
       if (result.failures.length) process.exitCode = 1;
       else accepted.push({ id: item.spec.id, category: item.spec.category, ...result.hashes });
     }

@@ -25,11 +25,11 @@ function stable(value) {
 }
 
 // Builder, validator and browser harness are all part of the verification source.
-export async function verifierSourceHash() {
+export async function verifierSourceHash({ includeCalibration = true, readSource = readFile } = {}) {
   const paths = ['src/assets/buildRecipe.ts', 'src/assets/palette.ts', 'src/assets/types.ts', 'src/assets/index.ts', 'tsconfig.json',
     'tools/assetgen/schema.mjs', 'tools/assetgen/geometry.mjs', 'tools/assetgen/render.js', 'tools/assetgen/color.js',
     'tools/assetgen/visual.mjs', 'tools/assetgen/bundle.mjs', 'tools/assetgen/config.mjs', 'tools/assetgen/cli.mjs',
-    'tools/assetgen/fixtures.mjs', 'tools/assetgen/signed-fixtures.mjs', 'tools/assetgen/signed-baselines.json',
+    'tools/assetgen/fixtures.mjs', 'tools/assetgen/signed-fixtures.mjs', 'tools/assetgen/signed-baselines.json', 'tools/assetgen/a9-calibration.mjs',
     'tools/assetgen/generator.mjs', 'docs/asset-lookdev-brief.md', 'package-lock.json',
     'src/scene/createScene.ts', 'src/scene/createIsland.ts', 'src/scene/createFarmLayout.ts', 'src/scene/createIsometricCamera.ts',
     'src/scene/farmPalette.ts', 'src/scene/farmBuildingMaterials.ts', 'src/scene/farmBuildingSpecs.ts',
@@ -38,6 +38,7 @@ export async function verifierSourceHash() {
     'src/lighting/dayNightPhases.ts', 'src/lighting/createDayNightCycle.ts', 'src/lighting/createPracticalLights.ts',
     'src/postprocess/index.ts', 'src/postprocess/PixelPresentation.ts', 'src/postprocess/pixelViewport.ts',
     'src/weather/createWeatherSystem.ts', 'src/weather/createRainEffect.ts', 'src/weather/rainSettings.ts', 'package.json'];
+  if (includeCalibration) paths.push('tools/assetgen/a9-calibration.json', 'tools/assetgen/a9-calibration.sha256');
   async function includeSource(directory) {
     for (const entry of await readdir(join(root, directory), { withFileTypes: true })) {
       const path = `${directory}/${entry.name}`;
@@ -46,7 +47,7 @@ export async function verifierSourceHash() {
     }
   }
   for (const directory of ['src/scene', 'src/lighting', 'src/weather', 'src/postprocess', 'src/character', 'src/placement']) await includeSource(directory);
-  const files = await Promise.all([...new Set(paths)].sort().map(async (path) => `${path}\0${await readFile(join(root, path), 'utf8')}`));
+  const files = await Promise.all([...new Set(paths)].sort().map(async (path) => `${path}\0${await readSource(join(root, path), 'utf8')}`));
   return hashText(files.join('\0'));
 }
 
