@@ -464,7 +464,7 @@ async function temporary(prefix) {
 }
 
 /** Record a clean main snapshot first, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir }) {
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir, archivedBaselineSha }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
@@ -481,11 +481,14 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
   let traceDir;
   try {
     assert.equal(git(candidateRoot, 'rev-parse', `${baselineSha}^{commit}`), baselineSha);
-    if (baselineRoot) {
+    if (baselineRoot && archivedBaselineSha) {
+      assert.equal(archivedBaselineSha, baselineSha);
+    } else if (baselineRoot) {
       assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
       assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
         'The reference must be a clean main worktree');
     } else {
+      assert.equal(archivedBaselineSha, undefined, 'An archive SHA needs a supplied reference directory');
       archiveRoot = await temporary('ebr75-archive-');
       const archive = join(archiveRoot, 'baseline.tar');
       execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
@@ -493,6 +496,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       execFileSync('tar', ['-xf', archive, '-C', archiveRoot]);
       await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
       baselineRoot = archiveRoot;
+      archivedBaselineSha = baselineSha;
     }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
@@ -599,7 +603,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--', 'src', 'index.html',
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
-      baselineSource: archiveRoot ? 'git archive' : 'clean worktree',
+      baselineSource: archivedBaselineSha ? 'git archive' : 'clean worktree',
       referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
       excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
       results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,

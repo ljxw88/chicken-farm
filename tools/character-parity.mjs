@@ -7,7 +7,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
-const baselineSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
+const historicalSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
+const stairBaselineSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb740001;
 const search = '?phase=daytime&weather=clear';
@@ -415,35 +416,50 @@ async function pixelDiff(page, frames) {
   }, Object.fromEntries(Object.entries(frames).map(([name, bytes]) => [name, bytes.toString('base64')])));
 }
 
-/** Replay a clean archived main against the same candidate events and frame times. */
-export async function compareCharacterParity({ candidateRoot, evidenceDir }) {
-  const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.equal(git(candidateRoot, 'rev-parse', '--verify', `${baselineSha}^{commit}`), baselineSha);
-  let baselineRoot;
-  try { baselineRoot = await mkdtemp('/tmp/opencode/ebr74-main-'); }
+async function temporary(prefix) {
+  try { return await mkdtemp(`/tmp/opencode/${prefix}`); }
   catch (error) {
     if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
-    baselineRoot = await mkdtemp(join(tmpdir(), 'ebr74-archive-'));
+    return mkdtemp(join(tmpdir(), prefix));
   }
+}
+
+/** Replay a clean reference against the same candidate events and frame times. */
+export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir, archivedBaselineSha, baselineSha = historicalSha }) {
+  const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
+  assert.ok([historicalSha, stairBaselineSha].includes(baselineSha), 'Unknown replay reference');
   let baseline;
   let candidate;
   let browser;
+  let archiveRoot;
+  let traceDir;
   try {
-    // A git archive is guaranteed to use the signed commit without creating,
-    // changing or force-removing any worktree on the shared host.
-    const archive = join(baselineRoot, 'baseline.tar');
-    execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
-      baselineSha, 'src', 'index.html', 'package.json', 'package-lock.json']);
-    execFileSync('tar', ['-xf', archive, '-C', baselineRoot]);
-    await symlink(join(candidateRoot, 'node_modules'), join(baselineRoot, 'node_modules'), 'dir');
+    assert.equal(git(candidateRoot, 'rev-parse', '--verify', `${baselineSha}^{commit}`), baselineSha);
+    if (!baselineRoot) {
+      assert.equal(archivedBaselineSha, undefined, 'An archive SHA needs a supplied reference directory');
+      archiveRoot = await temporary('ebr74-archive-');
+      const archive = join(archiveRoot, 'baseline.tar');
+      execFileSync('git', ['-C', candidateRoot, 'archive', '--format=tar', `--output=${archive}`,
+        baselineSha, 'src', 'index.html', 'package.json', 'package-lock.json']);
+      execFileSync('tar', ['-xf', archive, '-C', archiveRoot]);
+      await symlink(join(candidateRoot, 'node_modules'), join(archiveRoot, 'node_modules'), 'dir');
+      baselineRoot = archiveRoot;
+      archivedBaselineSha = baselineSha;
+    } else if (archivedBaselineSha) {
+      assert.equal(archivedBaselineSha, baselineSha);
+    } else {
+      assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
+      assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
+        'The reference worktree must contain the unmodified baseline source');
+    }
     baseline = await serverAt(baselineRoot);
     browser = await chromium.launch({ headless: true,
       args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'] });
     const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
-    // The reference is generated from the clean archive and stays outside the branch.
-    const traceDir = await mkdtemp(join(baselineRoot, '.ebr74-reference-'));
+    // The generated trace stays outside both the branch and any supplied worktree.
+    traceDir = await temporary('ebr74-reference-');
     const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed,
       scenarios: Object.fromEntries(names.map((name) => [name, {
@@ -459,6 +475,7 @@ export async function compareCharacterParity({ candidateRoot, evidenceDir }) {
     const effectMaskResults = {};
     const bodyIsolation = {};
     const traceMismatches = [];
+    const traces = {};
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
       const current = await recordScenario(browser, candidate.url, name, saved.scenarios[name].script);
@@ -466,6 +483,7 @@ export async function compareCharacterParity({ candidateRoot, evidenceDir }) {
       // compare every position, rotation, camera and shadow value exactly.
       const actualTrace = JSON.parse(JSON.stringify(current.trace));
       const expectedTrace = saved.scenarios[name].trace;
+      traces[name] = { baseline: expectedTrace, candidate: actualTrace };
       const mismatch = actualTrace.findIndex((frame, index) => !isDeepStrictEqual(frame, expectedTrace[index]));
       const identical = mismatch === -1 && actualTrace.length === expectedTrace.length;
       if (!identical) traceMismatches.push({ scenario: name, frame: mismatch,
@@ -544,9 +562,14 @@ export async function compareCharacterParity({ candidateRoot, evidenceDir }) {
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      baselineSource: 'git archive', tracePath, results, traceMismatches, frameResults,
+      baselineSource: archivedBaselineSha ? 'git archive' : 'clean worktree',
+      tracePath: evidenceDir ? join(evidenceDir, 'traces.json') : tracePath, results, traceMismatches, frameResults,
       unaffectedFrameResults, effectMaskResults, bodyIsolation, marks };
-    if (evidenceDir) await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
+    if (evidenceDir) {
+      await mkdir(evidenceDir, { recursive: true });
+      await writeFile(join(evidenceDir, 'traces.json'), `${JSON.stringify(traces, null, 2)}\n`);
+      await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
+    }
     assert.deepEqual(traceMismatches, [], 'Character position / pose replay differs from main');
     assert.ok(Object.values(bodyIsolation).every(({ outsideAllowedPixels, outsideBodyPixels, bodylessChangedPixels }) =>
       outsideAllowedPixels === 0 && outsideBodyPixels === 0 && bodylessChangedPixels === 0),
@@ -556,6 +579,7 @@ export async function compareCharacterParity({ candidateRoot, evidenceDir }) {
     await browser?.close();
     await baseline?.server.close();
     await candidate?.server.close();
-    await rm(baselineRoot, { recursive: true });
+    if (traceDir) await rm(traceDir, { recursive: true });
+    if (archiveRoot) await rm(archiveRoot, { recursive: true });
   }
 }
