@@ -12,7 +12,7 @@ test('external showcase builds real diagnostic packs without claiming a pass or 
   await mkdir(run, { recursive: true });
   const recipe = { id: 'barrel', category: 'prop', footprint: { w: 0.8, d: 0.8 }, height: 1, origin: 'base-center', facing: '+Z',
     parts: [
-      { name: 'body', prim: 'box', size: [0.8, 0.65, 0.8], at: [0, 0.325, 0], mat: 'wood.mid', feature: 'body' },
+      { name: 'body_bad', prim: 'box', size: [0.8, 0.65, 0.8], at: [0, 0.325, 0], mat: 'wood.mid', feature: 'body', jitter: { seed: 123, max: 0.01 } },
       { name: 'hoops', prim: 'box', size: [0.7, 0.2, 0.7], at: [0, 0.73, 0], mat: 'timber', feature: 'hoops' },
       { name: 'lid', prim: 'box', size: [0.5, 0.2, 0.5], at: [0, 0.9, 0], mat: 'wood.light', feature: 'lid' },
     ], anchors: {}, emissive: [], collision: { type: 'box', w: 0.8, d: 0.8, h: 1 }, slots: {}, tags: [] };
@@ -25,6 +25,8 @@ test('external showcase builds real diagnostic packs without claiming a pass or 
   assert.equal(barrel.status, 'incomplete run');
   assert.equal(barrel.pack.kind, 'diagnostic');
   assert.ok(barrel.failures.some((failure) => failure.code === 'NO_FINAL'));
+  assert.ok(barrel.failures.some((failure) => failure.code === 'H1'));
+  assert.ok(barrel.pack.notes.some((note) => note.includes('ignores unsupported nested jitter')));
   assert.equal(manifest.overview.available, true);
   assert.deepEqual(manifest.overview.included, ['barrel']);
   await access(join(output, 'images/barrel/sheet.png'));

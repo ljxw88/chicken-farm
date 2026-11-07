@@ -88,6 +88,8 @@ previous variant ids; all references must be available and are compared. A
 `variationSeed` requires a part using that seed with nonzero bounded jitter.
 The seed controls recipe geometry; OpenCode's CLI does not expose a model
 sampling seed. Variants still need distinct silhouettes and human review.
+For example, a part uses `"seed":84001,"jitter":{"position":0.01}`;
+`seed`, `max` and `rot` inside `jitter` are not valid recipe fields.
 
 A recipe is data only:
 
@@ -178,8 +180,10 @@ python3 -m http.server 5185 --bind 127.0.0.1 --directory /home/michael/OpenBot/S
 The page uses eight pre-rendered island views per light phase and puts P0
 apart for Look Dev. If a buildable candidate failed a hard gate or lacks a
 completed verification, the tool may make a **diagnostic-only** render pack; it never changes the
-failure, runs a critic, or treats the preview as verification. Missing or
-unsafe candidates remain explicitly unavailable. `ASSETGEN_SHOWCASE_DIR`
+failure, runs a critic, or treats the preview as verification. For a narrowly
+allowed invalid name or nested jitter field, the page says when the builder
+ignored jitter or the name remains invalid. Other malformed or unsafe
+candidates remain unavailable. `ASSETGEN_SHOWCASE_DIR`
 changes the output directory; existing showcases are not overwritten.
 `tools/assetgen/write-p0-report.mjs` writes a separate evidence table with
 rounds, blockers, actual recipe seed use, reported tokens and cost.

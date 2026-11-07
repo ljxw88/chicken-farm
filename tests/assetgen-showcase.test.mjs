@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { renderShowcasePage } from '../tools/assetgen/showcase-page.mjs';
 import { visualCheckSummary } from '../tools/assetgen/showcase-checks.mjs';
+import { diagnosticEligibility } from '../tools/assetgen/diagnostic-preview.mjs';
 
 const frames = ['daytime', 'sunset', 'night'].flatMap((phase) => Array.from({ length: 8 }, (_, i) => `${phase}-grass-${String(i * 45).padStart(3, '0')}.png`));
 
@@ -20,6 +21,27 @@ test('P0 showcase marks failures, unmeasured checks and diagnostic renders hones
   assert.match(page, /data-turntable/);
   assert.match(page, /id="island-yaw"/);
   assert.match(page, /<option>night<\/option>/);
+});
+
+test('schema-invalid previews are narrow, unchanged and disclose ignored jitter', () => {
+  const recipe = { parts: [{ name: 'lobe_a', jitter: { seed: 123, max: 0.02 } }] };
+  const original = structuredClone(recipe), rules = { jitterMaximum: 0.03 };
+  const failures = [{ code: 'H1', message: 'Invalid or duplicate part name lobe_a' },
+    { code: 'H1', message: 'Part lobe_a jitter requires an integer seed' }, { code: 'VARIANT_SEED', message: 'missing seed' }];
+  const result = diagnosticEligibility(recipe, failures, rules);
+  assert.equal(result.safe, true);
+  assert.ok(result.notes.some((note) => note.includes('ignores unsupported nested jitter')));
+  assert.ok(result.notes.some((note) => note.includes('not valid kebab-case')));
+  assert.deepEqual(recipe, original);
+  const bounded = structuredClone(recipe); bounded.parts[0].jitter = { seed: 123, max: [0.03, 0.02, 0.03], rot: [0.03, 0.03, 0.02] };
+  assert.equal(diagnosticEligibility(bounded, failures, rules).safe, true);
+  bounded.parts[0].jitter.rot[1] = 0.04;
+  assert.equal(diagnosticEligibility(bounded, failures, rules).safe, false);
+  assert.equal(diagnosticEligibility(recipe, [...failures, { code: 'H1', message: 'Part lobe_a uses an unknown palette token' }], rules).safe, false);
+  const bad = structuredClone(recipe); bad.parts[0].jitter.arbitrary = 1;
+  assert.equal(diagnosticEligibility(bad, failures, rules).safe, false);
+  const duplicate = structuredClone(recipe); duplicate.parts.push({ name: 'lobe_a' });
+  assert.equal(diagnosticEligibility(duplicate, failures, rules).safe, false);
 });
 
 test('visual summaries do not turn missing evidence or partial checks into passes', () => {

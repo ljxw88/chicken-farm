@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import * as THREE from 'three';
 import { verifierSourceHash } from './bundle.mjs';
 import { readBible, readSpec, root, runDirectory } from './config.mjs';
+import { diagnosticEligibility } from './diagnostic-preview.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { validateRecipe } from './schema.mjs';
 import { renderShowcasePage } from './showcase-page.mjs';
@@ -47,12 +48,11 @@ try {
   const records = [], overviewItems = [];
   for (const [index, entry] of entries.entries()) {
     const { id, spec, recipe, verification, stageReport, final } = entry;
-    let inspected = null, group = null, safe = false;
+    let inspected = null, group = null, safe = false, previewNotes = [];
     if (recipe) {
       inspected = inspectRecipe(recipe, spec, bible.rules, environment);
       const schemaFailures = validateRecipe(recipe, spec, bible.rules, ASSET_PALETTE, ACCENT_TOKENS);
-      // A missing variant jitter is a failed gate but not an unsafe primitive.
-      safe = schemaFailures.every((failure) => failure.code === 'VARIANT_SEED');
+      ({ safe, notes: previewNotes } = diagnosticEligibility(recipe, schemaFailures, bible.rules));
       if (safe) try { group = buildRecipe(recipe); } catch { safe = false; }
     }
     if (safe) overviewItems.push({ recipe, x: positions[index][0], z: positions[index][1] });
@@ -74,7 +74,7 @@ try {
         const standard = join(verifiedDir, 'diagnostic');
         packDir = await exists(standard) ? await mkdtemp(join(verifiedDir, 'diagnostic-')) : standard;
         const visual = await runner.capture(spec, bible.rules, packDir, recipe, { jitter: true });
-        diagnostic = { id, status: 'diagnostic-only', inputHash, note: 'A render for human review, not a hard-gate pass or an independent critique.',
+        diagnostic = { id, status: 'diagnostic-only', inputHash, previewNotes, note: 'A render for human review, not a hard-gate pass or an independent critique.',
           hard: verification?.hard ?? { failures: inspected.failures, metrics: inspected.metrics }, visual };
         await writeFile(join(packDir, 'diagnostic.json'), `${JSON.stringify(diagnostic, null, 2)}\n`, { flag: 'wx' });
       }
@@ -84,10 +84,14 @@ try {
     if (group) {
       group.updateMatrixWorld(true);
       let triangles = 0;
-      group.traverse((part) => { if (part.isMesh) triangles += Math.floor((part.geometry.index?.count ?? part.geometry.getAttribute('position').count) / 3); });
+      const colors = new Set();
+      group.traverse((part) => { if (part.isMesh) {
+        triangles += Math.floor((part.geometry.index?.count ?? part.geometry.getAttribute('position').count) / 3);
+        for (const material of Array.isArray(part.material) ? part.material : [part.material]) if (material?.color) colors.add(material.color.getHex());
+      } });
       const box = new THREE.Box3().setFromObject(group, true);
       const size = box.getSize(new THREE.Vector3());
-      measured = { triangles, bounds: { min: box.min.toArray(), max: box.max.toArray(), width: size.x, height: size.y, depth: size.z } };
+      measured = { triangles, colorCount: colors.size, bounds: { min: box.min.toArray(), max: box.max.toArray(), width: size.x, height: size.y, depth: size.z } };
     }
     const hard = verification?.hard ?? (inspected ? { failures: inspected.failures, metrics: inspected.metrics } : null);
     const checks = Object.fromEntries(Array.from({ length: 10 }, (_, i) => {
@@ -124,7 +128,7 @@ try {
     records.push({ id, status: final?.status ?? (recipe ? 'incomplete run' : 'not generated'), brief: spec.brief, rounds: final?.roundsUsed ?? null,
       triangles: hard?.metrics?.triangles ?? measured?.triangles ?? null, bounds: hard?.metrics?.bounds ?? measured?.bounds ?? null,
       metricSource: hard?.metrics?.triangles != null ? 'verifier' : measured ? 'diagnostic geometry only' : 'not measured',
-      colorCount: hard?.metrics?.colorCount ?? null,
+      colorCount: hard?.metrics?.colorCount ?? measured?.colorCount ?? null,
       colors: Array.isArray(recipe?.parts) ? [...new Set(recipe.parts.filter((part) => typeof part?.mat === 'string')
         .map((part) => recipe.slots?.[part.mat] ?? part.mat))].sort() : [], checks,
       visualChecks: visualCheckSummary(visual),
@@ -132,7 +136,7 @@ try {
       unmeasured: visual?.metrics?.unmeasured ?? ['Visual verification not run'],
       critiqueStatus: stageReport?.critiqueStatus ?? final?.visualCritiqueStatus ?? 'visual critique not run',
       criticScores: stageReport?.critique?.imageReviewed ? stageReport.critique.scores : null,
-      pack: kind ? { kind, files: copied } : null, reportHref, diagnosticHref });
+      pack: kind ? { kind, files: copied, notes: kind === 'diagnostic' ? previewNotes : [] } : null, reportHref, diagnosticHref });
   }
 
   const included = entries.filter((entry) => overviewItems.some((item) => item.recipe.id === entry.id)).map((entry) => entry.id);

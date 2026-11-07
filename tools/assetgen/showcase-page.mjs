@@ -19,6 +19,7 @@ function assetCard(asset) {
   const visualChecks = asset.visualChecks ? Object.entries(asset.visualChecks).map(([key, value]) => `<tr><th>${escape(key)}</th><td>${escape(value)}</td></tr>`).join('') : '<tr><td>Not run.</td></tr>';
   return `<article class="asset" id="${escape(asset.id)}"><header><div><span class="tag">P0 · SOLO REVIEW</span><h2>${escape(asset.id)}</h2></div><strong class="status">${escape(asset.status || 'not generated')}</strong></header>
     <p>${escape(asset.brief)}</p><p><strong>Render:</strong> ${escape(asset.pack?.kind || 'unavailable')} ${asset.pack?.kind === 'diagnostic' ? '— diagnostic only, not a verification pass; see the gate results.' : ''}</p>
+    ${asset.pack?.notes?.length ? `<div class="warning">${list(asset.pack.notes)}</div>` : ''}
     <p><strong>Triangles:</strong> ${fmt(asset.triangles)} · <strong>Measured colour count:</strong> ${fmt(asset.colorCount)} · <strong>Palette tokens:</strong> ${asset.colors?.length ? escape(asset.colors.join(', ')) : 'Not measured'} · <strong>Bounds:</strong> ${fmt(asset.bounds)} · <strong>Metrics source:</strong> ${escape(asset.metricSource || 'not measured')}</p>
     <p><strong>Rounds:</strong> ${fmt(asset.rounds)} · <strong>Critique:</strong> ${escape(asset.critiqueStatus || 'visual critique not run')}</p>
     ${turntable}
@@ -45,7 +46,7 @@ export function renderShowcasePage({ assets, overview, generatedAt }) {
   const overviewPanel = overview?.available ? `<div class="controls"><label>Light <select id="island-phase"><option>daytime</option><option>sunset</option><option>night</option></select></label>
     <label>Orbit <select id="island-yaw">${Array.from({ length: 8 }, (_, i) => `<option value="${String(i * 45).padStart(3, '0')}"${i === 1 ? ' selected' : ''}>${i * 45}°</option>`).join('')}</select></label></div>
     <img id="island" class="island" src="images/island/daytime-045.png" alt="P0 review candidates on the signed island; orbit and light controls select pre-rendered views">
-    <p>Shown on the review row in increasing world X: ${escape(overview.included.join(', ') || 'none')}. Not renderable: ${escape(overview.missing.join(', ') || 'none')}.</p>` : '<p class="missing">Island overview unavailable; see individual evidence below.</p>';
+    <p>Shown on the review row in increasing world X: ${escape(overview.included.join(', ') || 'none')}. Not renderable: ${escape(overview.missing.join(', ') || 'none')}. Schema-invalid subjects are diagnostic only; see their notes below.</p>` : '<p class="missing">Island overview unavailable; see individual evidence below.</p>';
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>P0 Asset Forge · Look Dev review</title>
 <style>
   :root{color-scheme:dark;--ink:#f5e7cb;--muted:#cbbca0;--bg:#171d18;--panel:#253126;--line:#596b4c;--warn:#ffd18a}*{box-sizing:border-box}
