@@ -1,4 +1,4 @@
-/* Glass fill and blur match the locked farm HUD; remaining fitting values are provisional. */
+/* EBR-36 design values; the system font family is fitted, not raster-measured. */
 :root {
   --hud-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --hud-text: #fffdf2;
@@ -10,6 +10,14 @@
   --hud-active: rgba(255, 255, 255, 0.16);
   --hud-focus: #fffce8;
   --hud-blur: 16px;
+  --hud-title-size: 20px;
+  --hud-column-label-size: 13px;
+  --hud-value-size: 22px;
+  --hud-toggle-label-size: 14px;
+  --hud-footer-size: 13px;
+  --hud-artwork-size: 120px;
+  --hud-panel-inset: 24px;
+  --hud-column-inset: 10px;
   --hud-panel-width: 536px;
   --hud-radius: 22px;
   --hud-toolbar-height: 56px;

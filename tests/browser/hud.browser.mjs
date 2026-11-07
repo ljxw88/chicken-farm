@@ -146,6 +146,21 @@ async function assertSeparated(page, viewport, active = false) {
   return { panel, toolbar, placement, biome };
 }
 
+async function assertClosedSeparated(page, viewport) {
+  const toolbar = await page.locator('.hud-toolbar').boundingBox();
+  const placement = await page.locator('.placement-controls').boundingBox();
+  const biome = await page.locator('.farm-biome').boundingBox();
+  for (const [name, box] of Object.entries({ toolbar, placement, biome })) {
+    assert.ok(box, `${name} missing at ${viewport.width}x${viewport.height}`);
+    assert.ok(box.x >= -0.5 && box.y >= -0.5 && box.x + box.width <= viewport.width + 0.5 && box.y + box.height <= viewport.height + 0.5,
+      `${name} outside viewport: ${JSON.stringify(box)}`);
+  }
+  for (const [a, b] of [[toolbar, placement], [biome, placement], [toolbar, biome]]) {
+    assert.equal(overlaps(a, b), false, `closed layout overlap ${viewport.width}x${viewport.height}: ${JSON.stringify({ a, b })}`);
+  }
+  return { toolbar, placement, biome };
+}
+
 test('desktop panel controls real phases, weather, automation and close/reopen', { timeout: 90000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   t.after(() => context.close());
@@ -337,7 +352,7 @@ test('panel input does not walk or place; walking and placement work with it ope
 
 test('responsive touch layouts keep the phase pill, placement and sky controls separate', { timeout: 120000 }, async (t) => {
   const results = [];
-  for (const [width, height] of [[1260, 1080], [390, 844], [320, 568], [844, 390]]) {
+  for (const [width, height] of [[1260, 1080], [700, 844], [390, 844], [320, 568], [844, 390]]) {
     const viewport = { width, height };
     const touch = width < 1000;
     const context = await browser.newContext({ viewport, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
@@ -346,6 +361,7 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     if (touch) await page.locator('[data-action="sky"]').tap(); else await page.locator('[data-action="sky"]').click();
     const inactive = await assertSeparated(page, viewport);
     assert.ok(inactive.panel.height <= height * 0.62 + 1);
+    if (width >= 480 && width < 720) assert.equal(inactive.panel.width, width - 24);
     const columnLayout = await page.locator('.hud-column').evaluateAll((nodes) => nodes.map((node) => {
       const box = node.getBoundingClientRect();
       return { x: box.x, y: box.y, width: box.width };
@@ -356,7 +372,7 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
       display: getComputedStyle(node).display, height: node.getBoundingClientRect().height,
     }));
     if (height <= 520) assert.equal(artwork.display, 'none');
-    else assert.equal(artwork.height, width < 480 ? 72 : 120);
+    else assert.equal(artwork.height, width < 480 ? 72 : width < 720 ? 88 : 120);
     const next = page.getByRole('button', { name: 'Next time of day' });
     const nextBox = await next.boundingBox();
     assert.ok(nextBox.width >= 44 && nextBox.height >= 44);
@@ -375,14 +391,35 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     if (touch) await page.getByRole('button', { name: 'Close sky settings', exact: true }).tap();
     else await page.getByRole('button', { name: 'Close sky settings', exact: true }).click();
     assert.equal(await page.locator('#sky-panel').isHidden(), true);
+    const closed = await assertClosedSeparated(page, viewport);
     const touchWalk = touch ? await walkToUncoveredGround(page, true) : undefined;
     if (touch) await page.locator('[data-action="sky"]').tap(); else await page.locator('[data-action="sky"]').click();
     assert.equal(await page.locator('#sky-panel').isVisible(), true);
     assert.deepEqual(errors, []);
-    results.push({ viewport: `${width}x${height}`, inactive, active, columnLayout, artwork, labels, touchWalk, errors });
+    results.push({ viewport: `${width}x${height}`, inactive, active, closed, columnLayout, artwork, labels, touchWalk, errors });
     await context.close();
   }
   proof.responsive = results;
+});
+
+test('short landscape keeps the toolbar and free placement usable without overlap', { timeout: 60000 }, async (t) => {
+  const results = [];
+  for (const [width, height] of [[480, 320], [568, 320]]) {
+    const viewport = { width, height };
+    const context = await browser.newContext({ viewport });
+    t.after(() => context.close());
+    const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`);
+    assert.equal(await page.locator('#sky-panel').isHidden(), true);
+    const idle = await assertClosedSeparated(page, viewport);
+    await page.locator('[data-fence]').click();
+    const active = await assertClosedSeparated(page, viewport);
+    await page.locator('[data-rotate]').click();
+    await page.locator('[data-cancel]').click();
+    assert.deepEqual(errors, []);
+    results.push({ viewport: `${width}x${height}`, idle, active, errors });
+    await context.close();
+  }
+  proof.shortLandscape = results;
 });
 
 test('frosted text remains legible against real cottage and grass in day, sunset and night', { timeout: 90000 }, async (t) => {

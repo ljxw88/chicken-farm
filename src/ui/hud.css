@@ -14,7 +14,7 @@
   gap: var(--hud-gap);
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     var(--hud-bottom) max(16px, env(safe-area-inset-left));
-  --hud-top-limit: 78px;
+  --hud-top-limit: max(78px, calc(env(safe-area-inset-top) + 60px));
   color: var(--hud-text);
   font-family: var(--hud-font);
   image-rendering: auto;
@@ -43,7 +43,7 @@
   flex: 0 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 16px 24px 0;
+  padding: 16px var(--hud-panel-inset) 0;
   border-radius: var(--hud-radius);
   scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
   scrollbar-width: thin;
@@ -65,7 +65,7 @@
 
 .hud-panel__header h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--hud-title-size);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.2;
@@ -126,7 +126,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 7px 10px 8px;
+  padding: 7px var(--hud-column-inset) 8px;
 }
 
 .hud-column + .hud-column {
@@ -136,7 +136,7 @@
 .hud-column__heading {
   margin: 0;
   color: var(--hud-muted);
-  font-size: 13px;
+  font-size: var(--hud-column-label-size);
   font-weight: 550;
   line-height: 18px;
   text-align: center;
@@ -144,7 +144,7 @@
 
 .hud-column__artwork {
   display: grid;
-  height: 120px;
+  height: var(--hud-artwork-size);
   flex: none;
   place-items: center;
   margin-top: 5px;
@@ -152,8 +152,8 @@
 }
 
 .hud-column__artwork svg {
-  width: 120px;
-  height: 120px;
+  width: var(--hud-artwork-size);
+  height: var(--hud-artwork-size);
 }
 
 .hud-column--pending .hud-column__artwork,
@@ -171,7 +171,7 @@
 
 .hud-selector__value {
   overflow: hidden;
-  font-size: 22px;
+  font-size: var(--hud-value-size);
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.2;
@@ -195,7 +195,7 @@
 
 .hud-toggle__label {
   color: var(--hud-muted);
-  font-size: 14px;
+  font-size: var(--hud-toggle-label-size);
   font-weight: 500;
   line-height: 1.2;
 }
@@ -241,11 +241,11 @@
   display: grid;
   min-height: 52px;
   place-items: center;
-  margin: 0 -24px;
-  padding: 0 24px;
+  margin: 0 calc(0px - var(--hud-panel-inset));
+  padding: 0 var(--hud-panel-inset);
   border-top: 1px solid var(--hud-divider);
   color: var(--hud-muted);
-  font-size: 13px;
+  font-size: var(--hud-footer-size);
   line-height: 1.4;
   text-align: center;
 }
@@ -276,76 +276,54 @@
 
 /* Reserve a separate lane for the existing placement bar and its active tools. */
 body:has(.placement-controls.is-active) .hud-root {
-  --hud-top-limit: 178px;
+  --hud-top-limit: max(178px, calc(env(safe-area-inset-top) + 160px));
 }
 
-@media (max-width: 680px) {
+@media (max-width: 719px) {
   body.sky-panel-open .placement-controls {
-    top: max(70px, calc(env(safe-area-inset-top) + 58px));
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
     bottom: auto;
     left: 50%;
   }
 
   .hud-root {
-    --hud-top-limit: 122px;
-  }
-
-  body:has(.placement-controls.is-active) .hud-root {
-    --hud-top-limit: 220px;
-  }
-}
-
-@media (max-width: 719px) {
-  .hud-root {
+    --hud-top-limit: max(132px, calc(env(safe-area-inset-top) + 126px));
+    --hud-panel-inset: 12px;
+    --hud-column-inset: 4px;
+    --hud-artwork-size: 88px;
+    --hud-value-size: 18px;
     padding-right: max(12px, env(safe-area-inset-right));
     padding-left: max(12px, env(safe-area-inset-left));
   }
 
+  body:has(.placement-controls.is-active) .hud-root {
+    --hud-top-limit: max(230px, calc(env(safe-area-inset-top) + 224px));
+  }
+
   .hud-panel {
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
-  .hud-panel__footer {
-    margin-right: -12px;
-    margin-left: -12px;
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
-  .hud-column__artwork {
-    height: 88px;
-  }
-
-  .hud-column__artwork svg {
-    width: 88px;
-    height: 88px;
-  }
-
-  .hud-column {
-    padding-right: 4px;
-    padding-left: 4px;
+    width: 100%;
   }
 
   .hud-selector__value {
-    font-size: 18px;
     text-overflow: clip;
     white-space: normal;
   }
 }
 
 @media (max-width: 479px) {
-  .hud-column__artwork {
-    height: 72px;
+  .hud-root {
+    --hud-artwork-size: 72px;
+    --hud-value-size: 17px;
   }
+}
 
-  .hud-column__artwork svg {
-    width: 72px;
-    height: 72px;
-  }
-
-  .hud-selector__value {
-    font-size: 17px;
+/* Main's bottom placement bar otherwise sits underneath the new toolbar in
+   short landscape. Keep its original location when skyhud=0. */
+@media (max-width: 680px) and (max-height: 430px), (min-width: 681px) and (max-width: 719px) {
+  body:has(.hud-root):not(.sky-panel-open) .placement-controls {
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    bottom: auto;
+    left: 50%;
   }
 }
 
