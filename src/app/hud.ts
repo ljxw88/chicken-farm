@@ -3,7 +3,7 @@ import { createFarmHud, createSkyHud, createSkyStateAdapter } from '../ui';
 import type { AppContext } from './context';
 
 export function registerHud(context: AppContext) {
-  context.farmHud = createFarmHud({ root: context.hudRoot, initialPhase: context.dayNight.getPhase() });
+  context.farmHud = createFarmHud({ root: context.hudRoot, initialPhase: context.dayNight.getPhase(), season: context.season });
   // A clean, HUD-free frame is available without DevTools for signed visual gates.
   const skyEnabled = new URLSearchParams(window.location.search).get(STARTUP_OPTIONS.skyHudKey) !== STARTUP_OPTIONS.skyHudDisabledValue;
   context.skyState = skyEnabled ? createSkyStateAdapter(window) : undefined;

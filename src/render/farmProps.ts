@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createWaterFeature } from '../scene/createWaterFeature';
 import { GROUND_HEIGHT, GROUND_SIZE } from '../scene/createScene';
-import { ART_SLOTS, FARM_PALETTE } from '../content/slots';
+import { ART_SLOTS, FARM_PALETTE, type CrownSlots } from '../content/slots';
 import type { FarmLayout } from '../content/farm';
 import { GRASS_GEOMETRY, PATH_GEOMETRY, POND_GEOMETRY, TREE_GEOMETRY } from '../content/propGeometry';
 
@@ -86,11 +86,11 @@ function createPath(group: THREE.Group, spec: FarmLayout['path']) {
   }
 }
 
-function createTrees(group: THREE.Group, trees: FarmLayout['trees']) {
+function createTrees(group: THREE.Group, trees: FarmLayout['trees'], crown: CrownSlots = ART_SLOTS.palette.season.spring.crown) {
   const trunkGeometry = new THREE.CylinderGeometry(...TREE_GEOMETRY.trunk);
   const crownGeometry = new THREE.IcosahedronGeometry(...TREE_GEOMETRY.crown);
   const trunkMaterial = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.treeTrunk, roughness: 1 });
-  const crowns = [FARM_PALETTE.treeFoliage, FARM_PALETTE.treeFoliageLight, FARM_PALETTE.treeFoliageDark]
+  const crowns = [crown.mid, crown.light, crown.dark]
     .map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }));
   const shadowMaterial = new THREE.MeshBasicMaterial({
     color: ART_SLOTS.palette.contactShadow, transparent: true, opacity: ART_SLOTS.light.contact.treeOpacity, depthWrite: false,
