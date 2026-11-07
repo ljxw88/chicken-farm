@@ -100,6 +100,7 @@ export function createSnow({ scene, camera, anchor, groundHeight, random = Math.
 
   function dispose() {
     scene.remove(root);
+    mesh.dispose();
     geometry.dispose();
     material.dispose();
   }

@@ -184,8 +184,14 @@ test('snow uses cloudy lighting and shadows, adds only 3% blue, and preserves pr
     assert.deepEqual(sample(), clear);
     assert.equal(flakes.visible, false);
   }
+  const flakes = scene.getObjectByName('snow-flakes');
+  let meshDisposals = 0;
+  flakes.addEventListener('dispose', () => { meshDisposals++; });
   weather.dispose();
   assert.equal(scene.getObjectByName('weather-snow'), undefined);
+  assert.equal(meshDisposals, 1, 'the instanced GPU buffer must be released');
+  weather.dispose();
+  assert.equal(meshDisposals, 1);
 });
 
 test('snow crossfades and reverses with rain without changing the seeded rain stream', (t) => {
