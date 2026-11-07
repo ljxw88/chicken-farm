@@ -38,16 +38,16 @@ export const DAY_NIGHT_PHASES = [
     name: 'sunset',
     sky: 0xf0a878,
     fog: 0xe89870,
-    fogDensity: 0.015,
+    fogDensity: 0.0129,
     // Keep a warm sunset without turning the signed green grass olive or the
-    // blue pond grey. Fog and material palette remain unchanged.
+    // blue pond grey. Key colour and the material palette remain unchanged.
     ambient: 0xeadbc8,
     ambientIntensity: 0.08,
     hemisphereSky: 0xe8dec6,
     hemisphereGround: 0xb5b99a,
     hemisphereIntensity: 0.2,
     directional: 0xffeddb,
-    directionalIntensity: 1.2,
+    directionalIntensity: 1.38,
     shadowOffset: 0.48,
     shadowOpacity: 0.22,
     nightLights: 0,

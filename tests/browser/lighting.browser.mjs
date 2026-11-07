@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { deltaE76 } from '../../tools/assetgen/color.js';
 
 // LIGHTING_URL can point at the requested live dev server. Evidence capture is
 // opt-in, so the normal browser suite does not rewrite checked-in baselines.
@@ -134,7 +135,7 @@ after(async () => {
   await server?.close();
 });
 
-async function openPhase(context, phase) {
+async function openPhase(context, phase, extraSearch = '') {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -147,7 +148,7 @@ async function openPhase(context, phase) {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightingTest = { scene, camera, character, stairs, controls, follow, renderer, composer, dayNight };\n` });
   });
-  await page.goto(`${url}/?phase=${phase}&weather=clear`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/?phase=${phase}&weather=clear${extraSearch}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__lightingTest && window.getPixelRendering?.().canvasWidth));
   await page.evaluate(() => {
     const { renderer, composer } = window.__lightingTest;
@@ -156,6 +157,88 @@ async function openPhase(context, phase) {
   });
   return { page, errors };
 }
+
+test('seeded sunset preserves lit grass, blue pond and stair-to-path separation', { timeout: 30000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  t.after(() => context.close());
+  const { page, errors } = await openPhase(context, 'sunset', '&seed=123');
+  const measured = await page.evaluate(async () => {
+    const THREE = await import('/node_modules/three/build/three.module.js');
+    const { scene, camera, stairs, renderer, composer } = window.__lightingTest;
+    scene.updateMatrixWorld(true); camera.updateMatrixWorld(); composer.render(0);
+    const width = renderer.domElement.width, height = renderer.domElement.height;
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(renderer.domElement, 0, 0);
+    const pixels = ctx.getImageData(0, 0, width, height).data;
+    const ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
+    const visible = (object) => {
+      for (let parent = object; parent; parent = parent.parent) if (!parent.visible) return false;
+      return true;
+    };
+    const sample = (point) => {
+      const p = point.clone().project(camera);
+      const x = Math.floor((p.x + 1) * width / 2), y = Math.floor((1 - p.y) * height / 2);
+      if (x < 0 || x >= width || y < 0 || y >= height) return null;
+      pointer.set((x + 0.5) / width * 2 - 1, 1 - (y + 0.5) / height * 2);
+      ray.setFromCamera(pointer, camera);
+      const hit = ray.intersectObjects(scene.children, true).find(({ object }) =>
+        object.isMesh && visible(object) && object.geometry.type !== 'CircleGeometry');
+      const offset = (y * width + x) * 4;
+      return { x, y, rgb: [...pixels.slice(offset, offset + 3)], name: hit?.object.name,
+        normalY: hit?.face?.normal.y };
+    };
+    const grass = [[6, -6], [-1.5, 6.5], [6, 6], [-0.5, 3.7], [-1, 5]]
+      .map(([x, z]) => sample(new THREE.Vector3(x, 2.405, z)));
+    const pond = sample(new THREE.Vector3(4.2, 2.431, -3.55));
+    const path = new Map(), treads = new Map();
+    const points = scene.getObjectByName('farm-path-surface').geometry.getAttribute('position');
+    for (let i = 0; i < points.count; i += 2) {
+      const x = (points.getX(i) + points.getX(i + 1)) / 2;
+      const z = (points.getZ(i) + points.getZ(i + 1)) / 2;
+      if (x < 4.7 || x > 7.9) continue;
+      for (const offset of [-0.28, 0, 0.28]) {
+        const s = sample(new THREE.Vector3(x, points.getY(i), z + offset));
+        if (s?.name === 'farm-path-surface') path.set(`${s.x},${s.y}`, s.rgb);
+      }
+    }
+    for (const step of stairs.treads) {
+      const y = step.position.y + step.geometry.parameters.height / 2;
+      for (const dx of [-0.3, -0.15, 0, 0.15, 0.25]) for (const dz of [-0.4, -0.2, 0, 0.2, 0.4]) {
+        const s = sample(new THREE.Vector3(step.position.x + dx, y, step.position.z + dz));
+        if (s?.name === step.name && s.normalY > 0.9) treads.set(`${s.x},${s.y}`, s.rgb);
+      }
+    }
+    const mean = (values) => [0, 1, 2].map((channel) =>
+      [...values.values()].reduce((sum, rgb) => sum + rgb[channel], 0) / values.size);
+    const light = scene.getObjectByName('day-night-directional');
+    return { size: [width, height], grass, pond, pathRgb: mean(path), treadRgb: mean(treads),
+      pathSamples: path.size, treadSamples: treads.size, fog: scene.fog.density,
+      intensity: light.intensity, keyColor: light.color.getHex(), keyPosition: light.position.toArray() };
+  });
+  assert.deepEqual(measured.size, [320, 180]);
+  assert.equal(measured.fog, 0.0129);
+  assert.equal(measured.intensity, 1.38);
+  assert.equal(measured.keyColor, 0xffeddb);
+  assert.ok(Math.abs(measured.keyPosition[0] + 0.8 * Math.hypot(11, 4)) < 1e-8);
+  assert.ok(Math.abs(measured.keyPosition[1] - 4) < 1e-8);
+  assert.ok(Math.abs(measured.keyPosition[2] - 0.6 * Math.hypot(11, 4)) < 1e-8);
+  for (const sample of measured.grass) {
+    assert.equal(sample?.name, 'island-top', `grass sample is obstructed: ${JSON.stringify(sample)}`);
+    assert.ok(sample.rgb[1] >= 1.25 * sample.rgb[0], `sunset grass became olive: ${sample.rgb}`);
+  }
+  assert.match(measured.pond?.name ?? '', /^farm-pond-(water|depth|rim)$/);
+  assert.ok(measured.pond.rgb[2] - measured.pond.rgb[0] >= 10, `pond lost its blue hint: ${measured.pond.rgb}`);
+  assert.ok(measured.pathSamples >= 8 && measured.treadSamples >= 8, 'too few visible path/stair pixels');
+  const separation = deltaE76(measured.treadRgb, measured.pathRgb);
+  assert.ok(separation >= 5, `stairs and path lost separation: ΔE ${separation}`);
+  const summary = { ...measured, stairPathDeltaE76: separation,
+    minGrassGOverR: Math.min(...measured.grass.map(({ rgb }) => rgb[1] / rgb[0])),
+    pondBlueMinusRed: measured.pond.rgb[2] - measured.pond.rgb[0] };
+  if (evidenceDir) await writeFile(join(evidenceDir, `${label}-ebr89-sunset-guardrails.json`), `${JSON.stringify(summary, null, 2)}\n`);
+  t.diagnostic(`Sunset frame guardrails: ${JSON.stringify(summary)}`);
+  assert.deepEqual(errors, []);
+});
 
 async function capture(page, phase) {
   if (!evidenceDir) return;

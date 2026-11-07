@@ -104,6 +104,21 @@ async function open(browser, url, search, normalizeClock = false, normalizeHisto
       };
     };
   }, { seed });
+  if (normalizeHistoricalVisuals) {
+    // The old references predate the deliberately changed sunset constants.
+    // Normalize only these two inputs for this historical replay; the live
+    // sunset and its interpolations have separate unit and visual checks.
+    await page.route('**/src/lighting/dayNightPhases.ts*', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: `${await response.text()}
+const __ebr89Sunset = DAY_NIGHT_PHASES.find((phase) => phase.name === 'sunset');
+if (__ebr89Sunset.fogDensity !== 0.0129 || __ebr89Sunset.directionalIntensity !== 1.38)
+  throw new Error('Unexpected EBR-89 sunset values in historical replay');
+__ebr89Sunset.fogDensity = 0.015;
+__ebr89Sunset.directionalIntensity = 1.2;
+` });
+    });
+  }
   await page.route('**/src/main.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
@@ -766,7 +781,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
       baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
       referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
-      visualComparison: 'The fold, new garden and old/new plot visuals are isolated only for historical screenshots; gameplay stays active.',
+      visualComparison: 'The fold, garden, plot and EBR-89 details are isolated and the two sunset values normalized only for historical comparisons; gameplay stays active.',
       excludedHistoricalFields: [...(historical ? ['environment.rain except visible', 'environment.randomCalls'] : []), 'plot visual parts'],
       results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
       expectedRainChanges, unexpectedVisualChanges, mismatches };

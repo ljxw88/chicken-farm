@@ -153,7 +153,7 @@ test('rain tracks all current phases without accumulating or changing practical 
   const phases = [
     ['morning', 2.35, 0xffe8c8, 0xf0e0d0],
     ['daytime', 1.8, 0xfff2d6, 0xe8f0e8],
-    ['sunset', 1.2, 0xffeddb, 0xeadbc8],
+    ['sunset', 1.38, 0xffeddb, 0xeadbc8],
     ['night', 0.52, 0xc8d4f0, 0xaeb8c9],
   ];
   for (const [phase, intensity, color, ambientColor] of phases) {
@@ -189,11 +189,11 @@ test('rain tracks all current phases without accumulating or changing practical 
   weather.setWeather('rain');
   weather.update(1.75);
   cycle.update(9); // Halfway between sunset and night.
-  near(directional.intensity, ((1.2 + 0.52) / 2) * 0.7);
+  near(directional.intensity, ((1.38 + 0.52) / 2) * 0.7);
   near(windows[0].children.find((child) => child.isPointLight).intensity, 0.425);
   weather.setWeather('clear');
   weather.update(1.75);
-  near(directional.intensity, (1.2 + 0.52) / 2);
+  near(directional.intensity, (1.38 + 0.52) / 2);
   assert.throws(() => cycle.setDirectionalIntensityMultiplier(-0.1), RangeError);
   assert.throws(() => cycle.setDirectionalIntensityMultiplier(NaN), RangeError);
   assert.throws(() => cycle.setDirectionalIntensityMultiplier(1.1), RangeError);
