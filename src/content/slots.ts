@@ -25,6 +25,14 @@ export interface BuildingSlots {
   coop: { wall: number; timber: number; roof: number; posts: number; ramp: number; cleats: number; popHole: number };
 }
 
+export interface SheepSlots {
+  woolTop: number; woolBase: number; woolShade: number; brown: number; detail: number; secondFaceGain: number;
+}
+
+export interface SheepfoldSlots {
+  wall: number; roof: number; posts: number;
+}
+
 export interface PlacementTintSlots {
   valid: number;
   invalid: number;
@@ -54,6 +62,10 @@ export const ART_SLOTS = {
     character: { body: 0xffd477, eye: 0x302820, beak: 0xe99049 },
     lantern: { wing: 0xffd477, metal: 0x554433 },
     chicken: { feathers: 0xfff1d7, wing: 0xe4d1ae, comb: 0xc75b46, beak: 0xe9a048, eye: 0x332820 },
+    sheep: { woolTop: 0xfff1d7, woolBase: FARM_PALETTE.wool, woolShade: 0xe4d1ae,
+      brown: FARM_PALETTE.treeTrunk, detail: FARM_PALETTE.dirtEdge, secondFaceGain: 0.86 } satisfies SheepSlots,
+    firefly: { core: 0xf2e27a },
+    smoke: { color: 0xefe3c8, emissive: 0x000000 },
     nest: { straw: 0xb8925b, egg: 0xfff5db },
     decoration: { wood: 0x96714a, darkWood: 0x684a32, lettering: 0xf3dfb2 },
     water: {
@@ -70,7 +82,8 @@ export const ART_SLOTS = {
       wall: 0xc8956c, timber: 0x8b5e3c, roof: 0xa94a30, posts: FARM_PALETTE.barnDoor,
       ramp: FARM_PALETTE.dirt, cleats: FARM_PALETTE.dirtEdge, popHole: 0x3e2a1a,
     },
-  } satisfies BuildingSlots,
+    sheepfold: { wall: 0xc8956c, roof: 0xa94a30, posts: FARM_PALETTE.barnDoor } satisfies SheepfoldSlots,
+  } satisfies BuildingSlots & { sheepfold: SheepfoldSlots },
   light: {
     morning: {
       sky: 0xe8d4c8, fog: 0xe8d4c8, fogDensity: 0.012, ambient: 0xf0e0d0, ambientIntensity: 0.2,
@@ -94,7 +107,8 @@ export const ART_SLOTS = {
     },
     window: { color: 0xffcc88, intensity: 0.85 },
     lantern: { color: 0xffb060, intensity: 0.12, glassIntensity: 0.55 },
-    contact: { characterOpacity: 0.22, treeOpacity: 0.16, chickenOpacity: 0.18, buildingOpacity: 0.12 },
+    contact: { characterOpacity: 0.22, treeOpacity: 0.16, chickenOpacity: 0.18, buildingOpacity: 0.12,
+      sheepfoldFenceOpacity: 0.12, sheepfoldSheepOpacity: 0.18 },
     weather: { nightRainFill: 0.2, nightCloudFill: 0.18, cloudShadowOffset: 0.5, rainShadowOffset: 0.51,
       cloudShadowOpacity: 0.5, rainShadowOpacity: 0.8 },
   },
@@ -107,5 +121,7 @@ export const ART_SLOTS = {
     stair: { stoneMix: 0.18, treadMixes: [0.76, 0.82, 0.78, 0.84, 0.8], padMix: 0.78,
       edgeMix: 0.5, edgeBrightness: 1.1 } satisfies StairSlots,
     character: { crownStrength: 0.15, dayCrownStrength: 0.28, dayBaseGain: 1.08 },
+    firefly: { pulseFloor: 0.25, pulseRange: 0.75, rainDimming: 0.4 },
+    smoke: { initialOpacity: 0, peakOpacity: 0.75, weatherNightDimming: 0.4, roughness: 1 },
   },
 } as const;
