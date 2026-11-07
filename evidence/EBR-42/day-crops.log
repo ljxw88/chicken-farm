@@ -1,5 +1,0 @@
-[heavy] slot /tmp/farm-heavy.1.lock acquired (waits for QA gate lock if held): python3 evidence/EBR-42/crop-day.py
-chimney-day-before: (644,84,144,156), 3x nearest-neighbour
-chimney-day-after: (644,84,144,156), 3x nearest-neighbour
-chimney-day-mask: (644,84,144,156), 3x nearest-neighbour
-[heavy] released /tmp/farm-heavy.1.lock rc=0
