@@ -10,6 +10,12 @@ export const PAD_WIDTH = 1.6;
 export const PAD_HEIGHT = 0.16;
 export const PAD_OVERLAP = 0.45;
 
+// At the island-to-stair seam, a previously supported footprint can be a
+// fraction outside the opening after a long pad-side/key sequence. Only slide
+// offsets within 0.001 world units; never widen the actual supported surface.
+const TOP_ENTRY_TOLERANCE = 0.001;
+const TOP_ENTRY_INSET = 0.00001;
+
 export interface StairSurface {
   edge: number;
   stairEnd: number;
@@ -69,6 +75,20 @@ export function slideStairPadCorner(surface: StairSurface, x: number, z: number,
   const openingZ = clamp(z, minZ + radius, maxZ - radius);
   const offset = openingZ - z;
   if (offset === 0) return undefined;
+  return { x, z: z + Math.sign(offset) * Math.min(Math.abs(offset), distance) };
+}
+
+export function slideStairTopEntry(surface: StairSurface, x: number, z: number, radius: number, distance: number) {
+  const { edge, minZ, maxZ } = surface;
+  if (x < edge - radius || x > edge || distance <= 0) return undefined;
+  const min = minZ + radius;
+  const max = maxZ - radius;
+  if (min > max) return undefined;
+  if (z >= min && z <= max) return undefined;
+  const openingZ = clamp(z, min, max);
+  if (Math.abs(openingZ - z) > TOP_ENTRY_TOLERANCE) return undefined;
+  const inset = Math.min(TOP_ENTRY_INSET, Math.max(0, (max - min) / 2));
+  const offset = clamp(z, min + inset, max - inset) - z;
   return { x, z: z + Math.sign(offset) * Math.min(Math.abs(offset), distance) };
 }
 

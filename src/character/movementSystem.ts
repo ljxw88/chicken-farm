@@ -3,7 +3,7 @@ import type { CoreComponents, EntityWorld, Transform } from '../core/ecs';
 import type { MoveAction } from '../core/input';
 import { moveWithFarmCollisions, type FarmBounds, type FarmObstacle } from './farmCollisions';
 import {
-  stairCharacterHeight, stairFloorHeight, stairSupports, slideStairPadCorner, type StairSurface,
+  stairCharacterHeight, stairFloorHeight, stairSupports, slideStairPadCorner, slideStairTopEntry, type StairSurface,
 } from './stairSurface';
 
 export interface CharacterMotion {
@@ -70,7 +70,9 @@ export function createMovementSystem(camera: THREE.Camera, bridgeHeight?: Bridge
       const next = moveWithFarmCollisions(
         startX, startZ, direction.x * step, direction.z * step, motion.radius, obstacles, motion.bounds,
         surface && ((x, z, radius) => stairSupports(surface, x, z, radius)),
-        surface && ((x, z, radius, distance) => slideStairPadCorner(surface, x, z, radius, distance)),
+        surface && ((x, z, radius, distance, directionX) => directionX < 0
+          ? slideStairPadCorner(surface, x, z, radius, distance)
+          : slideStairTopEntry(surface, x, z, radius, distance)),
       );
       coordinates[0] = next.x;
       const bridgeFloor = bridgeHeight?.(next.x, next.z);

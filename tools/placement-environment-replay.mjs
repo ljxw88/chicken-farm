@@ -424,12 +424,13 @@ function historicalBehavior(trace) {
   return copy;
 }
 
-/** Record a clean main worktree first, then replay identical events and timestamps. */
-export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, baselineIsArchive = false, evidenceDir }) {
+/** Record a clean main reference first, then replay identical events and timestamps. */
+export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha, evidenceDir, archivedBaselineSha }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
   assert.ok([historicalSha, mergedMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
-  if (baselineIsArchive) {
+  if (archivedBaselineSha) {
+    assert.equal(archivedBaselineSha, baselineSha);
     assert.equal(git(candidateRoot, 'rev-parse', `${baselineSha}^{commit}`), baselineSha);
   } else {
     assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
