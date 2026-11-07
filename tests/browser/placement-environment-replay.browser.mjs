@@ -13,7 +13,7 @@ test('fold and isolated placement feedback are allowed, but unrelated changes st
   const page = await browser.newPage();
   const fixtures = await page.evaluate(() => {
     const black = [0, 0, 0, 255]; const red = [200, 0, 0, 255];
-    const green = [0, 200, 0, 255]; const blue = [0, 0, 200, 255];
+    const green = [0, 200, 0, 255]; const blue = [0, 0, 200, 255]; const yellow = [200, 200, 0, 255];
     function png(colors) {
       const canvas = document.createElement('canvas'); canvas.width = 4; canvas.height = 1;
       const context = canvas.getContext('2d'); const image = context.createImageData(4, 1);
@@ -23,6 +23,13 @@ test('fold and isolated placement feedback are allowed, but unrelated changes st
     }
     const baseline = png([black, black, black, black]);
     const hudRects = { controls: { left: 1, top: 0, right: 3, bottom: 1 } };
+    const effectful = { baseline, candidate: png([red, green, blue, yellow]), hiddenFold: png([black, green, blue, yellow]),
+      hiddenFeature: png([black, black, blue, yellow]), hudRects,
+      effects: { baselineNoSmoke: baseline, candidateNoSmoke: png([red, green, black, yellow]),
+        baselineNoFireflies: baseline, candidateNoFireflies: png([red, green, blue, black]),
+        baselineNoEffects: baseline, candidateNoEffects: png([red, green, black, black]),
+        candidateNoEffectsHiddenFold: png([black, green, black, black]), candidateNoEffectsHiddenFeature: baseline,
+        candidateNoNod: png([black, green, blue, yellow]) } };
     return {
       valid: { baseline, candidate: png([red, green, red, black]), hiddenFold: png([black, green, green, black]),
         hiddenFeature: baseline, hudRects },
@@ -30,6 +37,9 @@ test('fold and isolated placement feedback are allowed, but unrelated changes st
         hiddenFeature: png([black, black, black, blue]), hudRects },
       hiddenMismatch: { baseline, candidate: png([red, green, red, black]), hiddenFold: png([black, green, green, black]),
         hiddenFeature: png([blue, black, black, black]), hudRects },
+      effectful,
+      effectLeak: { ...effectful, effects: { ...effectful.effects,
+        candidateNoEffectsHiddenFeature: png([black, black, blue, black]) } },
     };
   });
   const valid = await page.evaluate(compareFoldFeedbackFrame, fixtures.valid);
@@ -45,6 +55,14 @@ test('fold and isolated placement feedback are allowed, but unrelated changes st
   const hiddenMismatch = await page.evaluate(compareFoldFeedbackFrame, fixtures.hiddenMismatch);
   assert.equal(hiddenMismatch.outside, 0, 'the changed pixel is within the visible mask');
   assert.equal(hiddenMismatch.hiddenMismatch, 1, 'an incorrect feature-hidden frame must not be blessed by the mask');
+  const effectful = await page.evaluate(compareFoldFeedbackFrame, fixtures.effectful);
+  assert.deepEqual({ outside: effectful.outside, hiddenMismatch: effectful.hiddenMismatch,
+    effectsHiddenOutside: effectful.effectsHiddenOutside, smoke: effectful.smokePixels,
+    fireflies: effectful.fireflyPixels, nod: effectful.nodPixels },
+  { outside: 0, hiddenMismatch: 0, effectsHiddenOutside: 0, smoke: 1, fireflies: 1, nod: 1 });
+  const effectLeak = await page.evaluate(compareFoldFeedbackFrame, fixtures.effectLeak);
+  assert.equal(effectLeak.outside, 0);
+  assert.equal(effectLeak.hiddenMismatch, 1, 'an unrelated effects-hidden pixel must not be blessed by effect masks');
 });
 
 const references = [
@@ -82,6 +100,7 @@ for (const reference of references) test(`placement and environment replay again
       evidenceDir: process.env.EBR75_REPLAY_EVIDENCE_DIR && resolve(process.env.EBR75_REPLAY_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
     t.diagnostic(`Additional frames with the new fold hidden: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
+    t.diagnostic(`Raw frame differences: ${Object.values(report.rawVisualResults).filter((count) => count > 0).length} frames; body, rain and effects isolated`);
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }

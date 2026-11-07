@@ -2,8 +2,8 @@ import { DAY_NIGHT_PHASES } from './lighting/dayNightPhases';
 import type { DayNightPhaseName } from './lighting';
 import { isWeatherMode } from './weather';
 
-// An optional 32-bit visual seed leaves the existing weather RNG unchanged.
-export function parseVisualSeed(search: string) {
+// Preserve the sheepfold's signed integer seed and 32-bit wrap behavior.
+export function parseSheepSeed(search: string) {
   const value = new URLSearchParams(search).get('seed');
   if (value === null || !/^[+-]?\d+$/.test(value)) return undefined;
   const seed = Number(value);
@@ -18,6 +18,14 @@ export function parseStartupOptions(search: string) {
     weather: isWeatherMode(weather) ? weather : undefined,
     phase: DAY_NIGHT_PHASES.find((candidate) => candidate.name === phase)?.name,
   };
+}
+
+// Optional visual seed: without it the existing weather keeps its default RNG.
+export function parseVisualSeed(search: string) {
+  const value = new URLSearchParams(search).get('seed');
+  if (value === null || !/^(?:\d+|0x[\da-f]+)$/i.test(value)) return undefined;
+  const seed = Number(value);
+  return Number.isSafeInteger(seed) && seed <= 0xffffffff ? seed : undefined;
 }
 
 interface PhaseCycle {

@@ -40,8 +40,9 @@ for (const reference of references) test(`scripted key, mouse and touch traces m
       baselineSha: reference.sha, archivedBaselineSha,
       evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.frames}`).join(', ')}`);
-    t.diagnostic(`Changed pixels with the new sheepfold hidden: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
-    t.diagnostic('The unchanged body geometry/shader and the body-and-fold-hidden frames match main; visible changes are body-only.');
+    t.diagnostic(`Raw changed pixels with the new sheepfold hidden: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
+    t.diagnostic(`With effects hidden: ${Object.entries(report.unaffectedFrameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
+    t.diagnostic('Outside body/effect masks and with body, effects and fold hidden: zero; character geometry and shader match.');
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
   }

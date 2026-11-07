@@ -8,13 +8,14 @@ import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
+import { compareFoldFeedbackFrame } from './placement-environment-replay.mjs';
 
-// Compare clean EBR-92 main or the exact pre-merge EBR-70 head using verified
-// archives. The previous-head gate isolates the intended character-body change
-// while retaining the per-frame sheepfold mask and its independent counts.
-const mainSha = '05d5b4aa566bf3d48cd2d1f5b94224224287c4c2';
+// Compare clean EBR-42 main or the exact pre-merge EBR-70 head using verified
+// archives. Fold, feedback, sheep nod, smoke and fireflies are isolated by
+// paired renders, without broad rectangles or changing gameplay state.
+const mainSha = '8c4d55940be8d67ff5678179152ce3b3510740d4';
 const acceptedPenSha = '8ce0cbe19d7c63e5c2608b28725ccb8e9b4700aa';
-const previousHeadSha = '6ea25bc181183d0e7b4b79536550d5d5fd0addd8';
+const previousHeadSha = '3d9e0cf18cdbd4605bd6800dae9150ebe0d78e3a';
 const sheepDelta = process.env.EBR70_SHEEP_DELTA === '1';
 const previousHead = process.env.EBR70_PREVIOUS_HEAD === '1';
 assert.ok(!(sheepDelta && previousHead), 'Select only one comparison mode');
@@ -85,7 +86,10 @@ try {
     headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'],
   });
   for (const directory of ['baseline', 'candidate', 'diff', 'crops', 'hidden-fold', 'hidden-feature',
-    'baseline-hidden-fold', 'baseline-hidden-body', 'candidate-hidden-body', 'body-mask']) {
+    'baseline-hidden-fold', 'baseline-hidden-body', 'candidate-hidden-body', 'body-mask',
+    'baseline-no-effects', 'candidate-no-effects', 'hidden-fold-no-effects', 'hidden-feature-no-effects',
+    'baseline-no-smoke', 'candidate-no-smoke', 'baseline-no-fireflies', 'candidate-no-fireflies', 'candidate-no-nod',
+    'fold-mask', 'smoke-mask', 'firefly-mask', 'sheep-nod-mask', 'effects-hidden-diff']) {
     await mkdir(join(output, directory), { recursive: true });
   }
   await mkdir(maskDirectory, { recursive: true });
@@ -99,6 +103,13 @@ try {
     const name = scenario.name;
     await writeFile(join(output, 'baseline', `${name}.png`), baseline.png);
     await writeFile(join(output, 'candidate', `${name}.png`), candidate.png);
+    for (const [directory, bytes] of [
+      ['baseline-no-effects', baseline.noEffects], ['candidate-no-effects', candidate.noEffects],
+      ['baseline-no-smoke', baseline.noSmoke], ['candidate-no-smoke', candidate.noSmoke],
+      ['baseline-no-fireflies', baseline.noFireflies], ['candidate-no-fireflies', candidate.noFireflies],
+      ['candidate-no-nod', candidate.noNod], ['hidden-fold-no-effects', candidate.hiddenFoldNoEffects],
+      ['hidden-feature-no-effects', candidate.hiddenNoEffects],
+    ]) if (bytes) await writeFile(join(output, directory, `${name}.png`), bytes);
     if (previousHead && baseline.hiddenFold) await writeFile(join(output, 'baseline-hidden-fold', `${name}.png`), baseline.hiddenFold);
     if (baseline.hiddenBody) await writeFile(join(output, 'baseline-hidden-body', `${name}.png`), baseline.hiddenBody);
     if (candidate.hiddenBody) await writeFile(join(output, 'candidate-hidden-body', `${name}.png`), candidate.hiddenBody);
@@ -106,7 +117,16 @@ try {
     if (candidate.hidden && !candidate.hidden.equals(candidate.hiddenFold)) {
       await writeFile(join(output, 'hidden-feature', `${name}.png`), candidate.hidden);
     }
-    const diff = await comparePage.evaluate(async ({ baseline, baselineHidden, baselineBodyless, candidate,
+    const diff = !previousHead && !sheepDelta ? await comparePage.evaluate(compareFoldFeedbackFrame, {
+      baseline: baseline.png.toString('base64'), candidate: candidate.png.toString('base64'),
+      hiddenFold: candidate.hiddenFold.toString('base64'), hiddenFeature: candidate.hidden.toString('base64'),
+      hudRects: candidate.hudRects,
+      effects: { baselineNoSmoke: baseline.noSmoke.toString('base64'), candidateNoSmoke: candidate.noSmoke.toString('base64'),
+        baselineNoFireflies: baseline.noFireflies.toString('base64'), candidateNoFireflies: candidate.noFireflies.toString('base64'),
+        baselineNoEffects: baseline.noEffects.toString('base64'), candidateNoEffects: candidate.noEffects.toString('base64'),
+        candidateNoEffectsHiddenFold: candidate.hiddenFoldNoEffects.toString('base64'),
+        candidateNoEffectsHiddenFeature: candidate.hiddenNoEffects.toString('base64'), candidateNoNod: candidate.noNod.toString('base64') },
+    }) : await comparePage.evaluate(async ({ baseline, baselineHidden, baselineBodyless, candidate,
       hiddenFold, hidden, candidateBodyless, hudRects, sheepDelta, previousHead }) => {
       async function pixels(data) {
         const image = new Image();
@@ -226,13 +246,18 @@ try {
     await writeFile(join(output, 'diff', `${name}.png`), Buffer.from(diff.diff, 'base64'));
     if (diff.feedbackPixels) await writeFile(join(maskDirectory, `${name}-feedback.png`), Buffer.from(diff.feedback, 'base64'));
     if (previousHead) await writeFile(join(output, 'body-mask', `${name}.png`), Buffer.from(diff.body, 'base64'));
-    const { mask, diff: diffPng, feedback, body, ...counts } = diff;
-    void mask; void diffPng; void feedback; void body;
+    for (const [directory, data] of [['fold-mask', diff.fold], ['smoke-mask', diff.smoke], ['firefly-mask', diff.fireflies],
+      ['sheep-nod-mask', diff.nod], ['effects-hidden-diff', diff.effectsHiddenDiff]]) {
+      if (data) await writeFile(join(output, directory, `${name}.png`), Buffer.from(data, 'base64'));
+    }
+    const { mask, diff: diffPng, feedback, body, fold, smoke, fireflies, nod, effectsHiddenDiff, ...counts } = diff;
+    void mask; void diffPng; void feedback; void body; void fold; void smoke; void fireflies; void nod; void effectsHiddenDiff;
     const stateMatches = isDeepStrictEqual(baseline.state, candidate.state);
     results[name] = { ...counts, stateMatches, placementStatus: candidate.placementStatus &&
       { baseline: baseline.placementStatus, candidate: candidate.placementStatus }, baseline: baseline.state, candidate: candidate.state,
       cropped: candidate.cropBounds };
-    if (!stateMatches || (previousHead ? counts.outsideBody || counts.bodylessMismatch : counts.outside || counts.hiddenMismatch)) failures++;
+    if (!stateMatches || (previousHead ? counts.outsideBody || counts.bodylessMismatch :
+      counts.outside || counts.hiddenMismatch || counts.effectsHiddenOutside)) failures++;
     if (candidate.crops) {
       for (const [kind, data] of Object.entries(candidate.crops)) {
         await writeFile(join(output, 'crops', `${name}-${kind}.png`), Buffer.from(data, 'base64'));
@@ -241,7 +266,7 @@ try {
     if (candidate.geometry) await writeFile(join(output, 'geometry.json'), `${JSON.stringify(candidate.geometry, null, 2)}\n`);
     console.log(previousHead
       ? `${name}: changed=${counts.changed} inside-fold=${counts.insideMask} outside-fold=${counts.outside} outside-body=${counts.outsideBody} bodyless=${counts.bodylessMismatch} state=${stateMatches}`
-      : `${name}: changed=${counts.changed} mask=${counts.masked} outside=${counts.outside} referenceMismatch=${counts.hiddenMismatch} state=${stateMatches}`);
+      : `${name}: changed=${counts.changed} mask=${counts.masked} outside=${counts.outside} effects-hidden-outside=${counts.effectsHiddenOutside} hiddenMismatch=${counts.hiddenMismatch} state=${stateMatches}`);
   }
   await comparePage.close();
   const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -250,7 +275,7 @@ try {
     'tools/lighting-probe.mjs', 'tools/placement-environment-replay.mjs'], { encoding: 'utf8' }).trim();
   const report = { baseSha, baselineVerification: 'Git archive source and lockfile verified against every Git tree blob',
     scope: previousHead ? 'fold-mask-with-body-only-changes' : sheepDelta ? 'sheep-only' : 'new-fold-and-placement', maskDirectory,
-    sourceSha, sourceStatus, candidateUrl, chromium: browser.version(), viewport,
+    sourceSha, sourceStatus, candidateUrl, chromium: browser.version(), viewport, rainHidden: true,
     deviceScaleFactor: 1, visualSeed, rainSeed, scenarios: selected.map(({ name }) => name),
     complete: selected.length === scenarios.length, results, failures };
   await writeFile(join(output, 'gate-g.json'), `${JSON.stringify(report, null, 2)}\n`);
@@ -293,7 +318,12 @@ async function capture(browser, url, scenario, candidate) {
       const response = await route.fetch();
       const body = await response.text();
       assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-      await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr70Random,')}
+      const seededWeather = body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? [];
+      assert.ok(seededWeather.length <= 1, 'Unexpected seeded weather initialization');
+      const instrumented = seededWeather.length
+        ? body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70Random')
+        : body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr70Random,');
+      await route.fulfill({ response, body: `${instrumented}
 window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obstacles, renderer, composer, placement };
 ` });
     });
@@ -360,7 +390,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
         composer.render(0);
       }, scenario.setup);
     }
-    const state = await page.evaluate((compareSheep) => {
+    const state = await page.evaluate(({ compareSheep, compareEffects }) => {
       const { scene, camera, character } = window.__ebr70Gate;
       const gl = document.querySelector('#scene').getContext('webgl2');
       const debug = gl.getExtension('WEBGL_debug_renderer_info');
@@ -378,6 +408,15 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
           shadow: { position: shadow.position.toArray(), rotation: shadow.rotation.z,
             scale: shadow.scale.toArray(), opacity: shadow.material.opacity } };
       }) : undefined;
+      const effects = compareEffects ? (() => {
+        const smoke = scene.getObjectByName('chimney-smoke');
+        const fireflies = scene.getObjectByName('night-fireflies');
+        if (!smoke || !fireflies) throw new Error('EBR-42 effects are missing');
+        return { smokeVisible: smoke.visible, puffs: smoke.children.map((puff) => ({ visible: puff.visible,
+          position: puff.position.toArray(), scale: puff.scale.toArray(), rotation: puff.rotation.y, opacity: puff.material.opacity })),
+        firefliesVisible: fireflies.visible, matrices: Array.from(fireflies.instanceMatrix.array),
+        opacity: Array.from(fireflies.geometry.getAttribute('instanceOpacity').array) };
+      })() : undefined;
       return { position: character.position.toArray(), yaw: character.rotation.y, camera: camera.position.toArray(),
         cameraQuaternion: camera.quaternion.toArray(), cameraZoom: camera.zoom, pixel: window.getPixelRendering(),
         weather: window.getWeather(), phase: document.querySelector('[data-phase]')?.textContent,
@@ -386,8 +425,8 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
           practical: ['window-light-1', 'window-light-2', 'lantern-light'].map((name) => scene.getObjectByName(name).intensity),
           accents: ['cottage-window-1', 'cottage-window-2', 'cottage-east-window', 'ramp-coop-1-pop-hole-glow', 'ramp-coop-2-pop-hole-glow']
             .map((name) => scene.getObjectByName(name).material.emissiveIntensity) },
-        fold, randomCalls: window.__ebr70RandomCalls, renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) };
-    }, previousHead);
+        fold, effects, randomCalls: window.__ebr70RandomCalls, renderer: debug && gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) };
+    }, { compareSheep: previousHead, compareEffects: !previousHead && !sheepDelta });
     assert.match(state.renderer, /SwiftShader/i);
     assert.equal(state.pixel.enabled, true);
     assert.deepEqual([state.pixel.canvasWidth, state.pixel.canvasHeight], [320, 180]);
@@ -404,13 +443,59 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
       assert.deepEqual([bytes.readUInt32BE(16), bytes.readUInt32BE(20)], [1280, 720]);
       return bytes;
     }
+    state.rainCapture = await page.evaluate(() => {
+      const { scene, composer } = window.__ebr70Gate;
+      const rain = scene.getObjectByName('weather-rain');
+      const streaks = scene.getObjectByName('rain-streaks');
+      if (!rain || !streaks) throw new Error('Rain render group is missing');
+      const before = { rootVisible: rain.visible, streaksVisible: streaks.visible, weather: window.getWeather() };
+      rain.visible = false;
+      composer.render(0);
+      return { ...before, rootHiddenForCapture: !rain.visible, weatherAfter: window.getWeather() };
+    });
+    assert.equal(state.rainCapture.rootHiddenForCapture, true);
+    assert.deepEqual(state.rainCapture.weatherAfter, state.weather);
     const png = await screenshot();
+    async function screenshotToggled({ hideSmoke = false, hideFireflies = false, neutralNod = false }) {
+      const previous = await page.evaluate(({ hideSmoke, hideFireflies, neutralNod }) => {
+        const { scene, composer } = window.__ebr70Gate;
+        const smoke = scene.getObjectByName('chimney-smoke');
+        const fireflies = scene.getObjectByName('night-fireflies');
+        const heads = [1, 2].map((index) => scene.getObjectByName(`sheep-${index}-head-pivot`)).filter(Boolean);
+        const snapshot = { smoke: smoke?.visible, fireflies: fireflies?.visible,
+          heads: heads.map((head) => ({ name: head.name, angle: head.rotation.x })) };
+        if (hideSmoke && smoke) smoke.visible = false;
+        if (hideFireflies && fireflies) fireflies.visible = false;
+        if (neutralNod) heads.forEach((head) => { head.rotation.x = 0; });
+        composer.render(0);
+        return snapshot;
+      }, { hideSmoke, hideFireflies, neutralNod });
+      try {
+        return await screenshot();
+      } finally {
+        await page.evaluate((snapshot) => {
+          const { scene, composer } = window.__ebr70Gate;
+          const smoke = scene.getObjectByName('chimney-smoke');
+          const fireflies = scene.getObjectByName('night-fireflies');
+          if (smoke && snapshot.smoke !== undefined) smoke.visible = snapshot.smoke;
+          if (fireflies && snapshot.fireflies !== undefined) fireflies.visible = snapshot.fireflies;
+          snapshot.heads.forEach(({ name, angle }) => { scene.getObjectByName(name).rotation.x = angle; });
+          composer.render(0);
+        }, previous);
+      }
+    }
+    const noSmoke = await screenshotToggled({ hideSmoke: true });
+    const noFireflies = await screenshotToggled({ hideFireflies: true });
+    const noEffects = await screenshotToggled({ hideSmoke: true, hideFireflies: true });
+    const noNod = candidate || previousHead || sheepDelta ? await screenshotToggled({ neutralNod: true }) : png;
     const placementStatus = scenario.setup.startsWith('placement') ? await page.locator('.placement-status').textContent() : undefined;
     let crops;
     let cropBounds;
     let geometry;
     let hidden;
     let hiddenFold;
+    let hiddenFoldNoEffects = noEffects;
+    let hiddenNoEffects = noEffects;
     let hiddenBody;
     if (previousHead) {
       const wasVisible = await page.evaluate(() => {
@@ -537,7 +622,9 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
         composer.render(0);
       }, sheepDelta);
       hiddenFold = await screenshot();
+      hiddenFoldNoEffects = await screenshotToggled({ hideSmoke: true, hideFireflies: true });
       hidden = hiddenFold;
+      hiddenNoEffects = hiddenFoldNoEffects;
       if (!previousHead && !sheepDelta && scenario.setup === 'placement-rejected') {
         await page.evaluate(() => {
           const { obstacles, placement, composer } = window.__ebr70Gate;
@@ -551,11 +638,13 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
         });
         assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
         hidden = await screenshot();
+        hiddenNoEffects = await screenshotToggled({ hideSmoke: true, hideFireflies: true });
       }
     }
     await cdp.detach();
     assert.deepEqual(errors, []);
-    return { png, hiddenFold, hiddenBody, hidden, state, crops, cropBounds, geometry, hudRects, placementStatus };
+    return { png, hiddenFold, hiddenBody, hidden, noSmoke, noFireflies, noEffects, noNod,
+      hiddenFoldNoEffects, hiddenNoEffects, state, crops, cropBounds, geometry, hudRects, placementStatus };
   } finally {
     await context.close();
   }

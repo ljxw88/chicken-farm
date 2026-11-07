@@ -58,7 +58,8 @@ async function open(context, seed = 123, phase = 'daytime') {
     const response = await route.fetch();
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-    await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr70RainRandom,')}
+    assert.equal((body.match(/random:\s*createVisualRandom\(visualSeed\)/g) ?? []).length, 1);
+    await route.fulfill({ response, body: `${body.replace(/random:\s*createVisualRandom\(visualSeed\)/, 'random: window.__ebr70RainRandom')}
 window.__ebr70 = { scene, camera, character, obstacles, follow, composer, renderer, dayNight, weather, engine, environment, sheepfold };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=clear&seed=${seed}`, { waitUntil: 'networkidle' });
@@ -163,21 +164,28 @@ test('real WASD walks around the fold, through the opening and back out; fence, 
   }, null, 2)}\n`);
 });
 
-test('visual seed reproduces both independent nod phases in the running app', { timeout: 45000 }, async (t) => {
+test('visual seed reproduces independent sheep nods and both effects in the running app', { timeout: 45000 }, async (t) => {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   t.after(() => context.close());
-  async function angles(seed) {
+  async function sample(seed) {
     const { page, errors } = await open(context, seed);
-    const result = await page.evaluate(() => [1, 2].map((index) =>
-      window.__ebr70.scene.getObjectByName(`sheep-${index}-head-pivot`).rotation.x));
+    const result = await page.evaluate(() => {
+      const { scene } = window.__ebr70;
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const flies = scene.getObjectByName('night-fireflies');
+      return { angles: [1, 2].map((index) => scene.getObjectByName(`sheep-${index}-head-pivot`).rotation.x),
+        smoke: smoke.children.map((puff) => [puff.visible, ...puff.position.toArray(), puff.scale.x, puff.rotation.y, puff.material.opacity]),
+        fireflies: Array.from(flies.instanceMatrix.array) };
+    });
     assert.deepEqual(errors, []);
     await page.close();
     return result;
   }
-  const first = await angles(123);
-  assert.deepEqual(first, await angles(123));
-  assert.notDeepEqual(first, await angles(124));
-  assert.notEqual(first[0], first[1]);
+  const first = await sample(123);
+  assert.deepEqual(first, await sample(123));
+  const different = await sample(124);
+  for (const field of ['angles', 'smoke', 'fireflies']) assert.notDeepEqual(first[field], different[field], field);
+  assert.notEqual(first.angles[0], first.angles[1]);
 });
 
 test('the engine owns every fold obstacle and advances sheep and shared environment shadows', { timeout: 45000 }, async (t) => {
