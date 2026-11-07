@@ -3,6 +3,8 @@ import { writeFile } from 'node:fs/promises';
 import { createServer } from 'vite';
 
 // Make a shareable example from the real ECS systems, not a handwritten save.
+const path = process.argv[2];
+if (!path) throw new Error('Usage: node tools/write-snapshot-example.mjs <output.json>');
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
 try {
   const { createEntityWorld } = await vite.ssrLoadModule('/src/core/ecs/createEntityWorld.ts');
@@ -35,7 +37,6 @@ try {
   const data = snapshot(world);
   assert.equal(data.placed.length, 1);
   assert.deepEqual(JSON.parse(JSON.stringify(data)), data);
-  const path = process.argv[2] || 'evidence/EBR-76/snapshot-example.json';
   await writeFile(path, `${JSON.stringify(data, null, 2)}\n`);
   console.log(`Wrote ${path}`);
 } finally { await vite.close(); }

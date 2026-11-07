@@ -14,3 +14,5 @@ part of this shape.
 
 `SaveHooks` declares the future `save`/`load` contract only. No implementation,
 storage, startup loading, migration, or restore behavior is provided here.
+For an example from the ECS systems, run `node tools/write-snapshot-example.mjs <output.json>`
+with an explicit output path outside the repository.
