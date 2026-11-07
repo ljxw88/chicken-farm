@@ -21,11 +21,27 @@ export function summarizeP0(rows) {
   return summary;
 }
 
-/** Compare fully attempted iterations, prioritizing actual review-ready assets. */
+/** A full iteration improves if any independently reported metric exceeds its
+ * best observed value; none of these secondary metrics is a review pass. */
 export function improvesP0(current, best) {
   if (current.attempted < 9) return false;
-  for (const key of axes) if (current[key] !== best[key]) return current[key] > best[key];
-  return false;
+  return axes.some((key) => current[key] > best[key]);
+}
+
+export function trackP0Progress(baseline, iterations) {
+  const best = Object.fromEntries(axes.map((key) => [key, baseline[key]]));
+  let withoutImprovement = 0, stop = 'continue';
+  const history = [];
+  for (const [index, current] of iterations.entries()) {
+    if (current.ready >= 3) { stop = 'three-ready'; history.push({ iteration: index + 1, summary: current, stop }); break; }
+    if (current.attempted < 9) { stop = 'incomplete'; history.push({ iteration: index + 1, summary: current, stop }); break; }
+    const improved = improvesP0(current, best);
+    withoutImprovement = improved ? 0 : withoutImprovement + 1;
+    for (const key of axes) best[key] = Math.max(best[key], current[key]);
+    history.push({ iteration: index + 1, summary: current, improved, withoutImprovement });
+    if (withoutImprovement >= 3) { stop = 'three-without-improvement'; break; }
+  }
+  return { stop, bestByMetric: best, withoutImprovement, history };
 }
 
 export function renderP0Iteration({ rows, iteration, generatedAt, runDirectory }) {
@@ -38,5 +54,5 @@ export function renderP0Iteration({ rows, iteration, generatedAt, runDirectory }
     const safe = (value) => String(value).replaceAll('|', '\\|').replaceAll('\n', ' ');
     return `| ${row.id} | ${row.final?.roundsUsed ?? 0} | ${safe(status)} | ${codes.join(', ') || (row.assessment?.ready ? 'none' : 'not measured')} | ${safe(blocker)} |`;
   }).join('\n');
-  return `# P0 fix iteration ${iteration}\n\nGenerated ${generatedAt}. Runs: \`${runDirectory}\`. **${summary.ready} P0 candidate(s) clear all implemented offline checks and an authenticated independent image critic.** This means ready for Look Dev P0 review only, not signed, bundled or cleared for unimplemented checks.\n\nProgress counts: ${summary.attempted}/9 attempted; ${summary.ready} ready; ${summary.hardClear} hard-check clear; ${summary.schemaClear} schema clear; ${summary.validVariantJitter}/5 use valid required variant jitter. Progress is compared lexicographically in that order after a full nine-asset attempt; schema or hard-check improvements alone are not passes.\n\n| Brief | Rounds | Status | Failing / unmeasured codes | First blocking reason |\n|---|---:|---|---|---|\n${table}\n\nSee each \`review-readiness.json\`, verifier report and critic receipt for the full evidence. Unmeasured S1/S3/S5/S7 and excluded silhouette edges are not passes.\n`;
+  return `# P0 fix iteration ${iteration}\n\nGenerated ${generatedAt}. Runs: \`${runDirectory}\`. **${summary.ready} P0 candidate(s) clear all implemented offline checks and an authenticated independent image critic.** This means ready for Look Dev P0 review only, not signed, bundled or cleared for unimplemented checks.\n\nProgress counts: ${summary.attempted}/9 attempted; ${summary.ready} ready; ${summary.hardClear} hard-check clear; ${summary.schemaClear} schema clear; ${summary.validVariantJitter}/5 use valid required variant jitter. After a full nine-asset attempt, an increase in any metric above its best observed value counts as improvement; schema or hard-check improvements alone are not passes.\n\n| Brief | Rounds | Status | Failing / unmeasured codes | First blocking reason |\n|---|---:|---|---|---|\n${table}\n\nSee each \`review-readiness.json\`, verifier report and critic receipt for the full evidence. Unmeasured S1/S3/S5/S7 and excluded silhouette edges are not passes.\n`;
 }

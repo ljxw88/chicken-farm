@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { improvesP0, renderP0Iteration, summarizeP0 } from '../tools/assetgen/p0-iteration.mjs';
+import { improvesP0, renderP0Iteration, summarizeP0, trackP0Progress } from '../tools/assetgen/p0-iteration.mjs';
 
 test('iteration progress never counts hard-only or missing reviews as passes', () => {
   const checks = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`H${i + 1}`, true]));
@@ -26,6 +26,18 @@ test('only a fully attempted iteration can improve the best progress tuple', () 
   assert.equal(improvesP0({ ...baseline, attempted: 4, ready: 1 }, baseline), false);
   assert.equal(improvesP0({ ...baseline, validVariantJitter: 2 }, baseline), true);
   assert.equal(improvesP0({ ...baseline, ready: 1, hardClear: 0 }, baseline), true);
-  assert.equal(improvesP0({ ...baseline, hardClear: 1, schemaClear: 9 }, baseline), false);
+  assert.equal(improvesP0({ ...baseline, hardClear: 1, schemaClear: 9 }, baseline), true);
   assert.equal(improvesP0({ ...baseline }, baseline), false);
+});
+
+test('three consecutive full iterations without a new best stop; improvement resets the counter', () => {
+  const baseline = { attempted: 9, ready: 0, hardClear: 2, schemaClear: 3, validVariantJitter: 0 };
+  const better = { ...baseline, schemaClear: 5 };
+  const progress = trackP0Progress(baseline, [baseline, baseline, better, better, better, better]);
+  assert.equal(progress.stop, 'three-without-improvement');
+  assert.equal(progress.withoutImprovement, 3);
+  assert.equal(progress.history[2].withoutImprovement, 0);
+  assert.equal(progress.history.length, 6);
+  assert.equal(trackP0Progress(baseline, [{ ...baseline, attempted: 4, ready: 3 }]).stop, 'three-ready');
+  assert.equal(trackP0Progress(baseline, [{ ...baseline, attempted: 4, ready: 0 }]).stop, 'incomplete');
 });
