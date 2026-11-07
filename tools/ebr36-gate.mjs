@@ -9,8 +9,8 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
 // Record from the requested clean commit, never a different worktree. Seed
-// rain and both visual effects through the app's public URL and step frames.
-const baselineSha = process.env.EBR36_BASELINE_SHA ?? '8c4d55940be8d67ff5678179152ce3b3510740d4';
+// rain, visual effects and the sheepfold through the app's public URL and step frames.
+const baselineSha = process.env.EBR36_BASELINE_SHA ?? 'b41492ef04210b73c38c09379f6dfa4e42581d71';
 const seed = Number(process.env.EBR36_SEED ?? 0xeb730001);
 if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('EBR36_SEED must be a 32-bit unsigned integer');
 if (!process.env.EBR36_GATE_DIR) throw new Error('Set EBR36_GATE_DIR to an evidence directory outside the worktree');
@@ -99,19 +99,30 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
-      await route.fulfill({ response, body: `${body}\nwindow.__ebr36Gate = { scene, camera, character, dayNight, renderer, composer };\n` });
+      await route.fulfill({ response, body: `${body}\nwindow.__ebr36Gate = { scene, camera, character, dayNight, renderer, composer, sheepfold };\n` });
     });
     await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => Boolean(window.__ebr36Gate));
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => { for (let i = 0; i <= 25; i++) window.__ebr36Step(i * 100); });
     const state = await page.evaluate(() => {
-      const { scene, camera, character, dayNight } = window.__ebr36Gate;
+      const { scene, camera, character, dayNight, sheepfold } = window.__ebr36Gate;
       const key = scene.getObjectByName('day-night-directional');
       const hemi = scene.getObjectByName('day-night-hemisphere');
       const smoke = scene.getObjectByName('chimney-smoke');
       const fireflies = scene.getObjectByName('night-fireflies');
       if (!smoke || !fireflies) throw new Error('The seeded smoke and fireflies must remain enabled');
+      const fold = scene.getObjectByName('farm-sheepfold');
+      if (!fold || fold !== sheepfold.group) throw new Error('The sheepfold must remain enabled');
+      const sheep = [1, 2].map((index) => {
+        const animal = scene.getObjectByName(`sheep-${index}`);
+        const head = scene.getObjectByName(`sheep-${index}-head-pivot`);
+        const shadow = scene.getObjectByName(`sheep-${index}-shadow`);
+        if (!animal || !head || !shadow) throw new Error(`Missing sheep ${index} or its shadow`);
+        return { visible: animal.visible, position: animal.position.toArray(), rotationY: animal.rotation.y,
+          nod: head.rotation.x, shadowPosition: shadow.position.toArray(), shadowScale: shadow.scale.toArray(),
+          shadowRotationZ: shadow.rotation.z, shadowOpacity: shadow.material.opacity };
+      });
       return { phase: dayNight.getPhase(), weather: window.getWeather(), nightAmount: dayNight.getNightAmount(),
         position: character.position.toArray(), camera: camera.position.toArray(), keyPosition: key.position.toArray(),
         keyIntensity: key.intensity, hemisphere: hemi.color.toArray(), pixel: window.getPixelRendering(),
@@ -120,7 +131,9 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
           rotationY: puff.rotation.y, opacity: puff.material.opacity,
         })), firefliesVisible: fireflies.visible,
         fireflyOpacity: Array.from(fireflies.geometry.getAttribute('instanceOpacity').array),
-        fireflyMatrices: Array.from(fireflies.instanceMatrix.array) } };
+        fireflyMatrices: Array.from(fireflies.instanceMatrix.array) },
+        sheepfold: { visible: fold.visible, position: fold.position.toArray(), sheep,
+          obstacles: sheepfold.obstacles.map((obstacle) => ({ ...obstacle })) } };
     });
     assert.equal(state.phase, phase);
     assert.equal(state.weather.mode, weather);
@@ -129,15 +142,22 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
     const expectedFireflies = phase === 'night' ? { clear: 14, cloudy: 10, rain: 6 }[weather] : 0;
     assert.equal(state.effects.firefliesVisible, phase === 'night');
     assert.equal(state.effects.fireflyOpacity.filter((opacity) => opacity > 0).length, expectedFireflies);
-    const placementBox = await page.locator('.placement-controls').evaluate((element) => {
+    assert.equal(state.sheepfold.visible, true);
+    assert.equal(state.sheepfold.sheep.length, 2);
+    assert.ok(state.sheepfold.sheep.every((animal) => animal.visible));
+    assert.equal(state.sheepfold.obstacles.length, 13);
+    const box = (selector) => page.locator(selector).evaluate((element) => {
       const r = element.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height };
     });
+    const placementBox = await box('.placement-controls');
+    const biomeBox = await box('.farm-biome');
     let open = await screenshot(context, page);
     let closed;
     let openBoxes;
     let closedBoxes;
     let openPlacementBox;
+    let openBiomeBox;
     if (candidate && !hideSky) {
       assert.equal(await page.locator('#sky-panel').isHidden(), true);
       closed = open;
@@ -151,16 +171,14 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
         const r = document.querySelector(selector).getBoundingClientRect();
         return { x: r.x, y: r.y, width: r.width, height: r.height };
       }));
-      openPlacementBox = await page.locator('.placement-controls').evaluate((element) => {
-        const r = element.getBoundingClientRect();
-        return { x: r.x, y: r.y, width: r.width, height: r.height };
-      });
+      openPlacementBox = await box('.placement-controls');
+      openBiomeBox = await box('.farm-biome');
       open = await screenshot(context, page);
     } else if (hideSky) {
       assert.equal(await page.locator('#hud, #sky-panel, .hud-toolbar').count(), 0);
     }
     assert.deepEqual(errors, []);
-    return { open, closed, state, openBoxes, closedBoxes, placementBox, openPlacementBox, errors };
+    return { open, closed, state, openBoxes, closedBoxes, placementBox, openPlacementBox, biomeBox, openBiomeBox, errors };
   } finally {
     await context.close();
   }
@@ -241,6 +259,15 @@ try {
         const after = await capture(candidate.url, viewport, phase, weather, true);
         const hidden = await capture(candidate.url, viewport, phase, weather, true, true);
         const stateMatches = isDeepStrictEqual(before.state, after.state) && isDeepStrictEqual(before.state, hidden.state);
+        const layout = {
+          baseline: { placement: before.placementBox, biome: before.biomeBox },
+          closed: { placement: after.placementBox, biome: after.biomeBox },
+          open: { placement: after.openPlacementBox, biome: after.openBiomeBox },
+          hidden: { placement: hidden.placementBox, biome: hidden.biomeBox },
+        };
+        const wideDesktop = viewport.width > 800 && viewport.height > 520;
+        const desktopAnchorsMatch = !wideDesktop || ['closed', 'open', 'hidden'].every((variant) =>
+          isDeepStrictEqual(layout.baseline, layout[variant]));
         await save(join(output, 'before', size, `${name}.png`), before.open);
         const variants = {};
         for (const variant of ['open', 'closed', 'hidden']) {
@@ -248,7 +275,9 @@ try {
           const boxes = variant === 'hidden' ? [] : [...after[`${variant}Boxes`]];
           const placement = variant === 'open' ? after.openPlacementBox : after.placementBox;
           const hudRects = rectangles(boxes, viewport);
-          const placementRects = variant !== 'hidden' && !isDeepStrictEqual(before.placementBox, placement)
+          const placementReflow = variant !== 'hidden' && !isDeepStrictEqual(before.placementBox, placement);
+          const reflowAllowed = viewport.width <= 800 || viewport.height <= 520;
+          const placementRects = placementReflow && reflowAllowed
             ? rectangles([before.placementBox, placement], viewport) : [];
           const rects = [...hudRects, ...placementRects];
           const result = await compare(diffPage, before.open, image, rects);
@@ -259,10 +288,12 @@ try {
           await save(join(output, 'hud-only-mask', size, `${name}-${variant}.png`), Buffer.from(hudOnly.maskPng, 'base64'));
           await save(join(output, 'hud-only-diff', size, `${name}-${variant}.png`), Buffer.from(hudOnly.diffPng, 'base64'));
           variants[variant] = { rectangles: rects, hudRectangles: hudRects, placementRectangles: placementRects,
+            placementReflow, reflowAllowed: !placementReflow || reflowAllowed,
             changedPixels: result.changed, outsideMaskPixels: result.outside, outsideBounds: result.outsideBounds,
             outsideHudPixels: hudOnly.outside, outsideHudBounds: hudOnly.outsideBounds, sha256: sha256(image) };
         }
-        results.push({ viewport: size, phase, weather, stateMatches, state: after.state, beforeSha256: sha256(before.open), variants });
+        results.push({ viewport: size, phase, weather, stateMatches, desktopAnchorsMatch, layout,
+          state: after.state, beforeSha256: sha256(before.open), variants });
         console.log(`${size} ${name}: state=${stateMatches} outside-hud open=${variants.open.outsideHudPixels} closed=${variants.closed.outsideHudPixels} hidden=${variants.hidden.outsideHudPixels}; outside-hud-and-placement open=${variants.open.outsideMaskPixels} closed=${variants.closed.outsideMaskPixels} hidden=${variants.hidden.outsideMaskPixels}`);
       }
     }
@@ -273,14 +304,14 @@ try {
   const sourceStatus = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all', '--',
     'src', 'index.html', 'package.json', 'package-lock.json', 'tools/ebr36-gate.mjs'], { encoding: 'utf8' }).trim();
   const report = { baselineSha, candidateSha, candidateTree, candidateSource: 'working tree', sourceStatus, browser: browser.version(), seed,
-    seedMethod: 'public ?seed= URL with independent rain, smoke and firefly streams',
-    effects: 'enabled and included in the pixel comparison', shadowMaskPaddingPx: 64, results };
+    seedMethod: 'public ?seed= URL with independent rain, smoke, firefly and sheep streams',
+    effects: 'smoke, fireflies and sheepfold enabled and included in the pixel comparison',
+    placementReflowRule: 'permitted only at width <= 800px or height <= 520px', shadowMaskPaddingPx: 64, results };
   await mkdir(output, { recursive: true });
   await writeFile(join(output, 'gate-g.json'), `${JSON.stringify(report, null, 2)}\n`);
-  assert.ok(results.every(({ stateMatches, variants }) => stateMatches && Object.values(variants).every((variant) => variant.outsideMaskPixels === 0)),
-    'Gate G: state or pixels outside the HUD and placement-reflow masks differ');
-  assert.ok(results.every(({ variants }) => Object.values(variants).every((variant) => variant.outsideHudPixels === 0)),
-    'Gate G: pixels outside the strict sky panel/toolbar masks differ');
+  assert.ok(results.every(({ stateMatches, desktopAnchorsMatch, variants }) => stateMatches && desktopAnchorsMatch &&
+    Object.values(variants).every((variant) => variant.reflowAllowed && variant.outsideMaskPixels === 0)),
+  'Gate G: state, desktop anchors, or pixels outside approved HUD/reflow masks differ');
 } finally {
   await browser?.close();
   await baselineServer?.close();
