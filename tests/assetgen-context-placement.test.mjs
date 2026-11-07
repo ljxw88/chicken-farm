@@ -5,6 +5,7 @@ import { createServer } from 'vite';
 import { readSpec } from '../tools/assetgen/config.mjs';
 import { chooseContextPlacement, overlapsContextFootprint } from '../tools/assetgen/context-placement.js';
 import { createSignedFixtures } from '../tools/assetgen/signed-fixtures.mjs';
+import { P0_SHOWCASE_POSITIONS } from '../tools/assetgen/p0-showcase-positions.js';
 
 const server = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
 const { createFarmLayout } = await server.ssrLoadModule('/src/scene/createFarmLayout.ts');
@@ -33,6 +34,13 @@ test('the old barrel composite position intersects the real stream; the replacem
     const placement = chooseContextPlacement({ minX: -width / 2, maxX: width / 2, minZ: -depth / 2, maxZ: depth / 2 }, obstacles);
     assert.ok(placement, `signed ${name} has no safe context position`);
     assert.ok(!obstacles.some((obstacle) => overlapsContextFootprint(placement.footprint, obstacle)), name);
+  }
+  const placed = [];
+  for (const [id, [x, z]] of Object.entries(P0_SHOWCASE_POSITIONS)) {
+    const { spec } = await readSpec(id), w = spec.size.width * 0.55 + 0.05, d = spec.size.depth * 0.55 + 0.05;
+    const footprint = { kind: 'box', name: id, minX: x - w, maxX: x + w, minZ: z - d, maxZ: z + d };
+    assert.ok(![...obstacles, ...placed].some((obstacle) => overlapsContextFootprint(footprint, obstacle)), `showcase ${id} overlaps an existing object`);
+    placed.push(footprint);
   }
 });
 

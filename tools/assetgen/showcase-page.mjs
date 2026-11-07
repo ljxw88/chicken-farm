@@ -51,7 +51,7 @@ export function renderShowcasePage({ assets, overview, generatedAt }) {
   const overviewPanel = overview?.available ? `<div class="controls"><label>Light <select id="island-phase"><option>daytime</option><option>sunset</option><option>night</option></select></label>
     <label>Orbit <select id="island-yaw">${Array.from({ length: 8 }, (_, i) => `<option value="${String(i * 45).padStart(3, '0')}"${i === 1 ? ' selected' : ''}>${i * 45}°</option>`).join('')}</select></label></div>
     <img id="island" class="island" src="images/island/daytime-045.png" alt="P0 review candidates on the signed island; orbit and light controls select pre-rendered views">
-    <p>Shown on the review row in increasing world X: ${escape(overview.included.join(', ') || 'none')}. Not renderable: ${escape(overview.missing.join(', ') || 'none')}. Schema-invalid subjects are diagnostic only; see their notes below.</p>` : '<p class="missing">Island overview unavailable; see individual evidence below.</p>';
+    <p>Shown in the review-only scene: ${escape(overview.included.join(', ') || 'none')}. Not renderable: ${escape(overview.missing.join(', ') || 'none')}. Schema-invalid subjects are diagnostic only; see their notes below.</p>` : '<p class="missing">Island overview unavailable; see individual evidence below.</p>';
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>P0 Asset Forge · Look Dev review</title>
 <style>
   :root{color-scheme:dark;--ink:#f5e7cb;--muted:#cbbca0;--bg:#171d18;--panel:#253126;--line:#596b4c;--warn:#ffd18a}*{box-sizing:border-box}

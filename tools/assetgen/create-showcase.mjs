@@ -12,10 +12,10 @@ import { validateRecipe } from './schema.mjs';
 import { renderShowcasePage } from './showcase-page.mjs';
 import { visualCheckSummary } from './showcase-checks.mjs';
 import { assessReviewReadiness } from './review-readiness.mjs';
+import { P0_SHOWCASE_POSITIONS } from './p0-showcase-positions.js';
 import { createVisualRunner } from './visual.mjs';
 
 const ids = ['round-oak-a', 'round-oak-b', 'small-bush', 'rock-a', 'rock-b', 'rock-c', 'barrel', 'crate', 'hay-bale'];
-const positions = [[-5.5, 6.1], [-3.5, 6.1], [-1.7, 6.1], [-0.5, 6.1], [0.7, 6.1], [2.3, 6.1], [3.6, 6.1], [4.8, 6.1], [6.2, 6.1]];
 const finalOutput = resolve(process.env.ASSETGEN_SHOWCASE_DIR || join(homedir(), 'OpenBot/Shared/lookdev-assets/showcase'));
 const outside = relative(root, finalOutput);
 if (!(outside === '..' || outside.startsWith(`..${sep}`)) || isAbsolute(outside)) throw new Error('Showcase output must be outside the repository');
@@ -51,7 +51,7 @@ try {
   const referenceRecipes = Object.fromEntries(entries.filter((entry) => entry.recipe).map((entry) => [entry.id, entry.recipe]));
   const environment = { buildRecipe, palette: ASSET_PALETTE, accentTokens: ACCENT_TOKENS, referenceRecipes };
   const records = [], overviewItems = [];
-  for (const [index, entry] of entries.entries()) {
+  for (const entry of entries) {
     const { id, spec, recipe, verification, stageReport, final } = entry;
     let inspected = null, group = null, safe = false, previewNotes = [];
     if (recipe) {
@@ -60,7 +60,11 @@ try {
       ({ safe, notes: previewNotes } = diagnosticEligibility(recipe, schemaFailures, bible.rules));
       if (safe) try { group = buildRecipe(recipe); } catch { safe = false; }
     }
-    if (safe) overviewItems.push({ recipe, x: positions[index][0], z: positions[index][1] });
+    if (safe) {
+      const position = P0_SHOWCASE_POSITIONS[id];
+      if (!position) throw new Error(`Missing P0 showcase position for ${id}`);
+      overviewItems.push({ recipe, x: position[0], z: position[1] });
+    }
     const verifiedDir = join(entry.directory, 'verify');
     const stageRender = entry.stage ? join(entry.stage, 'render') : null;
     let packDir = await exists(join(verifiedDir, 'sheet.png')) ? verifiedDir
