@@ -12,6 +12,8 @@ modules in order before starting the engine:
    the sky HUD uses its public-scene adapter and can be removed with `?skyhud=0`.
 5. `presentation` creates the pixel composer, publishes its setters and handles
    the initial resize and later resize events.
+6. `debug` installs the read-only inspection getter only for `?qa=1`. It does
+   not register a frame system, input handler or game control.
 
 The context is populated in that order; frame callbacks and input handlers run
 only after registration is complete. Each frame still performs movement, clock

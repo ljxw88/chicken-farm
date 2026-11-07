@@ -81,6 +81,10 @@ The build is written to `dist/`. Run `npm run preview` to preview it locally, or
 
 For the clean-main PR pre-gate, see `docs/pregate.md`.
 
+For the opt-in, read-only `?qa=1` inspection snapshot and the real-browser
+`npm run play:harness` route, see `tools/selfplay/README.md`. The QA getter is
+absent during normal play.
+
 The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. Historical lighting changes intentionally differ from that older reference. EBR-76 scene data can be compared against clean `a75e8db`; the older `8dd79b8` replay does not exercise snow. See `tools/PARITY.md`. Do not re-baseline historical captures until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero historical result.
 
 The entry point is `src/main.ts`, which registers the ordered feature modules in `src/app/`. Free placement is in `src/placement/`, pixel presentation in `src/postprocess/`, scene construction and the camera in `src/scene/`, and the character and controls are in `src/character/`. The sky HUD and its public-scene adapter are in `src/ui/`. Plain layout, dimensions, weather and lighting presets live in `src/content/`; Three.js asset factories are in `src/render/`. Cottage and coop data is in `src/content/buildings.ts`, and Look Dev farm colors are in `src/content/slots.ts`. Their windows and pop-holes follow the night lighting. The fixed-step loop, Miniplex world and input actions are described in `src/core/README.md`. `src/state/` describes JSON-friendly snapshots and a save/load hook shape; no persistence or auto-load is installed. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.
