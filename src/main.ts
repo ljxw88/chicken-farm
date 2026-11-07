@@ -79,10 +79,10 @@ const engine = createEngine<GameComponents>({
       follow(character.position);
       placement.update();
       updateWeatherSystem(world, deltaSeconds);
-      weather.render(deltaSeconds);
-      const { rainAmount, cloudyAmount } = weather.getWeather();
       const nightAmount = dayNight.getNightAmount();
-      smoke.update(deltaSeconds, rainAmount, nightAmount);
+      weather.render(deltaSeconds, nightAmount);
+      const { rainAmount, cloudyAmount } = weather.getWeather();
+      smoke.update(deltaSeconds, rainAmount, nightAmount, weather.getSnowAmount());
       fireflies.update(deltaSeconds, nightAmount, rainAmount, cloudyAmount);
       skyState?.update(deltaSeconds);
       skyHud?.update();

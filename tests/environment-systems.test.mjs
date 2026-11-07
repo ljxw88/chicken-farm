@@ -37,16 +37,17 @@ function fixture(t, search = '', withCharacter = false) {
 }
 
 test('every URL phase and weather pins the engine clock while weather reaches its requested state', (t) => {
-  for (const phase of ['morning', 'daytime', 'sunset', 'night']) for (const mode of ['clear', 'cloudy', 'rain']) {
+  for (const phase of ['morning', 'daytime', 'sunset', 'night']) for (const mode of ['clear', 'cloudy', 'rain', 'snow']) {
     const f = fixture(t, `?phase=${phase}&weather=${mode}`);
     const progress = f.environment.dayNight.progress;
     updateDayNightSystem(f.world, 100);
     updateWeatherSystem(f.world, 1.75);
-    f.weather.render(1.75);
+    f.weather.render(1.75, f.cycle.getNightAmount());
     assert.equal(f.environment.dayNight.held, true, `${phase}/${mode}`);
     assert.equal(f.environment.dayNight.progress, progress);
     assert.equal(f.cycle.getPhase(), phase);
     assert.deepEqual(f.weather.getWeather(), { mode, rainAmount: Number(mode === 'rain'), cloudyAmount: Number(mode === 'cloudy') });
+    assert.equal(f.weather.getSnowAmount(), Number(mode === 'snow'));
     assert.deepEqual(JSON.parse(JSON.stringify(f.environment.weather)), f.environment.weather);
   }
 });
