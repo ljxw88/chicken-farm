@@ -1,0 +1,12 @@
+[heavy] slot /tmp/farm-heavy.c.lock acquired: env EBR42_EXPECT_HEAD=9e95dd24d7ccf4d83b6625f819ee3bbbec50dab3 EBR42_EVIDENCE_ROOT=/tmp/ebr42-final-zdaw3pm7/merge-run/evidence node /tmp/ebr42-final-zdaw3pm7/run-with-vite.mjs /tmp/ebr42-final-zdaw3pm7/merge-checkout node evidence/EBR-42/merge-05d5b4a/qa-gate.mjs
+Clean checkout 9e95dd24d7ccf4d83b6625f819ee3bbbec50dab3 served on http://127.0.0.1:5222
+spawn: 912 changed; smoke 912, fireflies 0, 0 outside mask, 0 with effects hidden
+stairs-pad: 0 changed; smoke 0, fireflies 0, 0 outside mask, 0 with effects hidden
+placement-ghost: 928 changed; smoke 928, fireflies 0, 0 outside mask, 0 with effects hidden
+day: 944 changed; smoke 944, fireflies 0, 0 outside mask, 0 with effects hidden
+night: 2352 changed; smoke 912, fireflies 1440, 0 outside mask, 0 with effects hidden
+rain: 992 changed; smoke 992, fireflies 0, 0 outside mask, 0 with effects hidden
+cottage-coops-day: 2656 changed; smoke 2656, fireflies 0, 0 outside mask, 0 with effects hidden
+cottage-coops-night: 6080 changed; smoke 2656, fireflies 3424, 0 outside mask, 0 with effects hidden
+QA Gate G PASS: 8 frames against 05d5b4aa566bf3d48cd2d1f5b94224224287c4c2, zero outside effect masks and zero with effects hidden
+[heavy] released /tmp/farm-heavy.c.lock rc=0

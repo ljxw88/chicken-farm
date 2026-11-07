@@ -1,0 +1,384 @@
+{
+  "baselineSha": "5d9ba48f6bd9bfbc3974351b50d0ce89934380ff",
+  "candidateSha": "9e95dd24d7ccf4d83b6625f819ee3bbbec50dab3",
+  "sourceStatus": "",
+  "browser": "153.0.8010.12",
+  "renderer": "SwiftShader",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1,
+  "seed": 3950313473,
+  "baselineSource": "git archive",
+  "referenceTrace": "/tmp/ebr75-reference-NENM45/trace.json",
+  "referenceSha256": "b23737568f1140692007fc610c879e1fdc874e9e9d65def95023702685f3bab4",
+  "excludedHistoricalFields": [],
+  "results": {
+    "placement": {
+      "actions": 37,
+      "samples": 39,
+      "identical": true
+    },
+    "environment-cycle": {
+      "actions": 31,
+      "samples": 94,
+      "identical": true
+    },
+    "url-morning-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-morning-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-morning-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-daytime-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-daytime-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-daytime-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-sunset-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-sunset-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-sunset-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-night-clear": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-night-cloudy": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "url-night-rain": {
+      "actions": 4,
+      "samples": 4,
+      "identical": true
+    },
+    "invalid-url": {
+      "actions": 3,
+      "samples": 3,
+      "identical": true
+    }
+  },
+  "rawTraceDifferences": [],
+  "rawVisualResults": {
+    "preview-valid": 2208,
+    "preview-rotated": 2208,
+    "preview-player": 2208,
+    "preview-deck": 2208,
+    "preview-water": 2208,
+    "preview-cottage": 2208,
+    "placed-fence-frame": 2208,
+    "touch-preview": 2208,
+    "touch-rotated": 2208,
+    "placed-fence-plot": 2208,
+    "cancel-frame": 2208,
+    "undo-frame": 2208,
+    "remove-frame": 2208,
+    "weather-half-rain": 2256,
+    "weather-crossfade": 2320,
+    "weather-full-rain": 2064,
+    "weather-half-cloud": 2192,
+    "weather-full-cloud": 2208,
+    "weather-clear": 2272,
+    "weather-night-rain": 1376,
+    "url-morning-clear": 1200,
+    "url-morning-cloudy": 1200,
+    "url-morning-rain": 912,
+    "url-daytime-clear": 2432,
+    "url-daytime-cloudy": 2128,
+    "url-daytime-rain": 2144,
+    "url-sunset-clear": 1200,
+    "url-sunset-cloudy": 1200,
+    "url-sunset-rain": 912,
+    "url-night-clear": 2704,
+    "url-night-cloudy": 2224,
+    "url-night-rain": 1568
+  },
+  "visualResults": {
+    "preview-valid": 1232,
+    "preview-rotated": 1232,
+    "preview-player": 1232,
+    "preview-deck": 1232,
+    "preview-water": 1232,
+    "preview-cottage": 1232,
+    "placed-fence-frame": 1232,
+    "touch-preview": 1232,
+    "touch-rotated": 1232,
+    "placed-fence-plot": 1232,
+    "cancel-frame": 1232,
+    "undo-frame": 1232,
+    "remove-frame": 1232,
+    "weather-half-rain": 1232,
+    "weather-crossfade": 1232,
+    "weather-full-rain": 1232,
+    "weather-half-cloud": 1184,
+    "weather-full-cloud": 960,
+    "weather-clear": 1232,
+    "weather-night-rain": 0,
+    "url-morning-clear": 0,
+    "url-morning-cloudy": 0,
+    "url-morning-rain": 0,
+    "url-daytime-clear": 1232,
+    "url-daytime-cloudy": 928,
+    "url-daytime-rain": 1232,
+    "url-sunset-clear": 0,
+    "url-sunset-cloudy": 0,
+    "url-sunset-rain": 0,
+    "url-night-clear": 0,
+    "url-night-cloudy": 0,
+    "url-night-rain": 0
+  },
+  "visualIsolation": {
+    "preview-valid": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "preview-rotated": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "preview-player": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "preview-deck": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "preview-water": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "preview-cottage": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "placed-fence-frame": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "touch-preview": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "touch-rotated": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "placed-fence-plot": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "cancel-frame": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "undo-frame": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "remove-frame": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-half-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-crossfade": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-full-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-half-cloud": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-full-cloud": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-clear": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "weather-night-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-morning-clear": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-morning-cloudy": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-morning-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-daytime-clear": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-daytime-cloudy": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-daytime-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-sunset-clear": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-sunset-cloudy": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-sunset-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-night-clear": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-night-cloudy": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    },
+    "url-night-rain": {
+      "rawOutsideAllowedPixels": 0,
+      "outsideAllowedPixels": 0,
+      "hiddenChangedPixels": 0,
+      "protectedChangedPixels": 0
+    }
+  },
+  "intendedBodyChanges": [
+    "preview-valid",
+    "preview-rotated",
+    "preview-player",
+    "preview-deck",
+    "preview-water",
+    "preview-cottage",
+    "placed-fence-frame",
+    "touch-preview",
+    "touch-rotated",
+    "placed-fence-plot",
+    "cancel-frame",
+    "undo-frame",
+    "remove-frame",
+    "weather-half-rain",
+    "weather-crossfade",
+    "weather-full-rain",
+    "weather-half-cloud",
+    "weather-full-cloud",
+    "weather-clear",
+    "url-daytime-clear",
+    "url-daytime-cloudy",
+    "url-daytime-rain"
+  ],
+  "expectedRainChanges": [],
+  "unexpectedVisualChanges": [],
+  "mismatches": []
+}

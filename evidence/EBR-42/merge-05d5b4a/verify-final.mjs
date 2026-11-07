@@ -127,9 +127,10 @@ for (const dir of [recorded, scratch]) {
   assert.match(build, /tsc && vite build/);
   assert.match(build, /built in/);
   assert.match(build, /^\[heavy\] released .*rc=0$/m);
-  for (const log of ['readability.log', 'qa-gate.log']) {
+  for (const log of ['readability.log', 'qa-gate.log', 'masks.log']) {
     assert.match(await readFile(join(dir, log), 'utf8'), /^\[heavy\] released .*rc=0$/m, log);
   }
+  assert.match(await readFile(join(dir, 'masks.log'), 'utf8'), /Independent mask verification PASS: 8\/8 frames/);
 }
 
 const handoff = await readFile('DELIVER-EBR-42.txt', 'utf8');
@@ -145,6 +146,13 @@ for (const [name, counts] of Object.entries(qaCounts)) {
   assert.ok(line, `Missing ${name}`);
   assert.deepEqual(line.trim().split(/\s+/).slice(1, 6).map(Number),
     [counts.changedPixels, counts.smoke, counts.fireflies, counts.outsideAllowed, counts.hiddenChanged], name);
+}
+const lumaSection = handoff.split('Final-tip smoke-mask peaks')[1]?.split('\n\n')[0];
+assert.ok(lumaSection, 'Missing smoke-mask peak table');
+for (const [name, scenario] of Object.entries(rerunLuma.cases)) {
+  const line = lumaSection.split('\n').find((item) => item.trim().startsWith(`${name} `));
+  assert.ok(line, `Missing luma case ${name}`);
+  for (const sample of scenario.samples) assert.ok(line.includes(sample.screenMask.peakLuminance.toFixed(2)), name);
 }
 const report = { head, main, unit, browser, qaCounts, samePoseFrames: Object.keys(pose.frames).length, lumaSamples: samples,
   lumaRange: Object.fromEntries(Object.entries(peaks).map(([key, values]) => [key, [Math.min(...values), Math.max(...values)]])), sourceTrees };

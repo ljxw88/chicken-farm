@@ -1,68 +1,83 @@
 # EBR-42 visual evidence
 
-- `baseline/` is clean main `6daf042ad85882f020268baf53fc92fb09e921ad`, extracted by `git archive` without touching another worktree. `candidate/` is the merged EBR-42 app. The 12 phase/weather combinations and walk, placement and stairs frames are 1280×720, DPR 1, Chromium/SwiftShader, with the normal 320×180 pixel pass.
-- `mask/smoke/` and `mask/fireflies/` contain exact white-on-black masks measured by hiding just that effect in the *same* candidate frame; `mask/combined/` is their union. `diff/` is the raw main/candidate difference in magenta. `no-effects/` is the candidate with both effects hidden. `comparison.json` records counts, bounds, state, lights, errors and seeded replay.
-- `merge-6daf042/qa-gate/` compares the eight frames from `/home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-baseline-6daf042/` directly, verifying their recorded hashes and pose/state. It contains the candidate and isolated-effect frames, exact smoke/firefly/combined masks, raw diffs, effect-hidden frames and per-frame parity counts. The combined mask also includes any quantized pixel revealed only by hiding both effects together.
-- `smoke-retune/before/` and `smoke-retune/diff/` compare the new build to signed firefly head `9305bd41ed71f1d885646ac5d9b1bc145fb2594e`. `mask/smoke-retune/` is the union of old/new smoke contributions; the checker also requires identical firefly masks and opacities. `smoke-retune/crops/` pairs the old/new chimney with its mask for day and sunset in clear/rain and for all three night weathers.
-- `merge-6daf042/previous/`, `merge-6daf042/candidate/`, `merge-6daf042/diff/` and `merge-6daf042/same-pose.json` compare every full merged frame with its committed pre-merge `468b4f3b2bc415d69ec0e52575de127c2035e1a8` frame. The harness verifies the old frame hash, seed, browser, viewport, complete captured pose/state and effect state before checking every pixel; it also verifies that the previous evidence commit did not change the source used for that capture.
-- `merge-6daf042/no-smoke/` and `merge-6daf042/no-fireflies/` preserve same-frame effect-isolation screenshots for those 15 cases.
-- `merge-6daf042/luma-frames/`, `merge-6daf042/luma-no-smoke/`, `merge-6daf042/luma-masks/` and `merge-6daf042/readability.json` record each merged-source frame, its same-state smoke-hidden counterpart, the exact mask and measurements at 2.5, 3.0 and 3.5 seconds for each day/sunset/night weather combination.
-- `source-snapshot.mjs` rejects unstaged or untracked runtime/test/tool inputs and records the exact Git index trees and HTML/package blobs. This allows evidence to be captured before its encompassing commit; the recorded trees can be checked against that commit afterward.
-- `merge-6daf042/verify-final.mjs <scratch-directory>` checks the final clean HEAD against those trees, final-tip build/unit/browser logs, the direct QA-baseline counts, all 15 previous-head frame comparisons and the 27 luma samples. It writes its verification report only into the supplied scratch directory.
-- `smoke-retune/readability.json` measures actual per-puff contributions at 2.5, 3.0 and 3.5 seconds across day/sunset/night and each weather. `mask/puff-bright/` shows the t=3 pixels on pure void where an individual puff contributes at least 5 luminance units to a pixel meeting the phase threshold. Overlapping puffs can share pixels; the JSON separately reports exclusive and isolated-puff peaks and a lights/fog-off non-emission check. **The unchanged smoke does not establish three independently readable puffs in every frame:** sunset-rain has no isolated puff at 110 in these samples, and some samples have fewer than three exclusive bright puffs. The later Look Dev rule no longer requires three individually readable puffs.
-- In `placement-night-clear` the existing translucent toolbar lies over part of the plume. Its composited pixel changes are included in the smoke mask; the toolbar itself is unmodified, and the no-effects frame still matches main exactly.
-- `crops/` contains paired 3× nearest-neighbour crops and their combined masks. The chimney is shown both by day and at night; the firefly cluster is night-clear. `comparison.json` records their original rectangles. The smoke crop is centred on the measured plume, and the firefly crop is chosen to contain multiple visible mote components.
-- Both scenes use seed `3950182401` (`0xeb730001`) and identical manually stepped render times. Main's existing rain RNG is injected at construction through the existing parity-test response hook; the candidate uses `?seed=3950182401`. Frame and weather randomness are not synchronized by wall-clock time.
-- `?seed=` accepts an unsigned 32-bit decimal or hexadecimal integer. Without it, existing rain retains its normal random behavior; the new effects use fixed, independent visual RNG streams. The seed does not affect input, collision or placement.
-- Smoke now has six slots. A 3.6 s lifetime and a 0.55 s interval require seven overlapping puffs for 0.30 s, so a scheduled birth is skipped when the pool is full rather than killing a puff early. A 2.6 s rain life yields four or five live puffs. Rain and night each select a 60% opacity factor; when both are active they do not compound below 60%.
-- The merge preserves the prior smoke appearance and its 90%-life opacity hold. The separately requested 40%-hold, size-variance and lateral-sway retune was not applied under the no-look-change direction.
-- The smoke material remains non-emissive and scene-lit with base `0xefe3c8`. To reach the requested luma under the signed lighting, its reflected result is boosted 9× and uniformly capped at its albedo; no light or emissive floor is added. The probe verifies no brightening with scene lights and fog removed.
-- The existing character replay still uses its historical `9e8c8c6` reference, extracted with `git archive`. It retains exact input/pose traces and compares every frame both normally and with just these two effects hidden; all other pixels must still match. Its historical reference is separate from the `6daf042` Gate G above. EBR-75's placement/environment replay also uses clean archives by default, compares with only the intended effects hidden and records raw diffs; its historical test references do not replace the new Gate G baseline.
-- `character-replay-test.log`, `character-replay-tmp-permission.log`, `browser-initial-effect-diff.log` and `browser-test.log` are retained from before the merge. Current build, unit and browser logs are in `merge-6daf042/`.
-- This host denies the current user write access to `/tmp/opencode`; the archive harnesses try it first, then fall back to a unique temporary directory under the system temp directory.
+## Current merge
 
-## Reproduce
+- `merge-05d5b4a/qa-gate/` directly compares QA's checked-in copy of the eight
+  frames and metadata from `/home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-baseline-05d5b4a/`.
+  `candidate/` and `diff/` show the final merged scene and raw differences.
+  `no-smoke/`, `no-fireflies/` and `no-effects/` isolate the exact same state;
+  `mask/smoke/`, `mask/fireflies/` and `mask/combined/` are exact pixel masks.
+  The combined mask also includes any quantized interaction only visible when
+  both effects are hidden. `parity.json` records frame counts and state.
+- `merge-05d5b4a/luma-frames/`, `luma-no-smoke/`, `luma-masks/` and
+  `readability.json` measure 27 smoke-mask frames at 2.5, 3.0 and 3.5 seconds
+  across daytime/sunset/night and clear/cloudy/rain. Per-puff bright masks in
+  `mask/puff-bright/` are diagnostic; Look Dev's current gate is the composite
+  smoke-mask peak and night-window contrast, not three independent puffs.
+- `merge-05d5b4a/{build,unit,browser,qa-gate,readability,masks}.log` record
+  the checks on the merged source/test/tool trees. `replay/` records the strict
+  historical character, placement and environment comparisons; `stairs/`
+  records the real-input pad routes. Runtime/test/tool tree IDs are in each
+  capture's source snapshot and in `DELIVER-EBR-42.txt`.
+- `merge-05d5b4a/verify-masks.py` independently recomputes every mask and raw
+  difference from the saved PNGs. `verify-final.mjs` checks a clean committed
+  tip against fresh scratch-only logs, source trees, eight QA frames, the
+  pre-EBR-92 same-pose comparison and all 27 luma samples.
 
-With this worktree's `npm ci` complete and its dev server running on `100.88.150.21:5212`, check available memory before each command and pause below 4 GB. Set `EBR42_EVIDENCE_ROOT` to an isolated directory to reproduce without modifying the committed evidence:
+## Retune and historical evidence
 
-```sh
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/smoke-retune/measure.mjs
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/capture.mjs
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/merge-6daf042/qa-gate.mjs
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy python3 evidence/EBR-42/crop-day.py
-```
+- `retune-468b4f3/merge-6daf042/same-pose.json` and its `previous/`,
+  `candidate/`, `diff/` and `mask/smoke-retune/` compare retuned commit
+  `114e2afa2cedfabc82c9d438eb27a3dfb8825232` against the hash-verified
+  pre-merge `468b4f3` frames. The candidate was served from a clean checkout
+  on `127.0.0.1:5222`. All differences stay inside old/new smoke masks;
+  smoke-hidden frames and firefly state/masks match. This was before EBR-92.
+- `retune-468b4f3/smoke-retune/` contains the corresponding pre-EBR-92
+  readability measurements and paired crops. `capture.mjs` reproduces this
+  historical comparison when run from the clean `114e2af` checkout.
+- Root-level frames and `merge-6daf042/` record the earlier, pre-retune merge
+  against main `6daf042`; their zero-change and 90%-hold results are historical,
+  not claims about the current head. Their old `verify-final.mjs` validates that
+  older handoff only. No historical reference was re-recorded.
+- All captures use seeded, manually stepped animation in Chromium/SwiftShader
+  at 1280x720, DPR 1 with the normal 320x180 pixel pass. `?seed=3950182401`
+  fixes visual effects and rain without affecting gameplay; effect RNG streams
+  are independent. Look Dev sign-off and hardware-device coverage are separate.
 
-The readability probe checks smoke-mask peaks and night-window contrast in every sampled case; per-puff overlap counts are diagnostic only, not a three-puff gate. The capture fails on its pixel, scene-state, signed-firefly, mask, error or replay assertions, including any full-frame pixel change relative to the previous head. Existing favicon errors, if any, are recorded separately. They write all frames and the report afresh. This is not a substitute for Look Dev's visual sign-off or hardware-GPU/device testing.
+## Reproduce the committed tip
 
-## Verify the committed tip without dirtying it
-
-Choose a new writable scratch directory, set `SCRATCH` to it, and keep the review server on port 5212. The archive-based EBR-75 replay references are selected explicitly so no other worktree is used.
+Use a clean checkout with installed dependencies and choose an absolute scratch
+directory outside it. The helper serves that checkout on `127.0.0.1:5222` only
+for the wrapped command and terminates only its own Vite process. Check
+`MemAvailable` before every command and wait below 4 GB; `heavy` also guards
+memory and waits for the shared queue. Run commands serially.
 
 ```sh
 mkdir -p "$SCRATCH"
 export EBR42_EVIDENCE_ROOT="$SCRATCH/evidence"
+export EBR42_MEASUREMENT_DIR=merge-05d5b4a
+export EBR42_SMOKE_OUT="$SCRATCH/evidence/merge-05d5b4a"
+export EBR42_SMOKE_MASK_DIR="$SCRATCH/evidence/merge-05d5b4a/mask/puff-bright"
 grep MemAvailable /proc/meminfo
 /home/michael/OpenBot/Shared/farm-tools/heavy npm run build > "$SCRATCH/build.log" 2>&1
 grep MemAvailable /proc/meminfo
 /home/michael/OpenBot/Shared/farm-tools/heavy npm test > "$SCRATCH/unit.log" 2>&1
 grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/smoke-retune/measure.mjs > "$SCRATCH/readability.log" 2>&1
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/capture.mjs > "$SCRATCH/capture.log" 2>&1
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/merge-6daf042/qa-gate.mjs > "$SCRATCH/qa-gate.log" 2>&1
-grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy python3 evidence/EBR-42/crop-day.py > "$SCRATCH/day-crops.log" 2>&1
-grep MemAvailable /proc/meminfo
 /home/michael/OpenBot/Shared/farm-tools/heavy env \
-  EBR46_URL=http://100.88.150.21:5212 EBR46_EVIDENCE_DIR="$SCRATCH/stairs" \
-  EBR46_SLIDE_PROOF="$SCRATCH/stairs/pad-sequences.json" EBR56_DEV_URL=http://100.88.150.21:5212 \
-  LIGHTING_URL=http://100.88.150.21:5212 EBR75_DCB_BASELINE_WORKTREE= EBR75_MAIN_BASELINE_WORKTREE= \
-  EBR75_REPLAY_EVIDENCE_DIR= EBR74_ROUTE_EVIDENCE_DIR= npm run test:browser > "$SCRATCH/browser.log" 2>&1
+  EBR46_URL=http://127.0.0.1:5222 EBR46_EVIDENCE_DIR="$SCRATCH/stairs" \
+  EBR46_SLIDE_PROOF="$SCRATCH/stairs/pad-sequences.json" EBR56_DEV_URL=http://127.0.0.1:5222 \
+  LIGHTING_URL=http://127.0.0.1:5222 EBR75_DCB_BASELINE_WORKTREE= EBR75_MAIN_BASELINE_WORKTREE= \
+  EBR75_REPLAY_EVIDENCE_DIR= EBR74_ROUTE_EVIDENCE_DIR= \
+  node evidence/EBR-42/merge-05d5b4a/with-vite.mjs npm run test:browser > "$SCRATCH/browser.log" 2>&1
 grep MemAvailable /proc/meminfo
-/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/merge-6daf042/verify-final.mjs "$SCRATCH"
+/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/merge-05d5b4a/with-vite.mjs \
+  node evidence/EBR-42/merge-05d5b4a/qa-gate.mjs > "$SCRATCH/qa-gate.log" 2>&1
+grep MemAvailable /proc/meminfo
+/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/merge-05d5b4a/with-vite.mjs \
+  node evidence/EBR-42/smoke-retune/measure.mjs > "$SCRATCH/readability.log" 2>&1
+grep MemAvailable /proc/meminfo
+/home/michael/OpenBot/Shared/farm-tools/heavy python3 evidence/EBR-42/merge-05d5b4a/verify-masks.py \
+  "$SCRATCH/evidence/merge-05d5b4a/qa-gate" > "$SCRATCH/masks.log" 2>&1
+grep MemAvailable /proc/meminfo
+/home/michael/OpenBot/Shared/farm-tools/heavy node evidence/EBR-42/merge-05d5b4a/verify-final.mjs "$SCRATCH"
 ```

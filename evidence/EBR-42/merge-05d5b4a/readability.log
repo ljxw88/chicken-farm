@@ -1,0 +1,31 @@
+[heavy] slot /tmp/farm-heavy.c.lock acquired: env EBR42_EXPECT_HEAD=9e95dd24d7ccf4d83b6625f819ee3bbbec50dab3 EBR42_EVIDENCE_ROOT=/tmp/ebr42-final-zdaw3pm7/merge-run/evidence EBR42_MEASUREMENT_DIR=merge-05d5b4a EBR42_SMOKE_OUT=/tmp/ebr42-final-zdaw3pm7/merge-run/evidence/merge-05d5b4a EBR42_SMOKE_MASK_DIR=/tmp/ebr42-final-zdaw3pm7/merge-run/evidence/merge-05d5b4a/mask/puff-bright node /tmp/ebr42-final-zdaw3pm7/run-with-vite.mjs /tmp/ebr42-final-zdaw3pm7/merge-checkout node evidence/EBR-42/smoke-retune/measure.mjs
+Clean checkout 9e95dd24d7ccf4d83b6625f819ee3bbbec50dab3 served on http://127.0.0.1:5222
+daytime-clear t=2.5: screen mask max 212.75, buffer mask max 212.75, void max 212.75, >=110: 5 contributing / 1 exclusive / 2 solo on void
+daytime-clear t=3: screen mask max 207.82, buffer mask max 207.82, void max 207.82, >=110: 5 contributing / 2 exclusive / 3 solo on void
+daytime-clear t=3.5: screen mask max 208.89, buffer mask max 208.89, void max 208.89, >=110: 5 contributing / 1 exclusive / 3 solo on void
+daytime-cloudy t=2.5: screen mask max 211.77, buffer mask max 211.77, void max 211.77, >=110: 5 contributing / 1 exclusive / 2 solo on void
+daytime-cloudy t=3: screen mask max 206.77, buffer mask max 206.77, void max 206.77, >=110: 5 contributing / 2 exclusive / 3 solo on void
+daytime-cloudy t=3.5: screen mask max 208.12, buffer mask max 208.12, void max 208.12, >=110: 5 contributing / 1 exclusive / 3 solo on void
+daytime-rain t=2.5: screen mask max 169.56, buffer mask max 169.56, void max 155.84, >=110: 3 contributing / 0 exclusive / 1 solo on void
+daytime-rain t=3: screen mask max 169.92, buffer mask max 169.92, void max 159.27, >=110: 4 contributing / 0 exclusive / 1 solo on void
+daytime-rain t=3.5: screen mask max 167.40, buffer mask max 167.40, void max 159.47, >=110: 4 contributing / 0 exclusive / 1 solo on void
+sunset-clear t=2.5: screen mask max 192.92, buffer mask max 192.92, void max 192.92, >=110: 4 contributing / 1 exclusive / 2 solo on void
+sunset-clear t=3: screen mask max 191.00, buffer mask max 191.00, void max 191.00, >=110: 5 contributing / 2 exclusive / 3 solo on void
+sunset-clear t=3.5: screen mask max 190.28, buffer mask max 190.28, void max 190.28, >=110: 5 contributing / 1 exclusive / 3 solo on void
+sunset-cloudy t=2.5: screen mask max 192.22, buffer mask max 192.22, void max 192.22, >=110: 4 contributing / 1 exclusive / 2 solo on void
+sunset-cloudy t=3: screen mask max 191.22, buffer mask max 191.22, void max 191.22, >=110: 5 contributing / 2 exclusive / 3 solo on void
+sunset-cloudy t=3.5: screen mask max 191.86, buffer mask max 191.86, void max 191.86, >=110: 5 contributing / 1 exclusive / 3 solo on void
+sunset-rain t=2.5: screen mask max 149.72, buffer mask max 149.72, void max 137.74, >=110: 3 contributing / 0 exclusive / 0 solo on void
+sunset-rain t=3: screen mask max 148.51, buffer mask max 148.51, void max 145.09, >=110: 4 contributing / 0 exclusive / 0 solo on void
+sunset-rain t=3.5: screen mask max 151.08, buffer mask max 151.08, void max 149.09, >=110: 4 contributing / 0 exclusive / 0 solo on void
+night-clear t=2.5: screen mask max 116.79, buffer mask max 116.79, void max 116.79, >=70: 4 contributing / 1 exclusive / 2 solo on void
+night-clear t=3: screen mask max 116.00, buffer mask max 116.00, void max 114.79, >=70: 4 contributing / 2 exclusive / 3 solo on void
+night-clear t=3.5: screen mask max 115.79, buffer mask max 115.79, void max 115.79, >=70: 5 contributing / 1 exclusive / 3 solo on void
+night-cloudy t=2.5: screen mask max 107.72, buffer mask max 107.72, void max 105.29, >=70: 4 contributing / 1 exclusive / 2 solo on void
+night-cloudy t=3: screen mask max 109.72, buffer mask max 109.72, void max 109.72, >=70: 4 contributing / 2 exclusive / 3 solo on void
+night-cloudy t=3.5: screen mask max 112.72, buffer mask max 112.72, void max 112.72, >=70: 5 contributing / 1 exclusive / 3 solo on void
+night-rain t=2.5: screen mask max 108.78, buffer mask max 108.78, void max 101.07, >=70: 3 contributing / 1 exclusive / 2 solo on void
+night-rain t=3: screen mask max 115.72, buffer mask max 115.72, void max 115.72, >=70: 4 contributing / 1 exclusive / 2 solo on void
+night-rain t=3.5: screen mask max 134.38, buffer mask max 134.38, void max 118.79, >=70: 4 contributing / 0 exclusive / 2 solo on void
+Smoke-mask peak checks PASS; 27 samples have fewer than three exclusive or solo puffs (diagnostic only).
+[heavy] released /tmp/farm-heavy.c.lock rc=0
