@@ -18,9 +18,10 @@ function assetCard(asset) {
   const scores = asset.criticScores ? Object.entries(asset.criticScores).map(([key, value]) => `<tr><th>${escape(key)}</th><td>${fmt(value)} / 5</td></tr>`).join('') : '<tr><td>Visual critique not run; no scores.</td></tr>';
   const visualChecks = asset.visualChecks ? Object.entries(asset.visualChecks).map(([key, value]) => `<tr><th>${escape(key)}</th><td>${escape(value)}</td></tr>`).join('') : '<tr><td>Not run.</td></tr>';
   const ready = asset.reviewReadiness?.ready === true;
-  const reason = asset.reviewReadiness?.reasons?.[0] ?? asset.failures?.[0];
+  const reasons = asset.reviewReadiness?.reasons?.length ? asset.reviewReadiness.reasons : asset.failures || [];
+  const reason = reasons[0], additional = reasons[1];
   const blocker = ready ? '<p class="ready-note">Implemented verifier checks and the independent critic cleared. Human review is still required; unmeasured checks are not passes.</p>'
-    : `<p class="warning"><strong>Blocking reason:</strong> ${escape(reason ? `${reason.code}: ${reason.message}` : 'Not yet verified or reviewed.')}</p>`;
+    : `<p class="warning"><strong>Blocking reason:</strong> ${escape(reason ? `${reason.code}: ${reason.message}` : 'Not yet verified or reviewed.')}${additional ? ` · Also: ${escape(`${additional.code}: ${additional.message}`)}` : ''}</p>`;
   return `<article class="asset" id="${escape(asset.id)}"><header><div><span class="tag">P0 · SOLO REVIEW</span><h2>${escape(asset.id)}</h2></div><strong class="status${ready ? ' ready' : ''}">${ready ? 'ready for Look Dev P0 review' : escape(asset.status || 'not generated')}</strong></header>
     ${blocker}${ready ? `<p>Pipeline status: ${escape(asset.status || 'needs-human')} · not signed or bundled.</p>` : ''}
     <p>${escape(asset.brief)}</p><p><strong>Render:</strong> ${escape(asset.pack?.kind || 'unavailable')} ${asset.pack?.kind === 'diagnostic' ? '— diagnostic only, not a verification pass; see the gate results.' : ''}</p>

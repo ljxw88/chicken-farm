@@ -10,6 +10,9 @@ test('external showcase builds real diagnostic packs without claiming a pass or 
   const directory = await mkdtemp(join(tmpdir(), 'assetgen-showcase-e2e-'));
   const evidence = join(directory, 'evidence'), run = join(evidence, 'runs/barrel'), output = join(directory, 'showcase');
   await mkdir(run, { recursive: true });
+  await mkdir(join(evidence, 'logs'), { recursive: true });
+  await writeFile(join(evidence, 'logs/iteration-1.tsv'), 'id\tgenerator_exit\nbarrel\t0\n');
+  await writeFile(join(evidence, 'iteration-1-stop.txt'), 'stop_reason=provider quota exhausted; further generation blocked\n');
   const recipe = { id: 'barrel', category: 'prop', footprint: { w: 0.8, d: 0.8 }, height: 1, origin: 'base-center', facing: '+Z',
     parts: [
       { name: 'body_bad', prim: 'box', size: [0.8, 0.65, 0.8], at: [0, 0.325, 0], mat: 'wood.mid', feature: 'body', jitter: { seed: 123, max: 0.01 } },
@@ -27,6 +30,9 @@ test('external showcase builds real diagnostic packs without claiming a pass or 
   assert.ok(barrel.failures.some((failure) => failure.code === 'NO_FINAL'));
   assert.ok(barrel.failures.some((failure) => failure.code === 'H1'));
   assert.ok(barrel.pack.notes.some((note) => note.includes('ignores unsupported nested jitter')));
+  const rock = manifest.assets.find((asset) => asset.id === 'rock-a');
+  assert.equal(rock.status, 'not attempted');
+  assert.match(rock.reviewReadiness.reasons[0].message, /provider quota exhausted/);
   assert.equal(manifest.overview.available, true);
   assert.deepEqual(manifest.overview.included, ['barrel']);
   await access(join(output, 'images/barrel/sheet.png'));

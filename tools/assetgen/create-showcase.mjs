@@ -5,7 +5,7 @@ import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import * as THREE from 'three';
 import { verifierSourceHash } from './bundle.mjs';
-import { readBible, readSpec, readVisionProbe, root, runDirectory } from './config.mjs';
+import { evidenceDirectory, readBible, readSpec, readVisionProbe, root, runDirectory } from './config.mjs';
 import { diagnosticEligibility } from './diagnostic-preview.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { validateRecipe } from './schema.mjs';
@@ -29,6 +29,12 @@ const output = await mkdtemp(join(dirname(finalOutput), '.asset-showcase-build-'
 const bible = await readBible();
 const sourceHash = await verifierSourceHash();
 const probe = await readVisionProbe();
+const iteration = Number(process.env.ASSETGEN_ITERATION || 1);
+if (!Number.isInteger(iteration) || iteration < 1) throw new Error('ASSETGEN_ITERATION must be a positive integer');
+const stopText = await readText(join(evidenceDirectory, `iteration-${iteration}-stop.txt`));
+const stopReason = stopText?.split('\n').find((line) => line.startsWith('stop_reason='))?.slice('stop_reason='.length) || null;
+const timingText = await readText(join(evidenceDirectory, 'logs', `iteration-${iteration}.tsv`));
+const attemptedIds = new Set((timingText || '').trim().split('\n').slice(1).map((line) => line.split('\t')[0]).filter(Boolean));
 const entries = [];
 for (const id of ids) {
   const { spec, path: specPath } = await readSpec(id);
@@ -110,6 +116,7 @@ try {
     const visual = typeof verification?.visual === 'object' ? verification.visual : stageReport?.visual;
     const reviewReadiness = assessReviewReadiness({ spec, specBytes: entry.specBytes, recipeBytes: entry.recipeBytes, bible, sourceHash,
       final, stage: stageReport, verification, receipts: entry.receipts, probe, environment });
+    if (!final && !recipe && !attemptedIds.has(id) && stopReason) reviewReadiness.reasons = [{ code: 'NOT_RUN', message: `Not attempted: ${stopReason}.` }];
     const unique = new Map();
     for (const failure of [...(hard?.failures || []), ...(visual?.failures || []), ...(stageReport?.blockers || []), ...reviewReadiness.reasons]) unique.set(`${failure.code}\0${failure.message}`, failure);
     if (!final) unique.set('NO_FINAL', { code: 'NO_FINAL', message: 'The generator did not complete a final report.' });
@@ -136,7 +143,7 @@ try {
       await copyFile(join(packDir, 'diagnostic.json'), join(target, 'diagnostic.json'), constants.COPYFILE_EXCL);
       diagnosticHref = `images/${id}/diagnostic.json`;
     }
-    records.push({ id, status: final?.status ?? (recipe ? 'incomplete run' : 'not generated'), brief: spec.brief, rounds: final?.roundsUsed ?? null,
+    records.push({ id, status: final?.status ?? (recipe || attemptedIds.has(id) ? 'incomplete run' : 'not attempted'), brief: spec.brief, rounds: final?.roundsUsed ?? null,
       triangles: hard?.metrics?.triangles ?? measured?.triangles ?? null, bounds: hard?.metrics?.bounds ?? measured?.bounds ?? null,
       metricSource: hard?.metrics?.triangles != null ? 'verifier' : measured ? 'diagnostic geometry only' : 'not measured',
       colorCount: hard?.metrics?.colorCount ?? measured?.colorCount ?? null,
