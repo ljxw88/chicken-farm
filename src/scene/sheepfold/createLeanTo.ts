@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILDING_PALETTE } from '../farmBuildingMaterials';
+import { ART_SLOTS } from '../../content/slots';
 
 export const LEAN_TO = { width: 1.4, depth: 1.2, height: 1.1, rise: 0.3, overhang: 0.12 } as const;
 
@@ -15,9 +15,9 @@ function prism(shape: THREE.Shape, width: number, material: THREE.Material, name
 export function createLeanTo() {
   const group = new THREE.Group();
   group.name = 'sheepfold-lean-to';
-  const wall = new THREE.MeshStandardMaterial({ color: BUILDING_PALETTE.coopWall, roughness: 1 });
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: BUILDING_PALETTE.shingle, roughness: 1 });
-  const postMaterial = new THREE.MeshStandardMaterial({ color: BUILDING_PALETTE.posts, roughness: 1 });
+  const wall = new THREE.MeshStandardMaterial({ color: ART_SLOTS.building.coop.wall, roughness: 1 });
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: ART_SLOTS.building.cottage.shingle, roughness: 1 });
+  const postMaterial = new THREE.MeshStandardMaterial({ color: ART_SLOTS.building.coop.posts, roughness: 1 });
   const { width, depth, height, rise, overhang } = LEAN_TO;
 
   function box(name: string, w: number, h: number, d: number, material: THREE.Material, x: number, y: number, z: number) {

@@ -1,5 +1,7 @@
 import type { WebGLRenderer } from 'three';
 import type { PixelViewport } from './pixelViewport';
+import { ART_SLOTS } from '../content/slots';
+import { PIXEL_PRESENTATION } from '../content/presentation';
 
 // The browser presents the low-resolution canvas with nearest-neighbor scaling.
 // Rendering to the canvas (rather than a linear offscreen target) preserves the
@@ -14,7 +16,7 @@ export function presentPixelViewport(
 ) {
   const canvas = renderer.domElement;
   if (enabled) {
-    renderer.setPixelRatio(1);
+    renderer.setPixelRatio(PIXEL_PRESENTATION.pixelRendererRatio);
     renderer.setSize(viewport.targetWidth, viewport.targetHeight, false);
     canvas.style.width = `${viewport.targetWidth}px`;
     canvas.style.height = `${viewport.targetHeight}px`;
@@ -24,9 +26,9 @@ export function presentPixelViewport(
     const offsetY = -viewport.cropTop / devicePixelRatio;
     const scale = viewport.pixelSize / devicePixelRatio;
     canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-    canvas.style.imageRendering = 'pixelated';
+    canvas.style.imageRendering = ART_SLOTS.post.pixel.imageRendering;
   } else {
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, PIXEL_PRESENTATION.nativeDprCap));
     renderer.setSize(width, height, false);
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;

@@ -10,12 +10,12 @@ import { createDayNightState, createWeatherState, updateDayNightSystem, updateWe
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
 import { createPlacementAdapter, type PlacementComponents } from './placement';
 import { createComposer, isPixelRenderingEnabled, type PixelRenderingState } from './postprocess';
-import { createFarmDecorations } from './scene/createFarmDecorations';
+import { createFarmDecorations } from './render/farmDecorations';
 import { createFarmLayout } from './scene/createFarmLayout';
 import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createSheepfold } from './scene/sheepfold/createSheepfold';
-import { WATER_FEATURE } from './scene/waterFeatureSpec';
+import { WATER_FEATURE } from './content/waterFeature';
 import { createStartupPhaseController, parseSheepSeed, parseStartupOptions, parseVisualSeed } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';

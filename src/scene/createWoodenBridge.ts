@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { GROUND_HEIGHT } from './createIsland';
 import type { FarmObstacle } from '../character/farmCollisions';
-import { WATER_FEATURE } from './waterFeatureSpec';
+import { WATER_FEATURE } from '../content/waterFeature';
+import { ART_SLOTS } from '../content/slots';
 
 function grade(localX: number) {
   const { bridge } = WATER_FEATURE;
@@ -37,7 +38,8 @@ export function bridgeHeight(x: number, z: number, radius = 0): number | undefin
 }
 
 export function createWoodenBridge(parent: THREE.Group): Extract<FarmObstacle, { kind: 'box' }> {
-  const { bridge, palette } = WATER_FEATURE;
+  const { bridge } = WATER_FEATURE;
+  const palette = ART_SLOTS.palette.water;
   const half = bridge.length / 2;
   const group = new THREE.Group();
   group.name = 'farm-wooden-bridge';
@@ -65,14 +67,14 @@ export function createWoodenBridge(parent: THREE.Group): Extract<FarmObstacle, {
     return mesh;
   }
 
-  gradedPiece('bridge-underside', -half, half, -bridge.width / 2, bridge.width, 0.06, -0.01, gap);
+  gradedPiece('bridge-underside', -half, half, -bridge.width / 2, bridge.width, bridge.undersideThickness, bridge.undersideLift, gap);
   const plankLength = bridge.length / bridge.plankCount;
   for (let i = 0; i < bridge.plankCount; i++) {
     const start = -half + i * plankLength;
-    gradedPiece(`bridge-plank-${i + 1}`, start, start + plankLength, -bridge.width / 2, bridge.width, 0.04, 0, plank);
+    gradedPiece(`bridge-plank-${i + 1}`, start, start + plankLength, -bridge.width / 2, bridge.width, bridge.plankThickness, 0, plank);
     if (i > 0) {
       gradedPiece(`bridge-gap-${i}`, start - bridge.gapWidth / 2, start + bridge.gapWidth / 2,
-        -bridge.width / 2, bridge.width, 0.002, 0.001, gap);
+        -bridge.width / 2, bridge.width, bridge.gapThickness, bridge.gapLift, gap);
     }
   }
 

@@ -1,14 +1,15 @@
 import { OrthographicCamera, Vector3 } from 'three';
+import { CAMERA } from '../content/camera';
 
 // The initial view includes the island's raised cross-section and the void.
-const VIEW_HEIGHT = 20;
-const FOCUS_HEIGHT = 0.7;
+const VIEW_HEIGHT = CAMERA.viewHeight;
+const FOCUS_HEIGHT = CAMERA.focusHeight;
 // Equal offsets give a 45° azimuth and a 35.26° elevation.
-const CAMERA_OFFSET = new Vector3(12, 12, 12);
+const CAMERA_OFFSET = new Vector3(...CAMERA.offset);
 
 export function createIsometricCamera() {
   const halfHeight = VIEW_HEIGHT / 2;
-  const camera = new OrthographicCamera(-halfHeight, halfHeight, halfHeight, -halfHeight, 0.1, 100);
+  const camera = new OrthographicCamera(-halfHeight, halfHeight, halfHeight, -halfHeight, CAMERA.near, CAMERA.far);
   const focus = new Vector3();
 
   function follow(position: Vector3) {

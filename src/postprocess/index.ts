@@ -3,9 +3,11 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { presentPixelViewport } from './PixelPresentation';
 import { calculatePixelViewport, type PixelViewport } from './pixelViewport';
+import { ART_SLOTS } from '../content/slots';
+import { PIXEL_PRESENTATION } from '../content/presentation';
 
 // Look Dev LOCKED: 4 CSS pixels per world pixel (about 320 wide at 1280x720).
-const DEFAULT_CSS_PIXEL_SIZE = 4;
+const DEFAULT_CSS_PIXEL_SIZE = PIXEL_PRESENTATION.cssPixelSize;
 
 export function isPixelRenderingEnabled(search: string) {
   return new URLSearchParams(search).get('pixel') !== '0';
@@ -23,13 +25,13 @@ export interface PixelRenderingState {
 
 export function createComposer(renderer: WebGLRenderer, scene: Scene, camera: Camera) {
   const composer = new EffectComposer(renderer);
-  composer.setPixelRatio(1);
+  composer.setPixelRatio(PIXEL_PRESENTATION.pixelRendererRatio);
   // Keep this pass on the canvas: an offscreen linear OutputPass changes how
   // Three.js blends the scene's existing fog and therefore changes its look.
   composer.addPass(new RenderPass(scene, camera));
 
-  let enabled = true;
-  let cssPixelSize = DEFAULT_CSS_PIXEL_SIZE;
+  let enabled: boolean = ART_SLOTS.post.pixel.enabled;
+  let cssPixelSize: number = DEFAULT_CSS_PIXEL_SIZE;
   let width = 1;
   let height = 1;
   let devicePixelRatio = 1;

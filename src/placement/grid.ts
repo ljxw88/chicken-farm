@@ -1,8 +1,9 @@
 import type { FarmObstacle } from '../character/farmCollisions';
+import { GRID } from '../content/world';
 
 // The existing fence is 1.47 units wide, including its posts. One tile leaves
 // a tiny gap between neighbouring segments without changing their proportions.
-export const TILE_SIZE = 1.5;
+export const TILE_SIZE = GRID.tileSize;
 export type PlacementKind = 'fence' | 'plot';
 
 export interface Cell {
@@ -33,9 +34,10 @@ export function createGrid(groundSize: number) {
   }
 
   function footprint(cell: Cell, kind: PlacementKind, rotation: number): Footprint {
-    const sideways = kind === 'plot' && rotation % 2 !== 0;
-    const columns = kind === 'plot' && !sideways ? 2 : 1;
-    const rows = sideways ? 2 : 1;
+    const sideways = rotation % 2 !== 0;
+    const dimensions = GRID.footprints[kind];
+    const columns = sideways ? dimensions.rows : dimensions.columns;
+    const rows = sideways ? dimensions.columns : dimensions.rows;
     const minX = min + cell.column * TILE_SIZE;
     const minZ = min + cell.row * TILE_SIZE;
     const maxX = minX + columns * TILE_SIZE;
@@ -76,8 +78,8 @@ export function intersectsFootprint(area: Footprint, obstacle: FarmObstacle) {
 
 /** Only the fence is solid; the plot is a walkable ground surface. */
 export function fenceCollision(area: Pick<Footprint, 'centerX' | 'centerZ'>, rotation: number, name: string): FarmObstacle {
-  const halfX = rotation % 2 === 0 ? 0.735 : 0.13;
-  const halfZ = rotation % 2 === 0 ? 0.13 : 0.735;
+  const halfX = rotation % 2 === 0 ? GRID.fenceCollision.halfLength : GRID.fenceCollision.halfWidth;
+  const halfZ = rotation % 2 === 0 ? GRID.fenceCollision.halfWidth : GRID.fenceCollision.halfLength;
   return {
     kind: 'box', name,
     minX: area.centerX - halfX, maxX: area.centerX + halfX,

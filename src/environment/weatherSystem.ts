@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { CoreComponents, EntityWorld } from '../core/ecs';
-import { RAIN_LOOK } from '../weather/rainSettings';
+import { RAIN_LOOK } from '../content/rainSettings';
 
 export const WEATHER_MODES = ['clear', 'cloudy', 'rain'] as const;
 export type WeatherMode = (typeof WEATHER_MODES)[number];

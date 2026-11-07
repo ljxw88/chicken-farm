@@ -1,4 +1,4 @@
-import { DAY_NIGHT_PHASES } from './lighting/dayNightPhases';
+import { DAY_NIGHT_PHASES } from './content/dayNight';
 import type { DayNightPhaseName } from './lighting';
 import { isWeatherMode } from './weather';
 

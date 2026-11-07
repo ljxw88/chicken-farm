@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import type { FarmObstacle } from '../character/farmCollisions';
 import { advanceWeather, createWeatherState, setWeatherMode, type WeatherMode, type WeatherState } from '../environment/weatherSystem';
-import { CLOUDY_LOOK } from './cloudySettings';
+import { CLOUDY_LOOK } from '../content/cloudySettings';
 import { createRainEffect } from './createRainEffect';
-import { RAIN_LOOK } from './rainSettings';
+import { RAIN_LOOK } from '../content/rainSettings';
 
 export { WEATHER_MODES, isWeatherMode } from '../environment/weatherSystem';
 export type { WeatherMode } from '../environment/weatherSystem';

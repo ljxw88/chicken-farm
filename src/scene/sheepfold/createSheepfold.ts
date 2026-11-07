@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import type { FarmObstacle } from '../../character/farmCollisions';
-import { createPlacementVisual } from '../../placement/createPlacementVisual';
+import { createPlacementAsset } from '../../render/placementAssets';
 import { fenceCollision, TILE_SIZE } from '../../placement/grid';
-import { CONTACT_SHADOW_COLOR } from '../contactShadowStyle';
+import { ART_SLOTS } from '../../content/slots';
 import { GROUND_HEIGHT } from '../createIsland';
 import { createSheep } from '../sheep/createSheep';
 import { createLeanTo, LEAN_TO } from './createLeanTo';
@@ -31,9 +31,9 @@ export function createSheepfold(scene: THREE.Scene, seed = DEFAULT_SHEEP_SEED) {
   scene.add(group);
   const obstacles: FarmObstacle[] = [];
   const shadowGeometry = new THREE.CircleGeometry(1, 20);
-  const fenceShadowMaterial = new THREE.MeshBasicMaterial({ color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.12, depthWrite: false });
+  const fenceShadowMaterial = new THREE.MeshBasicMaterial({ color: ART_SLOTS.palette.contactShadow, transparent: true, opacity: 0.12, depthWrite: false });
   const shelterShadowMaterial = fenceShadowMaterial.clone();
-  const sheepShadowMaterial = new THREE.MeshBasicMaterial({ color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.18, depthWrite: false });
+  const sheepShadowMaterial = new THREE.MeshBasicMaterial({ color: ART_SLOTS.palette.contactShadow, transparent: true, opacity: 0.18, depthWrite: false });
   const fenceShadows: { mesh: THREE.Mesh; x: number; z: number }[] = [];
   const sheepShadows: { mesh: THREE.Mesh; x: number; z: number }[] = [];
 
@@ -49,7 +49,7 @@ export function createSheepfold(scene: THREE.Scene, seed = DEFAULT_SHEEP_SEED) {
 
   function fence(localX: number, localZ: number, rotation: number, removeCornerPost?: 0 | 1) {
     const index = fenceShadows.length + 1;
-    const segment = createPlacementVisual('fence');
+    const segment = createPlacementAsset('fence');
     segment.name = `sheepfold-fence-${index}`;
     segment.position.set(localX, 0, localZ);
     segment.rotation.y = rotation * Math.PI / 2;

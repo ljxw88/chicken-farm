@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import type { EmissiveAccent } from '../lighting/createPracticalLights';
 import { GROUND_HEIGHT } from './createIsland';
-import { BUILDING_PALETTE, createBuildingPane, type BuildingMaterials } from './farmBuildingMaterials';
-import { buildingFootprint, type CoopSpec } from './farmBuildingSpecs';
+import { createBuildingPane, type BuildingMaterials } from './farmBuildingMaterials';
+import type { CoopSpec } from '../content/buildings';
+import type { BuildingSlots } from '../content/slots';
+import { buildingFootprint } from './buildingFootprint';
 import { createGableRoof } from './createGableRoof';
+import { COOP_GEOMETRY as GEOMETRY } from '../content/buildingGeometry';
 
 function box(parent: THREE.Group, name: string, width: number, height: number, depth: number,
   material: THREE.Material, x: number, y: number, z: number) {
@@ -14,7 +17,7 @@ function box(parent: THREE.Group, name: string, width: number, height: number, d
   return mesh;
 }
 
-export function createRampCoop(parent: THREE.Group, spec: CoopSpec, materials: BuildingMaterials) {
+export function createRampCoop(parent: THREE.Group, spec: CoopSpec, materials: BuildingMaterials, slots: BuildingSlots) {
   const { name, x, z, width, depth, height, floorHeight, roofRise, roofOverhang, rampWidth, rampLength } = spec;
   const coop = new THREE.Group();
   coop.name = `farm-${name}`;
@@ -23,28 +26,28 @@ export function createRampCoop(parent: THREE.Group, spec: CoopSpec, materials: B
 
   // The lock's dark stub posts and lighter timber wall trim are distinct.
   for (const sideX of [-1, 1]) for (const sideZ of [-1, 1]) {
-    box(coop, `${name}-post`, 0.3, floorHeight, 0.3, materials.posts,
-      sideX * (width / 2 - 0.15), floorHeight / 2, sideZ * (depth / 2 - 0.15));
+    box(coop, `${name}-post`, GEOMETRY.postSize, floorHeight, GEOMETRY.postSize, materials.posts,
+      sideX * (width / 2 - GEOMETRY.postInset), floorHeight / 2, sideZ * (depth / 2 - GEOMETRY.postInset));
   }
   box(coop, `${name}-body`, width, height, depth, materials.coopWall, 0, floorHeight + height / 2, 0);
   for (const side of [-1, 1]) {
-    box(coop, `${name}-corner-trim`, 0.14, height, 0.1, materials.timber,
-      side * (width / 2 - 0.07), floorHeight + height / 2, depth / 2 - 0.05);
-    box(coop, `${name}-eave-trim`, width, 0.12, 0.1, materials.timber,
-      0, floorHeight + height - 0.06, side * (depth / 2 - 0.05));
+    box(coop, `${name}-corner-trim`, GEOMETRY.trimWidth, height, GEOMETRY.trimDepth, materials.coopTimber,
+      side * (width / 2 - GEOMETRY.trimXInset), floorHeight + height / 2, depth / 2 - GEOMETRY.trimZInset);
+    box(coop, `${name}-eave-trim`, width, GEOMETRY.eaveHeight, GEOMETRY.trimDepth, materials.coopTimber,
+      0, floorHeight + height - GEOMETRY.eaveYInset, side * (depth / 2 - GEOMETRY.trimZInset));
   }
   createGableRoof(coop, {
     name, width, depth, wallTop: floorHeight + height, rise: roofRise, overhang: roofOverhang,
-    wallMaterial: materials.coopWall, roofMaterial: materials.shingle,
+    wallMaterial: materials.coopWall, roofMaterial: materials.coopRoof,
   });
 
   const front = depth / 2;
-  box(coop, `${name}-pop-hole`, 0.4, 0.5, 0.1, materials.popHole, 0, floorHeight + 0.25, front - 0.05);
-  const glowGeometry = new THREE.BoxGeometry(0.2, 0.25, 0.1);
-  glowGeometry.translate(0, 0, -0.05);
-  const glow = new THREE.Mesh(glowGeometry, createBuildingPane(BUILDING_PALETTE.popHole));
+  box(coop, `${name}-pop-hole`, ...GEOMETRY.popHole, materials.popHole, 0, floorHeight + GEOMETRY.popHoleY, front - GEOMETRY.popHoleInset);
+  const glowGeometry = new THREE.BoxGeometry(...GEOMETRY.glow);
+  glowGeometry.translate(0, 0, -GEOMETRY.glowInset);
+  const glow = new THREE.Mesh(glowGeometry, createBuildingPane(slots.coop.popHole));
   glow.name = `${name}-pop-hole-glow`;
-  glow.position.set(0, floorHeight + 0.25, front);
+  glow.position.set(0, floorHeight + GEOMETRY.popHoleY, front);
   coop.add(glow);
 
   // Extrude a triangular wedge so the visible ramp and its X/Z box agree.
@@ -61,10 +64,10 @@ export function createRampCoop(parent: THREE.Group, spec: CoopSpec, materials: B
   coop.add(ramp);
 
   const angle = Math.atan2(floorHeight, rampLength);
-  for (let distance = 0.25; distance < rampLength; distance += 0.25) {
-    const cleat = box(coop, `${name}-ramp-cleat`, rampWidth, 0.1, 0.1, materials.cleats,
-      0, floorHeight * (1 - distance / rampLength) + Math.cos(angle) * 0.05,
-      front + distance + Math.sin(angle) * 0.05);
+  for (let distance = GEOMETRY.cleatSpacing; distance < rampLength; distance += GEOMETRY.cleatSpacing) {
+    const cleat = box(coop, `${name}-ramp-cleat`, rampWidth, GEOMETRY.cleatHeight, GEOMETRY.cleatDepth, materials.cleats,
+      0, floorHeight * (1 - distance / rampLength) + Math.cos(angle) * GEOMETRY.cleatOffset,
+      front + distance + Math.sin(angle) * GEOMETRY.cleatOffset);
     cleat.rotation.x = angle;
   }
   const extraEmissives: EmissiveAccent[] = [{ material: glow.material, strength: 0.7 }];

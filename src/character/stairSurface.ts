@@ -1,14 +1,15 @@
 import type { FarmBounds } from './farmCollisions';
+import { STAIR } from '../content/world';
 
 // These dimensions describe both the visible blocks and their walkable union.
-export const STAIR_CENTER_Z = 0.75;
-export const STAIR_WIDTH = 1.2;
-export const TREAD_DEPTH = 0.9;
-export const TREAD_COUNT = 5;
-export const PAD_LENGTH = 1.5;
-export const PAD_WIDTH = 1.6;
-export const PAD_HEIGHT = 0.16;
-export const PAD_OVERLAP = 0.45;
+export const STAIR_CENTER_Z = STAIR.centerZ;
+export const STAIR_WIDTH = STAIR.width;
+export const TREAD_DEPTH = STAIR.treadDepth;
+export const TREAD_COUNT = STAIR.treadCount;
+export const PAD_LENGTH = STAIR.padLength;
+export const PAD_WIDTH = STAIR.padWidth;
+export const PAD_HEIGHT = STAIR.padHeight;
+export const PAD_OVERLAP = STAIR.padOverlap;
 
 // At the island-to-stair seam, a previously supported footprint can be a
 // fraction outside the opening after a long pad-side/key sequence. Only slide

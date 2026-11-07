@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { CONTACT_SHADOW_COLOR } from '../scene/contactShadowStyle';
+import { ART_SLOTS } from '../content/slots';
+import { PLAYER_GEOMETRY } from '../content/playerGeometry';
 
-export const CHARACTER_RADIUS = 0.4;
-const BODY_LENGTH = 0.6;
-const CROWN_LIFT = 0.15;
-const DAY_CROWN_LIFT = 0.28;
-const DAY_BASE_GAIN = 1.08;
+export const CHARACTER_RADIUS = PLAYER_GEOMETRY.radius;
+const BODY_LENGTH = PLAYER_GEOMETRY.bodyLength;
+const CROWN_LIFT = ART_SLOTS.prop.character.crownStrength;
+const DAY_CROWN_LIFT = ART_SLOTS.prop.character.dayCrownStrength;
+const DAY_BASE_GAIN = ART_SLOTS.prop.character.dayBaseGain;
 
 function applyCrownLift(geometry: THREE.BufferGeometry, lift: number, baseGain: number) {
   const positions = geometry.getAttribute('position');
@@ -13,7 +14,7 @@ function applyCrownLift(geometry: THREE.BufferGeometry, lift: number, baseGain: 
   for (let i = 0; i < positions.count; i++) {
     // A rotation-independent lighter crown helps the sun/moon read from
     // above without adding an emissive or camera-facing light.
-    const t = THREE.MathUtils.clamp((positions.getY(i) + 0.05) / 0.7, 0, 1);
+    const t = THREE.MathUtils.clamp((positions.getY(i) + PLAYER_GEOMETRY.crownOffset) / PLAYER_GEOMETRY.crownSpan, 0, 1);
     const value = baseGain * (1 + lift * THREE.MathUtils.smoothstep(t, 0, 1));
     colors.setXYZ(i, value, value, value);
   }
@@ -36,17 +37,17 @@ export function createCharacterCrownController(character: THREE.Object3D) {
     currentBaseAmount = baseAmount;
   };
 }
-
 export function createCharacter() {
   // The group's origin is at the character's feet on the ground plane.
   const character = new THREE.Group();
   character.name = 'character';
 
-  const bodyGeometry = new THREE.CapsuleGeometry(CHARACTER_RADIUS, BODY_LENGTH, 6, 12);
+  const bodyGeometry = new THREE.CapsuleGeometry(CHARACTER_RADIUS, BODY_LENGTH,
+    PLAYER_GEOMETRY.bodyCapSegments, PLAYER_GEOMETRY.bodyRadialSegments);
   const positions = bodyGeometry.getAttribute('position');
   bodyGeometry.setAttribute('color', new THREE.Float32BufferAttribute(positions.count * 3, 3));
   applyCrownLift(bodyGeometry, CROWN_LIFT, 1);
-  const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xffd477, roughness: 0.9, vertexColors: true });
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.body, roughness: 0.9, vertexColors: true });
   // Engineer: keep the signed base/crown and retune only key-away shading.
   // Warmer indirect bounce preserves directional contrast after the azimuth
   // change; at night the cool blue/green shade contribution is reduced.
@@ -77,32 +78,33 @@ export function createCharacter() {
   character.add(body);
 
   // A little face makes the direction of travel visible.
-  const eyeGeometry = new THREE.SphereGeometry(0.045, 10, 8);
-  const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0x302820 });
-  for (const x of [-0.14, 0.14]) {
+  const eyeGeometry = new THREE.SphereGeometry(...PLAYER_GEOMETRY.eye);
+  const eyeMaterial = new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.eye });
+  for (const x of PLAYER_GEOMETRY.eyeXs) {
     const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    eye.position.set(x, 1.04, 0.38);
+    eye.position.set(x, PLAYER_GEOMETRY.eyeY, PLAYER_GEOMETRY.eyeZ);
     character.add(eye);
   }
 
   const beak = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 12, 8),
-    new THREE.MeshStandardMaterial({ color: 0xe99049, roughness: 0.9 }),
+    new THREE.SphereGeometry(...PLAYER_GEOMETRY.beak),
+    new THREE.MeshStandardMaterial({ color: ART_SLOTS.palette.character.beak, roughness: 0.9 }),
   );
-  beak.scale.set(0.13, 0.09, 0.13);
-  beak.position.set(0, 0.85, 0.4);
+  beak.scale.set(...PLAYER_GEOMETRY.beakScale);
+  beak.position.set(...PLAYER_GEOMETRY.beakPosition);
   character.add(beak);
 
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(CHARACTER_RADIUS, 24),
+    new THREE.CircleGeometry(CHARACTER_RADIUS, PLAYER_GEOMETRY.shadowSegments),
     // Dark green-black follows main's tree contacts without brightening night ground.
-    new THREE.MeshBasicMaterial({ color: CONTACT_SHADOW_COLOR, transparent: true, opacity: 0.22, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: ART_SLOTS.palette.contactShadow, transparent: true,
+      opacity: ART_SLOTS.light.contact.characterOpacity, depthWrite: false }),
   );
   shadow.name = 'character-shadow';
   shadow.rotation.x = -Math.PI / 2;
-  shadow.scale.y = 0.7;
+  shadow.scale.y = PLAYER_GEOMETRY.shadowScale;
   // Stay above the slightly raised dirt path without changing the walking height.
-  shadow.position.y = 0.04;
+  shadow.position.y = PLAYER_GEOMETRY.shadowLift;
   character.add(shadow);
 
   return character;

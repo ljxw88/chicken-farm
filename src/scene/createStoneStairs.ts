@@ -5,10 +5,10 @@ import {
   STAIR_CENTER_Z, STAIR_WIDTH, TREAD_DEPTH, TREAD_COUNT, PAD_LENGTH, PAD_WIDTH, PAD_HEIGHT,
   type StairSurface,
 } from '../character/stairSurface';
-import { FARM_PALETTE } from './farmPalette';
+import { ART_SLOTS, FARM_PALETTE, type StairSlots } from '../content/slots';
+import { STAIR } from '../content/world';
 
-const EDGE_DEPTH = 0.18;
-const TREAD_MIXES = [0.76, 0.82, 0.78, 0.84, 0.8];
+const EDGE_DEPTH = STAIR.edgeDepth;
 
 export interface StoneStairs {
   treads: THREE.Mesh[];
@@ -22,7 +22,8 @@ export interface StoneStairs {
   target(x: number, z: number, radius: number): { x: number; z: number };
 }
 
-export function createStoneStairs(island: THREE.Group, size: number, top: number, bottom: number): StoneStairs {
+export function createStoneStairs(island: THREE.Group, size: number, top: number, bottom: number,
+  slots: StairSlots = ART_SLOTS.prop.stair): StoneStairs {
   const surface = createStairSurface(size, top, bottom);
   const { edge, padStart, padEnd, rise } = surface;
   const stairs = new THREE.Group();
@@ -34,12 +35,13 @@ export function createStoneStairs(island: THREE.Group, size: number, top: number
   // pixel pass without emissive light or a change to the locked lighting.
   const barn = new THREE.Color(FARM_PALETTE.barnWood);
   const dirt = new THREE.Color(FARM_PALETTE.dirt);
-  const stone = new THREE.MeshStandardMaterial({ color: dirt.clone().lerp(barn, 0.18), roughness: 1 });
+  const stone = new THREE.MeshStandardMaterial({ color: dirt.clone().lerp(barn, slots.stoneMix), roughness: 1 });
 
   function block(length: number, height: number, width: number, mix: number) {
     const color = dirt.clone().lerp(barn, mix);
     const tread = new THREE.MeshStandardMaterial({ color, roughness: 1 });
-    const tint = new THREE.MeshStandardMaterial({ color: color.clone().lerp(barn, 0.5).multiplyScalar(1.1), roughness: 1 });
+    const tint = new THREE.MeshStandardMaterial({ color: color.clone().lerp(barn, slots.edgeMix)
+      .multiplyScalar(slots.edgeBrightness), roughness: 1 });
     const geometry = new THREE.BoxGeometry(length, height, width, Math.round(length / EDGE_DEPTH), 1, 1);
     const groups = geometry.groups.slice();
     geometry.clearGroups();
@@ -57,7 +59,7 @@ export function createStoneStairs(island: THREE.Group, size: number, top: number
 
   const treads = Array.from({ length: TREAD_COUNT }, (_, index) => {
     const height = top - index * rise - bottom;
-    const step = block(TREAD_DEPTH, height, STAIR_WIDTH, TREAD_MIXES[index]);
+    const step = block(TREAD_DEPTH, height, STAIR_WIDTH, slots.treadMixes[index]);
     step.name = `stone-step-${index + 1}`;
     step.position.set(edge + (index + 0.5) * TREAD_DEPTH, bottom + height / 2, STAIR_CENTER_Z);
     stairs.add(step);
@@ -66,7 +68,7 @@ export function createStoneStairs(island: THREE.Group, size: number, top: number
 
   // Part of this small pad sits beneath the lowest block, so it visibly has a
   // foot without adding another island or lower terrace.
-  const footPad = block(PAD_LENGTH, PAD_HEIGHT, PAD_WIDTH, 0.78);
+  const footPad = block(PAD_LENGTH, PAD_HEIGHT, PAD_WIDTH, slots.padMix);
   footPad.name = 'stone-foot-pad';
   footPad.position.set((padStart + padEnd) / 2, bottom + PAD_HEIGHT / 2, STAIR_CENTER_Z);
   stairs.add(footPad);

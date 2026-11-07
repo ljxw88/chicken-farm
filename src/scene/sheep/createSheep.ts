@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FARM_PALETTE } from '../farmPalette';
+import { FARM_PALETTE } from '../../content/slots';
 
 // The two existing chicken feather colours flank Look Dev's approved wool base.
 export const SHEEP_WOOL = { top: 0xfff1d7, base: FARM_PALETTE.wool, shade: 0xe4d1ae } as const;
