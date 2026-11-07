@@ -29,7 +29,9 @@ The grid uses 1.5-world-unit tiles to fit the fence's 1.47-unit footprint. A plo
 
 The debug grid is hidden by default. Open `?grid=1` (or add `&grid=1` to other URL options) to show its dirt-coloured hairlines. The world, including previews and the grid, goes through the default pixel pass.
 
-The island, soil/rock rim and void are visible on load. The full day/night cycle takes 72 seconds by default. To hold a phase without a console, open one of:
+The island, soil/rock rim and void are visible on load. The full farm day takes 24 minutes by default. Open **A changing sky** with the toolbar's sun/moon button. The time chevrons choose a phase and pause it; **Follow the day** resumes the actual cycle. Weather chevrons choose **Clear skies**, **Cloudy**, or **Gentle rain**. **Let it change** cycles the real weather every quarter farm day, with at least 90 seconds between changes; choosing a weather manually turns automation off. Close the panel with **X** or the phase button. Sound and more options are unavailable; fullscreen is enabled only when the browser supports it. Focused HUD controls keep their keyboard input; click the canvas to use walking or placement shortcuts again. `?skyhud=0` hides the sky panel and toolbar for clean visual comparisons.
+
+To hold a phase without the panel or a console, open one of:
 
 ```text
 http://localhost:5173/?phase=morning
@@ -38,11 +40,13 @@ http://localhost:5173/?phase=sunset
 http://localhost:5173/?phase=night
 ```
 
-A valid phase URL holds that phase until you navigate away or use a day/night console setter; a missing or invalid phase keeps the normal cycle running. You can also use the browser console:
+A valid phase URL holds that phase until you navigate away, turn on **Follow the day**, or use a day/night console setter; a missing or invalid phase keeps the normal cycle running. You can also use the browser console:
 
 ```js
 setDayNightPhase('morning') // also: 'daytime', 'sunset', 'night'
 setDayNightCycleSeconds(12) // complete cycle in 12 seconds
+setDayNightFollowing(false) // pause, or true to resume
+getDayNightState()          // current phase, following and cycleSeconds
 ```
 
 The cycle keeps running after selecting a phase in the console. The top-left phase label follows the current lighting segment; Day 1 and Spring are placeholders. The island is surrounded by a fixed #101416 void; the phase fog and lighting still change over time. The cycle's `setDayNightCycleSeconds(seconds)` method accepts finite positive seconds and preserves the current phase when changed. The sun and moon share a fixed upper-left azimuth; their height, color and intensity change by phase. Intermediate phases are interpolated. Weather adjustments are separate from those presets; see `docs/lighting-audit.md` for the visual change and evidence.
@@ -77,4 +81,4 @@ The build is written to `dist/`. Run `npm run preview` to preview it locally, or
 
 The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. The lighting changes intentionally make lit frames differ. Do not re-baseline until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero result.
 
-The entry point is `src/main.ts`, free placement is in `src/placement/`, the pixel presentation is in `src/postprocess/`, the farm layout, static decorations and camera are in `src/scene/`, the character and controls are in `src/character/`, and the lighting presets and cycle driver are in `src/lighting/`. Cottage and coop positions and dimensions are shared in `src/scene/farmBuildingSpecs.ts`; their windows and pop-holes follow the night lighting. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The new fixed-step loop, Miniplex world and input actions are described in `src/core/README.md`; existing gameplay still uses its current paths. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.
+The entry point is `src/main.ts`, free placement is in `src/placement/`, the pixel presentation is in `src/postprocess/`, the farm layout, static decorations and camera are in `src/scene/`, the character and controls are in `src/character/`, and the lighting presets and cycle driver are in `src/lighting/`. The sky HUD and its public-scene adapter are in `src/ui/`. Cottage and coop positions and dimensions are shared in `src/scene/farmBuildingSpecs.ts`; their windows and pop-holes follow the night lighting. Look Dev LOCKED farm colors are collected in `src/scene/farmPalette.ts`. The new fixed-step loop, Miniplex world and input actions are described in `src/core/README.md`; existing gameplay still uses its current paths. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.

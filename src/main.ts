@@ -17,7 +17,7 @@ import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createSheepfold } from './scene/sheepfold/createSheepfold';
 import { WATER_FEATURE } from './scene/waterFeatureSpec';
 import { createStartupPhaseController, parseSheepSeed, parseStartupOptions, parseVisualSeed } from './startupOptions';
-import { createFarmHud } from './ui';
+import { createFarmHud, createSkyHud, createSkyStateAdapter } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
 interface GameComponents extends PlacementComponents, DayNightComponents, WeatherComponents {}
@@ -26,6 +26,8 @@ declare global {
   interface Window {
     setDayNightCycleSeconds: (seconds: number) => void;
     setDayNightPhase: (phase: DayNightPhaseName) => void;
+    setDayNightFollowing: (following: boolean) => void;
+    getDayNightState: () => { phase: DayNightPhaseName; following: boolean; cycleSeconds: number };
     setPixelRendering: (enabled: boolean) => void;
     setPixelSize: (cssPixels: number) => void;
     getPixelRendering: () => PixelRenderingState;
@@ -36,12 +38,16 @@ declare global {
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scene');
 const hudRoot = document.querySelector<HTMLElement>('#farm-hud');
+const skyRoot = document.querySelector<HTMLElement>('#hud');
 
 if (!canvas) {
   throw new Error('Scene canvas not found');
 }
 if (!hudRoot) {
   throw new Error('Farm HUD root not found');
+}
+if (!skyRoot) {
+  throw new Error('Sky HUD root not found');
 }
 
 const { scene, camera, renderer, ground, stairs, follow, resize } = createScene(canvas);
@@ -62,7 +68,7 @@ const engine = createEngine<GameComponents>({
   frameSystems: [
     (world, move, deltaSeconds) => controls.system(world, move, Math.min(deltaSeconds, 0.1)),
     (world, _move, deltaSeconds) => {
-      updateDayNightSystem(world, deltaSeconds);
+      updateDayNightSystem(world, phaseController.frameDelta(deltaSeconds));
       if (!environment.dayNight!.held) dayNight.applyState();
       dayNight.updateCharacterShadow();
       farmHud.setPhase(dayNight.getPhase());
@@ -74,6 +80,8 @@ const engine = createEngine<GameComponents>({
       const nightAmount = dayNight.getNightAmount();
       smoke.update(deltaSeconds, rainAmount, nightAmount);
       fireflies.update(deltaSeconds, nightAmount, rainAmount, cloudyAmount);
+      skyState?.update(deltaSeconds);
+      skyHud?.update();
       updateWaterfall(deltaSeconds);
       sheepfold.update(deltaSeconds);
     },
@@ -115,14 +123,22 @@ const smoke = createChimneySmoke({ scene,
 const fireflies = createFireflies({ scene, camera, groundHeight: GROUND_HEIGHT,
   random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x464c4945) });
 const startup = parseStartupOptions(window.location.search);
-const phaseController = createStartupPhaseController(dayNight, startup.phase);
+const phaseController = createStartupPhaseController(dayNight, startup.phase, {
+  cycleSeconds: 24 * 60,
+  getCycleSeconds: () => environment.dayNight!.cycleSeconds,
+  now: () => performance.now(),
+});
 if (startup.weather) weather.setWeather(startup.weather);
 export const setDayNightCycleSeconds = phaseController.setDayNightCycleSeconds;
 export const setDayNightPhase = phaseController.setDayNightPhase;
+export const setDayNightFollowing = phaseController.setFollowing;
+export const getDayNightState = phaseController.getState;
 export const setWeather = weather.setWeather;
 export const getWeather = weather.getWeather;
 window.setDayNightCycleSeconds = setDayNightCycleSeconds;
 window.setDayNightPhase = setDayNightPhase;
+window.setDayNightFollowing = setDayNightFollowing;
+window.getDayNightState = getDayNightState;
 window.setWeather = setWeather;
 window.getWeather = getWeather;
 const controls = createCharacterController({
@@ -141,6 +157,11 @@ const placement = createPlacementAdapter({
   },
 });
 const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase() });
+// A clean, HUD-free frame is available without DevTools for signed visual gates.
+const skyEnabled = new URLSearchParams(window.location.search).get('skyhud') !== '0';
+const skyState = skyEnabled ? createSkyStateAdapter(window) : undefined;
+const skyHud = skyState ? createSkyHud({ root: skyRoot, ...skyState }) : undefined;
+if (!skyEnabled) skyRoot.remove();
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
 window.setPixelSize = composer.setPixelSize;

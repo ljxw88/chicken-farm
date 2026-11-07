@@ -25,7 +25,7 @@ async function serverAt(root) {
   return { server, url: `http://127.0.0.1:${address.port}` };
 }
 
-async function open(browser, url, search) {
+async function open(browser, url, search, normalizeClock = false) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', hasTouch: true });
   const page = await context.newPage();
   const errors = [];
@@ -111,8 +111,12 @@ async function open(browser, url, search) {
 window.__ebr75 = { scene, camera, character, obstacles, stairs, dayNight, composer };
 ` });
   });
-  await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
+  // This is a scene/placement replay, so use the real HUD-free gate flag.
+  await page.goto(`${url}/${search}${search.includes('?') ? '&' : '?'}skyhud=0`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => window.__ebr75 && window.__ebr75RandomCalls > 0));
+  // The sky ticket intentionally changes the app default to 1440s. Compare
+  // invalid-URL behavior at the same explicit speed as the old baseline.
+  if (normalizeClock) await page.evaluate(() => window.setDayNightCycleSeconds(72));
   await page.evaluate(() => document.fonts.ready);
   const graphics = await page.evaluate(() => {
     const gl = document.querySelector('#scene').getContext('webgl2');
@@ -212,7 +216,7 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
 }
 
 async function recordScenario(browser, url, scenario, replayScript, historical) {
-  const fixture = await open(browser, url, scenario.search);
+  const fixture = await open(browser, url, scenario.search, scenario.name === 'invalid-url');
   const { page } = fixture;
   const script = [];
   const trace = [];

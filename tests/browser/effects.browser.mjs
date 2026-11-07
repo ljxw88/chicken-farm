@@ -20,7 +20,7 @@ before(async () => {
 
 after(async () => { await browser?.close(); await server?.close(); });
 
-async function open(phase, weather, seed = 3950182401) {
+async function open(phase, weather, seed = 3950182401, hideSky = false) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   const errors = [];
@@ -44,7 +44,7 @@ async function open(phase, weather, seed = 3950182401) {
     const response = await route.fetch();
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr42 = { scene, camera, renderer, composer, dayNight, weather };\n` });
   });
-  await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}`, { waitUntil: 'networkidle' });
+  await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => Boolean(window.__ebr42));
   await page.evaluate(() => { for (let i = 0; i <= 30; i++) window.__ebr42Step(i * 100); });
   return { context, page, errors };
@@ -228,6 +228,47 @@ test('seeded rain and both visual effects replay exactly at a controlled frame',
     assert.deepEqual(samples[0][field], samples[1][field], field);
     assert.notDeepEqual(samples[0][field], samples[2][field], field);
   }
+});
+
+test('hiding the sky HUD preserves seeded rain, smoke and fireflies', { timeout: 60000 }, async () => {
+  const samples = [];
+  for (const hideSky of [false, true]) {
+    const { context, page, errors } = await open('night', 'rain', 3950182401, hideSky);
+    try {
+      assert.equal(await page.locator('#hud').count(), hideSky ? 0 : 1);
+      const state = await inspect(page);
+      assert.equal(state.active, 6);
+      assert.ok(state.smokePuffs.length >= 4 && state.flyDiff.changed > 0 && state.smokeDiff.changed > 0);
+      samples.push(state);
+      assert.deepEqual(errors, []);
+    } finally { await context.close(); }
+  }
+  assert.deepEqual(samples[0], samples[1]);
+});
+
+test('sky selectors drive the existing weather and firefly effects', { timeout: 60000 }, async () => {
+  const { context, page, errors } = await open('night', 'clear');
+  try {
+    await page.locator('[data-action="sky"]').click();
+    assert.equal((await inspect(page)).active, 14);
+    await page.getByRole('button', { name: 'Next weather' }).click();
+    await page.evaluate(() => window.__ebr42Step(4750));
+    let state = await inspect(page);
+    assert.equal(state.weather.mode, 'cloudy');
+    assert.equal(state.active, 10);
+    await page.getByRole('button', { name: 'Next weather' }).click();
+    await page.evaluate(() => window.__ebr42Step(6500));
+    state = await inspect(page);
+    assert.equal(state.weather.mode, 'rain');
+    assert.equal(state.active, 6);
+    await page.getByRole('button', { name: 'Next time of day' }).click();
+    await page.evaluate(() => window.__ebr42Step(6600));
+    state = await inspect(page);
+    assert.equal(await page.evaluate(() => window.getDayNightState().phase), 'morning');
+    assert.equal(state.active, 0);
+    assert.ok(state.smokePuffs.length >= 4);
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
 });
 
 test('smoke has no self-emission when the scene lights and fog are removed', { timeout: 45000 }, async () => {

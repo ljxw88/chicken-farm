@@ -12,7 +12,7 @@ const historicalSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
 const stairBaselineSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb740001;
-const search = '?phase=daytime&weather=clear';
+const search = '?phase=daytime&weather=clear&skyhud=0';
 
 async function serverAt(root) {
   const server = await createServer({ root, configFile: false, logLevel: 'error',
