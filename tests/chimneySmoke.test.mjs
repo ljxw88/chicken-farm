@@ -134,6 +134,25 @@ test('rain and night each reduce opacity to 60% without double-dimming, and rain
   }
 });
 
+test('snow shortens smoke life like rain without changing its day or night opacity', (t) => {
+  const snow = fixture(t, () => 0.625);
+  const snowyNight = fixture(t, () => 0.625);
+  const mixed = fixture(t, () => 0.625);
+  snow.smoke.update(0, 0, 0, 1);
+  snowyNight.smoke.update(0, 0, 1, 1);
+  near(snow.puffs[0].material.opacity, 0.75);
+  near(snowyNight.puffs[0].material.opacity, 0.45);
+  for (const [farm, rain, amount] of [[snow, 0, 1], [mixed, 0.5, 0.5]]) {
+    farm.smoke.update(2.59, rain, 0, amount);
+    assert.equal(farm.puffs[0].visible, true);
+    farm.smoke.update(0.01, rain, 0, amount);
+    assert.equal(farm.puffs[0].visible, false);
+  }
+  for (const invalid of [-1, 1.01, NaN, Infinity]) {
+    assert.throws(() => snow.smoke.update(0, 0, 0, invalid), RangeError);
+  }
+});
+
 test('seeded puff sizes vary by at most 15% and sway stays within 0.06 of the wind path', (t) => {
   const seed = 3950182401 ^ 0x534d4f4b;
   const minimum = fixture(t, () => 0);

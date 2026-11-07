@@ -57,19 +57,26 @@ test('the sky adapter delegates time controls and follows authoritative scene st
   assert.deepEqual(adapter.dayNight.getState(), { phase: 'night', following: false, cycleSeconds: 1440 });
 });
 
-test('weather selectors use Clear skies, Cloudy, Gentle rain and reflect external changes', () => {
+test('weather selectors cycle Clear skies, Cloudy, Gentle rain, Soft snow and wrap in both directions', () => {
   const { state, calls, adapter } = sceneFixture();
   const weather = adapter.weather;
   assert.equal(weather.status, 'ready');
   assert.deepEqual(weather.getState(), { mode: 'clear', label: 'Clear skies', automatic: false });
   weather.previous();
-  assert.equal(weather.getState().label, 'Gentle rain');
+  assert.equal(weather.getState().label, 'Soft snow');
   weather.next();
   weather.next();
   assert.equal(weather.getState().label, 'Cloudy');
   weather.next();
   assert.equal(weather.getState().label, 'Gentle rain');
-  assert.deepEqual(calls, [['weather', 'rain'], ['weather', 'clear'], ['weather', 'cloudy'], ['weather', 'rain']]);
+  weather.next();
+  assert.equal(weather.getState().label, 'Soft snow');
+  weather.next();
+  assert.equal(weather.getState().label, 'Clear skies');
+  assert.deepEqual(calls, [['weather', 'snow'], ['weather', 'clear'], ['weather', 'cloudy'], ['weather', 'rain'],
+    ['weather', 'snow'], ['weather', 'clear']]);
+  state.mode = 'snow';
+  assert.equal(weather.getState().label, 'Soft snow');
   state.mode = 'clear';
   assert.equal(weather.getState().label, 'Clear skies');
 });
@@ -89,6 +96,8 @@ test('automatic weather uses the real setter and never changes before 90 seconds
   adapter.update(89);
   assert.equal(weather.getState().label, 'Gentle rain');
   adapter.update(1);
+  assert.equal(weather.getState().label, 'Soft snow');
+  adapter.update(90);
   assert.equal(weather.getState().label, 'Clear skies');
   weather.next(); // An explicit choice stops automation.
   assert.equal(weather.getState().automatic, false);
@@ -110,7 +119,7 @@ test('automatic weather restarts its dwell after an external weather change', ()
   assert.equal(weather.getState().label, 'Gentle rain');
   assert.equal(weather.getState().automatic, true);
   adapter.update(1);
-  assert.deepEqual(calls, [['weather', 'rain'], ['weather', 'clear']]);
+  assert.deepEqual(calls, [['weather', 'rain'], ['weather', 'snow']]);
 });
 
 test('the default 24-minute farm day gives automatic weather a six-minute dwell', () => {

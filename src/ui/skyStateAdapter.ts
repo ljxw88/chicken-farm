@@ -2,9 +2,9 @@ import type { DayNightHudAdapter, SkyPhase, SkySceneApi, SkyWeather, WeatherHudA
 
 const PHASES: readonly SkyPhase[] = ['morning', 'daytime', 'sunset', 'night'];
 // Look Dev's selector order, independent of the weather driver's internal order.
-const WEATHER: readonly SkyWeather[] = ['clear', 'cloudy', 'rain'];
+const WEATHER: readonly SkyWeather[] = ['clear', 'cloudy', 'rain', 'snow'];
 const WEATHER_LABELS: Record<SkyWeather, string> = {
-  clear: 'Clear skies', cloudy: 'Cloudy', rain: 'Gentle rain',
+  clear: 'Clear skies', cloudy: 'Cloudy', rain: 'Gentle rain', snow: 'Soft snow',
 };
 
 /** Translate only public scene controls into the small interface used by the HUD. */
