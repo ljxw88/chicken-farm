@@ -1,13 +1,14 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Additional audit references, kept separate from the quantitative detector.
 // Run with the real dev server already listening, for example:
 // LIGHTING_URL=http://100.88.150.21:5184 LIGHTING_CAPTURE_LABEL=before node tools/lighting-audit-capture.mjs
 const url = process.env.LIGHTING_URL || 'http://127.0.0.1:5184';
 const label = process.env.LIGHTING_CAPTURE_LABEL || 'audit';
-const dir = process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting';
+const dir = outputDirectory('lighting-audit-capture', 'LIGHTING_EVIDENCE_DIR');
 await mkdir(dir, { recursive: true });
 const browser = await chromium.launch({
   headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],

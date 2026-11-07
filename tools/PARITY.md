@@ -26,18 +26,24 @@ normal isometric front direction, to frame the cottage and both coops without
 moving the character. They use the existing composer and also check the window
 lights and window/pop-hole emissives.
 `baseline.json` records the source SHA, capture state and frame hashes. Each scenario saves
-baseline, candidate, and a black/magenta exact-RGBA diff PNG under
-`evidence/EBR-73/`; `parity.json` records the counts. Any differing pixel,
-missing or altered baseline frame, page error, unexpected pose or browser-version mismatch fails
-the command. Run on the same machine/browser as the baseline; browser, fonts,
+baseline, candidate, and a black/magenta exact-RGBA diff PNG (cyan for masked
+changes) under
+`/home/michael/OpenBot/Shared/farm-evidence/parity/`; `EVIDENCE_DIR` or the
+older `PARITY_EVIDENCE_DIR` selects another output directory. A comparison
+without a newly recorded or explicitly selected legacy baseline uses
+`tools/fixtures/historical/EBR-73/`; `PARITY_BASELINE_DIR` explicitly selects a
+different input. `parity.json` records the counts. Any differing pixel outside
+an approved mask supplied with `--masks` (see `docs/pregate.md`), missing or
+altered baseline frame, page error, unexpected pose or browser-version mismatch
+fails the command. Run on the same machine/browser as the baseline; browser, fonts,
 or graphics changes can alter pixels even when application code does not.
 For an external `--url`, the server's source SHA is unknown rather than inferred
 from the local checkout. For a local run, `parity.json` records both HEAD and
 any source changes present during capture.
 
-For EBR-80, leave the signed `evidence/EBR-73/` files untouched. Copy its
-`baseline.json` and `baseline/` into a separate directory and run, for example,
-`PARITY_EVIDENCE_DIR=evidence/lighting/gate-g npm run parity`. Do not re-record
+For EBR-80, leave the signed `tools/fixtures/historical/EBR-73/` files untouched.
+Copy its `baseline.json` and `baseline/` into a separate external directory and
+run, for example, `PARITY_EVIDENCE_DIR=/path/to/gate-g npm run parity`. Do not re-record
 the baseline until Look Dev signs. On the EBR-48 layout the stairs capture uses
 real clicks along the bridge route; the old direct click crosses the new water.
 The old baseline's stair pose and the WASD walk can therefore differ as well as

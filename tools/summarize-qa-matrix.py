@@ -5,8 +5,9 @@ import math
 import sys
 from pathlib import Path
 from PIL import Image
+from evidence_paths import HISTORICAL
 
-directory = Path(sys.argv[1] if len(sys.argv) > 1 else 'evidence/lighting/qa-lookdev-rulings')
+directory = Path(sys.argv[1]) if len(sys.argv) > 1 else HISTORICAL / 'lighting/qa-lookdev-rulings'
 matrix = json.loads((directory / 'matrix.json').read_text())
 
 

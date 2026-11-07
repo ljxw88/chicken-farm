@@ -8,6 +8,7 @@ import json
 import sys
 from pathlib import Path
 from PIL import Image, ImageChops
+from evidence_paths import output_directory
 
 cases = ['morning-clear', 'day-clear', 'sunset-clear', 'night-clear', 'day-cloudy']
 mask = (475, 510, 580, 700)  # Includes the projected +Z waterfall at the QA spawn camera.
@@ -34,5 +35,7 @@ for directory in map(Path, sys.argv[1:]):
         records[case] = checks
         print(directory, case, checks)
     results[str(directory)] = records
-Path('evidence/lighting/waterfall-motion-proof.json').write_text(json.dumps({'mask': mask, 'results': results}, indent=2) + '\n')
+output = output_directory('check-waterfall-motion')
+output.mkdir(parents=True, exist_ok=True)
+(output / 'waterfall-motion-proof.json').write_text(json.dumps({'mask': mask, 'results': results}, indent=2) + '\n')
 raise SystemExit(1 if failed else 0)

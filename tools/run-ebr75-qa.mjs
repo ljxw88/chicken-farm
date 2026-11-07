@@ -4,11 +4,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { createServer } from 'vite';
 import { compareQaSequences } from './compare-qa-sequences.mjs';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Run the supplied real-time QA capture and its strict position/height check
 // together under one heavy-run lock; its screenshots are not a pixel oracle.
 const qa = '/home/michael/OpenBot/Shared/qa-graphics-gate/gate-g-sequences';
-const output = resolve(process.argv[2] ?? 'evidence/EBR-75/qa-wrapped');
+const output = process.argv[2] !== undefined ? resolve(process.argv[2]) : outputDirectory('run-ebr75-qa');
 const server = await createServer({ configFile: false, logLevel: 'error',
   server: { host: '127.0.0.1', port: 0, hmr: false } });
 try {

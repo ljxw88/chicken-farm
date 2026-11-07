@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Controlled, repeatable close views and geometry/pixel measurements for the
 // separate path-winding and static-contact-shadow fixes. Nothing ships in app.
@@ -8,7 +9,7 @@ const mode = process.argv[2];
 if (!['path', 'shadows', 'windows'].includes(mode)) throw new Error('Choose path, shadows or windows');
 const url = process.env.LIGHTING_URL || 'http://127.0.0.1:5184';
 const label = process.env.LIGHTING_CAPTURE_LABEL || mode;
-const dir = process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting';
+const dir = outputDirectory('graphics-audit-capture', 'LIGHTING_EVIDENCE_DIR');
 await mkdir(dir, { recursive: true });
 const browser = await chromium.launch({ headless: true,
   args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
