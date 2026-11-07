@@ -2,6 +2,9 @@ import './style.css';
 import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterController } from './character';
 import { createEngine } from './core/loop';
+import { createChimneySmoke } from './effects/createChimneySmoke';
+import { createFireflies } from './effects/createFireflies';
+import { createVisualRandom } from './effects/createVisualRandom';
 import { createDayNightState, createWeatherState, updateDayNightSystem, updateWeatherSystem,
   type DayNightComponents, type WeatherComponents } from './environment';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
@@ -12,7 +15,7 @@ import { createFarmLayout } from './scene/createFarmLayout';
 import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { WATER_FEATURE } from './scene/waterFeatureSpec';
-import { createStartupPhaseController, parseStartupOptions } from './startupOptions';
+import { createStartupPhaseController, parseStartupOptions, parseVisualSeed } from './startupOptions';
 import { createFarmHud, createSkyHud, createSkyStateAdapter } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
 
@@ -69,6 +72,10 @@ const engine = createEngine<GameComponents>({
       placement.update();
       updateWeatherSystem(world, deltaSeconds);
       weather.render(deltaSeconds);
+      const { rainAmount, cloudyAmount } = weather.getWeather();
+      const nightAmount = dayNight.getNightAmount();
+      smoke.update(deltaSeconds, rainAmount, nightAmount);
+      fireflies.update(deltaSeconds, nightAmount, rainAmount, cloudyAmount);
       skyState?.update(deltaSeconds);
       skyHud?.update();
       updateWaterfall(deltaSeconds);
@@ -92,13 +99,19 @@ function shadowSupported(x: number, z: number, radius: number) {
 }
 const dayNight = createDayNightCycle({ scene, character, windows, extraEmissives,
   shadowSupported, updateFarmShadows: farmShadows.update, state: environment.dayNight });
+const visualSeed = parseVisualSeed(window.location.search);
 const weather = createWeatherSystem({
+  ...(visualSeed === undefined ? {} : { random: createVisualRandom(visualSeed) }),
   scene, camera, anchor: character, groundHeight: GROUND_HEIGHT, groundSize: GROUND_SIZE,
   state: environment.weather,
   splashExclusions, setDirectionalIntensityMultiplier: dayNight.setDirectionalIntensityMultiplier,
   setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
   setShadowWeather: dayNight.setShadowWeather,
 });
+const smoke = createChimneySmoke({ scene,
+  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x534d4f4b) });
+const fireflies = createFireflies({ scene, camera, groundHeight: GROUND_HEIGHT,
+  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x464c4945) });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase, {
   cycleSeconds: 24 * 60,

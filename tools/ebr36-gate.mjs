@@ -8,9 +8,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
-// Record from the requested clean commit, never a different worktree. Match
-// tools/parity.mjs: seed rain at construction and step the renderer ourselves.
-const baselineSha = process.env.EBR36_BASELINE_SHA ?? '4799b8e4fe57dfede5b567a8517be523ff575f4f';
+// Record from the requested clean commit, never a different worktree. Seed
+// rain and both visual effects through the app's public URL and step frames.
+const baselineSha = process.env.EBR36_BASELINE_SHA ?? '8c4d55940be8d67ff5678179152ce3b3510740d4';
 const seed = Number(process.env.EBR36_SEED ?? 0xeb730001);
 if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('EBR36_SEED must be a 32-bit unsigned integer');
 if (!process.env.EBR36_GATE_DIR) throw new Error('Set EBR36_GATE_DIR to an evidence directory outside the worktree');
@@ -84,14 +84,7 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
     if (message.type() === 'error' && (candidate || !message.location().url.endsWith('/favicon.ico'))) errors.push(message.text());
   });
   try {
-    await page.addInitScript(({ seed }) => {
-      let state = seed >>> 0;
-      window.__ebr36RandomCalls = 0;
-      window.__ebr36Random = () => {
-        window.__ebr36RandomCalls++;
-        state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-        return state / 0x100000000;
-      };
+    await page.addInitScript(() => {
       let id = 0;
       const callbacks = new Map();
       window.requestAnimationFrame = (callback) => { callbacks.set(++id, callback); return id; };
@@ -102,14 +95,13 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
         if (!current.length) throw new Error('No animation frame was scheduled');
         for (const callback of current) callback(time);
       };
-    }, { seed });
+    });
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
-      assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-      await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr36Random,')}\nwindow.__ebr36Gate = { scene, camera, character, dayNight, renderer, composer };\n` });
+      await route.fulfill({ response, body: `${body}\nwindow.__ebr36Gate = { scene, camera, character, dayNight, renderer, composer };\n` });
     });
-    await page.goto(`${url}/?phase=${phase}&weather=${weather}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
+    await page.goto(`${url}/?phase=${phase}&weather=${weather}&seed=${seed}${hideSky ? '&skyhud=0' : ''}`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => Boolean(window.__ebr36Gate));
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => { for (let i = 0; i <= 25; i++) window.__ebr36Step(i * 100); });
@@ -117,13 +109,26 @@ async function capture(url, viewport, phase, weather, candidate, hideSky = false
       const { scene, camera, character, dayNight } = window.__ebr36Gate;
       const key = scene.getObjectByName('day-night-directional');
       const hemi = scene.getObjectByName('day-night-hemisphere');
-      return { phase: dayNight.getPhase(), weather: window.getWeather(), randomCalls: window.__ebr36RandomCalls,
+      const smoke = scene.getObjectByName('chimney-smoke');
+      const fireflies = scene.getObjectByName('night-fireflies');
+      if (!smoke || !fireflies) throw new Error('The seeded smoke and fireflies must remain enabled');
+      return { phase: dayNight.getPhase(), weather: window.getWeather(), nightAmount: dayNight.getNightAmount(),
         position: character.position.toArray(), camera: camera.position.toArray(), keyPosition: key.position.toArray(),
-        keyIntensity: key.intensity, hemisphere: hemi.color.toArray(), pixel: window.getPixelRendering() };
+        keyIntensity: key.intensity, hemisphere: hemi.color.toArray(), pixel: window.getPixelRendering(),
+        effects: { smokeVisible: smoke.visible, smokePuffs: smoke.children.map((puff) => ({
+          visible: puff.visible, position: puff.position.toArray(), scale: puff.scale.toArray(),
+          rotationY: puff.rotation.y, opacity: puff.material.opacity,
+        })), firefliesVisible: fireflies.visible,
+        fireflyOpacity: Array.from(fireflies.geometry.getAttribute('instanceOpacity').array),
+        fireflyMatrices: Array.from(fireflies.instanceMatrix.array) } };
     });
-    assert.ok(state.randomCalls > 0);
     assert.equal(state.phase, phase);
     assert.equal(state.weather.mode, weather);
+    assert.equal(state.effects.smokeVisible, true);
+    assert.ok(state.effects.smokePuffs.some((puff) => puff.visible && puff.opacity > 0));
+    const expectedFireflies = phase === 'night' ? { clear: 14, cloudy: 10, rain: 6 }[weather] : 0;
+    assert.equal(state.effects.firefliesVisible, phase === 'night');
+    assert.equal(state.effects.fireflyOpacity.filter((opacity) => opacity > 0).length, expectedFireflies);
     const placementBox = await page.locator('.placement-controls').evaluate((element) => {
       const r = element.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height };
@@ -242,30 +247,40 @@ try {
           const image = variant === 'hidden' ? hidden.open : after[variant];
           const boxes = variant === 'hidden' ? [] : [...after[`${variant}Boxes`]];
           const placement = variant === 'open' ? after.openPlacementBox : after.placementBox;
-          if (variant !== 'hidden' && !isDeepStrictEqual(before.placementBox, placement)) boxes.push(before.placementBox, placement);
-          const rects = rectangles(boxes, viewport);
+          const hudRects = rectangles(boxes, viewport);
+          const placementRects = variant !== 'hidden' && !isDeepStrictEqual(before.placementBox, placement)
+            ? rectangles([before.placementBox, placement], viewport) : [];
+          const rects = [...hudRects, ...placementRects];
           const result = await compare(diffPage, before.open, image, rects);
+          const hudOnly = placementRects.length ? await compare(diffPage, before.open, image, hudRects) : result;
           await save(join(output, variant, size, `${name}.png`), image);
           await save(join(output, 'mask', size, `${name}-${variant}.png`), Buffer.from(result.maskPng, 'base64'));
           await save(join(output, 'diff', size, `${name}-${variant}.png`), Buffer.from(result.diffPng, 'base64'));
-          variants[variant] = { rectangles: rects, changedPixels: result.changed, outsideMaskPixels: result.outside,
-            outsideBounds: result.outsideBounds, sha256: sha256(image) };
+          await save(join(output, 'hud-only-mask', size, `${name}-${variant}.png`), Buffer.from(hudOnly.maskPng, 'base64'));
+          await save(join(output, 'hud-only-diff', size, `${name}-${variant}.png`), Buffer.from(hudOnly.diffPng, 'base64'));
+          variants[variant] = { rectangles: rects, hudRectangles: hudRects, placementRectangles: placementRects,
+            changedPixels: result.changed, outsideMaskPixels: result.outside, outsideBounds: result.outsideBounds,
+            outsideHudPixels: hudOnly.outside, outsideHudBounds: hudOnly.outsideBounds, sha256: sha256(image) };
         }
         results.push({ viewport: size, phase, weather, stateMatches, state: after.state, beforeSha256: sha256(before.open), variants });
-        console.log(`${size} ${name}: state=${stateMatches} outside-mask open=${variants.open.outsideMaskPixels} closed=${variants.closed.outsideMaskPixels} hidden=${variants.hidden.outsideMaskPixels}`);
+        console.log(`${size} ${name}: state=${stateMatches} outside-hud open=${variants.open.outsideHudPixels} closed=${variants.closed.outsideHudPixels} hidden=${variants.hidden.outsideHudPixels}; outside-hud-and-placement open=${variants.open.outsideMaskPixels} closed=${variants.closed.outsideMaskPixels} hidden=${variants.hidden.outsideMaskPixels}`);
       }
     }
   }
   await diffPage.close();
   const candidateSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  const candidateTree = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
   const sourceStatus = execFileSync('git', ['status', '--porcelain=v1', '--untracked-files=all', '--',
-    'src', 'index.html', 'package.json', 'package-lock.json'], { encoding: 'utf8' }).trim();
-  const report = { baselineSha, candidateSha, candidateSource: 'working tree', sourceStatus, browser: browser.version(), seed,
-    seedMethod: 'tools/parity.mjs-style seeded weather random injection', shadowMaskPaddingPx: 64, results };
+    'src', 'index.html', 'package.json', 'package-lock.json', 'tools/ebr36-gate.mjs'], { encoding: 'utf8' }).trim();
+  const report = { baselineSha, candidateSha, candidateTree, candidateSource: 'working tree', sourceStatus, browser: browser.version(), seed,
+    seedMethod: 'public ?seed= URL with independent rain, smoke and firefly streams',
+    effects: 'enabled and included in the pixel comparison', shadowMaskPaddingPx: 64, results };
   await mkdir(output, { recursive: true });
   await writeFile(join(output, 'gate-g.json'), `${JSON.stringify(report, null, 2)}\n`);
   assert.ok(results.every(({ stateMatches, variants }) => stateMatches && Object.values(variants).every((variant) => variant.outsideMaskPixels === 0)),
-    'Gate G: state or pixels outside the declared HUD/shadow mask differ');
+    'Gate G: state or pixels outside the HUD and placement-reflow masks differ');
+  assert.ok(results.every(({ variants }) => Object.values(variants).every((variant) => variant.outsideHudPixels === 0)),
+    'Gate G: pixels outside the strict sky panel/toolbar masks differ');
 } finally {
   await browser?.close();
   await baselineServer?.close();
