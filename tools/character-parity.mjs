@@ -84,7 +84,7 @@ async function capture(context, page) {
   }
 }
 
-async function perform(fixture, action, trace, frames, marks) {
+async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
   const { page, context } = fixture;
   if (action.type === 'frames') {
     const states = await page.evaluate((times) => times.map((time) => {
@@ -108,25 +108,35 @@ async function perform(fixture, action, trace, frames, marks) {
   } else if (action.type === 'blur') {
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   } else if (action.type === 'capture') {
-    // EBR-70 adds scenery deliberately. Keep the original all-zero replay
-    // assertion for the rest of the frame, without removing collision data or
-    // hiding anything during movement. Gate G separately checks the full frame.
-    const hidden = fixture.excludeSheepfold && await page.evaluate(() => {
-      const { scene, composer } = window.__ebr74;
+    // The old reference has no fold. Hide only its visual group during both
+    // captures; collision data stays active during the complete replay.
+    const visibility = await page.evaluate((excludeSheepfold) => {
+      const { scene, character, composer } = window.__ebr74;
       const fold = scene.getObjectByName('farm-sheepfold');
-      if (!fold) return false;
-      fold.visible = false;
+      const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+      if (!body) throw new Error('Character body is missing');
+      const previous = { fold: fold?.visible, body: body.visible };
+      if (excludeSheepfold && fold) fold.visible = false;
       composer.render(0);
-      return true;
-    });
+      return previous;
+    }, fixture.excludeSheepfold);
     try {
       frames[action.name] = await capture(context, page);
-    } finally {
-      if (hidden) await page.evaluate(() => {
-        const { scene, composer } = window.__ebr74;
-        scene.getObjectByName('farm-sheepfold').visible = true;
+      // EBR-92 may change the body, so also capture the same frame bodyless.
+      await page.evaluate(() => {
+        const { character, composer } = window.__ebr74;
+        character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = false;
         composer.render(0);
       });
+      bodylessFrames[action.name] = await capture(context, page);
+    } finally {
+      await page.evaluate((previous) => {
+        const { scene, character, composer } = window.__ebr74;
+        character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = previous.body;
+        const fold = scene.getObjectByName('farm-sheepfold');
+        if (fold && previous.fold !== undefined) fold.visible = previous.fold;
+        composer.render(0);
+      }, visibility);
     }
   } else if (action.type === 'mark') {
     marks[action.name] = await page.evaluate(() => {
@@ -157,11 +167,21 @@ async function recordScenario(browser, url, name, replayScript) {
   const script = [];
   const trace = [];
   const frames = {};
+  const bodylessFrames = {};
   const marks = {};
+  const bodyShape = await page.evaluate(() => {
+    const body = window.__ebr74.character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+    const geometry = body.geometry;
+    return { position: body.position.toArray(), rotation: body.rotation.toArray(), scale: body.scale.toArray(),
+      positions: Array.from(geometry.getAttribute('position').array), normals: Array.from(geometry.getAttribute('normal').array),
+      indices: Array.from(geometry.index.array), material: { color: body.material.color.getHex(),
+        emissive: body.material.emissive.getHex(), roughness: body.material.roughness,
+        shadeShader: body.material.onBeforeCompile.toString() } };
+  });
   let time = 0;
   async function emit(action) {
     script.push(action);
-    await perform(fixture, action, trace, frames, marks);
+    await perform(fixture, action, trace, frames, bodylessFrames, marks);
   }
   async function advance(count, delta) {
     const times = Array.from({ length: count }, () => { time += delta; return time; });
@@ -180,7 +200,7 @@ async function recordScenario(browser, url, name, replayScript) {
   }
   try {
     if (replayScript) {
-      for (const action of replayScript) await perform(fixture, action, trace, frames, marks);
+      for (const action of replayScript) await perform(fixture, action, trace, frames, bodylessFrames, marks);
     } else {
       await emit({ type: 'frames', times: [0] });
       if (name === 'walking') {
@@ -310,42 +330,55 @@ async function recordScenario(browser, url, name, replayScript) {
       } else throw new Error(`Unknown scenario ${name}`);
     }
     assert.deepEqual(fixture.errors, []);
-    return { script, trace, frames, marks };
+    return { script, trace, frames, bodylessFrames, bodyShape, marks };
   } finally {
     await fixture.context.close();
   }
 }
 
-async function pixelDiff(page, reference, candidate) {
-  return page.evaluate(async ({ reference, candidate }) => {
+async function pixelDiff(page, reference, candidate, referenceBodyless, candidateBodyless) {
+  return page.evaluate(async ({ reference, candidate, referenceBodyless, candidateBodyless }) => {
     async function decode(data) {
       const image = new Image();
       image.src = `data:image/png;base64,${data}`;
       await image.decode();
       return image;
     }
-    const [a, b] = await Promise.all([decode(reference), decode(candidate)]);
-    if (a.width !== b.width || a.height !== b.height) throw new Error('Frame dimensions differ');
+    const images = await Promise.all([reference, candidate, referenceBodyless, candidateBodyless].map(decode));
+    const [a, b] = images;
+    if (images.some((image) => image.width !== a.width || image.height !== a.height)) throw new Error('Frame dimensions differ');
     const canvas = document.createElement('canvas');
     canvas.width = a.width;
     canvas.height = a.height;
     const context = canvas.getContext('2d', { willReadFrequently: true });
-    context.drawImage(a, 0, 0);
-    const original = context.getImageData(0, 0, a.width, a.height);
-    context.clearRect(0, 0, a.width, a.height);
-    context.drawImage(b, 0, 0);
-    const current = context.getImageData(0, 0, a.width, a.height);
+    const pixels = images.map((image) => {
+      context.clearRect(0, 0, a.width, a.height);
+      context.drawImage(image, 0, 0);
+      return context.getImageData(0, 0, a.width, a.height).data;
+    });
+    const [original, current, withoutOriginal, withoutCurrent] = pixels;
     const diff = context.createImageData(a.width, a.height);
+    const mask = context.createImageData(a.width, a.height);
     let changedPixels = 0;
-    for (let i = 0; i < original.data.length; i += 4) {
-      const changed = original.data[i] !== current.data[i] || original.data[i + 1] !== current.data[i + 1] ||
-        original.data[i + 2] !== current.data[i + 2] || original.data[i + 3] !== current.data[i + 3];
+    let outsideBodyPixels = 0;
+    let bodylessChangedPixels = 0;
+    const differs = (x, y, i) => x[i] !== y[i] || x[i + 1] !== y[i + 1] || x[i + 2] !== y[i + 2] || x[i + 3] !== y[i + 3];
+    for (let i = 0; i < original.length; i += 4) {
+      const changed = differs(original, current, i);
+      const body = differs(original, withoutOriginal, i) || differs(current, withoutCurrent, i);
       if (changed) { changedPixels++; diff.data[i] = 255; diff.data[i + 2] = 255; }
+      if (changed && !body) outsideBodyPixels++;
+      if (differs(withoutOriginal, withoutCurrent, i)) bodylessChangedPixels++;
+      if (body) mask.data[i] = mask.data[i + 1] = mask.data[i + 2] = 255;
       diff.data[i + 3] = 255;
+      mask.data[i + 3] = 255;
     }
     context.putImageData(diff, 0, 0);
-    return { changedPixels, png: canvas.toDataURL('image/png').split(',')[1] };
-  }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
+    const png = canvas.toDataURL('image/png').split(',')[1];
+    context.putImageData(mask, 0, 0);
+    return { changedPixels, outsideBodyPixels, bodylessChangedPixels, png, mask: canvas.toDataURL('image/png').split(',')[1] };
+  }, Object.fromEntries(Object.entries({ reference, candidate, referenceBodyless, candidateBodyless })
+    .map(([name, bytes]) => [name, bytes.toString('base64')])));
 }
 
 /** Replay the same events and frame times against a verified baseline. */
@@ -390,6 +423,7 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     candidate = await serverAt(candidateRoot);
     const results = {};
     const frameResults = {};
+    const bodyIsolation = {};
     const traceMismatches = [];
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const name of names) {
@@ -406,17 +440,22 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       if (!isDeepStrictEqual(current.marks, saved.scenarios[name].marks)) {
         traceMismatches.push({ scenario: name, marks: 'scenario state differs' });
       }
+      if (!isDeepStrictEqual(current.bodyShape, reference[name].bodyShape)) {
+        traceMismatches.push({ scenario: name, body: 'geometry, material or shade shader differs' });
+      }
       results[name] = { frames: current.trace.length, identical };
       for (const [frameName, bytes] of Object.entries(current.frames)) {
         const original = reference[name].frames[frameName];
         assert.ok(original, `Missing baseline frame ${frameName}`);
-        const diff = await pixelDiff(diffPage, original, bytes);
+        const diff = await pixelDiff(diffPage, original, bytes, reference[name].bodylessFrames[frameName], current.bodylessFrames[frameName]);
         frameResults[frameName] = diff.changedPixels;
+        bodyIsolation[frameName] = { outsideBodyPixels: diff.outsideBodyPixels, bodylessChangedPixels: diff.bodylessChangedPixels };
         if (evidenceDir) {
-          for (const directory of ['baseline', 'candidate', 'diff']) await mkdir(join(evidenceDir, directory), { recursive: true });
+          for (const directory of ['baseline', 'candidate', 'diff', 'mask']) await mkdir(join(evidenceDir, directory), { recursive: true });
           await writeFile(join(evidenceDir, 'baseline', `${frameName}.png`), original);
           await writeFile(join(evidenceDir, 'candidate', `${frameName}.png`), bytes);
           await writeFile(join(evidenceDir, 'diff', `${frameName}.png`), Buffer.from(diff.png, 'base64'));
+          await writeFile(join(evidenceDir, 'mask', `${frameName}.png`), Buffer.from(diff.mask, 'base64'));
         }
       }
     }
@@ -458,10 +497,11 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
       sourceStatus: git(candidateRoot, 'status', '--porcelain', '--untracked-files=all', '--',
         'src', 'index.html', 'package.json', 'package-lock.json', 'tools/character-parity.mjs', 'tests/browser/character-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', search, viewport, deviceScaleFactor: 1, seed,
-      tracePath, results, traceMismatches, frameResults, marks };
+      tracePath, results, traceMismatches, frameResults, bodyIsolation, marks };
     if (evidenceDir) await writeFile(join(evidenceDir, 'parity.json'), `${JSON.stringify(report, null, 2)}\n`);
     assert.deepEqual(traceMismatches, [], 'Character position / pose replay differs from main');
-    assert.ok(Object.values(frameResults).every((count) => count === 0), 'Route frames contain changed pixels');
+    assert.ok(Object.values(bodyIsolation).every(({ outsideBodyPixels, bodylessChangedPixels }) =>
+      outsideBodyPixels === 0 && bodylessChangedPixels === 0), 'Route frames contain changes beyond the character body');
     return report;
   } finally {
     await browser?.close();

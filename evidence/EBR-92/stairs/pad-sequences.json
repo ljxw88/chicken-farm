@@ -1,0 +1,79 @@
+{
+  "browser": "Chromium 153.0.8010.12",
+  "url": "http://100.88.150.21:5211",
+  "viewport": "1280x720",
+  "scenarios": [
+    {
+      "scenario": "A: S+A then W+A",
+      "pushesMs": 2200,
+      "climbMs": 4000,
+      "afterPush": [
+        12.786066761919821,
+        0.3595814867345623,
+        1.1499999996348782
+      ],
+      "afterClimb": [
+        5.109677254286388,
+        2.4,
+        0.9500000000000001
+      ],
+      "pathCrossing": {
+        "stage": "climb",
+        "x": 7.988593141406749,
+        "y": 2.4,
+        "z": 0.9500000000000001
+      },
+      "frames": 622,
+      "clippedOrUnsupported": 0,
+      "errors": []
+    },
+    {
+      "scenario": "B: W+D then W+A",
+      "pushesMs": 2200,
+      "climbMs": 6000,
+      "afterPush": [
+        12.785716721712326,
+        0.3599391986377777,
+        0.3500000021142332
+      ],
+      "afterClimb": [
+        4.257284171773762,
+        2.4,
+        0.55
+      ],
+      "pathCrossing": {
+        "stage": "climb",
+        "x": 7.988248860635131,
+        "y": 2.4,
+        "z": 0.55
+      },
+      "frames": 743,
+      "clippedOrUnsupported": 0,
+      "errors": []
+    },
+    {
+      "scenario": "S+D, S+A, W+D, W+A",
+      "pushesMs": 2200,
+      "climbMs": 6000,
+      "afterPush": [
+        13.15,
+        0.16,
+        0.3500000011499672
+      ],
+      "afterClimb": [
+        4.257284171381588,
+        2.4,
+        0.55
+      ],
+      "pathCrossing": {
+        "stage": "climb",
+        "x": 7.990329695960875,
+        "y": 2.4,
+        "z": 0.55
+      },
+      "frames": 821,
+      "clippedOrUnsupported": 0,
+      "errors": []
+    }
+  ]
+}

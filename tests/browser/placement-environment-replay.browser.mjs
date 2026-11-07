@@ -38,7 +38,7 @@ for (const reference of references) test(`placement and environment replay again
       baselineSha: reference.sha, baselineArchive,
       evidenceDir: process.env.EBR75_REPLAY_EVIDENCE_DIR && resolve(process.env.EBR75_REPLAY_EVIDENCE_DIR, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
-    t.diagnostic(`Additional frames with only the new fold hidden: ${Object.keys(report.visualResults).length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
+    t.diagnostic(`Additional frames with the new fold hidden: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
   } finally {
     if (temp) await rm(temp, { recursive: true });
   }

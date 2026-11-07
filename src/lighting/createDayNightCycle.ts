@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CHARACTER_RADIUS } from '../character/createCharacter';
+import { CHARACTER_RADIUS, createCharacterCrownController } from '../character/createCharacter';
 import { advanceDayNight, createDayNightState, setCycleSeconds, setPhase, type DayNightState } from '../environment/dayNightSystem';
 import { createPracticalLights, type EmissiveAccent, type WindowPane } from './createPracticalLights';
 import { createSunsetWaterTint } from './createSunsetWaterTint';
@@ -50,12 +50,14 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
 
   const practicalLights = createPracticalLights(character, windows, extraEmissives);
   const setSunsetWaterTint = createSunsetWaterTint(scene);
+  const setCharacterDaytimeCrown = createCharacterCrownController(character);
   const characterShadow = character.getObjectByName('character-shadow');
   const lightDirection = new THREE.Vector3();
   const targetPosition = new THREE.Vector3();
   const localShadowDirection = new THREE.Vector3();
   const characterWorldPosition = new THREE.Vector3();
   const characterRotation = new THREE.Quaternion();
+  let daytimeCrownAmount = 0;
   let directionalMultiplier = 1;
   let directionalBaseIntensity: number = morning.directionalIntensity;
   let ambientBaseIntensity: number = morning.ambientIntensity;
@@ -147,6 +149,7 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     }
     rainAmount = rain;
     cloudyAmount = cloudy;
+    setCharacterDaytimeCrown(daytimeCrownAmount, cloudyAmount);
     applyFillIntensities();
     updateCharacterShadow();
   }
@@ -164,6 +167,10 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     const lerp = THREE.MathUtils.lerp;
     // Fade only into and out of the sunset anchor; other phase anchors are unchanged.
     setSunsetWaterTint((from.name === 'sunset' ? 1 - blend : 0) + (to.name === 'sunset' ? blend : 0));
+    // Preserve the signed morning/sunset/night crowns, and blend the daytime
+    // contrast lift with the same smooth phase interpolation as the lighting.
+    daytimeCrownAmount = (from.name === 'daytime' ? 1 - blend : 0) + (to.name === 'daytime' ? blend : 0);
+    setCharacterDaytimeCrown(daytimeCrownAmount, cloudyAmount);
 
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);

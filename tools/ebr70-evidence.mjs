@@ -9,18 +9,20 @@ import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
 
-// Compare archived clean EBR-75 main or the exact pre-merge EBR-70 head,
-// without checking out or modifying either branch. The older sheep-only mode
-// remains available for reproducing the Look Dev revision evidence.
-const mainSha = '6daf042ad85882f020268baf53fc92fb09e921ad';
+// Compare clean EBR-92 main or the exact pre-merge EBR-70 head using verified
+// archives. The previous-head gate isolates the intended character-body change
+// while retaining the per-frame sheepfold mask and its independent counts.
+const mainSha = '05d5b4aa566bf3d48cd2d1f5b94224224287c4c2';
 const acceptedPenSha = '8ce0cbe19d7c63e5c2608b28725ccb8e9b4700aa';
-const previousHeadSha = '76a2181a2bc90b793b7dc58e21cc062d17d13dd6';
+const previousHeadSha = '6ea25bc181183d0e7b4b79536550d5d5fd0addd8';
 const sheepDelta = process.env.EBR70_SHEEP_DELTA === '1';
 const previousHead = process.env.EBR70_PREVIOUS_HEAD === '1';
 assert.ok(!(sheepDelta && previousHead), 'Select only one comparison mode');
 const baseSha = previousHead ? previousHeadSha : sheepDelta ? acceptedPenSha : mainSha;
 const candidateUrl = (process.env.EBR70_URL || 'http://100.88.150.21:5213').replace(/\/$/, '');
-const output = resolve(process.env.EBR70_GATE_DIR || `evidence/EBR-70/${previousHead ? 'merge-previous' : 'merge-main'}`);
+const sourceShort = execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim();
+const output = resolve(process.env.EBR70_GATE_DIR ||
+  `/home/michael/OpenBot/Shared/farm-evidence/EBR-70/${sourceShort}/${previousHead ? 'previous' : 'main'}`);
 const maskDirectory = resolve(process.env.EBR70_MASK_DIR || join(output, 'mask'));
 const viewport = { width: 1280, height: 720 };
 const visualSeed = 123;
@@ -82,7 +84,8 @@ try {
   browser = await chromium.launch({
     headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--force-color-profile=srgb'],
   });
-  for (const directory of ['baseline', 'candidate', 'diff', 'crops', 'hidden-fold', 'hidden-feature']) {
+  for (const directory of ['baseline', 'candidate', 'diff', 'crops', 'hidden-fold', 'hidden-feature',
+    'baseline-hidden-fold', 'baseline-hidden-body', 'candidate-hidden-body', 'body-mask']) {
     await mkdir(join(output, directory), { recursive: true });
   }
   await mkdir(maskDirectory, { recursive: true });
@@ -96,11 +99,15 @@ try {
     const name = scenario.name;
     await writeFile(join(output, 'baseline', `${name}.png`), baseline.png);
     await writeFile(join(output, 'candidate', `${name}.png`), candidate.png);
+    if (previousHead && baseline.hiddenFold) await writeFile(join(output, 'baseline-hidden-fold', `${name}.png`), baseline.hiddenFold);
+    if (baseline.hiddenBody) await writeFile(join(output, 'baseline-hidden-body', `${name}.png`), baseline.hiddenBody);
+    if (candidate.hiddenBody) await writeFile(join(output, 'candidate-hidden-body', `${name}.png`), candidate.hiddenBody);
     if (candidate.hiddenFold) await writeFile(join(output, 'hidden-fold', `${name}.png`), candidate.hiddenFold);
     if (candidate.hidden && !candidate.hidden.equals(candidate.hiddenFold)) {
       await writeFile(join(output, 'hidden-feature', `${name}.png`), candidate.hidden);
     }
-    const diff = await comparePage.evaluate(async ({ baseline, baselineHidden, candidate, hiddenFold, hidden, hudRects, sheepDelta }) => {
+    const diff = await comparePage.evaluate(async ({ baseline, baselineHidden, baselineBodyless, candidate,
+      hiddenFold, hidden, candidateBodyless, hudRects, sheepDelta, previousHead }) => {
       async function pixels(data) {
         const image = new Image();
         image.src = `data:image/png;base64,${data}`;
@@ -112,8 +119,9 @@ try {
         ctx.drawImage(image, 0, 0);
         return ctx.getImageData(0, 0, canvas.width, canvas.height);
       }
-      const [original, originalHidden, visible, withoutFold, withoutFeature] = await Promise.all([
-        pixels(baseline), pixels(baselineHidden), pixels(candidate), pixels(hiddenFold), pixels(hidden),
+      const [original, originalHidden, originalBodyless, visible, withoutFold, withoutFeature, visibleBodyless] = await Promise.all([
+        pixels(baseline), pixels(baselineHidden), pixels(baselineBodyless), pixels(candidate), pixels(hiddenFold),
+        pixels(hidden), pixels(candidateBodyless),
       ]);
       if (original.width !== 1280 || original.height !== 720 || visible.width !== 1280 || visible.height !== 720) {
         throw new Error('Unexpected frame dimensions');
@@ -121,30 +129,43 @@ try {
       const maskCanvas = document.createElement('canvas');
       const diffCanvas = document.createElement('canvas');
       const feedbackCanvas = document.createElement('canvas');
-      maskCanvas.width = diffCanvas.width = feedbackCanvas.width = 1280;
-      maskCanvas.height = diffCanvas.height = feedbackCanvas.height = 720;
+      const bodyCanvas = document.createElement('canvas');
+      maskCanvas.width = diffCanvas.width = feedbackCanvas.width = bodyCanvas.width = 1280;
+      maskCanvas.height = diffCanvas.height = feedbackCanvas.height = bodyCanvas.height = 720;
       const maskCtx = maskCanvas.getContext('2d');
       const diffCtx = diffCanvas.getContext('2d');
       const feedbackCtx = feedbackCanvas.getContext('2d');
+      const bodyCtx = bodyCanvas.getContext('2d');
       const mask = maskCtx.createImageData(1280, 720);
       const diff = diffCtx.createImageData(1280, 720);
       const feedback = feedbackCtx.createImageData(1280, 720);
+      const body = bodyCtx.createImageData(1280, 720);
       let changed = 0;
       let masked = 0;
       let foldPixels = 0;
       let feedbackPixels = 0;
+      let insideMask = 0;
       let outside = 0;
       let hiddenMismatch = 0;
+      let bodyPixels = 0;
+      let bodyChanged = 0;
+      let outsideBody = 0;
+      let outsideFoldAndBody = 0;
+      let bodylessMismatch = 0;
       const hudChanged = { biome: 0, placement: 0 };
       let minX = 1280; let minY = 720; let maxX = -1; let maxY = -1;
+      let bodyMinX = 1280; let bodyMinY = 720; let bodyMaxX = -1; let bodyMaxY = -1;
       const differs = (a, b, i) => a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3];
       for (let i = 0; i < original.data.length; i += 4) {
         const inFold = differs(visible.data, withoutFold.data, i) ||
-          (sheepDelta && differs(original.data, originalHidden.data, i));
+          ((sheepDelta || previousHead) && differs(original.data, originalHidden.data, i));
         const inFeedback = differs(withoutFold.data, withoutFeature.data, i);
         const inMask = inFold || inFeedback;
+        const inBody = previousHead && (differs(original.data, originalBodyless.data, i) ||
+          differs(visible.data, visibleBodyless.data, i));
         const isChanged = differs(original.data, visible.data, i);
-        if (differs(sheepDelta ? originalHidden.data : original.data, withoutFeature.data, i)) hiddenMismatch++;
+        if (!previousHead && differs(sheepDelta ? originalHidden.data : original.data, withoutFeature.data, i)) hiddenMismatch++;
+        if (previousHead && differs(originalBodyless.data, visibleBodyless.data, i)) bodylessMismatch++;
         if (inFold) foldPixels++;
         if (inFeedback) {
           feedbackPixels++;
@@ -159,9 +180,22 @@ try {
           maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
           mask.data[i] = mask.data[i + 1] = mask.data[i + 2] = 255;
         }
+        if (inBody) {
+          bodyPixels++;
+          const pixel = i / 4;
+          const x = pixel % 1280;
+          const y = Math.floor(pixel / 1280);
+          bodyMinX = Math.min(bodyMinX, x); bodyMinY = Math.min(bodyMinY, y);
+          bodyMaxX = Math.max(bodyMaxX, x); bodyMaxY = Math.max(bodyMaxY, y);
+          body.data[i] = body.data[i + 1] = body.data[i + 2] = 255;
+        }
         if (isChanged) {
           changed++;
-          if (!inMask) outside++;
+          if (inMask) insideMask++; else outside++;
+          if (previousHead) {
+            if (inBody) bodyChanged++; else outsideBody++;
+            if (!inMask && !inBody) outsideFoldAndBody++;
+          }
           const pixel = i / 4;
           const x = pixel % 1280;
           const y = Math.floor(pixel / 1280);
@@ -171,35 +205,43 @@ try {
           diff.data[i] = 255;
           diff.data[i + 2] = 255;
         }
-        mask.data[i + 3] = diff.data[i + 3] = feedback.data[i + 3] = 255;
+        mask.data[i + 3] = diff.data[i + 3] = feedback.data[i + 3] = body.data[i + 3] = 255;
       }
       maskCtx.putImageData(mask, 0, 0);
       diffCtx.putImageData(diff, 0, 0);
       feedbackCtx.putImageData(feedback, 0, 0);
-      return { changed, masked, foldPixels, feedbackPixels, outside, hiddenMismatch, hudChanged,
+      bodyCtx.putImageData(body, 0, 0);
+      return { changed, masked, foldPixels, feedbackPixels, insideMask, outside, hiddenMismatch, hudChanged,
+        bodyPixels, bodyChanged, outsideBody, outsideFoldAndBody, bodylessMismatch,
         bounds: masked ? [minX, minY, maxX, maxY] : null,
+        bodyBounds: bodyPixels ? [bodyMinX, bodyMinY, bodyMaxX, bodyMaxY] : null,
         mask: maskCanvas.toDataURL('image/png').split(',')[1], diff: diffCanvas.toDataURL('image/png').split(',')[1],
-        feedback: feedbackCanvas.toDataURL('image/png').split(',')[1] };
+        feedback: feedbackCanvas.toDataURL('image/png').split(',')[1], body: bodyCanvas.toDataURL('image/png').split(',')[1] };
     }, { baseline: baseline.png.toString('base64'), baselineHidden: (baseline.hiddenFold || baseline.png).toString('base64'),
+      baselineBodyless: (baseline.hiddenBody || baseline.png).toString('base64'),
       candidate: candidate.png.toString('base64'), hiddenFold: (candidate.hiddenFold || candidate.png).toString('base64'),
-      hidden: (candidate.hidden || candidate.png).toString('base64'), hudRects: candidate.hudRects, sheepDelta });
+      hidden: (candidate.hidden || candidate.png).toString('base64'),
+      candidateBodyless: (candidate.hiddenBody || candidate.png).toString('base64'), hudRects: candidate.hudRects, sheepDelta, previousHead });
     await writeFile(join(maskDirectory, `${name}.png`), Buffer.from(diff.mask, 'base64'));
     await writeFile(join(output, 'diff', `${name}.png`), Buffer.from(diff.diff, 'base64'));
     if (diff.feedbackPixels) await writeFile(join(maskDirectory, `${name}-feedback.png`), Buffer.from(diff.feedback, 'base64'));
-    const { mask, diff: diffPng, feedback, ...counts } = diff;
-    void mask; void diffPng; void feedback;
+    if (previousHead) await writeFile(join(output, 'body-mask', `${name}.png`), Buffer.from(diff.body, 'base64'));
+    const { mask, diff: diffPng, feedback, body, ...counts } = diff;
+    void mask; void diffPng; void feedback; void body;
     const stateMatches = isDeepStrictEqual(baseline.state, candidate.state);
     results[name] = { ...counts, stateMatches, placementStatus: candidate.placementStatus &&
       { baseline: baseline.placementStatus, candidate: candidate.placementStatus }, baseline: baseline.state, candidate: candidate.state,
       cropped: candidate.cropBounds };
-    if (!stateMatches || counts.outside || counts.hiddenMismatch || (previousHead && counts.changed)) failures++;
+    if (!stateMatches || (previousHead ? counts.outsideBody || counts.bodylessMismatch : counts.outside || counts.hiddenMismatch)) failures++;
     if (candidate.crops) {
       for (const [kind, data] of Object.entries(candidate.crops)) {
         await writeFile(join(output, 'crops', `${name}-${kind}.png`), Buffer.from(data, 'base64'));
       }
     }
     if (candidate.geometry) await writeFile(join(output, 'geometry.json'), `${JSON.stringify(candidate.geometry, null, 2)}\n`);
-    console.log(`${name}: changed=${counts.changed} mask=${counts.masked} outside=${counts.outside} referenceMismatch=${counts.hiddenMismatch} state=${stateMatches}`);
+    console.log(previousHead
+      ? `${name}: changed=${counts.changed} inside-fold=${counts.insideMask} outside-fold=${counts.outside} outside-body=${counts.outsideBody} bodyless=${counts.bodylessMismatch} state=${stateMatches}`
+      : `${name}: changed=${counts.changed} mask=${counts.masked} outside=${counts.outside} referenceMismatch=${counts.hiddenMismatch} state=${stateMatches}`);
   }
   await comparePage.close();
   const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -207,7 +249,7 @@ try {
     'package.json', 'package-lock.json', 'tests', 'tools/ebr70-evidence.mjs', 'tools/character-parity.mjs',
     'tools/lighting-probe.mjs', 'tools/placement-environment-replay.mjs'], { encoding: 'utf8' }).trim();
   const report = { baseSha, baselineVerification: 'Git archive source and lockfile verified against every Git tree blob',
-    scope: previousHead ? 'full-frame-no-changes' : sheepDelta ? 'sheep-only' : 'new-fold-and-placement', maskDirectory,
+    scope: previousHead ? 'fold-mask-with-body-only-changes' : sheepDelta ? 'sheep-only' : 'new-fold-and-placement', maskDirectory,
     sourceSha, sourceStatus, candidateUrl, chromium: browser.version(), viewport,
     deviceScaleFactor: 1, visualSeed, rainSeed, scenarios: selected.map(({ name }) => name),
     complete: selected.length === scenarios.length, results, failures };
@@ -369,7 +411,25 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
     let geometry;
     let hidden;
     let hiddenFold;
-    if (candidate || sheepDelta) {
+    let hiddenBody;
+    if (previousHead) {
+      const wasVisible = await page.evaluate(() => {
+        const { character, composer } = window.__ebr70Gate;
+        const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+        if (!body) throw new Error('Character body is missing');
+        const visible = body.visible;
+        body.visible = false;
+        composer.render(0);
+        return visible;
+      });
+      hiddenBody = await screenshot();
+      await page.evaluate((visible) => {
+        const { character, composer } = window.__ebr70Gate;
+        character.children.find((child) => child.geometry?.type === 'CapsuleGeometry').visible = visible;
+        composer.render(0);
+      }, wasVisible);
+    }
+    if (candidate || sheepDelta || previousHead) {
       if (candidate && scenario.setup === 'pen') {
         const cropResult = await page.evaluate(async (png) => {
           const THREE = await import('/node_modules/three/build/three.module.js');
@@ -463,7 +523,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
               roofSize: size(roof), top: roof.max.y - 2.4 }, sheep };
         });
       }
-      if (!previousHead) await page.evaluate((sheepDelta) => {
+      await page.evaluate((sheepDelta) => {
         const { scene, composer } = window.__ebr70Gate;
         const fold = scene.getObjectByName('farm-sheepfold');
         if (!fold) throw new Error('Candidate is missing the sheepfold');
@@ -476,7 +536,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
         } else fold.visible = false;
         composer.render(0);
       }, sheepDelta);
-      if (!previousHead) hiddenFold = await screenshot();
+      hiddenFold = await screenshot();
       hidden = hiddenFold;
       if (!previousHead && !sheepDelta && scenario.setup === 'placement-rejected') {
         await page.evaluate(() => {
@@ -495,7 +555,7 @@ window.__ebr70Gate = { scene, camera, character, controls, follow, stairs, obsta
     }
     await cdp.detach();
     assert.deepEqual(errors, []);
-    return { png, hiddenFold, hidden, state, crops, cropBounds, geometry, hudRects, placementStatus };
+    return { png, hiddenFold, hiddenBody, hidden, state, crops, cropBounds, geometry, hudRects, placementStatus };
   } finally {
     await context.close();
   }

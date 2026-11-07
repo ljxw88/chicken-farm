@@ -231,6 +231,46 @@ test('the character has a non-emissive, outward-normal body and a lighter crown'
   }
 });
 
+test('the daytime crown lift blends smoothly and leaves the other phase anchors unchanged', () => {
+  const { character, cycle } = fixture();
+  const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
+  const colors = body.geometry.getAttribute('color');
+  const original = Array.from(colors.array);
+  const crown = () => Math.max(...colors.array);
+  const base = () => Math.min(...colors.array);
+  near(crown(), 1.15, 1e-6);
+
+  cycle.update(9);
+  near(base(), 1.04, 1e-6);
+  near(crown() / base(), 1.215, 1e-6);
+  cycle.update(9);
+  near(base(), 1.08, 1e-6);
+  near(crown() / base(), 1.28, 1e-6);
+  assert.equal(body.material.color.getHex(), 0xffd477);
+  assert.equal(body.material.emissive.getHex(), 0);
+  cycle.update(9);
+  near(base(), 1.04, 1e-6);
+  near(crown() / base(), 1.215, 1e-6);
+  cycle.update(9);
+  assert.deepEqual(Array.from(colors.array), original);
+
+  cycle.setDayNightPhase('daytime');
+  cycle.setShadowWeather(0, 1);
+  near(base(), 1, 1e-6);
+  near(crown() / base(), 1.28, 1e-6);
+  cycle.setShadowWeather(0, 0.5);
+  near(base(), 1.04, 1e-6);
+  near(crown() / base(), 1.28, 1e-6);
+  cycle.setShadowWeather(1, 0);
+  near(base(), 1.08, 1e-6);
+  near(crown() / base(), 1.28, 1e-6);
+
+  for (const phase of ['night', 'morning', 'sunset']) {
+    cycle.setDayNightPhase(phase);
+    assert.deepEqual(Array.from(colors.array), original, phase);
+  }
+});
+
 test('sunset blue affects water only, fades between anchors, and keeps the locked material colors', () => {
   const { scene, cycle } = fixture();
   const waterNames = ['farm-pond-rim', 'farm-pond-water', 'farm-pond-depth', 'farm-stream-rim', 'farm-stream-water',
