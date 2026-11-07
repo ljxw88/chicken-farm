@@ -2,9 +2,9 @@ import './style.css';
 import './ui/farmHud.css';
 import { CHARACTER_RADIUS, createCharacter, createCharacterController } from './character';
 import { createEngine } from './core/loop';
-import { createChimneySmoke } from './effects/createChimneySmoke';
-import { createFireflies } from './effects/createFireflies';
 import { createVisualRandom } from './effects/createVisualRandom';
+import { EFFECT_ASSETS } from './render/effectAssets';
+import { CHIMNEY_SMOKE, FIREFLIES } from './content/effects';
 import { createDayNightState, createWeatherState, updateDayNightSystem, updateWeatherSystem,
   type DayNightComponents, type WeatherComponents } from './environment';
 import { createDayNightCycle, type DayNightPhaseName } from './lighting';
@@ -16,6 +16,7 @@ import { createFarmShadows } from './scene/createFarmShadows';
 import { createScene, GROUND_HEIGHT, GROUND_SIZE } from './scene/createScene';
 import { createSheepfold } from './scene/sheepfold/createSheepfold';
 import { WATER_FEATURE } from './content/waterFeature';
+import { VISUAL_SEEDS } from './content/startup';
 import { createStartupPhaseController, parseSheepSeed, parseStartupOptions, parseVisualSeed } from './startupOptions';
 import { createFarmHud } from './ui';
 import { createWeatherSystem, type WeatherMode } from './weather';
@@ -109,10 +110,10 @@ const weather = createWeatherSystem({
   setAmbientHemisphereColorMultiplier: dayNight.setAmbientHemisphereColorMultiplier,
   setShadowWeather: dayNight.setShadowWeather,
 });
-const smoke = createChimneySmoke({ scene,
-  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x534d4f4b) });
-const fireflies = createFireflies({ scene, camera, groundHeight: GROUND_HEIGHT,
-  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ 0x464c4945) });
+const smoke = EFFECT_ASSETS[CHIMNEY_SMOKE.assetId]({ scene,
+  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ VISUAL_SEEDS.smoke) });
+const fireflies = EFFECT_ASSETS[FIREFLIES.assetId]({ scene, camera, groundHeight: GROUND_HEIGHT,
+  random: visualSeed === undefined ? undefined : createVisualRandom(visualSeed ^ VISUAL_SEEDS.fireflies) });
 const startup = parseStartupOptions(window.location.search);
 const phaseController = createStartupPhaseController(dayNight, startup.phase);
 if (startup.weather) weather.setWeather(startup.weather);

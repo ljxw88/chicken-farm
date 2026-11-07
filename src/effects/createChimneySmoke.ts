@@ -1,19 +1,29 @@
 import * as THREE from 'three';
 import { createVisualRandom } from './createVisualRandom';
+import { CHIMNEY_SMOKE } from '../content/effects';
+import { ART_SLOTS } from '../content/slots';
+import { VISUAL_SEEDS } from '../content/startup';
 
-const CAPACITY = 6;
-const SPAWN_INTERVAL = 0.55;
-const WIND = new THREE.Vector3(0.94, 0, -0.34).normalize().multiplyScalar(0.25);
-const SWAY_AMPLITUDE = 0.06;
-const SWAY_SPEED = Math.PI / 2;
+const CAPACITY = CHIMNEY_SMOKE.capacity;
+const SPAWN_INTERVAL = CHIMNEY_SMOKE.spawnInterval;
+const WIND = new THREE.Vector3(...CHIMNEY_SMOKE.wind).normalize().multiplyScalar(CHIMNEY_SMOKE.windSpeed);
+const SWAY_AMPLITUDE = CHIMNEY_SMOKE.swayAmplitude;
+const SWAY_SPEED = CHIMNEY_SMOKE.swaySpeed;
+
+export interface SmokeSlots {
+  color: number; emissive: number; initialOpacity: number; peakOpacity: number; weatherNightDimming: number; roughness: number;
+}
+const DEFAULT_SLOTS: SmokeSlots = { ...ART_SLOTS.palette.smoke, ...ART_SLOTS.prop.smoke };
 
 interface ChimneySmokeOptions {
   scene: THREE.Scene;
   random?: () => number;
+  slots?: SmokeSlots;
 }
 
 /** Visual-only smoke; the named anchor belongs to the existing cottage. */
-export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f4b) }: ChimneySmokeOptions) {
+export function createChimneySmoke({ scene, random = createVisualRandom(VISUAL_SEEDS.smoke),
+  slots = DEFAULT_SLOTS }: ChimneySmokeOptions) {
   const chimney = scene.getObjectByName('cottage-chimney-top');
   if (!chimney) throw new Error('Cottage chimney anchor not found');
 
@@ -23,14 +33,14 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
 
   // Normalize the icosahedron's bounding box to one unit, so the scale below
   // is the actual world-space puff width, not the radius of its circumsphere.
-  const geometry = new THREE.IcosahedronGeometry(1, 0);
+  const geometry = new THREE.IcosahedronGeometry(...CHIMNEY_SMOKE.puffGeometry);
   geometry.computeBoundingBox();
   const dimensions = geometry.boundingBox!.getSize(new THREE.Vector3());
   geometry.scale(1 / dimensions.x, 1 / dimensions.y, 1 / dimensions.z);
   const puffs = Array.from({ length: CAPACITY }, (_, index) => {
     const material = new THREE.MeshStandardMaterial({
-      color: 0xefe3c8, emissive: 0x000000, roughness: 1, flatShading: true,
-      transparent: true, opacity: 0, depthWrite: false,
+      color: slots.color, emissive: slots.emissive, roughness: slots.roughness, flatShading: true,
+      transparent: true, opacity: slots.initialOpacity, depthWrite: false,
     });
     // The signed scene is very dim at night. Lift only its reflected light so
     // the puffs remain legible, then cap it to the specified albedo without
@@ -56,7 +66,7 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
     const draw = random();
     const bits = Math.floor(draw * 0x100000000);
     puff.mesh.rotation.y = Math.floor(draw * 4) * Math.PI / 2;
-    puff.sizeFactor = 0.85 + 0.3 * ((bits >>> 15) & 0x7fff) / 0x8000;
+    puff.sizeFactor = CHIMNEY_SMOKE.sizeFactorMin + CHIMNEY_SMOKE.sizeFactorRange * ((bits >>> 15) & 0x7fff) / 0x8000;
     puff.swayPhase = 2 * Math.PI * (bits & 0x7fff) / 0x8000;
   }
   puffs.forEach(initializePuff);
@@ -71,7 +81,7 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
       throw new RangeError('Smoke needs non-negative elapsed time and valid rain/night amounts');
     }
     elapsed += deltaSeconds;
-    const lifetime = THREE.MathUtils.lerp(3.6, 2.6, rainAmount);
+    const lifetime = THREE.MathUtils.lerp(...CHIMNEY_SMOKE.lifetime, rainAmount);
     while (spawnIndex * SPAWN_INTERVAL <= elapsed + 1e-9) {
       const birth = spawnIndex++ * SPAWN_INTERVAL;
       for (const puff of puffs) {
@@ -96,14 +106,14 @@ export function createChimneySmoke({ scene, random = createVisualRandom(0x534d4f
       if (!puff.alive) continue;
       const progress = age / lifetime;
       const sway = SWAY_AMPLITUDE * Math.sin(age * SWAY_SPEED + puff.swayPhase);
-      puff.mesh.position.set(origin.x + WIND.x * age + sway, origin.y + 0.45 * age, origin.z + WIND.z * age);
-      puff.mesh.scale.setScalar(THREE.MathUtils.lerp(0.28, 0.65, Math.pow(progress, 1.5)) * puff.sizeFactor);
+      puff.mesh.position.set(origin.x + WIND.x * age + sway, origin.y + CHIMNEY_SMOKE.riseSpeed * age, origin.z + WIND.z * age);
+      puff.mesh.scale.setScalar(THREE.MathUtils.lerp(...CHIMNEY_SMOKE.size, Math.pow(progress, CHIMNEY_SMOKE.sizeExponent)) * puff.sizeFactor);
       // Hold the peak through 40% of life, then ease continuously to zero.
-      const fade = 1 - THREE.MathUtils.smoothstep(progress, 0.4, 1);
+      const fade = 1 - THREE.MathUtils.smoothstep(progress, CHIMNEY_SMOKE.fadeStart, 1);
       // Both rain and night individually dim to 60%; together they do not
       // double-dim the plume below that floor.
-      const dim = 1 - 0.4 * Math.max(rainAmount, nightAmount);
-      puff.material.opacity = 0.75 * fade * dim;
+      const dim = 1 - slots.weatherNightDimming * Math.max(rainAmount, nightAmount);
+      puff.material.opacity = slots.peakOpacity * fade * dim;
     }
   }
 
