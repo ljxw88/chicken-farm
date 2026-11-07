@@ -15,6 +15,8 @@
     "asset:verify": "node tools/assetgen/cli.mjs verify",
     "asset:bundle": "node tools/assetgen/cli.mjs bundle",
     "parity": "node tools/parity.mjs",
+    "play:harness": "node tools/selfplay/harness.mjs",
+    "gate:qa": "node tools/selfplay/gate-g.mjs",
     "lighting:parity": "node tools/lighting-parity.mjs",
     "preview": "vite preview"
   },

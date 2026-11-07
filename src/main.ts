@@ -12,6 +12,7 @@ import { registerPlacement } from './app/placement';
 import { registerPresentation } from './app/presentation';
 import { registerScene } from './app/scene';
 import { registerStartup } from './app/startup';
+import { registerGameInspection } from './debug/gameInspection';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scene');
 const hudRoot = document.querySelector<HTMLElement>('#farm-hud');
@@ -24,7 +25,7 @@ if (!skyRoot) throw new Error('Sky HUD root not found');
 const context = { canvas, hudRoot, skyRoot } as AppContext;
 const modules: readonly AppModule[] = [
   registerScene, registerFarm, registerGarden, registerFarmDecorations, registerEngine, registerEnvironment, registerEffects,
-  registerStartup, registerCharacter, registerPlacement, registerHud, registerPresentation,
+  registerStartup, registerCharacter, registerPlacement, registerHud, registerPresentation, registerGameInspection,
 ];
 for (const register of modules) register(context);
 
