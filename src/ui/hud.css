@@ -281,17 +281,12 @@ body:has(.placement-controls.is-active) .hud-root {
 
 @media (max-width: 719px) {
   .hud-root {
-    --hud-top-limit: max(132px, calc(env(safe-area-inset-top) + 126px));
     --hud-panel-inset: 12px;
     --hud-column-inset: 4px;
     --hud-artwork-size: 88px;
     --hud-value-size: 18px;
     padding-right: max(12px, env(safe-area-inset-right));
     padding-left: max(12px, env(safe-area-inset-left));
-  }
-
-  body:has(.placement-controls.is-active) .hud-root {
-    --hud-top-limit: max(230px, calc(env(safe-area-inset-top) + 224px));
   }
 
   .hud-panel {
@@ -305,6 +300,14 @@ body:has(.placement-controls.is-active) .hud-root {
 }
 
 @media (max-width: 680px) {
+  .hud-root {
+    --hud-top-limit: max(132px, calc(env(safe-area-inset-top) + 126px));
+  }
+
+  body:has(.placement-controls.is-active) .hud-root {
+    --hud-top-limit: max(230px, calc(env(safe-area-inset-top) + 224px));
+  }
+
   body.sky-panel-open .placement-controls {
     top: max(80px, calc(env(safe-area-inset-top) + 68px));
     bottom: auto;

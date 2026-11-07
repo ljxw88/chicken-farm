@@ -20,6 +20,7 @@ const viewports = [
   { width: 1280, height: 720 }, { width: 1260, height: 1080 },
   { width: 390, height: 844, touch: true }, { width: 320, height: 568, touch: true },
   { width: 844, height: 390, touch: true }, { width: 700, height: 844, touch: true },
+  { width: 700, height: 390, touch: true },
   { width: 480, height: 320, touch: true }, { width: 568, height: 320, touch: true },
 ];
 const sha256 = (data) => createHash('sha256').update(data).digest('hex');

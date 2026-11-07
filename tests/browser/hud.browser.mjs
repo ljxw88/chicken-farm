@@ -358,7 +358,7 @@ test('panel input does not walk or place; walking and placement work with it ope
 
 test('responsive touch layouts keep the phase pill, placement and sky controls separate', { timeout: 120000 }, async (t) => {
   const results = [];
-  for (const [width, height] of [[1260, 1080], [700, 844], [390, 844], [320, 568], [844, 390]]) {
+  for (const [width, height] of [[1260, 1080], [700, 844], [700, 390], [390, 844], [320, 568], [844, 390]]) {
     const viewport = { width, height };
     const touch = width < 1000;
     const context = await browser.newContext({ viewport, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
@@ -380,6 +380,7 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     }));
     if (height <= 520) assert.equal(artwork.display, 'none');
     else assert.equal(artwork.height, width < 480 ? 72 : width < 720 ? 88 : 120);
+    if (width === 700 && height === 390) assert.ok(Math.abs(inactive.panel.height - 200) <= 20, JSON.stringify(inactive.panel));
     const next = page.getByRole('button', { name: 'Next time of day' });
     const nextBox = await next.boundingBox();
     assert.ok(nextBox.width >= 44 && nextBox.height >= 44);
