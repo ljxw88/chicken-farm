@@ -1,9 +1,10 @@
 import { constants } from 'node:fs';
 import { access, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
 import { createServer } from 'vite';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Run the *current* detector against a pristine archived main without
 // checking out, resetting, or modifying the user's worktree. The nonzero exit
@@ -11,7 +12,7 @@ import { createServer } from 'vite';
 const root = process.cwd();
 const ref = process.env.LIGHTING_BASELINE_REF || 'c59b0433e4bec1b7d7dce6e69833dab6d64bdbaa';
 const sha = execFileSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], { cwd: root, encoding: 'utf8' }).trim();
-const evidence = resolve(process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting');
+const evidence = outputDirectory('lighting-baseline', 'LIGHTING_EVIDENCE_DIR');
 await mkdir(evidence, { recursive: true });
 let tempParent = '/tmp/opencode';
 try { await access(tempParent, constants.W_OK); } catch { tempParent = tmpdir(); }

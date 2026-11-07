@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { isolateHistoricalGarden, restoreHistoricalGarden } from './historical-garden-isolation.mjs';
 
 const historicalSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
 const stairBaselineSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
@@ -151,6 +152,7 @@ async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
   } else if (action.type === 'capture') {
     // The old reference has no fold. Hide only its visual group during both
     // captures; collision data stays active during the complete replay.
+    const garden = await page.evaluate(isolateHistoricalGarden, { contextName: '__ebr74', hidePlots: false });
     const visibility = await page.evaluate((excludeSheepfold) => {
       const { scene, character, composer } = window.__ebr74;
       const fold = scene.getObjectByName('farm-sheepfold');
@@ -178,6 +180,8 @@ async function perform(fixture, action, trace, frames, bodylessFrames, marks) {
         if (fold && previous.fold !== undefined) fold.visible = previous.fold;
         composer.render(0);
       }, visibility);
+      await page.evaluate(restoreHistoricalGarden, { contextName: '__ebr74', state: garden });
+      await page.evaluate(() => window.__ebr74.composer.render(0));
     }
   } else if (action.type === 'mark') {
     marks[action.name] = await page.evaluate(() => {

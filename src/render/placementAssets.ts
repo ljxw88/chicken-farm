@@ -1,47 +1,27 @@
 import * as THREE from 'three';
 import { ART_SLOTS, FARM_PALETTE } from '../content/slots';
-import { TILE_SIZE, type PlacementKind } from '../placement/grid';
-import { GRID } from '../content/world';
 import { PLACEMENT_GEOMETRY as GEOMETRY } from '../content/placementGeometry';
+import type { PlacementKind } from '../placement/grid';
+import { createGardenPlot } from '../scene/gardenDressing/createGardenPlot';
 
 // Both the ghost and the placed object come from this same geometry and palette.
 function createPlacementVisual(kind: PlacementKind) {
+  if (kind === 'plot') return createGardenPlot();
   const group = new THREE.Group();
   group.name = `placement-${kind}-visual`;
-
-  if (kind === 'fence') {
-    const wood = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnWood, roughness: 1 });
-    const trim = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1 });
-    const postGeometry = new THREE.BoxGeometry(...GEOMETRY.fence.post);
-    for (const x of GEOMETRY.fence.postXs) {
-      const post = new THREE.Mesh(postGeometry, trim);
-      post.position.set(x, GEOMETRY.fence.postY, 0);
-      group.add(post);
-    }
-    const railGeometry = new THREE.BoxGeometry(...GEOMETRY.fence.rail);
-    for (const y of GEOMETRY.fence.railYs) {
-      const rail = new THREE.Mesh(railGeometry, wood);
-      rail.position.set(0, y, GEOMETRY.fence.railZ);
-      group.add(rail);
-    }
-  } else {
-    const edge = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.dirtEdge, roughness: 1 });
-    const dirt = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.dirt, roughness: 1 });
-    const base = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * GRID.footprints.plot.columns - GEOMETRY.plot.baseInset,
-      GEOMETRY.plot.baseHeight, TILE_SIZE - GEOMETRY.plot.baseInset), edge);
-    base.position.y = GEOMETRY.plot.baseY;
-    group.add(base);
-    const surface = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * GRID.footprints.plot.columns - GEOMETRY.plot.surfaceInset,
-      GEOMETRY.plot.surfaceHeight, TILE_SIZE - GEOMETRY.plot.surfaceInset), dirt);
-    surface.position.y = GEOMETRY.plot.surfaceY;
-    group.add(surface);
-    const furrowGeometry = new THREE.BoxGeometry(TILE_SIZE * GRID.footprints.plot.columns - GEOMETRY.plot.furrowInset,
-      GEOMETRY.plot.furrowHeight, GEOMETRY.plot.furrowDepth);
-    for (const z of GEOMETRY.plot.furrowZs) {
-      const furrow = new THREE.Mesh(furrowGeometry, edge);
-      furrow.position.set(0, GEOMETRY.plot.furrowY, z);
-      group.add(furrow);
-    }
+  const wood = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnWood, roughness: 1 });
+  const trim = new THREE.MeshStandardMaterial({ color: FARM_PALETTE.barnTrim, roughness: 1 });
+  const postGeometry = new THREE.BoxGeometry(...GEOMETRY.fence.post);
+  for (const x of GEOMETRY.fence.postXs) {
+    const post = new THREE.Mesh(postGeometry, trim);
+    post.position.set(x, GEOMETRY.fence.postY, 0);
+    group.add(post);
+  }
+  const railGeometry = new THREE.BoxGeometry(...GEOMETRY.fence.rail);
+  for (const y of GEOMETRY.fence.railYs) {
+    const rail = new THREE.Mesh(railGeometry, wood);
+    rail.position.set(0, y, GEOMETRY.fence.railZ);
+    group.add(rail);
   }
   return group;
 }

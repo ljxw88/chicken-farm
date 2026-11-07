@@ -7,6 +7,7 @@ const vite = await createServer({ configFile: false, server: { middlewareMode: t
 const { ART_SLOTS } = await vite.ssrLoadModule('/src/content/slots.ts');
 const { FARM_BUILDINGS } = await vite.ssrLoadModule('/src/content/buildings.ts');
 const { FARM_LAYOUT, FARM_DECORATIONS } = await vite.ssrLoadModule('/src/content/farm.ts');
+const { GARDEN_DRESSING, BEEHIVE_FOOTPRINT, BEEHIVE_GEOMETRY, FLOWER_GEOMETRY } = await vite.ssrLoadModule('/src/content/garden.ts');
 const { ISLAND, STAIR, GRID } = await vite.ssrLoadModule('/src/content/world.ts');
 const { PATH_GEOMETRY, TREE_GEOMETRY, POND_GEOMETRY, GRASS_GEOMETRY } = await vite.ssrLoadModule('/src/content/propGeometry.ts');
 const { CHICKEN_GEOMETRY, NEST_GEOMETRY, DECORATION_GEOMETRY } = await vite.ssrLoadModule('/src/content/decorationGeometry.ts');
@@ -36,6 +37,7 @@ const { createFireflies } = await vite.ssrLoadModule('/src/effects/createFirefli
 const { createChimneySmoke } = await vite.ssrLoadModule('/src/effects/createChimneySmoke.ts');
 const { SHEEPFOLD_ASSETS } = await vite.ssrLoadModule('/src/render/sheepfoldAssets.ts');
 const { EFFECT_ASSETS } = await vite.ssrLoadModule('/src/render/effectAssets.ts');
+const { GARDEN_ASSETS } = await vite.ssrLoadModule('/src/render/gardenAssets.ts');
 after(() => vite.close());
 
 function assertPlain(value) {
@@ -48,7 +50,8 @@ function assertPlain(value) {
 }
 
 test('content and slots are plain finite JSON data with separate dimensions and footprints', () => {
-  const content = { ART_SLOTS, FARM_BUILDINGS, FARM_LAYOUT, FARM_DECORATIONS, ISLAND, STAIR, GRID,
+  const content = { ART_SLOTS, FARM_BUILDINGS, FARM_LAYOUT, FARM_DECORATIONS, GARDEN_DRESSING, BEEHIVE_FOOTPRINT,
+    BEEHIVE_GEOMETRY, FLOWER_GEOMETRY, ISLAND, STAIR, GRID,
     PATH_GEOMETRY, TREE_GEOMETRY, POND_GEOMETRY, GRASS_GEOMETRY, CHICKEN_GEOMETRY, NEST_GEOMETRY,
     DECORATION_GEOMETRY, WATER_FEATURE, DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, FOLLOW_DAY_NIGHT_CYCLE_SECONDS,
     WINDOW_LIGHT, LANTERN_LIGHT, RAIN_LOOK,
@@ -73,6 +76,9 @@ test('content and slots are plain finite JSON data with separate dimensions and 
   assert.equal(typeof SHEEPFOLD_ASSETS[SHEEPFOLD.shelterAssetId], 'function');
   assert.equal(typeof EFFECT_ASSETS[FIREFLIES.assetId], 'function');
   assert.equal(typeof EFFECT_ASSETS[CHIMNEY_SMOKE.assetId], 'function');
+  assert.equal(typeof GARDEN_ASSETS[GARDEN_DRESSING.hiveAssetId], 'function');
+  assert.equal(typeof GARDEN_ASSETS[GARDEN_DRESSING.flowerAssetId], 'function');
+  assert.deepEqual(BEEHIVE_FOOTPRINT, { halfWidth: 0.35, halfDepth: 0.35 });
 });
 
 test('placement asset IDs resolve only through known render factories', () => {

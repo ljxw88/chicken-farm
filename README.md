@@ -69,7 +69,7 @@ setPixelSize(4)           // restore the locked default
 
 The device-pixel block size is rounded to an integer. Odd dimensions use centered partial blocks at the edges, rather than stretching the grid; fractional DPR may make the effective CSS size slightly different from the requested value. The camera projection and existing antialiasing remain unchanged, and the camera is not snapped to the pixel grid. `getPixelRendering().viewport` describes the planned pixel grid even in native comparison mode; `canvasWidth` and `canvasHeight` are the actual drawing buffer size.
 
-Only `#scene` is scaled. The HTML HUD is a separate, positioned sibling above the canvas, not a child of a transformed/pixelated container. For weather and HUD integration notes, see `DELIVER-EBR37.txt`.
+Only `#scene` is scaled. The HTML HUD is a separate, positioned sibling above the canvas, not a child of a transformed/pixelated container. For weather and HUD integration notes, see `/home/michael/OpenBot/Shared/farm-evidence/_main-archive-843c242/DELIVER-EBR37.txt`.
 
 ## Production build
 
@@ -79,6 +79,8 @@ npm run build
 
 The build is written to `dist/`. Run `npm run preview` to preview it locally, or `npm test` to check the phase HUD, generic interaction utilities, pixel sizing, farm, collisions, camera, weather and lighting. For the Chromium playable-build checks, install the browser once with `npx playwright install chromium`, then run `npm run test:browser` (which also builds).
 
-The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. Historical lighting changes intentionally differ from that older reference. The EBR-76 data-only comparison against `b41492e` used an all-black mask; the merged build can be compared against clean `843c242` with the sky HUD disabled for the replay. See `tools/PARITY.md` for the pinned references. Do not re-baseline the historical captures until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero historical result.
+For the clean-main PR pre-gate, see `docs/pregate.md`.
+
+The directional-light regression check is `node --test tests/browser/lighting.browser.mjs`. `npm run parity` uses the EBR-73 Gate G baseline; `npm run lighting:parity` includes additional sunset and cloudy frames. Historical lighting changes intentionally differ from that older reference. EBR-76 can be compared against clean `8dd79b8`, with the sky HUD disabled for replay; see `tools/PARITY.md`. Do not re-baseline historical captures until Look Dev signs; see `docs/lighting-audit.md` before interpreting a nonzero historical result.
 
 The entry point is `src/main.ts`, which registers the ordered feature modules in `src/app/`. Free placement is in `src/placement/`, pixel presentation in `src/postprocess/`, scene construction and the camera in `src/scene/`, and the character and controls are in `src/character/`. The sky HUD and its public-scene adapter are in `src/ui/`. Plain layout, dimensions, weather and lighting presets live in `src/content/`; Three.js asset factories are in `src/render/`. Cottage and coop data is in `src/content/buildings.ts`, and Look Dev farm colors are in `src/content/slots.ts`. Their windows and pop-holes follow the night lighting. The fixed-step loop, Miniplex world and input actions are described in `src/core/README.md`. `src/state/` describes JSON-friendly snapshots and a save/load hook shape; no persistence or auto-load is installed. The reusable `Interactable` contract and controller remain in `src/interactions/`, but are not wired into the playable build.

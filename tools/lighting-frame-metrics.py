@@ -2,10 +2,12 @@
 """Compare fixed 1280x720 review frames on a common, void-free island mask."""
 import json
 import math
+import os
 from pathlib import Path
 from PIL import Image, ImageChops, ImageStat
+from evidence_paths import HISTORICAL
 
-root = Path(__file__).resolve().parents[1] / 'evidence' / 'lighting'
+root = Path(os.environ.get('LIGHTING_INPUT_DIR') or HISTORICAL / 'lighting')
 before = root / 'lookdev-before'
 rect = (300, 375, 450, 415)
 background = (16, 20, 22)

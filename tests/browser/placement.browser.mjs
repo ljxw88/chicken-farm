@@ -234,8 +234,12 @@ test('dev: valid and invalid previews, rotations, two kinds, collisions, undo an
   await page.mouse.click(plotPoint.x, plotPoint.y);
   assert.equal(await count(page, 'placed-plot'), 1);
   assert.equal(await page.evaluate(() => window.__ebr56Test.obstacles.length), initial.obstacles + 1);
-  assert.deepEqual(await page.evaluate(() => window.__ebr56Test.scene.getObjectByName('placed-plot').children.map((part) => part.material.color.getHex())),
-    [0x7a5a3a, 0xa67c52, 0x7a5a3a, 0x7a5a3a, 0x7a5a3a]);
+  assert.deepEqual(await page.evaluate(() => {
+    const plot = window.__ebr56Test.scene.getObjectByName('placed-plot');
+    return { soil: plot.getObjectByName('garden-plot-soil').material.color.getHex(),
+      frame: plot.getObjectByName('garden-plot-frame').material.color.getHex(),
+      seedlings: plot.getObjectsByProperty('name', 'garden-plot-seedling').length };
+  }), { soil: 0x5f4630, frame: 0x8b5e3c, seedlings: 8 });
   await page.keyboard.press('Escape');
   await capture(page, '06-fence-and-plot.png');
   await moveWorld(page, -0.75, 3.75);

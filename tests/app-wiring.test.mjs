@@ -5,10 +5,14 @@ import { createServer } from 'vite';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom' });
 const { registerEngine } = await vite.ssrLoadModule('/src/app/engine.ts');
-const { registerFarm } = await vite.ssrLoadModule('/src/app/farm.ts');
+const { registerFarm, registerFarmDecorations } = await vite.ssrLoadModule('/src/app/farm.ts');
+const { registerGarden } = await vite.ssrLoadModule('/src/app/garden.ts');
+const { registerEnvironment } = await vite.ssrLoadModule('/src/app/environment.ts');
 const { registerStartup } = await vite.ssrLoadModule('/src/app/startup.ts');
 const { registerHud } = await vite.ssrLoadModule('/src/app/hud.ts');
 const { createDayNightState, createWeatherState } = await vite.ssrLoadModule('/src/environment/index.ts');
+const { createEntityWorld } = await vite.ssrLoadModule('/src/core/ecs/createEntityWorld.ts');
+const { createCharacter } = await vite.ssrLoadModule('/src/character/index.ts');
 const THREE = await import('three');
 after(() => vite.close());
 
@@ -68,17 +72,52 @@ test('registered frame wiring preserves feature order and full environment timin
   assert.equal(weather.rainProgress, 0.5 / 1.75);
 });
 
-test('farm registration forwards building, shelter and sheep click targets in order', (t) => {
+test('farm and garden registration forwards targets and obstacles in main order', (t) => {
   const dom = new JSDOM('<!doctype html><body></body>', { url: 'http://localhost/?seed=123' });
   const previous = globalThis.window;
   globalThis.window = dom.window;
   t.after(() => { globalThis.window = previous; dom.window.close(); });
   const context = { scene: new THREE.Scene() };
   registerFarm(context);
+  registerGarden(context);
+  registerFarmDecorations(context);
   assert.deepEqual(context.clickTargets.map((item) => item.name),
-    ['farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2', 'sheepfold-lean-to', 'sheep-1', 'sheep-2']);
-  assert.deepEqual(context.clickTargets.slice(3), context.sheepfold.clickTargets);
+    ['farm-cottage', 'farm-ramp-coop-1', 'farm-ramp-coop-2', 'sheepfold-lean-to', 'sheep-1', 'sheep-2', 'beehive-1', 'beehive-2']);
+  assert.deepEqual(context.clickTargets.slice(3, 6), context.sheepfold.clickTargets);
+  assert.deepEqual(context.clickTargets.slice(6), context.garden.clickTargets);
+  assert.deepEqual(context.obstacles.slice(-2), context.garden.obstacles);
+  const children = context.scene.children.map((child) => child.name);
+  assert.ok(children.indexOf('farm-sheepfold') < children.indexOf('garden-beehives'));
+  assert.ok(children.indexOf('garden-beehives') < children.indexOf('garden-flower-patches'));
+  assert.ok(children.indexOf('garden-flower-patches') < children.indexOf('farm-flock-decorations'));
   assert.ok(context.clickTargets.every((target) => context.scene.getObjectById(target.id) === target));
+});
+
+test('day/night shadows update farm, sheepfold and garden in main order', (t) => {
+  const dom = new JSDOM('<!doctype html><body></body>', { url: 'http://localhost/?visualSeed=123' });
+  const previous = globalThis.window;
+  globalThis.window = dom.window;
+  t.after(() => { globalThis.window = previous; dom.window.close(); });
+  const events = [];
+  const track = (name) => (...args) => events.push([name, ...args]);
+  const scene = new THREE.Scene();
+  const character = createCharacter();
+  scene.add(character);
+  const context = { scene, character, camera: new THREE.PerspectiveCamera(), windows: [], extraEmissives: [],
+    stairs: { supports: () => true }, bridgeHeight: () => undefined, splashExclusions: [],
+    farmShadows: { update: track('farm') }, sheepfold: { updateShadows: track('sheepfold') },
+    garden: { updateShadows: track('garden') }, engine: { world: createEntityWorld() } };
+  registerEnvironment(context);
+  events.length = 0;
+  context.dayNight.setDayNightPhase('night');
+  assert.deepEqual(events.map(([name]) => name), ['farm', 'sheepfold', 'garden']);
+  assert.deepEqual(events[0].slice(1), events[1].slice(1));
+  assert.deepEqual(events[1].slice(1), events[2].slice(1));
+  events.length = 0;
+  context.dayNight.setShadowWeather(1, 0);
+  assert.deepEqual(events.map(([name]) => name), ['farm', 'sheepfold', 'garden']);
+  assert.deepEqual(events[0].slice(1), events[2].slice(1));
+  context.weather.dispose();
 });
 
 test('startup publishes the main clock controls and 24-minute cycle before weather', (t) => {

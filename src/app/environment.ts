@@ -9,7 +9,7 @@ import { createWeatherSystem } from '../weather';
 import type { AppContext, GameComponents } from './context';
 
 export function registerEnvironment(context: AppContext) {
-  const { scene, camera, character, windows, extraEmissives, stairs, bridgeHeight, farmShadows, sheepfold } = context;
+  const { scene, camera, character, windows, extraEmissives, stairs, bridgeHeight, farmShadows, sheepfold, garden } = context;
   const environment = context.engine.world.create({ dayNight: createDayNightState(), weather: createWeatherState() });
   context.environment = environment;
   function shadowSupported(x: number, z: number, radius: number) {
@@ -26,6 +26,7 @@ export function registerEnvironment(context: AppContext) {
     updateFarmShadows(awayX, awayZ, offset, strength) {
       farmShadows.update(awayX, awayZ, offset, strength);
       sheepfold.updateShadows(awayX, awayZ, offset, strength);
+      garden.updateShadows(awayX, awayZ, offset, strength);
     },
   });
   context.dayNight = dayNight;

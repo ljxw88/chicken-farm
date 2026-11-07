@@ -11,6 +11,7 @@ import type { createFarmDecorations } from '../render/farmDecorations';
 import type { createFarmLayout } from '../scene/createFarmLayout';
 import type { createFarmShadows } from '../scene/createFarmShadows';
 import type { createScene } from '../scene/createScene';
+import type { createGardenDressing } from '../scene/gardenDressing/createGardenDressing';
 import type { createSheepfold } from '../scene/sheepfold/createSheepfold';
 import type { createStartupPhaseController } from '../startupOptions';
 import type { createFarmHud, createSkyHud, createSkyStateAdapter } from '../ui';
@@ -32,6 +33,7 @@ export interface AppContext extends SceneParts, FarmParts {
   skyRoot: HTMLElement;
   character: ReturnType<typeof createCharacter>;
   sheepfold: ReturnType<typeof createSheepfold>;
+  garden: ReturnType<typeof createGardenDressing>;
   decorations: ReturnType<typeof createFarmDecorations>;
   farmShadows: ReturnType<typeof createFarmShadows>;
   engine: Engine;

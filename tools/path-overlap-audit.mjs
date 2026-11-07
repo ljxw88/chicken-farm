@@ -1,6 +1,8 @@
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import * as THREE from 'three';
 import { createServer } from 'vite';
+import { outputDirectory } from './evidence-path.mjs';
 
 // The winding fix does not redesign the folded ribbon. Quantify overlapping
 // same-height triangles for a follow-up, without touching the visible layout.
@@ -28,7 +30,9 @@ try {
     }
     results.push({ name, step: 0.01, overlappingPoints, example });
   }
-  await writeFile('evidence/lighting/path-overlap.json', `${JSON.stringify(results, null, 2)}\n`);
+  const output = outputDirectory('path-overlap-audit');
+  await mkdir(output, { recursive: true });
+  await writeFile(join(output, 'path-overlap.json'), `${JSON.stringify(results, null, 2)}\n`);
   console.log(JSON.stringify(results));
 } finally {
   await vite.close();

@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { access, readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { verifyBaselineArchive } from './baseline-archive.mjs';
 
-// This reference is captured from a clean, detached main worktree, not from
-// the implementation under test. The dump deliberately excludes Three UUIDs.
-export const REFERENCE_SHA = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
-export const REFERENCE_PATH = 'tests/fixtures/scene-b41492e.json.gz';
+// The reference comes from verified clean main, never the implementation under
+// test. The dump deliberately excludes Three UUIDs.
+export const REFERENCE_SHA = '8dd79b81bad7eec1d45a018715b357003f483f1c';
+export const REFERENCE_PATH = 'tests/fixtures/scene-8dd79b8.json.gz';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb760001;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -194,8 +195,15 @@ async function sceneDump(page) {
     const shelter = scene.getObjectByName('sheepfold-lean-to');
     const smoke = scene.getObjectByName('chimney-smoke');
     const fireflies = scene.getObjectByName('night-fireflies');
+    const hives = [1, 2].map((index) => scene.getObjectByName(`beehive-${index}`));
+    const flowers = [1, 2, 3, 4].map((index) => scene.getObjectByName(`flower-patch-${index}`));
     if (!fold || sheep.some((animal) => !animal) || !shelter || !smoke || !fireflies) {
       throw new Error('The dump must include both sheep, their fold and shelter, smoke and fireflies');
+    }
+    if (!scene.getObjectByName('garden-beehives') || !scene.getObjectByName('garden-flower-patches') ||
+      hives.some((hive) => !hive || !hive.getObjectByName(`${hive.name}-shadow`)) ||
+      flowers.some((patch) => !patch || !patch.getObjectByName(`${patch.name}-shadow`))) {
+      throw new Error('The dump must include both hives, four flower patches and their contact shadows');
     }
     const canvas = renderer.domElement;
     return {
@@ -209,7 +217,10 @@ async function sceneDump(page) {
       canvas: { width: canvas.width, height: canvas.height, styleWidth: canvas.style.width, styleHeight: canvas.style.height,
         transform: canvas.style.transform, imageRendering: canvas.style.imageRendering },
       features: { sheep: sheep.length, foldChildren: fold.children.length,
-        smokePuffs: smoke.children.length, fireflies: fireflies.count },
+        smokePuffs: smoke.children.length, fireflies: fireflies.count,
+        hives: hives.length, flowerPatches: flowers.length,
+        flowerHeads: scene.getObjectsByProperty('name', 'flower-head').length,
+        plotSeedlings: scene.getObjectsByProperty('name', 'garden-plot-seedling').length },
       objects, materials, geometries,
     };
   });
@@ -294,10 +305,12 @@ export async function captureSceneData(root) {
       await page.mouse.move(p.x, p.y);
       assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
       snapshots['plot-valid'] = await sceneDump(page);
+      assert.equal(snapshots['plot-valid'].features.plotSeedlings, 8, 'The plot ghost must be captured');
       await page.mouse.click(p.x, p.y);
       assert.equal(await page.evaluate(() => window.__ebr76Scene.scene.getObjectByName('placement-layer').children
         .filter((item) => item.name === 'placed-plot').length), 1);
       snapshots['plot-placed'] = await sceneDump(page);
+      assert.equal(snapshots['plot-placed'].features.plotSeedlings, 16, 'The placed plot and ghost must both be captured');
       assert.deepEqual(fixture.errors, []);
     } finally { await fixture.context.close(); }
     return { format: 1, viewport, deviceScaleFactor: 1, seed, snapshots };
@@ -324,7 +337,12 @@ function assertSameDump(expected, actual, label) {
   }
 }
 
-function assertCleanMain(root) {
+async function assertCleanMain(root) {
+  const isWorktree = await access(join(root, '.git')).then(() => true, () => false);
+  if (!isWorktree) {
+    await verifyBaselineArchive(root, REFERENCE_SHA);
+    return;
+  }
   const git = (...parts) => execFileSync('git', ['-C', root, ...parts], { encoding: 'utf8' }).trim();
   assert.equal(git('rev-parse', 'HEAD'), REFERENCE_SHA, 'Reference must be the ticket baseline');
   assert.equal(git('status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
@@ -342,15 +360,16 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/scene-data-du
   const args = process.argv.slice(2);
   if (args[0] === '--write-reference' && args[1]) {
     const root = resolve(args[1]);
-    assertCleanMain(root);
+    await assertCleanMain(root);
     const json = JSON.stringify(await captureSceneData(root));
     const packed = packSceneReference(json);
     assert.equal(unpackSceneReference(packed), json, 'Packed fixture must reconstruct the exact reference bytes');
+    await assertCleanMain(root);
     await writeFile(REFERENCE_PATH, packed, { flag: 'wx' });
     console.log(`Reference ${REFERENCE_SHA}: ${Buffer.byteLength(json)} bytes, ${packed.length} compressed, SHA-256 ${hash(Buffer.from(json))}`);
   } else if (args[0] === '--against-main' && args[1]) {
     const root = resolve(args[1]);
-    assertCleanMain(root);
+    await assertCleanMain(root);
     const expected = unpackSceneReference(await readFile(REFERENCE_PATH));
     assertSameDump(expected, JSON.stringify(await captureSceneData(root)), 'Clean main recapture');
     const result = await compareSceneData();
@@ -359,6 +378,6 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/scene-data-du
     const result = await compareSceneData();
     console.log(`Scene dump matches ${REFERENCE_SHA}: ${result.snapshots.length} snapshots, ${result.bytes} bytes, SHA-256 ${result.sha256}`);
   } else {
-    throw new Error('Usage: node tools/scene-data-dump.mjs [--write-reference|--against-main <clean-main-worktree>]');
+    throw new Error('Usage: node tools/scene-data-dump.mjs [--write-reference|--against-main <clean-main-archive-or-worktree>]');
   }
 }

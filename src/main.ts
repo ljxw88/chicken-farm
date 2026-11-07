@@ -5,7 +5,8 @@ import type { AppContext, AppModule } from './app/context';
 import { registerEffects } from './app/effects';
 import { registerEngine } from './app/engine';
 import { registerEnvironment } from './app/environment';
-import { registerFarm } from './app/farm';
+import { registerFarm, registerFarmDecorations } from './app/farm';
+import { registerGarden } from './app/garden';
 import { registerHud } from './app/hud';
 import { registerPlacement } from './app/placement';
 import { registerPresentation } from './app/presentation';
@@ -22,7 +23,7 @@ if (!skyRoot) throw new Error('Sky HUD root not found');
 // The ordered modules fill the shared context before any frame or input event.
 const context = { canvas, hudRoot, skyRoot } as AppContext;
 const modules: readonly AppModule[] = [
-  registerScene, registerFarm, registerEngine, registerEnvironment, registerEffects,
+  registerScene, registerFarm, registerGarden, registerFarmDecorations, registerEngine, registerEnvironment, registerEffects,
   registerStartup, registerCharacter, registerPlacement, registerHud, registerPresentation,
 ];
 for (const register of modules) register(context);

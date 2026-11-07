@@ -6,6 +6,9 @@ and the `*Geometry.ts` files supply sizes and collision footprints. The default
 is assembled by the render factories in `src/render/`, which resolve the IDs in
 the data. `sheep.ts` separates the fold and shelter footprints, sheep geometry,
 and their `fence`, `building.sheepfold`, and `prop.sheep` IDs from appearance.
+`garden.ts` keeps the hive and flower positions, asset IDs, silhouettes and hive
+footprint separate from their palette and shadow-opacity slots. Plot geometry
+stays in `placementGeometry.ts`, while its tile footprint remains in `world.ts`.
 `effects.ts` supplies the `effect.fireflies` and `effect.chimney-smoke` IDs,
 positions, counts and motion parameters; `startup.ts` owns the default seeds and
 query keys. Placement entities likewise carry `fence` or `plot` asset IDs.

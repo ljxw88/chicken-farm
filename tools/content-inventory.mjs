@@ -6,6 +6,7 @@ import { createServer } from 'vite';
 const modules = {
   slots: ['ART_SLOTS'],
   farm: ['FARM_CONTENT_ID', 'FARM_LAYOUT', 'FARM_DECORATIONS'],
+  garden: ['GARDEN_DRESSING', 'BEEHIVE_FOOTPRINT', 'BEEHIVE_GEOMETRY', 'FLOWER_GEOMETRY'],
   buildings: ['FARM_BUILDINGS'],
   world: ['ISLAND', 'STAIR', 'GRID'],
   propGeometry: ['PATH_GEOMETRY', 'TREE_GEOMETRY', 'POND_GEOMETRY', 'GRASS_GEOMETRY'],

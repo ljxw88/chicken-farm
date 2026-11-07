@@ -12,6 +12,9 @@ export function registerFarm(context: AppContext) {
   context.obstacles.push(...sheepfold.obstacles);
   context.clickTargets.push(...sheepfold.clickTargets);
   context.sheepfold = sheepfold;
+}
+
+export function registerFarmDecorations(context: AppContext) {
   context.decorations = createFarmDecorations(context.scene, GROUND_HEIGHT);
   context.farmShadows = createFarmShadows(context.scene);
 }

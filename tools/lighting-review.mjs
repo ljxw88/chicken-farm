@@ -1,11 +1,12 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Fixed-URL, pixel-pass review frames. Test-only facing/zoom changes do not
 // ship in the game; the full frames retain the normal camera and spawn pose.
 const url = process.env.LIGHTING_URL || 'http://100.88.150.21:5184';
-const dir = process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting';
+const dir = outputDirectory('lighting-review', 'LIGHTING_EVIDENCE_DIR');
 const label = process.env.LIGHTING_REVIEW_LABEL || 'review';
 const only = process.env.LIGHTING_REVIEW_ONLY;
 await mkdir(dir, { recursive: true });

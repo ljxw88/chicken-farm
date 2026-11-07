@@ -279,7 +279,7 @@ test('walking obstacles match only the visible wall, coop bodies and ramps, whil
 test('locked gaps, walkable path surface, stairs and the +X keep-out remain verifiable', () => {
   assert.deepEqual(FARM_LAYOUT.trees, [
     { x: -2.15, z: 1.55, scale: 0.95 }, { x: 4.8, z: 1.6, scale: 1 },
-    { x: -5.8, z: -0.1, scale: 1.05 }, { x: 0.05, z: -5.6, scale: 0.95 },
+    { x: -5.8, z: -0.1, scale: 1.05 }, { x: -0.35, z: -5.8, scale: 0.9 },
   ]);
   assert.equal(FARM_LAYOUT.pond.x, 4);
   assert.equal(FARM_LAYOUT.pond.z, -3.5);

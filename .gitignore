@@ -1,2 +1,6 @@
 node_modules/
 dist/
+__pycache__/
+/evidence/
+/DELIVER*.txt
+/handoffs/

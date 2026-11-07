@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -8,6 +9,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairsAcrossBridge } from './parity-bridge-route.mjs';
+import { historicalFixtures, outputDirectory } from './evidence-path.mjs';
 
 // Based on the EBR-73 Gate G harness. Main did not yet contain that tool.
 // Baselines are explicit archived commits; a comparison never re-records one.
@@ -23,7 +25,9 @@ const baselineRef = value('--baseline-sha');
 const suppliedUrl = value('--url');
 if (recording && (!baselineRef || suppliedUrl)) throw new Error('Use --record-baseline --baseline-sha <origin/main SHA>');
 if (!recording && baselineRef) throw new Error('--baseline-sha is only valid when recording');
-const evidence = resolve('evidence/lighting/parity');
+const evidence = outputDirectory('lighting-parity');
+const baselineDirectory = process.env.LIGHTING_PARITY_BASELINE_DIR ? resolve(process.env.LIGHTING_PARITY_BASELINE_DIR) :
+  existsSync(join(evidence, 'baseline.json')) ? evidence : join(historicalFixtures, 'lighting/parity');
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -86,7 +90,7 @@ try {
     }, null, 2)}\n`);
     console.log(`Baseline: ${sourceSha}`);
   } else {
-    const baseline = JSON.parse(await readFile(join(evidence, 'baseline.json'), 'utf8'));
+    const baseline = JSON.parse(await readFile(join(baselineDirectory, 'baseline.json'), 'utf8'));
     assert.equal(browser.version(), baseline.browser, 'Use the same Chromium version as the baseline');
     assert.deepEqual(baseline.viewport, viewport);
     assert.equal(baseline.deviceScaleFactor, 1);
@@ -98,7 +102,7 @@ try {
     const results = {};
     const stateMismatches = [];
     for (const { name } of scenarios) {
-      const before = await readFile(join(evidence, 'baseline', `${name}.png`));
+      const before = await readFile(join(baselineDirectory, 'baseline', `${name}.png`));
       const after = await readFile(join(output, `${name}.png`));
       assert.equal(hash(before), baseline.frames[name].sha256, `Baseline image changed: ${name}`);
       for (const key of ['position', 'yaw', 'camera', 'cameraQuaternion', 'cameraZoom', 'pixel', 'weather', 'phase', 'buildings']) {

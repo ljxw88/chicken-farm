@@ -1,11 +1,12 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { outputDirectory } from './evidence-path.mjs';
 
 // Test-only close framing near the existing sign: compare real rendered pixels
 // with the carried point light on/off, without adding any test light or prop.
 const url = process.env.LIGHTING_URL || 'http://100.88.150.21:5184';
-const dir = process.env.LIGHTING_EVIDENCE_DIR || 'evidence/lighting';
+const dir = outputDirectory('lantern-audit', 'LIGHTING_EVIDENCE_DIR');
 const label = process.env.LIGHTING_CAPTURE_LABEL || 'lantern';
 const tune = JSON.parse(process.env.LIGHTING_TUNE || '{}');
 await mkdir(dir, { recursive: true });
