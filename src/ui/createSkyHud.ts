@@ -39,6 +39,7 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   root.dataset.inputScope = 'ui';
 
   const { element: panel, close } = createPanel({ id: 'sky-panel', title: 'A changing sky', closeLabel: 'Close sky settings' });
+  panel.tabIndex = -1;
 
   const columns = document.createElement('div');
   columns.className = 'hud-columns';
@@ -97,6 +98,7 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
 
   const toolbar = document.createElement('div');
   toolbar.className = 'hud-toolbar';
+  toolbar.tabIndex = -1;
   toolbar.setAttribute('role', 'group');
   toolbar.setAttribute('aria-label', 'Farm controls');
   const sound = createIconButton('Sound unavailable', SPEAKER_ICON, 'hud-toolbar__button');
@@ -172,6 +174,17 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   });
   document.addEventListener('fullscreenchange', syncFullscreen);
 
+  function handleHudPointerDown(event: PointerEvent) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const surface = target.closest<HTMLElement>('.hud-panel, .hud-toolbar');
+    if (!surface || !root.contains(surface)) return;
+    // Focus non-focusable surfaces and cover browsers that do not focus
+    // buttons on pointer input, without preventing clicks or touch scrolling.
+    surface.focus({ preventScroll: true });
+  }
+  root.addEventListener('pointerdown', handleHudPointerDown, true);
+
   function handleHudKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape' && panelOpen && root.contains(document.activeElement)) {
       event.preventDefault();
@@ -226,6 +239,7 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
 
   function dispose() {
     document.removeEventListener('fullscreenchange', syncFullscreen);
+    root.removeEventListener('pointerdown', handleHudPointerDown, true);
     root.removeEventListener('keydown', handleHudKeyDown);
     document.body.classList.remove('sky-panel-open');
     delete root.dataset.inputScope;

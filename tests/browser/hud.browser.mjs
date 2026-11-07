@@ -223,6 +223,24 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   assert.deepEqual([surface.titleSize, surface.valueSize, surface.toggleSize, surface.footerSize, surface.artwork],
     ['20px', '22px', '14px', '13px', 120]);
   assert.equal(await page.getByRole('button', { name: 'Sound unavailable' }).evaluate((node) => getComputedStyle(node).opacity), '0.45');
+  const alignment = await panel.evaluate((element) => {
+    const measure = (node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const box = node.getBoundingClientRect();
+      const textBox = range.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return { text: node.textContent, align: style.textAlign, textLeft: textBox.left,
+        textBox: { x: textBox.x, y: textBox.y, width: textBox.width, height: textBox.height },
+        contentLeft: box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft) };
+    };
+    return [...element.querySelectorAll('.hud-column__heading, .hud-panel__footer')].map(measure);
+  });
+  assert.deepEqual(alignment.map((item) => item.text), ['Time of day', 'Weather', 'One farm day lasts 24 minutes.']);
+  for (const item of alignment) {
+    assert.equal(item.align, 'left');
+    assert.ok(Math.abs(item.textLeft - item.contentLeft) < 1, `not left-aligned: ${JSON.stringify(item)}`);
+  }
   const layout = await assertSeparated(page, { width: 1280, height: 720 });
   assert.ok(Math.abs(layout.panel.width - 536) < 1 && Math.abs(layout.panel.height - 365) < 8, JSON.stringify(layout.panel));
   assert.ok(Math.abs(layout.panel.y + layout.panel.height - 626) < 1, JSON.stringify(layout.panel));
@@ -308,7 +326,129 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   await page.keyboard.press('Escape');
   assert.equal(await panel.isHidden(), true);
   assert.deepEqual(errors, []);
-  proof.desktop = { surface, cycling: 'four phases, three real weather states, both automations', fullscreen: fullscreenResult, errors };
+  proof.desktop = { surface, alignment, cycling: 'four phases, three real weather states, both automations', fullscreen: fullscreenResult, errors };
+});
+
+test('desktop Woodland and placement bars stay unchanged unless placement state changes', { timeout: 60000 }, async (t) => {
+  const contexts = [];
+  const pages = [];
+  const errors = [];
+  for (const hideSky of [true, false]) {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+    contexts.push(context);
+    t.after(() => context.close());
+    await context.addInitScript(() => {
+      let id = 0;
+      const callbacks = new Map();
+      window.requestAnimationFrame = (callback) => { callbacks.set(++id, callback); return id; };
+      window.cancelAnimationFrame = (handle) => callbacks.delete(handle);
+      window.__desktopBarStep = (time) => {
+        const pending = [...callbacks.values()];
+        callbacks.clear();
+        if (!pending.length) throw new Error('No animation frame scheduled');
+        for (const callback of pending) callback(time);
+      };
+    });
+    const opened = await openPage(context, `${devUrl}/?phase=morning&weather=clear&seed=0xeb730001${hideSky ? '&skyhud=0' : ''}`);
+    pages.push(opened.page);
+    errors.push(opened.errors);
+    await opened.page.evaluate(() => document.fonts.ready);
+    await opened.page.evaluate(() => { for (let i = 0; i <= 25; i++) window.__desktopBarStep(i * 100); });
+  }
+  const [hidden, visible] = pages;
+  const inspect = (page) => page.evaluate(() => {
+    const rect = (node) => {
+      const box = node.getBoundingClientRect();
+      return { x: box.x, y: box.y, width: box.width, height: box.height };
+    };
+    const bar = document.querySelector('.placement-controls');
+    const biome = document.querySelector('.farm-biome');
+    return { placement: { box: rect(bar), active: bar.classList.contains('is-active'),
+      top: getComputedStyle(bar).top, left: getComputedStyle(bar).left, transform: getComputedStyle(bar).transform,
+      buttons: [...bar.querySelectorAll('button')].filter((button) => !button.closest('[hidden]')).map((button) => ({
+        text: button.textContent.trim(), disabled: button.disabled, pressed: button.getAttribute('aria-pressed'),
+        hovered: button.matches(':hover'), focused: button === document.activeElement,
+      })) }, biome: { box: rect(biome), text: biome.textContent.trim() } };
+  });
+  const screenshot = async (context, page, name) => {
+    const cdp = await context.newCDPSession(page);
+    try {
+      const bytes = Buffer.from((await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
+      if (evidenceDir) await writeFile(join(evidenceDir, name), bytes);
+      return bytes;
+    } finally { await cdp.detach(); }
+  };
+  const compare = (first, second, regions) => visible.evaluate(async ({ a, b, regions }) => {
+    const decode = async (data) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${data}`;
+      await image.decode();
+      return image;
+    };
+    const [before, after] = await Promise.all([decode(a), decode(b)]);
+    const canvas = document.createElement('canvas');
+    canvas.width = before.width; canvas.height = before.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(before, 0, 0);
+    const original = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(after, 0, 0);
+    const current = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    return Object.fromEntries(Object.entries(regions).map(([name, [left, top, right, bottom]]) => {
+      let pixels = 0, minX = right, minY = bottom, maxX = -1, maxY = -1;
+      for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) {
+        const i = (y * canvas.width + x) * 4;
+        if ([0, 1, 2, 3].every((channel) => original[i + channel] === current[i + channel])) continue;
+        pixels++;
+        minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+      }
+      return [name, { pixels, bounds: pixels ? { minX, minY, maxX, maxY } : null }];
+    }));
+  }, { a: first.toString('base64'), b: second.toString('base64'), regions });
+
+  const baselineState = await inspect(hidden);
+  const baselineImage = await screenshot(contexts[0], hidden, 'desktop-bars-hidden.png');
+  const closedState = await inspect(visible);
+  const closedImage = await screenshot(contexts[1], visible, 'desktop-bars-closed.png');
+  await visible.evaluate(() => document.querySelector('[data-action="sky"]').click());
+  const openState = await inspect(visible);
+  const openImage = await screenshot(contexts[1], visible, 'desktop-bars-open.png');
+  assert.deepEqual(closedState, baselineState);
+  assert.deepEqual(openState, baselineState);
+  const idleRegions = { woodland: [0, 0, 260, 150], placement: [450, 0, 830, 150] };
+  const closedDiff = await compare(baselineImage, closedImage, idleRegions);
+  const openDiff = await compare(baselineImage, openImage, idleRegions);
+  for (const region of ['woodland', 'placement']) {
+    assert.equal(closedDiff[region].pixels, 0, `closed ${region}: ${JSON.stringify(closedDiff[region])}`);
+    assert.equal(openDiff[region].pixels, 0, `open ${region}: ${JSON.stringify(openDiff[region])}`);
+  }
+
+  // Demonstrate real bar-state changes without changing its desktop CSS.
+  await visible.evaluate(() => document.querySelector('[data-action="sky"]').click());
+  const fence = await visible.locator('[data-fence]').boundingBox();
+  await visible.mouse.move(fence.x + fence.width / 2, fence.y + fence.height / 2);
+  const hoverState = await inspect(visible);
+  const hoverImage = await screenshot(contexts[1], visible, 'desktop-bars-hover.png');
+  const stateRegions = { woodland: [0, 0, 260, 150], placement: [450, 0, 830, 220], frame: [0, 0, 1280, 720] };
+  const hoverDiff = await compare(closedImage, hoverImage, stateRegions);
+  assert.deepEqual(hoverState.placement.box, baselineState.placement.box);
+  assert.equal(hoverState.placement.buttons.find((button) => button.text.startsWith('Fence')).hovered, true);
+  assert.ok(hoverDiff.placement.pixels > 0, 'hover must visibly differ from idle');
+  assert.equal(hoverDiff.frame.pixels, hoverDiff.placement.pixels, 'idle-to-hover changes must stay at the placement bar');
+
+  // Selecting Fence expands the detail and highlights the button.
+  await visible.mouse.move(0, 0);
+  await visible.evaluate(() => document.querySelector('[data-fence]').click());
+  const activeState = await inspect(visible);
+  const activeImage = await screenshot(contexts[1], visible, 'desktop-bars-active.png');
+  const activeDiff = await compare(closedImage, activeImage, stateRegions);
+  assert.equal(activeState.placement.active, true);
+  assert.equal(activeState.placement.buttons.find((button) => button.text.startsWith('Fence')).pressed, 'true');
+  assert.ok(activeDiff.placement.pixels > 0, 'active placement must visibly differ from idle');
+  assert.equal(activeDiff.woodland.pixels, 0);
+  assert.equal(activeDiff.frame.pixels, activeDiff.placement.pixels, 'idle-to-active changes must stay at the placement bar');
+  for (const list of errors) assert.deepEqual(list, []);
+  proof.desktopBarAudit = { baselineState, closedState, openState, hoverState, activeState, closedDiff, openDiff, hoverDiff, activeDiff, errors };
 });
 
 test('panel input does not walk or place; walking and placement work with it open and closed', { timeout: 90000 }, async (t) => {
@@ -366,6 +506,163 @@ test('panel input does not walk or place; walking and placement work with it ope
   const closedWalkPoint = await walkToUncoveredGround(page);
   assert.deepEqual(errors, []);
   proof.input = { start, afterWASD, openWalkPoint, placementPoint: point, closedWalkPoint, errors };
+});
+
+test('non-focusable sky surfaces isolate pointer, walking and placement keys', { timeout: 90000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
+  const panel = page.locator('#sky-panel');
+  const sky = page.locator('[data-action="sky"]');
+  const focusBody = async () => {
+    await page.evaluate(() => { document.body.tabIndex = -1; document.body.focus(); });
+    assert.equal(await page.evaluate(() => document.activeElement === document.body), true);
+  };
+  const placementState = () => page.evaluate(() => {
+    const state = [...window.__ebr36Test.engine.world.with('placement')][0].placement;
+    return { kind: state.kind, rotation: state.rotation };
+  });
+  const assertIsolated = async (name, action) => {
+    await focusBody();
+    const before = await position(page);
+    await action();
+    await page.keyboard.down('w');
+    await page.waitForTimeout(450);
+    await page.keyboard.up('w');
+    assert.ok(distance(before, await position(page)) < 0.001, `${name}: W moved the chicken`);
+    for (const key of ['f', 'p', 'r', 'z']) await page.keyboard.press(key);
+    assert.equal(await page.evaluate(() => window.__ebr36Test.placement.isActive()), false, `${name}: placement shortcut leaked`);
+    assert.equal(await placed(page), 0);
+  };
+
+  await sky.click();
+  await assertIsolated('heading', () => page.getByRole('heading', { name: 'A changing sky' }).click());
+  await assertIsolated('panel padding', () => panel.click({ position: { x: 8, y: 80 } }));
+  await assertIsolated('illustration', () => page.locator('.hud-column__artwork').first().click());
+  await assertIsolated('column divider', async () => {
+    const box = await page.locator('.hud-column').nth(1).boundingBox();
+    await page.mouse.click(box.x + 0.5, box.y + box.height / 2);
+  });
+  await assertIsolated('footer divider', async () => {
+    const box = await page.locator('.hud-panel__footer').boundingBox();
+    await page.mouse.click(box.x + 30, box.y + 0.5);
+  });
+  await assertIsolated('toolbar gap', async () => {
+    const a = await page.locator('.hud-toolbar__button').nth(0).boundingBox();
+    const b = await page.locator('.hud-toolbar__button').nth(1).boundingBox();
+    await page.mouse.click((a.x + a.width + b.x) / 2, a.y + a.height / 2);
+  });
+  await assertIsolated('disabled toolbar button', async () => {
+    const box = await page.getByRole('button', { name: 'Sound unavailable' }).boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  });
+  await assertIsolated('pointerdown before click', async () => {
+    const box = await panel.boundingBox();
+    await page.mouse.move(box.x + 8, box.y + 80);
+    await page.mouse.down();
+  });
+  await page.mouse.up();
+  await assertIsolated('enabled button pointerdown', async () => {
+    const box = await page.getByRole('button', { name: 'Next time of day' }).boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+  });
+  await page.mouse.up();
+
+  await page.getByRole('heading', { name: 'A changing sky' }).click();
+  await page.keyboard.press('Escape');
+  assert.equal(await panel.isHidden(), true, 'Escape in the panel should close it');
+
+  await focusBody();
+  await page.keyboard.press('f');
+  assert.equal((await placementState()).kind, 'fence');
+  await focusBody();
+  await page.keyboard.press('r');
+  assert.equal((await placementState()).rotation, 1);
+  await focusBody();
+  await page.keyboard.press('p');
+  assert.deepEqual(await placementState(), { kind: 'plot', rotation: 0 });
+  const point = await findUncoveredPlacement(page);
+  await page.mouse.click(point.x, point.y);
+  assert.equal(await placed(page), 1);
+  await focusBody();
+  await page.keyboard.press('z');
+  assert.equal(await placed(page), 0);
+  await focusBody();
+  await page.keyboard.press('Escape');
+  assert.equal((await placementState()).kind, null);
+  assert.deepEqual(errors, []);
+  proof.surfaceInput = { areas: ['heading', 'padding', 'illustration', 'column divider', 'footer divider',
+    'toolbar gap', 'disabled button', 'pointerdown', 'enabled button pointerdown'],
+    bodyShortcuts: ['F', 'R', 'P', 'Z', 'Escape'], errors };
+});
+
+test('touching non-focusable sky surfaces keeps subsequent walking keys isolated', { timeout: 60000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
+  await page.locator('[data-action="sky"]').tap();
+  const targets = [
+    ['heading', () => page.locator('.hud-panel__header h1').tap()],
+    ['illustration', () => page.locator('.hud-column__artwork').first().tap()],
+    ['footer', () => page.locator('.hud-panel__footer').tap()],
+    ['enabled selector', () => page.getByRole('button', { name: 'Next time of day' }).tap()],
+    ['toolbar gap', async () => {
+      const a = await page.locator('.hud-toolbar__button').nth(0).boundingBox();
+      const b = await page.locator('.hud-toolbar__button').nth(1).boundingBox();
+      await page.touchscreen.tap((a.x + a.width + b.x) / 2, a.y + a.height / 2);
+    }],
+    ['disabled toolbar button', async () => {
+      const box = await page.getByRole('button', { name: 'Sound unavailable' }).boundingBox();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    }],
+  ];
+  for (const [name, action] of targets) {
+    await page.evaluate(() => { document.body.tabIndex = -1; document.body.focus(); });
+    const before = await position(page);
+    await action();
+    await page.keyboard.down('w');
+    await page.waitForTimeout(450);
+    await page.keyboard.up('w');
+    assert.ok(distance(before, await position(page)) < 0.001, `${name}: W moved after touch`);
+    await page.keyboard.press('f');
+    assert.equal(await page.evaluate(() => window.__ebr36Test.placement.isActive()), false);
+  }
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#sky-panel').isHidden(), true);
+  assert.deepEqual(errors, []);
+  proof.touchSurfaceInput = { targets: targets.map(([name]) => name), errors };
+});
+
+test('touch scrolling remains available inside the compact sky panel', { timeout: 30000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
+  t.after(() => context.close());
+  const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`, true);
+  await page.locator('[data-action="sky"]').tap();
+  const panel = page.locator('#sky-panel');
+  const dimensions = await panel.evaluate((node) => ({ client: node.clientHeight, scroll: node.scrollHeight, top: node.scrollTop }));
+  assert.ok(dimensions.scroll > dimensions.client, `panel is not scrollable: ${JSON.stringify(dimensions)}`);
+  const box = await panel.boundingBox();
+  const cdp = await context.newCDPSession(page);
+  const x = box.x + 10, y = box.y + box.height - 35;
+  const point = (nextY) => ({ x, y: nextY, radiusX: 1, radiusY: 1, force: 1, id: 1 });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point(y)] });
+  for (let i = 1; i <= 8; i++) {
+    await page.waitForTimeout(30);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point(y - i * 18)] });
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(300);
+  await cdp.detach();
+  const after = await panel.evaluate((node) => node.scrollTop);
+  assert.ok(after > dimensions.top, `touch gesture did not scroll the panel: ${after}`);
+  const beforeWalk = await position(page);
+  await page.keyboard.down('w');
+  await page.waitForTimeout(450);
+  await page.keyboard.up('w');
+  assert.ok(distance(beforeWalk, await position(page)) < 0.001, 'W moved after scrolling inside the panel');
+  assert.deepEqual(errors, []);
+  proof.touchScroll = { before: dimensions.top, after, errors };
 });
 
 test('responsive touch layouts keep the phase pill, placement and sky controls separate', { timeout: 120000 }, async (t) => {

@@ -139,7 +139,7 @@
   font-size: var(--hud-column-label-size);
   font-weight: 550;
   line-height: 18px;
-  text-align: center;
+  text-align: left;
 }
 
 .hud-column__artwork {
@@ -240,14 +240,15 @@
 .hud-panel__footer {
   display: grid;
   min-height: 52px;
-  place-items: center;
+  align-items: center;
+  justify-items: start;
   margin: 0 calc(0px - var(--hud-panel-inset));
   padding: 0 var(--hud-panel-inset);
   border-top: 1px solid var(--hud-divider);
   color: var(--hud-muted);
   font-size: var(--hud-footer-size);
   line-height: 1.4;
-  text-align: center;
+  text-align: left;
 }
 
 .hud-toolbar {
