@@ -29,6 +29,7 @@ const evidence = resolve(process.env.PARITY_EVIDENCE_DIR || 'evidence/EBR-73');
 const comparisonOutput = resolve(process.env.PARITY_OUTPUT_DIR || evidence);
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb730001;
+const ticketBaseline = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const scenarios = [
   { name: 'spawn', search: '?phase=daytime&weather=clear', setup: 'spawn' },
@@ -54,8 +55,9 @@ try {
   let sourceSha;
   if (recordBaseline) {
     sourceSha = execFileSync('git', ['rev-parse', '--verify', `${baselineSha}^{commit}`], { encoding: 'utf8' }).trim();
-    assert.equal(sourceSha, execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim(),
-      'Baseline must be origin/main at the time of recording');
+    const currentMain = execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim();
+    assert.ok(sourceSha === currentMain || sourceSha === ticketBaseline,
+      'Baseline must be current origin/main or the explicitly pinned EBR-76 main');
     try {
       temp = await mkdtemp('/tmp/opencode/ebr73-parity-');
     } catch (error) {
@@ -69,6 +71,17 @@ try {
     execFileSync('tar', ['-xf', archive, '-C', root]);
     await symlink(resolve('node_modules'), join(root, 'node_modules'), 'dir');
   }
+
+  // Use one target for both sides of a comparison. Old signed baselines used
+  // y=381; the pinned EBR-76 reference already contains the sheepfold and uses
+  // y=340. New baselines can explicitly record another target if needed.
+  const baseline = recordBaseline ? undefined : JSON.parse(await readFile(join(evidence, 'baseline.json'), 'utf8'));
+  if (baseline) assert.match(baseline.sourceSha, /^[a-f0-9]{40}$/, 'Baseline must identify its Git commit');
+  const implicitPlacementY = (sourceSha ?? baseline?.sourceSha) === ticketBaseline ? 340 : 381;
+  const recordedPlacementY = baseline?.placementY ?? implicitPlacementY;
+  const placementY = process.env.PARITY_PLACEMENT_Y === undefined ? recordedPlacementY : Number(process.env.PARITY_PLACEMENT_Y);
+  assert.ok(Number.isFinite(placementY) && placementY >= 0 && placementY < viewport.height, 'Invalid placement target');
+  if (baseline) assert.equal(placementY, recordedPlacementY, 'Candidate must use the recorded placement target');
 
   let baseUrl = suppliedUrl?.replace(/\/$/, '');
   if (!baseUrl) {
@@ -93,17 +106,17 @@ try {
   await mkdir(output, { recursive: true });
   const frames = {};
   for (const scenario of scenarios) {
-    frames[scenario.name] = await captureScenario(browser, baseUrl, scenario, join(output, `${scenario.name}.png`));
+    frames[scenario.name] = await captureScenario(browser, baseUrl, scenario, join(output, `${scenario.name}.png`), placementY);
     console.log(`Captured ${recordBaseline ? 'baseline' : 'candidate'} ${scenario.name}`);
   }
 
   if (recordBaseline) {
     await writeFile(join(evidence, 'baseline.json'), `${JSON.stringify({
-      sourceSha, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, scenarios, frames,
+      sourceSha, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, placementY, scenarios, frames,
     }, null, 2)}\n`);
     console.log(`Baseline: ${sourceSha}`);
   } else {
-    const baseline = JSON.parse(await readFile(join(evidence, 'baseline.json'), 'utf8'));
+    assert.ok(baseline);
     assert.equal(browserVersion, baseline.browser, 'Use the same Chromium version as the baseline');
     assert.deepEqual(baseline.viewport, viewport);
     assert.equal(baseline.deviceScaleFactor, 1);
@@ -166,7 +179,7 @@ try {
     ], { encoding: 'utf8' }).trim();
     await writeFile(join(comparisonOutput, 'parity.json'), `${JSON.stringify({
       baselineSha: baseline.sourceSha, candidateSha, candidateUrl: suppliedUrl ?? 'local Vite (working tree)',
-      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, results, stateMismatches, frames,
+      sourceStatus, browser: browserVersion, viewport, deviceScaleFactor: 1, seed, placementY, results, stateMismatches, frames,
     }, null, 2)}\n`);
     assert.ok(Object.values(results).every((result) => result.changedPixels === 0), 'Gate G: pixel differences found');
     assert.deepEqual(stateMismatches, [], 'Gate G: pose, camera or environment differs from the baseline');
@@ -177,7 +190,7 @@ try {
   if (temp) await rm(temp, { recursive: true, force: true });
 }
 
-async function captureScenario(browser, baseUrl, scenario, path) {
+async function captureScenario(browser, baseUrl, scenario, path, placementY) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   const page = await context.newPage();
   const errors = [];
@@ -210,13 +223,19 @@ async function captureScenario(browser, baseUrl, scenario, path) {
     // Like the existing browser tests, instrument the served Vite module only.
     // Supplying random here reaches createRainEffect at construction, including
     // its initial particle positions; normal app initialization is unchanged.
+    await page.route('**/src/app/environment.ts*', async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
+      await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr73Random,') });
+    });
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
       const body = await response.text();
       const matches = body.match(/\bcreateWeatherSystem\(\{/g) ?? [];
-      assert.equal(matches.length, 1, 'Expected one weather initialization in the Vite main module');
+      assert.ok(matches.length === 1 || (matches.length === 0 && /\bconst context\s*=/.test(body)), 'Unknown Vite app entry point');
       await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr73Random,')}
-window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, renderer, composer, placement };
+window.__ebr73Parity = typeof context !== 'undefined' ? context : { scene, camera, character, controls, follow, stairs, renderer, composer, placement };
 ` });
     });
     await page.goto(`${baseUrl}/${scenario.search}`, { waitUntil: 'networkidle' });
@@ -251,7 +270,7 @@ window.__ebr73Parity = { scene, camera, character, controls, follow, stairs, ren
       assert.ok(distance < 0.03, `Click-walk did not reach stairs pad: ${distance}`);
     } else if (scenario.setup === 'placement') {
       await page.keyboard.press('f');
-      await page.mouse.move(449, 381);
+      await page.mouse.move(449, placementY);
       assert.match(await page.locator('.placement-status').textContent(), /Ready to place/);
       await page.evaluate(() => window.__ebr73Step(100));
       assert.equal(await page.evaluate(() => window.__ebr73Parity.scene.getObjectByName('placement-ghost')?.visible), true);

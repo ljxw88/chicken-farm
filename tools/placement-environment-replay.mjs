@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -11,6 +11,7 @@ import { createServer } from 'vite';
 const historicalSha = 'dcbaf70b8f2c1038afe5c0b70f506ec7de931214';
 const mergedMainSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const contentMainSha = '6daf042ad85882f020268baf53fc92fb09e921ad';
+const ticketMainSha = 'b41492ef04210b73c38c09379f6dfa4e42581d71';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb750001;
 const phases = ['morning', 'daytime', 'sunset', 'night'];
@@ -106,12 +107,19 @@ async function open(browser, url, search) {
       };
     };
   }, { seed });
-  await page.route('**/src/main.ts*', async (route) => {
+  await page.route('**/src/app/environment.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
+    await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr75Random,') });
+  });
+  await page.route('**/src/main.ts*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+    assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)), 'Unknown Vite app entry point');
     await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr75Random,')}
-window.__ebr75 = { scene, camera, character, obstacles, stairs, dayNight, composer };
+window.__ebr75 = typeof context !== 'undefined' ? context : { scene, camera, character, obstacles, stairs, dayNight, composer };
 ` });
   });
   await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
@@ -158,8 +166,8 @@ async function perform(fixture, action) {
   return { label: action.label, outcome, samples: [await page.evaluate(() => window.__ebr75Sample())] };
 }
 
-async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
-  const visibility = await fixture.page.evaluate(({ hideBody, hideRain }) => {
+async function capture(fixture, { hideBody = false, hideRain = false, hideFold = true, isolateEffects = true } = {}) {
+  const visibility = await fixture.page.evaluate(({ hideBody, hideRain, hideFold }) => {
     const { scene, character, composer } = window.__ebr75;
     const body = character.children.find((child) => child.geometry?.type === 'CapsuleGeometry');
     const rain = scene.getObjectByName('weather-rain');
@@ -167,16 +175,17 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
     const previous = { body: body.visible, rain: rain.visible, fold: fold?.visible };
     // Keep the EBR-70 collision entities active, hiding only its new visual
     // group during these historical fold-free reference screenshots.
-    if (fold) fold.visible = false;
+    if (fold && hideFold) fold.visible = false;
     if (hideBody) body.visible = false;
     if (hideRain) rain.visible = false;
     composer.render(0);
     return previous;
-  }, { hideBody, hideRain });
+  }, { hideBody, hideRain, hideFold });
   const cdp = await fixture.context.newCDPSession(fixture.page);
   try {
     const screenshot = async () => Buffer.from((await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true })).data, 'base64');
     const image = await screenshot();
+    if (!isolateEffects) return { image, withoutEffects: image };
     const flags = await fixture.page.evaluate(() => {
       const { scene, composer } = window.__ebr75;
       const smoke = scene.getObjectByName('chimney-smoke');
@@ -214,7 +223,7 @@ async function capture(fixture, { hideBody = false, hideRain = false } = {}) {
   }
 }
 
-async function recordScenario(browser, url, scenario, replayScript, historical) {
+async function recordScenario(browser, url, scenario, replayScript, historical, exactVisual) {
   const fixture = await open(browser, url, scenario.search);
   const { page } = fixture;
   const script = [];
@@ -236,8 +245,8 @@ async function recordScenario(browser, url, scenario, replayScript, historical) 
   let time = 0;
   async function run(action) {
     if (action.type !== 'capture') return perform(fixture, action);
-    captures[action.label] = await capture(fixture);
-    bodylessCaptures[action.label] = await capture(fixture, { hideBody: true });
+    captures[action.label] = await capture(fixture, { hideFold: !exactVisual, isolateEffects: !exactVisual });
+    bodylessCaptures[action.label] = exactVisual ? captures[action.label] : await capture(fixture, { hideBody: true });
     // The older EBR-75 reference predates EBR-88. Isolate its already-approved
     // rain layer as well as the EBR-92 body, without allowing other changes.
     if (historical && await page.evaluate(() => window.getWeather().rainAmount > 0)) {
@@ -581,8 +590,9 @@ async function temporary(prefix) {
 export async function comparePlacementEnvironmentReplay({ baselineRoot, candidateRoot, baselineSha,
   baselineArchive = false, archivedBaselineSha, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.ok([historicalSha, mergedMainSha, contentMainSha].includes(baselineSha), 'Unknown replay reference');
+  assert.ok([historicalSha, mergedMainSha, contentMainSha, ticketMainSha].includes(baselineSha), 'Unknown replay reference');
   const historical = baselineSha === historicalSha;
+  const exactVisual = baselineSha === ticketMainSha;
   const scenarios = [
     { name: 'placement', search: '?phase=daytime&weather=clear' },
     { name: 'environment-cycle', search: '?phase=sunset&weather=clear' },
@@ -634,7 +644,7 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const referenceBothHidden = {};
     for (const scenario of scenarios) {
       const { frames, bodylessFrames, rainlessFrames, bothHiddenFrames, ...result } =
-        await recordScenario(browser, baseline.url, scenario, undefined, historical);
+        await recordScenario(browser, baseline.url, scenario, undefined, historical, exactVisual);
       reference[scenario.name] = result;
       referenceFrames[scenario.name] = frames;
       referenceBodyless[scenario.name] = bodylessFrames;
@@ -658,9 +668,10 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     const intendedBodyChanges = [];
     const unexpectedVisualChanges = [];
     const rawTraceDifferences = [];
+    let maskWritten = false;
     const diffPage = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     for (const scenario of scenarios) {
-      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script, historical);
+      const actual = await recordScenario(browser, candidate.url, scenario, saved.scenarios[scenario.name].script, historical, exactVisual);
       const expected = saved.scenarios[scenario.name].trace;
       for (let i = 0; i < actual.trace.length; i++) {
         if (!isDeepStrictEqual(actual.trace[i], expected[i])) rawTraceDifferences.push(`${scenario.name}:${actual.trace[i].label}`);
@@ -706,21 +717,31 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
           outsideAllowedPixels: diff.outsideAllowedPixels, hiddenChangedPixels: diff.hiddenChangedPixels, protectedChangedPixels };
         if (diff.changedPixels && historical && captured.environment.weather.rainAmount > 0) expectedRainChanges.push(name);
         else if (diff.changedPixels) intendedBodyChanges.push(name);
-        if (diff.rawOutsideAllowedPixels || diff.outsideAllowedPixels || diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
+        if ((exactVisual && diff.rawChangedPixels) || diff.rawOutsideAllowedPixels || diff.outsideAllowedPixels ||
+          diff.hiddenChangedPixels || protectedChangedPixels) unexpectedVisualChanges.push(name);
         if (evidenceDir) {
-          for (const dir of ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff',
-            'body-mask', 'rain-mask', 'effect-mask']) {
+          const directories = exactVisual ? ['baseline', 'candidate', 'diff', 'raw-diff', 'mask'] :
+            ['baseline', 'candidate', 'baseline-no-effects', 'candidate-no-effects', 'diff', 'raw-diff',
+              'body-mask', 'rain-mask', 'effect-mask'];
+          for (const dir of directories) {
             await mkdir(join(evidenceDir, dir), { recursive: true });
           }
           await writeFile(join(evidenceDir, 'baseline', `${name}.png`), original.image);
           await writeFile(join(evidenceDir, 'candidate', `${name}.png`), frame.image);
-          await writeFile(join(evidenceDir, 'baseline-no-effects', `${name}.png`), original.withoutEffects);
-          await writeFile(join(evidenceDir, 'candidate-no-effects', `${name}.png`), frame.withoutEffects);
           await writeFile(join(evidenceDir, 'diff', `${name}.png`), Buffer.from(diff.png, 'base64'));
           await writeFile(join(evidenceDir, 'raw-diff', `${name}.png`), Buffer.from(diff.rawPng, 'base64'));
-          await writeFile(join(evidenceDir, 'body-mask', `${name}.png`), Buffer.from(diff.bodyPng, 'base64'));
-          await writeFile(join(evidenceDir, 'rain-mask', `${name}.png`), Buffer.from(diff.rainPng, 'base64'));
-          await writeFile(join(evidenceDir, 'effect-mask', `${name}.png`), Buffer.from(diff.effectPng, 'base64'));
+          if (exactVisual) {
+            if (!maskWritten) {
+              await writeFile(join(evidenceDir, 'mask', 'no-changes-1280x720.png'), Buffer.from(diff.bodyPng, 'base64'));
+              maskWritten = true;
+            }
+          } else {
+            await writeFile(join(evidenceDir, 'baseline-no-effects', `${name}.png`), original.withoutEffects);
+            await writeFile(join(evidenceDir, 'candidate-no-effects', `${name}.png`), frame.withoutEffects);
+            await writeFile(join(evidenceDir, 'body-mask', `${name}.png`), Buffer.from(diff.bodyPng, 'base64'));
+            await writeFile(join(evidenceDir, 'rain-mask', `${name}.png`), Buffer.from(diff.rainPng, 'base64'));
+            await writeFile(join(evidenceDir, 'effect-mask', `${name}.png`), Buffer.from(diff.effectPng, 'base64'));
+          }
         }
       }
     }
@@ -730,17 +751,22 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
         'package.json', 'package-lock.json', 'tools/placement-environment-replay.mjs', 'tests/browser/placement-environment-replay.browser.mjs'),
       browser: browser.version(), renderer: 'SwiftShader', viewport, deviceScaleFactor: 1, seed,
       baselineSource: archivedBaselineSha || baselineArchive ? 'git archive' : 'clean worktree',
-      referenceTrace: tracePath, referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
-      visualComparison: 'The EBR-70 fold is hidden only during screenshot capture; its obstacle entities remain active.',
+      referenceTrace: evidenceDir ? join(evidenceDir, 'reference-trace.json') : tracePath,
+      referenceSha256: createHash('sha256').update(JSON.stringify(saved)).digest('hex'),
+      visualComparison: exactVisual ? 'Full unmasked frames, including the fold, rain, smoke and fireflies; zero changed pixels allowed.' :
+        'The EBR-70 fold is hidden only during screenshot capture; its obstacle entities remain active.',
+      mask: exactVisual ? { allowedPixels: 0, path: evidenceDir ? join(evidenceDir, 'mask', 'no-changes-1280x720.png') : null } : null,
       excludedHistoricalFields: historical ? ['environment.rain except visible', 'environment.randomCalls'] : [],
       results, rawTraceDifferences, rawVisualResults, visualResults, visualIsolation, intendedBodyChanges,
       expectedRainChanges, unexpectedVisualChanges, mismatches };
     if (evidenceDir) {
       await mkdir(evidenceDir, { recursive: true });
+      await writeFile(join(evidenceDir, 'reference-trace.json'), `${JSON.stringify(saved)}\n`);
       await writeFile(join(evidenceDir, 'replay.json'), `${JSON.stringify(report, null, 2)}\n`);
     }
     assert.deepEqual(mismatches, [], 'Placement/environment replay differs from clean main');
-    assert.deepEqual(unexpectedVisualChanges, [], 'Placement/environment frames differ outside the isolated body and historical rain');
+    assert.deepEqual(unexpectedVisualChanges, [], exactVisual ? 'Gate G: unmasked replay frames differ' :
+      'Placement/environment frames differ outside the isolated body and historical rain');
     return report;
   } finally {
     await browser?.close();
@@ -749,4 +775,16 @@ export async function comparePlacementEnvironmentReplay({ baselineRoot, candidat
     if (traceDir) await rm(traceDir, { recursive: true });
     if (archiveRoot) await rm(archiveRoot, { recursive: true });
   }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/placement-environment-replay.mjs')) {
+  const [option, reference, evidenceDir] = process.argv.slice(2);
+  if (option !== '--against-main' || !reference) {
+    throw new Error('Usage: node tools/placement-environment-replay.mjs --against-main <clean-b41492e-worktree> [evidence-dir]');
+  }
+  const report = await comparePlacementEnvironmentReplay({ baselineRoot: resolve(reference), candidateRoot: process.cwd(),
+    baselineSha: ticketMainSha, evidenceDir: evidenceDir && resolve(evidenceDir) });
+  const samples = Object.values(report.results).reduce((sum, result) => sum + result.samples, 0);
+  const pixels = Object.values(report.rawVisualResults).reduce((sum, count) => sum + count, 0);
+  console.log(`${Object.keys(report.results).length} scenarios, ${samples} identical samples, ${Object.keys(report.rawVisualResults).length} unmasked frames, ${pixels} changed pixels`);
 }
