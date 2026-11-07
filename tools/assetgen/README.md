@@ -37,13 +37,15 @@ Identity tags must exist and each tagged part must have a measured visible
 pixel contribution in at least one fixed view; the critic must also judge
 whether the part genuinely depicts the feature.
 
-For schema-valid, axis-aligned recipes without jitter, a modest (at most 25%)
-geometry size error can be fitted to the spec about the origin. Declarations
-are never changed. The original model recipe and fit factors are recorded, and
-the bundle audit replays the fit against the model receipt. All hard checks run
-on the fitted recipe, including scaled profile-edge thickness. Larger errors,
-bad metadata, rotations and jitter receive explicit measured per-part bounds
-in the correction prompt instead; they are not silently fitted.
+For a schema-valid recipe with a modest (at most 25%) size error, overhanging
+parts can first be translated by at most 0.03 units if that clears H3 without
+introducing any other failure. If necessary, axis-aligned recipes without jitter
+can instead be fitted by scaling about the origin. Declarations are never
+changed. The original model recipe and transform are recorded, and the bundle
+audit replays the fit against the model receipt. All hard checks run on the
+fitted recipe, including scaled profile-edge thickness. Larger errors, bad
+metadata and unsafe transforms receive measured per-part bounds in the
+correction prompt instead; they are not silently fitted.
 
 The first three bake-off runs were started before a subprocess `PWD` bug was
 fixed: their sessions ran in the worktree rather than the intended scratch
@@ -77,6 +79,11 @@ Specs are JSON objects with kebab-case `id`, `category` (`prop`, `flora`,
 3–5 `identityFeatures: [{id, description}]`. An optional `variantOf` names
 another fixture or previous recipe; an unchanged/recoloured or uniformly
 rescaled silhouette is rejected. New buildings and animals are not generated.
+For a family with more than two variants, `distinctFrom` lists additional
+previous variant ids; all references must be available and are compared. A
+`variationSeed` requires a part using that seed with nonzero bounded jitter.
+The seed controls recipe geometry; OpenCode's CLI does not expose a model
+sampling seed. Variants still need distinct silhouettes and human review.
 
 A recipe is data only:
 

@@ -1,0 +1,14 @@
+{
+  "id": "rock-a",
+  "category": "terrain",
+  "brief": "A small grounded warm stone with a flat base, squat irregular outline and a broad lighter top facet; no spiky or realistic detail.",
+  "size": { "width": 0.48, "depth": 0.42, "height": 0.32 },
+  "variationSeed": 84101,
+  "paletteHints": ["stone", "dirt.hi", "foliage.dark"],
+  "referenceAssetIds": ["signed-cottage", "signed-fence"],
+  "identityFeatures": [
+    { "id": "base", "description": "Flat grounded stone base" },
+    { "id": "shape", "description": "Squat irregular stone outline" },
+    { "id": "facets", "description": "Broad warm stone and lighter top facets" }
+  ]
+}

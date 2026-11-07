@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import * as THREE from 'three';
+import { variantReferences } from './config.mjs';
 import { validateRecipe } from './schema.mjs';
 
 const round = (number) => Math.round(number * 10000) / 10000;
@@ -51,6 +52,13 @@ export function sameVariantShape(left, right, buildRecipe, tolerance = 0.02) {
     remaining.delete(match);
   }
   return true;
+}
+
+// Seeded micro-jitter alone is not a distinct silhouette.
+function withoutJitter(recipe) {
+  const copy = structuredClone(recipe);
+  for (const part of copy.parts) delete part.jitter;
+  return copy;
 }
 
 export function obviousStyleFailures(recipe, spec) {
@@ -237,11 +245,12 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
   const fail = (code, message) => failures.push({ code, message });
   if (failures.length) return { failures, metrics };
   failures.push(...obviousStyleFailures(recipe, spec));
-  if (spec.variantOf && !referenceRecipes[spec.variantOf]) fail('VARIANT_REFERENCE_MISSING', `Variant reference ${spec.variantOf} was not supplied`);
-  else if (spec.variantOf) {
+  for (const reference of variantReferences(spec)) {
+    if (!referenceRecipes[reference]) { fail('VARIANT_REFERENCE_MISSING', `Variant reference ${reference} was not supplied`); continue; }
     try {
-      if (sameVariantShape(recipe, referenceRecipes[spec.variantOf], buildRecipe)) {
-        fail('VARIANT_RECOLOR', `Variant ${spec.id} has the same silhouette geometry as ${spec.variantOf}`);
+      if (sameVariantShape(recipe, referenceRecipes[reference], buildRecipe) ||
+          sameVariantShape(withoutJitter(recipe), withoutJitter(referenceRecipes[reference]), buildRecipe)) {
+        fail('VARIANT_RECOLOR', `Variant ${spec.id} has the same silhouette geometry as ${reference}`);
       }
     } catch (error) { fail('VARIANT_UNMEASURED', `Cannot compare variant geometry: ${String(error)}`); }
   }

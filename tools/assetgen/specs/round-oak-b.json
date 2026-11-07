@@ -1,0 +1,15 @@
+{
+  "id": "round-oak-b",
+  "category": "flora",
+  "brief": "A second cozy round oak with a visible stout trunk and five uneven, flat-shaded crown lobes including an offset side lobe; a lighter upper-left lobe, no individual leaves or smooth ball. Give it a different silhouette from round-oak-a.",
+  "size": { "width": 1.8, "depth": 1.55, "height": 3.2 },
+  "variationSeed": 84002,
+  "variantOf": "round-oak-a",
+  "paletteHints": ["trunk", "foliage.dark", "foliage.mid", "foliage.light"],
+  "referenceAssetIds": ["signed-tree", "signed-cottage", "signed-coop"],
+  "identityFeatures": [
+    { "id": "trunk", "description": "Stout visible tree trunk" },
+    { "id": "crown", "description": "Uneven rounded oak crown silhouette" },
+    { "id": "lobes", "description": "Five distinct offset foliage lobes" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "rock-b",
+  "category": "terrain",
+  "brief": "A medium grounded warm boulder with a flat base, asymmetric sloping silhouette and a broad lighter top facet; no spikes. Its silhouette must differ from rock-a.",
+  "size": { "width": 0.9, "depth": 0.72, "height": 0.55 },
+  "variationSeed": 84102,
+  "variantOf": "rock-a",
+  "paletteHints": ["stone", "dirt.hi", "foliage.dark"],
+  "referenceAssetIds": ["signed-cottage", "signed-fence"],
+  "identityFeatures": [
+    { "id": "base", "description": "Flat grounded stone base" },
+    { "id": "shape", "description": "Asymmetric sloping boulder outline" },
+    { "id": "facets", "description": "Broad warm stone and lighter top facets" }
+  ]
+}

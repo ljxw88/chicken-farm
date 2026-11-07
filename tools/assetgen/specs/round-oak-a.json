@@ -1,0 +1,14 @@
+{
+  "id": "round-oak-a",
+  "category": "flora",
+  "brief": "A cozy round oak with a visible stout trunk and three broad, flat-shaded, irregular foliage lobes; a lighter upper-left lobe, no individual leaves or smooth ball.",
+  "size": { "width": 1.6, "depth": 1.6, "height": 3.0 },
+  "variationSeed": 84001,
+  "paletteHints": ["trunk", "foliage.dark", "foliage.mid", "foliage.light"],
+  "referenceAssetIds": ["signed-tree", "signed-cottage", "signed-coop"],
+  "identityFeatures": [
+    { "id": "trunk", "description": "Stout visible tree trunk" },
+    { "id": "crown", "description": "Broad rounded oak crown silhouette" },
+    { "id": "lobes", "description": "Three distinct faceted foliage lobes" }
+  ]
+}

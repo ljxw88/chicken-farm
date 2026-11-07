@@ -51,8 +51,18 @@ export function validateSpec(spec) {
       new Set(spec.identityFeatures.map((feature) => feature.id)).size !== spec.identityFeatures.length) {
     throw new Error('Spec needs 3–5 uniquely named identityFeatures with descriptions');
   }
-  if (spec.variantOf !== undefined && (!idPattern.test(spec.variantOf) || spec.variantOf === spec.id)) throw new Error('variantOf must name a different valid asset id');
+  if (spec.variantOf !== undefined && (typeof spec.variantOf !== 'string' || !idPattern.test(spec.variantOf) || spec.variantOf === spec.id)) throw new Error('variantOf must name a different valid asset id');
+  if (spec.distinctFrom !== undefined && (!Array.isArray(spec.distinctFrom) || !spec.distinctFrom.length ||
+      spec.distinctFrom.some((id) => typeof id !== 'string' || !idPattern.test(id) || id === spec.id || id === spec.variantOf) ||
+      new Set(spec.distinctFrom).size !== spec.distinctFrom.length)) throw new Error('distinctFrom must name unique, different asset ids');
+  if (spec.variationSeed !== undefined && (!Number.isInteger(spec.variationSeed) || spec.variationSeed < 0 || spec.variationSeed > 0xffffffff)) {
+    throw new Error('variationSeed must be an unsigned 32-bit integer');
+  }
   return spec;
+}
+
+export function variantReferences(spec) {
+  return [...(spec.variantOf ? [spec.variantOf] : []), ...(spec.distinctFrom || [])];
 }
 
 export async function readSpec(input) {

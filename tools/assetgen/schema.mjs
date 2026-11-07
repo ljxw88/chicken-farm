@@ -110,6 +110,10 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
         !part.positions.every(finite) || !Array.isArray(part.indices) || part.indices.length < 3 || part.indices.length > 30000 || part.indices.length % 3 ||
         !part.indices.every((index) => Number.isInteger(index) && index >= 0 && index < part.positions.length / 3))) fail(`Part ${part.name} has invalid custom BufferGeometry`);
   }
+  if (spec.variationSeed !== undefined && !recipe.parts.some((part) => object(part) && part.seed === spec.variationSeed &&
+      object(part.jitter) && Object.values(part.jitter).some((value) => finite(value) && value > 0))) {
+    fail(`A part must use variationSeed ${spec.variationSeed} with nonzero deterministic jitter`, 'VARIANT_SEED');
+  }
   const allowedAccents = spec.id.includes('flower') ? 2 : 1;
   for (const [family, colors] of families) if (colors.size > 3) fail(`${family} uses more than three albedo tones`);
   if (accentUsed.size > allowedAccents) fail(`At most ${allowedAccents} accent token(s) per asset: ${[...accentUsed].join(', ')}`);

@@ -1,0 +1,16 @@
+{
+  "id": "rock-c",
+  "category": "terrain",
+  "brief": "A broad grounded warm boulder with an uneven low, stepped profile and one lighter top facet; an optional foliage-dark moss cap is a mesh, not a texture. No spikes. Its silhouette must differ from both other rocks.",
+  "size": { "width": 1.3, "depth": 1.0, "height": 0.8 },
+  "variationSeed": 84103,
+  "variantOf": "rock-a",
+  "distinctFrom": ["rock-b"],
+  "paletteHints": ["stone", "dirt.hi", "foliage.dark"],
+  "referenceAssetIds": ["signed-cottage", "signed-fence"],
+  "identityFeatures": [
+    { "id": "base", "description": "Flat grounded stone base" },
+    { "id": "shape", "description": "Broad low stepped boulder silhouette" },
+    { "id": "facets", "description": "Broad warm stone and lighter top facets" }
+  ]
+}

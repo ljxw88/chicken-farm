@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, writeFile, copyFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory } from './config.mjs';
+import { evidenceDirectory, listSpecs, readBible, readSpec, readVisionProbe, recipePath, root, runDirectory, variantReferences } from './config.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { fitGeneratedRecipe } from './fit-generated.mjs';
 import { critiqueRecipe, generateRecipe, makePrompt } from './generator.mjs';
@@ -114,10 +114,11 @@ async function newAsset(input, args) {
   }
   const context = await setup();
   const { bible, runner, calibration, environment, probe } = context;
-  if (spec.variantOf) {
+  environment.referenceRecipes = {};
+  for (const referenceId of variantReferences(spec)) {
     try {
-      const reference = JSON.parse(await readFile(join(runDirectory, spec.variantOf, 'best.json'), 'utf8'));
-      environment.referenceRecipes = { [spec.variantOf]: reference.recipe };
+      const reference = JSON.parse(await readFile(join(runDirectory, referenceId, 'best.json'), 'utf8'));
+      environment.referenceRecipes[referenceId] = reference.recipe;
     } catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
   const sessionDir = await isolatedSessionDirectory();
@@ -137,7 +138,7 @@ async function newAsset(input, args) {
       const stage = stages[stageIndex];
       const stageDir = join(run, `round-${round}`, `stage-${stage}`);
       await mkdir(stageDir, { recursive: true });
-      const prompt = await makePrompt(spec, bible, stage, current, previous, best?.recipe);
+      const prompt = await makePrompt(spec, bible, stage, current, previous, best?.recipe, environment.referenceRecipes);
       await writeFile(join(stageDir, 'prompt.txt'), prompt);
       let generated;
       try {
@@ -348,8 +349,8 @@ async function verifyCommand(input, args) {
   const { bible, runner, calibration, environment } = await setup();
   try {
     environment.referenceRecipes = {};
-    for (const { spec } of candidates) if (spec.variantOf) {
-      try { environment.referenceRecipes[spec.variantOf] = JSON.parse(await readFile(join(runDirectory, spec.variantOf, 'candidate.json'), 'utf8')); }
+    for (const { spec } of candidates) for (const referenceId of variantReferences(spec)) {
+      try { environment.referenceRecipes[referenceId] = JSON.parse(await readFile(join(runDirectory, referenceId, 'candidate.json'), 'utf8')); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
     }
     let count = 0;
