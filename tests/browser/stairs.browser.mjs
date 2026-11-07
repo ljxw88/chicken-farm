@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairs } from './bridgeRoute.mjs';
+import { approachStairsAcrossBridge } from '../../tools/parity-bridge-route.mjs';
 
 const evidenceDir = process.env.EBR46_EVIDENCE_DIR;
 const slideProofPath = process.env.EBR46_SLIDE_PROOF;
@@ -395,9 +396,106 @@ for (const scenario of padSideScenarios) {
     assert.ok(afterClimb[0] < 7.6 && Math.abs(afterClimb[1] - 2.4) < 1e-6,
       `${scenario.name}: stuck at ${afterClimb}`);
     assert.ok(pathCrossing, `${scenario.name}: did not reach the dirt path`);
+    if (evidenceDir) await capture(page, `pad-side-${scenario.name.replace(/[^a-z0-9]+/gi, '-').replace(/-$/, '')}.png`);
     await assertNoSimUi(page);
     assert.deepEqual(errors, []);
     slideResults.push({ scenario: scenario.name, pushesMs: 2200, climbMs: scenario.climbMs,
-      afterPush, afterClimb, pathCrossing, frames: frames.length, clippedOrUnsupported: 0, errors });
+      afterPush, afterClimb, pathCrossing, frames: frames.length, minY: Math.min(...frames.map((frame) => frame.y)),
+      clippedOrUnsupported: 0, errors });
   });
 }
+
+test('the longer QA stairs route can re-enter the top at the edge of the run', { timeout: 120000 }, async (t) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+  t.after(() => context.close());
+  const page = await context.newPage();
+  const errors = [];
+  collectErrors(page, errors);
+  await page.addInitScript(() => {
+    let id = 0;
+    const callbacks = new Map();
+    window.requestAnimationFrame = (callback) => { callbacks.set(++id, callback); return id; };
+    window.cancelAnimationFrame = (handle) => callbacks.delete(handle);
+    window.__ebr94Time = 0;
+    window.__ebr94Frames = [];
+    window.__ebr94Step = (time) => {
+      window.__ebr94Time = time;
+      const current = [...callbacks.values()];
+      callbacks.clear();
+      for (const callback of current) callback(time);
+      if (window.__ebr46Test) {
+        const p = window.__ebr46Test.character.position;
+        window.__ebr94Frames.push({ x: p.x, y: p.y, z: p.z });
+      }
+    };
+  });
+  await page.route('**/src/main.ts*', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
+  });
+  await page.goto(`${url}/?phase=daytime&weather=clear`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => window.__ebr94Step(0));
+  await approachStairsAcrossBridge(page, '__ebr46Test', '__ebr94Step');
+
+  const advance = async (count, milliseconds = 100) => page.evaluate(({ count, milliseconds }) => {
+    for (let i = 0; i < count; i++) window.__ebr94Step(window.__ebr94Time + milliseconds);
+  }, { count, milliseconds });
+  const hold = async (keys, count, milliseconds = 100) => {
+    for (const key of keys) await page.keyboard.down(key);
+    await advance(count, milliseconds);
+    for (const key of keys) await page.keyboard.up(key);
+  };
+  const pos = () => page.evaluate(() => window.__ebr46Test.character.position.toArray());
+  const checkpoints = {};
+  // The same climb, descent, pad resets and three side-push sequences as QA's
+  // gate-g-sequences.mjs, with fixed frame times to avoid timing-dependent tests.
+  await hold(['w', 'a'], 52);
+  await hold(['s', 'd'], 65);
+  for (const [name, legs] of [
+    ['SA_then_WA', [[['s', 'a'], 22], [['w', 'a'], 40]]],
+    ['WD_then_WA', [[['w', 'd'], 22], [['w', 'a'], 60]]],
+    ['SD_SA_WD_then_WA', [[['s', 'd'], 12], [['s', 'a'], 12], [['w', 'd'], 12], [['w', 'a'], 60]]],
+  ]) {
+    await hold(['s', 'd'], 50);
+    for (const [keys, frames] of legs) await hold(keys, frames);
+    checkpoints[name] = await pos();
+  }
+
+  // Reproduce the observed sub-pixel side offset without teleporting: a tiny
+  // real W+D key interval on the island places the capsule 1e-8 beyond the
+  // z=0.55 opening. Real frame/key timing can introduce the same rounding.
+  await hold(['w', 'd'], 1, 1e-8 / 3.5 * 1000);
+  checkpoints.beforeReturn = await pos();
+  await hold(['s', 'd'], 65);
+  checkpoints.afterReturn = await pos();
+  const frames = await page.evaluate(() => window.__ebr94Frames);
+  const boxes = await page.evaluate(() => {
+    const { stairs } = window.__ebr46Test;
+    return [...stairs.treads, stairs.footPad].map((mesh) => {
+      const p = mesh.getWorldPosition(mesh.position.clone());
+      const { width, height, depth } = mesh.geometry.parameters;
+      return { minX: p.x - width / 2, maxX: p.x + width / 2,
+        minY: p.y - height / 2, maxY: p.y + height / 2,
+        minZ: p.z - depth / 2, maxZ: p.z + depth / 2 };
+    });
+  });
+
+  if (process.env.EBR94_EVIDENCE_DIR) {
+    await mkdir(process.env.EBR94_EVIDENCE_DIR, { recursive: true });
+    const cdp = await context.newCDPSession(page);
+    const image = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: true });
+    await writeFile(join(process.env.EBR94_EVIDENCE_DIR, 'long-return.png'), Buffer.from(image.data, 'base64'));
+    await cdp.detach();
+    await writeFile(join(process.env.EBR94_EVIDENCE_DIR, 'long-return.json'), `${JSON.stringify({
+      browser: `Chromium ${browser.version()}`, url, viewport: '1280x720', checkpoints,
+      frameCount: frames.length, minY: Math.min(...frames.map((frame) => frame.y)), frames, errors,
+    }, null, 2)}\n`);
+  }
+  for (const frame of frames) assertNoClipping(frame, boxes);
+  assert.ok(checkpoints.beforeReturn[2] < 0.55 && checkpoints.beforeReturn[2] > 0.5499999,
+    `repro did not approach the stair edge: ${checkpoints.beforeReturn}`);
+  assert.ok(checkpoints.afterReturn[0] > 13 && Math.abs(checkpoints.afterReturn[1] - 0.16) < 0.01,
+    `stuck before returning to the pad: ${checkpoints.afterReturn}`);
+  assert.ok(Math.min(...frames.map((frame) => frame.y)) >= 0.16 - 1e-8);
+  assert.deepEqual(errors, []);
+});

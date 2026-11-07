@@ -222,3 +222,40 @@ test('direct controls map every placement command without changing browser event
   f.key('keydown', 'KeyF');
   assert.deepEqual(f.input.consume().actions, []);
 });
+
+test('owned placement resolves immediately, respects target prevention, and stops movement on a placement pointer', (t) => {
+  const f = fixture(t, { ownMovement: true, ownPlacement: true });
+  const actions = [];
+  const moves = [];
+  const unsubscribe = f.input.onPlacement((action) => {
+    actions.push(action);
+    if (action.type === 'placement-select') f.context.active = true;
+  });
+  f.input.onMovement((action) => moves.push(action));
+  f.document.body.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyP') event.preventDefault();
+  });
+  f.key('keydown', 'KeyP');
+  assert.deepEqual(actions, [], 'a target can prevent the window-level placement shortcut');
+  assert.equal(f.key('keydown', 'KeyF').defaultPrevented, true);
+  assert.deepEqual(actions, [{ type: 'placement-select', kind: 'fence' }]);
+  assert.equal(f.pointer('pointerdown', 'touch').defaultPrevented, true);
+  assert.deepEqual(actions.slice(1), [{ type: 'placement-preview', point: { x: 123, y: 456, pointerType: 'touch' } }]);
+  assert.deepEqual(moves, []);
+  f.pointer('pointerdown', 'mouse');
+  assert.deepEqual(actions.slice(-2).map((action) => action.type), ['placement-preview', 'placement-confirm']);
+  unsubscribe();
+  f.pointer('pointermove');
+  assert.equal(actions.length, 4);
+});
+
+test('a duplicate non-repeat placement key keeps the old event-time behavior without duplicating fixed actions', (t) => {
+  const f = fixture(t, { ownMovement: true, ownPlacement: true });
+  const actions = [];
+  f.input.onPlacement((action) => actions.push(action));
+  f.key('keydown', 'KeyF');
+  f.key('keydown', 'KeyF');
+  f.key('keydown', 'KeyF', f.document.body, { repeat: true });
+  assert.deepEqual(actions, [{ type: 'placement-select', kind: 'fence' }, { type: 'placement-select', kind: 'fence' }]);
+  assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'fence' }, { type: 'cancel-move-to' }]);
+});

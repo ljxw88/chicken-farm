@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { CHARACTER_RADIUS } from '../character/createCharacter';
+import { CHARACTER_RADIUS, createCharacterCrownController } from '../character/createCharacter';
+import { advanceDayNight, createDayNightState, setCycleSeconds, setPhase, type DayNightState } from '../environment/dayNightSystem';
 import { createPracticalLights, type EmissiveAccent, type WindowPane } from './createPracticalLights';
 import { createSunsetWaterTint } from './createSunsetWaterTint';
-import { DAY_NIGHT_PHASES, DEFAULT_DAY_NIGHT_CYCLE_SECONDS, type DayNightPhaseName } from './dayNightPhases';
+import { DAY_NIGHT_PHASES, type DayNightPhaseName } from './dayNightPhases';
 
 // THREE.Color converts the locked sRGB hex values to its linear working space.
 const phaseColors = DAY_NIGHT_PHASES.map((phase) => ({
@@ -25,9 +26,11 @@ interface DayNightCycleOptions {
   extraEmissives?: readonly EmissiveAccent[];
   shadowSupported?: (x: number, z: number, radius: number) => boolean;
   updateFarmShadows?: (awayX: number, awayZ: number, offset: number, strength: number) => void;
+  state?: DayNightState;
 }
 
-export function createDayNightCycle({ scene, character, windows, extraEmissives, shadowSupported, updateFarmShadows }: DayNightCycleOptions) {
+export function createDayNightCycle({ scene, character, windows, extraEmissives, shadowSupported, updateFarmShadows,
+  state = createDayNightState() }: DayNightCycleOptions) {
   const morning = DAY_NIGHT_PHASES[0];
   // The scene owns the fixed diorama void; phases still drive fog and lights.
   const fog = new THREE.FogExp2(morning.fog, morning.fogDensity);
@@ -47,14 +50,14 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
 
   const practicalLights = createPracticalLights(character, windows, extraEmissives);
   const setSunsetWaterTint = createSunsetWaterTint(scene);
+  const setCharacterDaytimeCrown = createCharacterCrownController(character);
   const characterShadow = character.getObjectByName('character-shadow');
   const lightDirection = new THREE.Vector3();
   const targetPosition = new THREE.Vector3();
   const localShadowDirection = new THREE.Vector3();
   const characterWorldPosition = new THREE.Vector3();
   const characterRotation = new THREE.Quaternion();
-  let cycleSeconds = DEFAULT_DAY_NIGHT_CYCLE_SECONDS;
-  let progress = 0;
+  let daytimeCrownAmount = 0;
   let directionalMultiplier = 1;
   let directionalBaseIntensity: number = morning.directionalIntensity;
   let ambientBaseIntensity: number = morning.ambientIntensity;
@@ -146,11 +149,13 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     }
     rainAmount = rain;
     cloudyAmount = cloudy;
+    setCharacterDaytimeCrown(daytimeCrownAmount, cloudyAmount);
     applyFillIntensities();
     updateCharacterShadow();
   }
 
   function applyLighting() {
+    const { progress } = state;
     const phasePosition = progress * DAY_NIGHT_PHASES.length;
     const index = Math.floor(phasePosition);
     const nextIndex = (index + 1) % DAY_NIGHT_PHASES.length;
@@ -162,6 +167,10 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     const lerp = THREE.MathUtils.lerp;
     // Fade only into and out of the sunset anchor; other phase anchors are unchanged.
     setSunsetWaterTint((from.name === 'sunset' ? 1 - blend : 0) + (to.name === 'sunset' ? blend : 0));
+    // Preserve the signed morning/sunset/night crowns, and blend the daytime
+    // contrast lift with the same smooth phase interpolation as the lighting.
+    daytimeCrownAmount = (from.name === 'daytime' ? 1 - blend : 0) + (to.name === 'daytime' ? blend : 0);
+    setCharacterDaytimeCrown(daytimeCrownAmount, cloudyAmount);
 
     fog.color.copy(fromColors.fog).lerp(toColors.fog, blend);
     fog.density = lerp(from.fogDensity, to.fogDensity, blend);
@@ -190,25 +199,17 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
   }
 
   function update(deltaSeconds: number) {
-    if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0) {
-      throw new RangeError('Day/night elapsed time must be a finite, non-negative number');
-    }
-    progress = (progress + (deltaSeconds % cycleSeconds) / cycleSeconds) % 1;
+    advanceDayNight(state, deltaSeconds);
     applyLighting();
   }
 
   function setDayNightCycleSeconds(seconds: number) {
-    if (!Number.isFinite(seconds) || seconds <= 0) {
-      throw new RangeError('Day/night cycle length must be a finite number greater than zero');
-    }
     // Preserve the current phase when the cycle speed changes.
-    cycleSeconds = seconds;
+    setCycleSeconds(state, seconds);
   }
 
   function setDayNightPhase(name: DayNightPhaseName) {
-    const index = DAY_NIGHT_PHASES.findIndex((phase) => phase.name === name);
-    if (index < 0) throw new RangeError(`Unknown day/night phase: ${name}`);
-    progress = index / DAY_NIGHT_PHASES.length;
+    setPhase(state, name);
     applyLighting();
   }
 
@@ -239,6 +240,10 @@ export function createDayNightCycle({ scene, character, windows, extraEmissives,
     setAmbientHemisphereColorMultiplier,
     setShadowWeather,
     updateCharacterShadow,
-    getPhase: () => DAY_NIGHT_PHASES[Math.floor(progress * DAY_NIGHT_PHASES.length)].name,
+    applyState: applyLighting,
+    setHeld: (held: boolean) => { state.held = held; },
+    isHeld: () => state.held,
+    getPhase: () => DAY_NIGHT_PHASES[Math.floor(state.progress * DAY_NIGHT_PHASES.length)].name,
+    getNightAmount: () => nightAmount,
   };
 }

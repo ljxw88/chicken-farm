@@ -12,29 +12,39 @@ export function parseStartupOptions(search: string) {
   };
 }
 
+// Optional visual seed: without it the existing weather keeps its default RNG.
+export function parseVisualSeed(search: string) {
+  const value = new URLSearchParams(search).get('seed');
+  if (value === null || !/^(?:\d+|0x[\da-f]+)$/i.test(value)) return undefined;
+  const seed = Number(value);
+  return Number.isSafeInteger(seed) && seed <= 0xffffffff ? seed : undefined;
+}
+
 interface PhaseCycle {
   update: (deltaSeconds: number) => void;
   setDayNightPhase: (phase: DayNightPhaseName) => void;
   setDayNightCycleSeconds: (seconds: number) => void;
+  setHeld: (held: boolean) => void;
+  isHeld: () => boolean;
 }
 
 export function createStartupPhaseController(cycle: PhaseCycle, phase: DayNightPhaseName | undefined) {
   // A URL phase is held for repeatable Nest captures; ordinary sessions keep cycling.
-  let held = phase !== undefined;
+  cycle.setHeld(phase !== undefined);
   if (phase) cycle.setDayNightPhase(phase);
 
   function update(deltaSeconds: number) {
-    if (!held) cycle.update(deltaSeconds);
+    if (!cycle.isHeld()) cycle.update(deltaSeconds);
   }
 
   function setDayNightPhase(next: DayNightPhaseName) {
     cycle.setDayNightPhase(next);
-    held = false;
+    cycle.setHeld(false);
   }
 
   function setDayNightCycleSeconds(seconds: number) {
     cycle.setDayNightCycleSeconds(seconds);
-    held = false;
+    cycle.setHeld(false);
   }
 
   return { update, setDayNightPhase, setDayNightCycleSeconds };
