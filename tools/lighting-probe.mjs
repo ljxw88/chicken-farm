@@ -94,19 +94,36 @@ try {
         const r = Math.abs(proj(center.clone().addScaledVector(right, 0.4))[0] - cx);
         const hh = Math.abs(bottom[1] - top[1]) / 2;
         const canvas = document.createElement('canvas'); canvas.width = renderer.domElement.width; canvas.height = renderer.domElement.height;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(renderer.domElement, 0, 0);
-        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        const region = (x0, x1, y0, y1) => {
-          let sum = 0; let count = 0;
-          for (let x = Math.trunc(x0); x < Math.trunc(x1); x++) for (let y = Math.trunc(y0); y < Math.trunc(y1); y++) {
-            const i = (y * canvas.width + x) * 4;
-            sum += 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]; count++;
-          }
-          return sum / count;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const measure = () => {
+          composer.render(0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(renderer.domElement, 0, 0);
+          const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          const region = (x0, x1, y0, y1) => {
+            let sum = 0; let count = 0;
+            for (let x = Math.trunc(x0); x < Math.trunc(x1); x++) for (let y = Math.trunc(y0); y < Math.trunc(y1); y++) {
+              const i = (y * canvas.width + x) * 4;
+              sum += 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]; count++;
+            }
+            return sum / count;
+          };
+          const face = region(cx - 0.5 * r, cx + 0.5 * r, cy - 0.25 * hh, cy + 0.45 * hh);
+          const crown = region(cx - 0.4 * r, cx + 0.4 * r, cy - 0.95 * hh, cy - 0.7 * hh);
+          return { face, crown, faceToTop: face / crown };
         };
-        const face = region(cx - 0.5 * r, cx + 0.5 * r, cy - 0.25 * hh, cy + 0.45 * hh);
-        const crown = region(cx - 0.4 * r, cx + 0.4 * r, cy - 0.95 * hh, cy - 0.7 * hh);
-        return { face, crown, faceToTop: face / crown };
+        const visible = measure();
+        // The red comb and gold wings are not the yellow body's moon-lit
+        // crown. Preserve the full-frame reading while independently measuring
+        // the existing body rule without the new accent materials.
+        const details = ['character-comb', 'character-wing-left', 'character-wing-right']
+          .map((name) => character.getObjectByName(name)).filter(Boolean);
+        const states = details.map((part) => part.visible);
+        details.forEach((part) => { part.visible = false; });
+        const bodyOnly = measure();
+        details.forEach((part, index) => { part.visible = states[index]; });
+        composer.render(0);
+        return { ...visible, bodyOnly };
       });
       const facings = {};
       let initialLight;

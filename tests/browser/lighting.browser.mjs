@@ -73,7 +73,7 @@ test('fixed upper-left key follows the specified phase, weather and facing rules
     assert.equal(sample.bodyColor, 'ffd477', `${name}: runtime body color is not the signed hex`);
     if (name.startsWith('night')) {
       assert.ok(Object.values(sample.faceToTopByFacing).every((ratio) => ratio <= 1), `${name}: face brighter than moon-lit top`);
-      assert.ok(sample.spawn.faceToTop <= 1, `${name}: spawn face brighter than moon-lit top`);
+      assert.ok(sample.spawn.bodyOnly.faceToTop <= 1, `${name}: spawn face brighter than moon-lit body top`);
     }
     // Look Dev's C4 ruling is shade-front vs grass, not body vs path/ground.
     assert.ok(sample.shadeGrassDeltaE >= 25, `${name}: shade and grass are too similar (ΔE ${sample.shadeGrassDeltaE})`);

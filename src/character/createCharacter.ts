@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONTACT_SHADOW_COLOR } from '../scene/contactShadowStyle';
+import { createCharacterDetails } from './createCharacterDetails';
 
 export const CHARACTER_RADIUS = 0.4;
 const BODY_LENGTH = 0.6;
@@ -75,6 +76,7 @@ export function createCharacter() {
   const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
   body.position.y = CHARACTER_RADIUS + BODY_LENGTH / 2;
   character.add(body);
+  createCharacterDetails(body);
 
   // A little face makes the direction of travel visible.
   const eyeGeometry = new THREE.SphereGeometry(0.045, 10, 8);

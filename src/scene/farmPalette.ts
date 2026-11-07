@@ -10,6 +10,8 @@ export const FARM_PALETTE = {
   flowerYellow: 0xf2c94c,
   flowerBlue: 0x6a8fd0,
   flowerOrange: 0xe08a3c,
+  // Look Dev's darker gold for the player's wing patches (EBR-89).
+  characterWingGold: 0xd9b45a,
   barnWood: 0xd4a574,
   barnTrim: 0x8b6914,
   barnRoof: 0xc45a3a,

@@ -26,7 +26,7 @@ async function serverAt(root) {
   return { server, url: `http://127.0.0.1:${address.port}` };
 }
 
-async function open(browser, url, search, normalizeClock = false, normalizeGardenRain = false) {
+async function open(browser, url, search, normalizeClock = false, normalizeHistoricalVisuals = false) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', hasTouch: true });
   const page = await context.newPage();
   const errors = [];
@@ -110,7 +110,7 @@ async function open(browser, url, search, normalizeClock = false, normalizeGarde
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
     // The moved tree changes its rain shelter. Use the historic shelter only
     // in this old seeded-weather replay, while separately testing the live tree.
-    const random = normalizeGardenRain
+    const random = normalizeHistoricalVisuals
       ? `random: (() => { const tree = splashExclusions.find((entry) => entry.name === 'tree-canopy-4');
           if (tree) Object.assign(tree, { x: 0.05, z: -5.6, radius: 1.02 * 0.95 }); return window.__ebr75Random; })(),`
       : 'random: window.__ebr75Random,';
@@ -121,6 +121,18 @@ window.__ebr75 = { scene, camera, character, obstacles, stairs, dayNight, compos
   // This is a scene/placement replay, so use the real HUD-free gate flag.
   await page.goto(`${url}/${search}${search.includes('?') ? '&' : '?'}skyhud=0`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => window.__ebr75 && window.__ebr75RandomCalls > 0));
+  if (normalizeHistoricalVisuals) {
+    // The old references predate EBR-89. Isolate only its new accents while
+    // retaining the original protected-anchor body, shader, face and lantern.
+    await page.evaluate(() => {
+      const { character, composer } = window.__ebr75;
+      for (const name of ['character-comb', 'character-wing-left', 'character-wing-right']) {
+        const detail = character.getObjectByName(name);
+        if (detail) detail.visible = false;
+      }
+      composer.render(0);
+    });
+  }
   // The sky ticket intentionally changes the app default to 1440s. Compare
   // invalid-URL behavior at the same explicit speed as the old baseline.
   if (normalizeClock) await page.evaluate(() => window.setDayNightCycleSeconds(72));
