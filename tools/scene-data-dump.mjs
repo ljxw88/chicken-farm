@@ -15,6 +15,43 @@ const viewport = { width: 1280, height: 720 };
 const seed = 0xeb760001;
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+// Most scene objects are identical across snapshots. Pool complete entries so
+// the checked-in gzip stays small, then reconstruct the exact original JSON
+// before comparison. No scene fields, values, array order or bytes are omitted.
+export function packSceneReference(json) {
+  const data = JSON.parse(json);
+  const pools = {};
+  for (const key of ['objects', 'materials', 'geometries']) {
+    const entries = [];
+    const ids = new Map();
+    for (const snapshot of Object.values(data.snapshots)) {
+      snapshot[key] = snapshot[key].map((item) => {
+        const text = JSON.stringify(item);
+        if (!ids.has(text)) { ids.set(text, entries.length); entries.push(item); }
+        return ids.get(text);
+      });
+    }
+    pools[key] = entries;
+  }
+  return gzipSync(JSON.stringify({ format: 'scene-pool-v1', pools, data }), { level: 9 });
+}
+
+export function unpackSceneReference(bytes) {
+  const packed = JSON.parse(gunzipSync(bytes).toString('utf8'));
+  assert.equal(packed.format, 'scene-pool-v1', 'Unexpected scene fixture format');
+  for (const snapshot of Object.values(packed.data.snapshots)) {
+    for (const key of ['objects', 'materials', 'geometries']) {
+      const entries = packed.pools[key];
+      assert.ok(Array.isArray(entries) && Array.isArray(snapshot[key]), `Invalid scene pool: ${key}`);
+      snapshot[key] = snapshot[key].map((id) => {
+        assert.ok(Number.isSafeInteger(id) && id >= 0 && id < entries.length, `Invalid ${key} pool index`);
+        return entries[id];
+      });
+    }
+  }
+  return JSON.stringify(packed.data);
+}
+
 async function open(browser, url, search) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce', hasTouch: true });
   const page = await context.newPage();
@@ -40,13 +77,22 @@ async function open(browser, url, search) {
       for (const callback of pending) callback(time);
     };
   }, { seed });
-  await page.route('**/src/main.ts*', async (route) => {
+  // The clean baseline initializes weather in main; the candidate registers it
+  // in a feature module. Instrument only the served source, not the app API.
+  await page.route('**/src/app/environment.ts*', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
     assert.equal((body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length, 1);
-    await route.fulfill({ response, body: `${body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr76Random,')}
-window.__ebr76Scene = { scene, camera, character, renderer, composer };
-` });
+    await route.fulfill({ response, body: body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr76Random,') });
+  });
+  await page.route('**/src/main.ts*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    const legacy = (body.match(/\bcreateWeatherSystem\(\{/g) ?? []).length;
+    assert.ok(legacy === 1 || (legacy === 0 && /\bconst context\s*=/.test(body)), 'Unknown app entry point');
+    const source = legacy ? body.replace(/\bcreateWeatherSystem\(\{/, 'createWeatherSystem({ random: window.__ebr76Random,') : body;
+    const exposed = legacy ? '{ scene, camera, character, renderer, composer }' : 'context';
+    await route.fulfill({ response, body: `${source}\nwindow.__ebr76Scene = ${exposed};\n` });
   });
   await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => Boolean(window.__ebr76Scene)), 'Expected the Vite source module');
@@ -286,7 +332,7 @@ function assertCleanMain(root) {
 }
 
 export async function compareSceneData(root = process.cwd()) {
-  const expected = gunzipSync(await readFile(resolve(root, REFERENCE_PATH))).toString('utf8');
+  const expected = unpackSceneReference(await readFile(resolve(root, REFERENCE_PATH)));
   const actual = JSON.stringify(await captureSceneData(root));
   assertSameDump(expected, actual, 'Candidate scene');
   return { bytes: Buffer.byteLength(expected), sha256: hash(Buffer.from(expected)), snapshots: Object.keys(JSON.parse(expected).snapshots) };
@@ -298,12 +344,14 @@ if (process.argv[1] && resolve(process.argv[1]) === resolve('tools/scene-data-du
     const root = resolve(args[1]);
     assertCleanMain(root);
     const json = JSON.stringify(await captureSceneData(root));
-    await writeFile(REFERENCE_PATH, gzipSync(json, { level: 9 }), { flag: 'wx' });
-    console.log(`Reference ${REFERENCE_SHA}: ${Buffer.byteLength(json)} bytes, SHA-256 ${hash(Buffer.from(json))}`);
+    const packed = packSceneReference(json);
+    assert.equal(unpackSceneReference(packed), json, 'Packed fixture must reconstruct the exact reference bytes');
+    await writeFile(REFERENCE_PATH, packed, { flag: 'wx' });
+    console.log(`Reference ${REFERENCE_SHA}: ${Buffer.byteLength(json)} bytes, ${packed.length} compressed, SHA-256 ${hash(Buffer.from(json))}`);
   } else if (args[0] === '--against-main' && args[1]) {
     const root = resolve(args[1]);
     assertCleanMain(root);
-    const expected = gunzipSync(await readFile(REFERENCE_PATH)).toString('utf8');
+    const expected = unpackSceneReference(await readFile(REFERENCE_PATH));
     assertSameDump(expected, JSON.stringify(await captureSceneData(root)), 'Clean main recapture');
     const result = await compareSceneData();
     console.log(`Clean main recapture and candidate both match ${REFERENCE_SHA}: ${result.snapshots.length} snapshots, ${result.bytes} bytes, SHA-256 ${result.sha256}`);
