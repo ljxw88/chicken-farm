@@ -274,14 +274,6 @@
   text-align: center;
 }
 
-@supports not (backdrop-filter: blur(1px)) {
-  .hud-panel,
-  .hud-toolbar,
-  .hud-status {
-    background-color: rgba(40, 55, 36, 0.94);
-  }
-}
-
 /* Reserve a separate lane for the existing placement bar and its active tools. */
 body:has(.placement-controls.is-active) .hud-root {
   --hud-top-limit: 178px;

@@ -3,7 +3,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { closeSkyForWorldTests } from './skyTestUtils.mjs';
 import { createServer, preview } from 'vite';
 import { approachStairs } from './bridgeRoute.mjs';
 
@@ -77,7 +76,6 @@ async function openPage(context, url, instrument = false) {
     });
   }
   await page.goto(url, { waitUntil: 'networkidle' });
-  await closeSkyForWorldTests(page);
   if (instrument) await page.waitForFunction(() => Boolean(window.__ebr56Test));
   await page.waitForFunction(() => Boolean(window.getPixelRendering?.().canvasWidth));
   return { page, errors };

@@ -3,7 +3,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { closeSkyForWorldTests } from './skyTestUtils.mjs';
 import { createServer, preview } from 'vite';
 
 const evidenceDir = process.env.EBR71_EVIDENCE_DIR;
@@ -60,7 +59,6 @@ async function openPage(context, url, inspectScene = false) {
     });
   }
   await page.goto(url, { waitUntil: 'networkidle' });
-  await closeSkyForWorldTests(page);
   await page.waitForFunction(() => Boolean(window.getPixelRendering && window.getWeather));
   if (inspectScene) await page.waitForFunction(() => Boolean(window.__ebr71Test));
   return { page, errors };
@@ -266,7 +264,6 @@ test('fixed WASD and ground-click steps retain main-branch movement and camera',
   assert.ok(Math.abs(walk.rotation - Math.PI / 4) < 1e-6);
 
   await page.reload({ waitUntil: 'networkidle' });
-  await closeSkyForWorldTests(page);
   await page.waitForFunction(() => Boolean(window.__ebr71Test));
   await page.evaluate(() => window.__ebr71Test.renderer.setAnimationLoop(null));
   const target = await worldPoint(page, 3.2, -0.3);

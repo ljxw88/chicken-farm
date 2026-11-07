@@ -162,19 +162,21 @@ test('editable focus, modifiers, composing, default prevention and focused butto
 });
 
 test('focused sky controls keep game keys; the canvas still receives walking and placement', (t) => {
-  const f = fixture(t, { ownMovement: true });
-  const sky = f.document.querySelector('#sky-control');
-  f.context.active = true;
-  for (const code of ['Escape', 'Enter', 'Space', 'KeyW', 'KeyF', 'KeyP', 'KeyR', 'KeyZ']) f.key('keydown', code, sky);
-  assert.deepEqual(f.input.consume().actions, []);
-  assert.equal(f.input.consume().move.active, false);
-  f.key('keydown', 'KeyW', f.document.body);
-  assert.equal(f.input.consume().move.forward, 1);
-  // Releasing a held game key still works if focus moved into the HUD.
-  f.key('keyup', 'KeyW', sky);
-  assert.equal(f.input.consume().move.active, false);
-  f.key('keydown', 'KeyF', f.document.body);
-  assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'fence' }]);
+  for (const ownPlacement of [false, true]) {
+    const f = fixture(t, { ownMovement: true, ownPlacement });
+    const sky = f.document.querySelector('#sky-control');
+    f.context.active = true;
+    for (const code of ['Escape', 'Enter', 'Space', 'KeyW', 'KeyF', 'KeyP', 'KeyR', 'KeyZ']) f.key('keydown', code, sky);
+    assert.deepEqual(f.input.consume().actions, []);
+    assert.equal(f.input.consume().move.active, false);
+    f.key('keydown', 'KeyW', f.document.body);
+    assert.equal(f.input.consume().move.forward, 1);
+    // Releasing a held game key still works if focus moved into the HUD.
+    f.key('keyup', 'KeyW', sky);
+    assert.equal(f.input.consume().move.active, false);
+    f.key('keydown', 'KeyF', f.document.body);
+    assert.deepEqual(f.input.consume().actions, [{ type: 'placement-select', kind: 'fence' }]);
+  }
 });
 
 test('placement takes pointer priority; mouse confirms, touch/pen preview, and UI confirms', (t) => {

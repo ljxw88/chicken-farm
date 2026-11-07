@@ -3,7 +3,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { closeSkyForWorldTests } from './skyTestUtils.mjs';
 import * as THREE from 'three';
 import { createServer } from 'vite';
 
@@ -46,7 +45,6 @@ async function openPage(context, phase = 'daytime', weather = 'clear') {
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr47Test = { scene, camera, character, obstacles };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=${weather}`, { waitUntil: 'networkidle' });
-  await closeSkyForWorldTests(page);
   await page.waitForFunction(() => Boolean(window.__ebr47Test && window.getPixelRendering?.().canvasWidth));
   if (weather === 'rain') await page.waitForFunction(() => window.getWeather().rainAmount > 0.99, null, { timeout: 15000 });
   return { page, errors };

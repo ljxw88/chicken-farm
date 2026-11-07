@@ -92,16 +92,22 @@ async function walkToUncoveredGround(page, touch = false) {
   const targets = await page.evaluate(() => {
     const { camera, character } = window.__ebr36Test;
     camera.updateMatrixWorld();
-    return [[0, -1.5], [-1.5, 0], [1.5, 0], [0, 1.5], [-2, -1], [2, -1],
-      [-4, -4], [-5, -3], [-3, -5], [-6, 4], [4, -6], [-5, 5], [5, -5]].flatMap(([dx, dz]) => {
+    const offsets = [[0, -1.5], [-1.5, 0], [1.5, 0], [0, 1.5], [-2, -1], [2, -1]];
+    // The desktop panel deliberately covers the lower island, so search the
+    // remaining visible grass as well as points near the player.
+    for (let x = -7; x <= 7; x++) for (let z = -7; z <= 7; z++) {
+      offsets.push([x - character.position.x, z - character.position.z]);
+    }
+    offsets.sort((a, b) => Math.hypot(...a) - Math.hypot(...b));
+    return offsets.flatMap(([dx, dz]) => {
       const x = character.position.x + dx;
       const z = character.position.z + dz;
-      if (Math.abs(x) > 7 || Math.abs(z) > 7) return [];
+      if (Math.abs(x) > 7 || Math.abs(z) > 7 || Math.hypot(dx, dz) < 1) return [];
       const projected = character.position.clone().set(x, 2.4, z).project(camera);
       const px = (projected.x + 1) * innerWidth / 2;
       const py = (1 - projected.y) * innerHeight / 2;
       return document.elementFromPoint(px, py)?.id === 'scene' ? [{ x: px, y: py }] : [];
-    });
+    }).slice(0, 25);
   });
   for (const target of targets) {
     const before = await position(page);
@@ -220,9 +226,12 @@ test('desktop panel controls real phases, weather, automation and close/reopen',
   assert.equal(await automatic.getAttribute('aria-checked'), 'true');
   await nextWeather.click();
   assert.equal(await automatic.getAttribute('aria-checked'), 'false');
-  await page.evaluate(() => { window.setDayNightPhase('night'); window.setDayNightFollowing(false); });
+  await page.evaluate(() => { window.setDayNightCycleSeconds(1440); window.setDayNightPhase('night'); window.setDayNightFollowing(false); });
   await page.waitForFunction(() => window.getWeather().mode === 'rain' && window.getWeather().rainAmount > 0.99, null, { timeout: 15000 });
+  await page.waitForFunction(() => document.querySelector('.hud-panel__footer').textContent === 'One farm day lasts 24 minutes.');
   await capture(page, 'desktop-1280-night-rain-open.png');
+  await page.evaluate(() => { window.setDayNightCycleSeconds(8); window.setDayNightFollowing(false); });
+  await page.waitForFunction(() => document.querySelector('.hud-panel__footer').textContent === 'One farm day lasts 8 seconds.');
   await follow.click();
   assert.equal(await page.evaluate(() => window.getDayNightState().following), true);
   const initialPhase = await page.evaluate(() => window.getDayNightState().phase);
