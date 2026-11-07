@@ -48,7 +48,7 @@ async function openPage(context, url, instrument = false) {
   if (instrument) {
     await page.route('**/src/main.ts*', async (route) => {
       const response = await route.fetch();
-      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr36Test = { scene, camera, character, placement, skyState, skyHud, weather, follow, composer, engine };\n` });
+      await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr36Test = { scene, camera, character, placement, skyState, skyHud, farmHud, dayNight, weather, follow, composer, engine };\n` });
     });
   }
   await page.goto(url, { waitUntil: 'networkidle' });
@@ -447,10 +447,12 @@ test('frosted text remains legible against real cottage and grass in day, sunset
         window.setDayNightPhase(phase);
         window.setDayNightFollowing(false);
         test.skyHud.update();
+        test.farmHud.setPhase(test.dayNight.getPhase());
         test.follow(test.character.position.clone().set(x, 2.4, z));
         test.camera.updateMatrixWorld();
         test.composer.render(0);
       }, { phase, x, z });
+      assert.equal(await page.locator('.farm-biome [data-phase]').textContent(), phase[0].toUpperCase() + phase.slice(1));
       const text = await page.evaluate(() => {
         const selectors = [
           ['body', '.hud-panel__header h1, .hud-selector__value'],
