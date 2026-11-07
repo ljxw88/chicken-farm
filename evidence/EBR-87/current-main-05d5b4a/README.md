@@ -1,0 +1,10 @@
+# EBR-87 integration evidence
+
+- Stacked on EBR-94 PR #25 at `f5f20a5658bd7ba482e286dce7c81dd0d21b2926`, itself based on main `05d5b4aa566bf3d48cd2d1f5b94224224287c4c2`.
+- Captured source: `965129e70fd21a7d29c7ea93f1570a602326f731`; the following evidence-only commit does not change source, tests, or tools. The SHA-256 of `git diff --binary f5f20a5 965129e -- src tests tools` is `ebf7d9e268369233ead05396f37d0abc56d30bbf3bb4b2663f7314c3a1c23757`.
+- Intended same-pose pixel changes: none; the allowed mask is empty. `gate-g/` compares all eight unmasked frames to current main: zero changed pixels and zero state mismatches. The signed EBR-92 character look is present on both sides.
+- `routes.log` and `routes/` contain 12 passing route cases, including one live pad click via the bridge, blocked destinations, keyboard cancellation, placement priority, and routing around a newly placed ECS-owned fence. The live click ended at `(12.80000028, 0.34457482, 0.75000035)`.
+- `replay.log` and `walking-replay/` compare against clean historical `9e8c8c6` and `5d9ba48` archives. For each, 749 unchanged movement/camera/shadow frames match exactly. The intentional single-pad-click route differs for 120 of 121 frames and reaches the pad instead of stopping at the stream. The historical same-pose visual differences are EBR-92's signed body change: outside-body and body-hidden differences are zero. They are not a pixel exception for this ticket's current-main comparison.
+- Captures use Chromium 153.0.8010.12, SwiftShader, 1280×720, DPR 1. The shared dev server used port 5214 with `--strictPort`. Commands ran serially through `/home/michael/OpenBot/Shared/farm-tools/heavy` after checking available memory.
+
+To review, click the stair foot pad once from spawn: the character should cross the bridge and descend. Click the water, a roof, or the void and observe an approach to the nearest reachable boundary; press any key to cancel. Place a fence with F, exit placement with Escape, then click beyond it: the next route should avoid the fence. Exact global optimality for every possible obstacle arrangement and physical-device testing remain unverified.
