@@ -261,9 +261,18 @@
   border-radius: 999px;
 }
 
-.hud-toolbar__button[aria-expanded="true"] {
+.hud-toolbar__button[aria-expanded="true"],
+.hud-toolbar__button[data-action="sound"][aria-pressed="true"] {
   background: var(--hud-active);
   border-radius: 999px;
+}
+
+.hud-toolbar__button[data-audio-state="locked"] {
+  opacity: 0.45;
+}
+
+.hud-toolbar__button[data-action="sound"]:not([aria-pressed="true"]):enabled:hover {
+  background: transparent;
 }
 
 .hud-status {

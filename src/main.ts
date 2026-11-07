@@ -1,5 +1,6 @@
 import './style.css';
 import './ui/farmHud.css';
+import { createAudio } from './audio';
 import { CHARACTER_RADIUS, createCharacter, createCharacterController } from './character';
 import { createEngine } from './core/loop';
 import { createChimneySmoke } from './effects/createChimneySmoke';
@@ -165,7 +166,8 @@ const farmHud = createFarmHud({ root: hudRoot, initialPhase: dayNight.getPhase()
 // A clean, HUD-free frame is available without DevTools for signed visual gates.
 const skyEnabled = new URLSearchParams(window.location.search).get('skyhud') !== '0';
 const skyState = skyEnabled ? createSkyStateAdapter(window) : undefined;
-const skyHud = skyState ? createSkyHud({ root: skyRoot, ...skyState }) : undefined;
+const audio = createAudio();
+const skyHud = skyState ? createSkyHud({ root: skyRoot, ...skyState, audio }) : undefined;
 if (!skyEnabled) skyRoot.remove();
 const composer = createComposer(renderer, scene, camera);
 window.setPixelRendering = composer.setEnabled;
