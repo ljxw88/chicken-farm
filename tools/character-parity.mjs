@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 
-const baselineSha = '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4';
+const baselineSha = '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff';
 const viewport = { width: 1280, height: 720 };
 const seed = 0xeb740001;
 const search = '?phase=daytime&weather=clear';
@@ -57,6 +58,13 @@ window.__ebr74 = { scene, camera, character, controls, follow, stairs, obstacles
   });
   await page.goto(`${url}/${search}`, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => window.__ebr74 && window.__ebr74RandomCalls > 0));
+  // This test compares scene/character frames. The new HTML overlay is tested
+  // separately; hide it here so it cannot obscure the scripted canvas clicks.
+  await page.evaluate(() => {
+    const sky = document.querySelector('#hud');
+    if (sky) sky.style.display = 'none';
+    document.body.classList.remove('sky-panel-open');
+  });
   await page.evaluate(() => document.fonts.ready);
   const graphics = await page.evaluate(() => {
     const gl = document.querySelector('#scene').getContext('webgl2');
@@ -327,12 +335,16 @@ async function pixelDiff(page, reference, candidate) {
   }, { reference: reference.toString('base64'), candidate: candidate.toString('base64') });
 }
 
-/** Record main in a temporary worktree, then replay the same events and frame times on the candidate. */
-export async function compareCharacterParity({ baselineRoot, candidateRoot, evidenceDir }) {
+/** Record clean main, then replay the same events and frame times on the candidate. */
+export async function compareCharacterParity({ baselineRoot, candidateRoot, baselineIsArchive = false, evidenceDir }) {
   const git = (root, ...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' }).trim();
-  assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
-  assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
-    'The reference worktree must contain the unmodified baseline source');
+  if (baselineIsArchive) {
+    assert.equal(git(candidateRoot, 'rev-parse', `${baselineSha}^{commit}`), baselineSha);
+  } else {
+    assert.equal(git(baselineRoot, 'rev-parse', 'HEAD'), baselineSha);
+    assert.equal(git(baselineRoot, 'status', '--porcelain', '--untracked-files=no', '--', 'src', 'index.html', 'package.json', 'package-lock.json'), '',
+      'The reference worktree must contain the unmodified baseline source');
+  }
   let baseline;
   let candidate;
   let browser;
@@ -343,8 +355,14 @@ export async function compareCharacterParity({ baselineRoot, candidateRoot, evid
     const names = ['walking', 'qa-walk', 'key-transitions', 'bridge', 'stairs', 'stream'];
     const reference = {};
     for (const name of names) reference[name] = await recordScenario(browser, baseline.url, name);
-    // The reference is generated from the clean main worktree and stays there, never in the branch.
-    const traceDir = await mkdtemp(join(baselineRoot, '.ebr74-reference-'));
+    // Keep the generated trace outside every worktree.
+    let traceDir;
+    try {
+      traceDir = await mkdtemp('/tmp/opencode/ebr74-reference-');
+    } catch (error) {
+      if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
+      traceDir = await mkdtemp(join(tmpdir(), 'ebr74-reference-'));
+    }
     const tracePath = join(traceDir, 'trace.json');
     await writeFile(tracePath, `${JSON.stringify({ baselineSha, browser: browser.version(), viewport, seed,
       scenarios: Object.fromEntries(names.map((name) => [name, {

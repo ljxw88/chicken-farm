@@ -12,7 +12,9 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--hud-gap);
-  padding: 16px 16px var(--hud-bottom);
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    var(--hud-bottom) max(16px, env(safe-area-inset-left));
+  --hud-top-limit: 78px;
   color: var(--hud-text);
   font-family: var(--hud-font);
   image-rendering: auto;
@@ -26,21 +28,22 @@
 }
 
 .hud-panel,
-.hud-toolbar {
+.hud-toolbar,
+.hud-status {
   border: 1px solid var(--hud-border);
-  background: linear-gradient(145deg, var(--hud-glass-highlight), rgba(255, 255, 255, 0.015)), var(--hud-glass);
+  background: linear-gradient(145deg, var(--hud-glass-highlight), rgba(255, 255, 242, 0.015)), var(--hud-glass);
   box-shadow: var(--hud-shadow);
-  -webkit-backdrop-filter: blur(var(--hud-blur)) saturate(1.12);
-  backdrop-filter: blur(var(--hud-blur)) saturate(1.12);
+  -webkit-backdrop-filter: blur(var(--hud-blur)) saturate(1.08);
+  backdrop-filter: blur(var(--hud-blur)) saturate(1.08);
 }
 
 .hud-panel {
   width: min(var(--hud-panel-width), 100%);
-  max-height: calc(100dvh - var(--hud-bottom) - var(--hud-toolbar-height) - var(--hud-gap) - 32px);
+  max-height: min(62dvh, calc(100dvh - var(--hud-bottom) - var(--hud-toolbar-height) - var(--hud-gap) - var(--hud-top-limit)));
   flex: 0 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 20px 25px 0;
+  padding: 16px 24px 0;
   border-radius: var(--hud-radius);
   scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
   scrollbar-width: thin;
@@ -62,7 +65,7 @@
 
 .hud-panel__header h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.2;
@@ -106,7 +109,7 @@
 
 .hud-icon-button:disabled,
 .hud-toggle__button:disabled {
-  opacity: 0.38;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -123,7 +126,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 7px 18px 15px;
+  padding: 7px 10px 8px;
 }
 
 .hud-column + .hud-column {
@@ -141,7 +144,7 @@
 
 .hud-column__artwork {
   display: grid;
-  height: 96px;
+  height: 120px;
   flex: none;
   place-items: center;
   margin-top: 5px;
@@ -149,8 +152,8 @@
 }
 
 .hud-column__artwork svg {
-  width: 88px;
-  height: 88px;
+  width: 120px;
+  height: 120px;
 }
 
 .hud-column--pending .hud-column__artwork,
@@ -168,7 +171,7 @@
 
 .hud-selector__value {
   overflow: hidden;
-  font-size: 14px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.2;
@@ -182,17 +185,6 @@
   height: 18px;
 }
 
-.hud-column__hint {
-  display: grid;
-  height: 30px;
-  place-items: center;
-  margin: 1px 0 5px;
-  color: var(--hud-faint);
-  font-size: 11px;
-  line-height: 1.25;
-  text-align: center;
-}
-
 .hud-toggle {
   display: flex;
   min-height: 44px;
@@ -203,7 +195,7 @@
 
 .hud-toggle__label {
   color: var(--hud-muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.2;
 }
@@ -220,7 +212,7 @@
   height: 22px;
   border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
   transition: background 160ms ease;
 }
 
@@ -238,21 +230,22 @@
 
 .hud-toggle__button[aria-checked="true"] .hud-toggle__track {
   border-color: transparent;
-  background: rgba(255, 254, 247, 0.9);
+  background: rgba(216, 234, 187, 0.45);
 }
 
 .hud-toggle__button[aria-checked="true"] .hud-toggle__thumb {
   transform: translateX(16px);
-  background: #49654b;
 }
 
 .hud-panel__footer {
   display: grid;
-  min-height: 56px;
+  min-height: 52px;
   place-items: center;
+  margin: 0 -24px;
+  padding: 0 24px;
   border-top: 1px solid var(--hud-divider);
   color: var(--hud-muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
   text-align: center;
 }
@@ -264,11 +257,12 @@
   align-items: center;
   gap: 3px;
   padding: 5px;
-  border-radius: 17px;
+  border-radius: 999px;
 }
 
 .hud-toolbar__button[aria-expanded="true"] {
   background: var(--hud-active);
+  border-radius: 999px;
 }
 
 .hud-status {
@@ -276,22 +270,43 @@
   margin: 0;
   padding: 9px 14px;
   border-radius: 12px;
-  background: rgba(28, 42, 35, 0.92);
   font-size: 12px;
   text-align: center;
 }
 
 @supports not (backdrop-filter: blur(1px)) {
   .hud-panel,
-  .hud-toolbar {
-    background-color: rgba(28, 42, 35, 0.92);
+  .hud-toolbar,
+  .hud-status {
+    background-color: rgba(40, 55, 36, 0.94);
   }
 }
 
-@media (max-width: 430px) {
+/* Reserve a separate lane for the existing placement bar and its active tools. */
+body:has(.placement-controls.is-active) .hud-root {
+  --hud-top-limit: 178px;
+}
+
+@media (max-width: 680px) {
+  body.sky-panel-open .placement-controls {
+    top: max(70px, calc(env(safe-area-inset-top) + 58px));
+    bottom: auto;
+    left: 50%;
+  }
+
   .hud-root {
-    padding-right: 12px;
-    padding-left: 12px;
+    --hud-top-limit: 122px;
+  }
+
+  body:has(.placement-controls.is-active) .hud-root {
+    --hud-top-limit: 220px;
+  }
+}
+
+@media (max-width: 719px) {
+  .hud-root {
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
   }
 
   .hud-panel {
@@ -299,8 +314,20 @@
     padding-left: 12px;
   }
 
-  .hud-panel__header h1 {
-    font-size: 20px;
+  .hud-panel__footer {
+    margin-right: -12px;
+    margin-left: -12px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .hud-column__artwork {
+    height: 88px;
+  }
+
+  .hud-column__artwork svg {
+    width: 88px;
+    height: 88px;
   }
 
   .hud-column {
@@ -309,37 +336,45 @@
   }
 
   .hud-selector__value {
-    font-size: clamp(10px, 3vw, 13px);
-  }
-
-  .hud-toggle__label {
-    font-size: 11px;
+    font-size: 18px;
+    text-overflow: clip;
+    white-space: normal;
   }
 }
 
-@media (max-width: 350px) {
-  .hud-selector {
-    grid-template-columns: 36px minmax(0, 1fr) 36px;
+@media (max-width: 479px) {
+  .hud-column__artwork {
+    height: 72px;
   }
 
-  .hud-selector__arrow {
-    /* Keep the 44px hit target while giving the state label more room. */
-    justify-self: center;
+  .hud-column__artwork svg {
+    width: 72px;
+    height: 72px;
+  }
+
+  .hud-selector__value {
+    font-size: 17px;
   }
 }
 
-@media (max-height: 480px) {
+@media (max-width: 339px) {
+  .hud-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hud-column + .hud-column {
+    border-top: 1px solid var(--hud-divider);
+    border-left: 0;
+  }
+}
+
+@media (max-height: 520px) {
   .hud-panel {
     padding-top: 8px;
   }
 
   .hud-column__artwork {
-    height: 60px;
-  }
-
-  .hud-column__artwork svg {
-    width: 60px;
-    height: 60px;
+    display: none;
   }
 
   .hud-column {

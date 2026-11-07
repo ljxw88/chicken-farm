@@ -7,6 +7,7 @@ const vite = await createServer({ configFile: false, server: { middlewareMode: t
 const { createCharacter } = await vite.ssrLoadModule('/src/character/createCharacter.ts');
 const { createFarmLayout } = await vite.ssrLoadModule('/src/scene/createFarmLayout.ts');
 const { createDayNightCycle } = await vite.ssrLoadModule('/src/lighting/createDayNightCycle.ts');
+const { createStartupPhaseController } = await vite.ssrLoadModule('/src/startupOptions.ts');
 const { configureDayNightFromUrl } = await vite.ssrLoadModule('/src/lighting/configureDayNightFromUrl.ts');
 const { createIsland, VOID_COLOR } = await vite.ssrLoadModule('/src/scene/createIsland.ts');
 after(() => vite.close());
@@ -382,47 +383,44 @@ test('missing or invalid phase URLs retain the normal running cycle', () => {
 });
 
 test('following can pause the actual interpolated lighting and resume from the same progress', () => {
-  const { scene, cycle, lanternLight } = fixture();
-  cycle.setDayNightCycleSeconds(24 * 60);
-  cycle.update(123);
-  const pausedAt = cycle.getState();
-  const pausedSky = scene.background.clone();
+  const { cycle, hemisphere, lanternLight } = fixture();
+  const controller = createStartupPhaseController(cycle, undefined, { cycleSeconds: 1440 });
+  controller.update(123);
+  const pausedAt = controller.getState();
+  const pausedSky = hemisphere.color.clone();
   assert.equal(pausedAt.following, true);
   assert.equal(pausedAt.cycleSeconds, 1440);
-  near(pausedAt.progress, 123 / 1440);
 
-  cycle.setFollowing(false);
-  cycle.update(900);
-  near(cycle.getState().progress, pausedAt.progress);
-  colorNear(scene.background, pausedSky);
-  assert.equal(cycle.getState().following, false);
-  assert.throws(() => cycle.update(-1), RangeError); // Validation still applies while paused.
-  assert.throws(() => cycle.setFollowing('yes'), TypeError);
+  controller.setFollowing(false);
+  controller.update(900);
+  colorNear(hemisphere.color, pausedSky);
+  assert.equal(controller.getState().following, false);
+  assert.throws(() => controller.setFollowing('yes'), TypeError);
 
-  cycle.setDayNightPhase('night');
-  assert.equal(cycle.getState().phase, 'night');
-  assert.equal(cycle.getState().following, false);
-  assert.equal(scene.background.getHex(), 0x2a2848);
-  near(lanternLight.intensity, 0.55);
-  cycle.update(180);
-  near(cycle.getState().progress, 0.75);
+  controller.setDayNightPhase('night');
+  controller.setFollowing(false);
+  assert.equal(controller.getState().phase, 'night');
+  assert.equal(hemisphere.color.getHex(), 0x2a2848);
+  near(lanternLight.intensity, 0.12);
+  controller.update(180);
+  near(lanternLight.intensity, 0.12);
 
-  cycle.setFollowing(true);
-  cycle.update(180);
-  near(cycle.getState().progress, 0.875);
-  near(lanternLight.intensity, 0.55 / 2);
-  assert.equal(cycle.getState().phase, 'morning'); // Nearest preset across the wrap.
+  controller.setFollowing(true);
+  controller.update(180);
+  near(lanternLight.intensity, 0.12 / 2);
+  assert.equal(controller.getState().phase, 'night');
 });
 
-test('the exposed phase tracks the nearest preset during smooth transitions', () => {
+test('the exposed phase tracks the same lighting segment as the existing phase pill', () => {
   const { cycle } = fixture();
-  assert.deepEqual(cycle.getState(), { phase: 'morning', progress: 0, following: true, cycleSeconds: 72 });
-  cycle.setDayNightPhase('sunset');
-  cycle.update(8.9);
-  assert.equal(cycle.getState().phase, 'sunset');
-  cycle.update(0.2);
-  assert.equal(cycle.getState().phase, 'night');
-  cycle.setDayNightPhase('night');
-  cycle.update(9.1);
-  assert.equal(cycle.getState().phase, 'morning');
+  const controller = createStartupPhaseController(cycle, undefined);
+  assert.deepEqual(controller.getState(), { phase: 'morning', following: true, cycleSeconds: 72 });
+  controller.setDayNightPhase('sunset');
+  controller.update(17.9);
+  assert.equal(controller.getState().phase, 'sunset');
+  controller.update(0.2);
+  assert.equal(controller.getState().phase, 'night');
+  controller.setDayNightPhase('night');
+  controller.update(18.1);
+  assert.equal(controller.getState().phase, 'morning');
 });

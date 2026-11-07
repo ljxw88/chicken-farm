@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { chromium } from 'playwright';
+import { closeSkyForWorldTests } from './skyTestUtils.mjs';
 import { createServer } from 'vite';
 
 // LIGHTING_URL can point at the requested live dev server. Evidence capture is
@@ -148,6 +149,7 @@ async function openPhase(context, phase) {
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__lightingTest = { scene, camera, character, stairs, controls, follow, renderer, composer, dayNight };\n` });
   });
   await page.goto(`${url}/?phase=${phase}&weather=clear`, { waitUntil: 'networkidle' });
+  await closeSkyForWorldTests(page);
   await page.waitForFunction(() => Boolean(window.__lightingTest && window.getPixelRendering?.().canvasWidth));
   await page.evaluate(() => {
     const { renderer, composer } = window.__lightingTest;

@@ -3,4 +3,4 @@ import './hud.css';
 
 export { createFarmHud } from './createFarmHud';
 export { createSkyHud } from './createSkyHud';
-export { createPendingWeatherAdapter } from './weatherAdapter';
+export { createSkyStateAdapter } from './skyStateAdapter';

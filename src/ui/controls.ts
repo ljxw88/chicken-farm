@@ -1,4 +1,4 @@
-import { NEXT_ICON, PREVIOUS_ICON } from './icons';
+import { CLOSE_ICON, NEXT_ICON, PREVIOUS_ICON } from './icons';
 
 export function createIconButton(label: string, icon: string, className = '') {
   const button = document.createElement('button');
@@ -8,6 +8,22 @@ export function createIconButton(label: string, icon: string, className = '') {
   button.title = label;
   button.innerHTML = icon; // Icons are static, local SVGs, never weather-provided markup.
   return button;
+}
+
+export function createPanel({ id, title, closeLabel }: { id: string; title: string; closeLabel: string }) {
+  const element = document.createElement('section');
+  element.id = id;
+  element.className = 'hud-panel';
+  element.setAttribute('aria-labelledby', `${id}-title`);
+  const header = document.createElement('header');
+  header.className = 'hud-panel__header';
+  const heading = document.createElement('h1');
+  heading.id = `${id}-title`;
+  heading.textContent = title;
+  const close = createIconButton(closeLabel, CLOSE_ICON, 'hud-panel__close');
+  header.append(heading, close);
+  element.append(header);
+  return { element, close };
 }
 
 interface SelectorOptions {
@@ -35,6 +51,14 @@ export function createSelector({ name, onPrevious, onNext }: SelectorOptions) {
   previous.addEventListener('click', onPrevious);
   next.addEventListener('click', onNext);
   element.append(previous, value, next);
+  element.addEventListener('keydown', (event) => {
+    const backwards = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+    const forwards = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+    if (!backwards && !forwards) return;
+    event.preventDefault();
+    const button = backwards ? previous : next;
+    if (!button.disabled) button.click();
+  });
 
   function setState(state: SelectorState) {
     if (value.textContent !== state.value) value.textContent = state.value;

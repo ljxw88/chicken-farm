@@ -9,5 +9,5 @@ export function formatFarmDayLength(seconds: number) {
   const duration = minutes > 0
     ? `${withUnit(minutes, 'minute')}${remainder > 0 ? ` ${withUnit(remainder, 'second')}` : ''}`
     : withUnit(remainder, 'second');
-  return `One farm day lasts ${duration}`;
+  return `One farm day lasts ${duration}.`;
 }

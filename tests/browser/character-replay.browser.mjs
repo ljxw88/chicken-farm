@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, symlink } from 'node:fs/promises';
+import { mkdtemp, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -11,16 +11,24 @@ test('scripted key, mouse and touch traces match the main worktree frame by fram
   let owned = false;
   try {
     if (!baseline) {
-      baseline = await mkdtemp(join(tmpdir(), 'ebr74-main-'));
-      execFileSync('git', ['worktree', 'add', '--detach', baseline, '9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4'], { cwd: root });
+      try {
+        baseline = await mkdtemp('/tmp/opencode/ebr74-main-');
+      } catch (error) {
+        if (!['EACCES', 'ENOENT'].includes(error.code)) throw error;
+        baseline = await mkdtemp(join(tmpdir(), 'ebr74-main-'));
+      }
       owned = true;
+      const archive = join(baseline, 'main.tar');
+      execFileSync('git', ['archive', '--format=tar', `--output=${archive}`, '5d9ba48f6bd9bfbc3974351b50d0ce89934380ff',
+        'index.html', 'package.json', 'package-lock.json', 'src'], { cwd: root });
+      execFileSync('tar', ['-xf', archive, '-C', baseline]);
       await symlink(join(root, 'node_modules'), join(baseline, 'node_modules'), 'dir');
     }
     const report = await compareCharacterParity({ baselineRoot: resolve(baseline), candidateRoot: root,
-      evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR) });
+      baselineIsArchive: owned, evidenceDir: process.env.EBR74_ROUTE_EVIDENCE_DIR && resolve(process.env.EBR74_ROUTE_EVIDENCE_DIR) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.frames}`).join(', ')}`);
     t.diagnostic(`Changed pixels: ${Object.entries(report.frameResults).map(([name, count]) => `${name}=${count}`).join(', ')}`);
   } finally {
-    if (owned) execFileSync('git', ['worktree', 'remove', '--force', baseline], { cwd: root });
+    if (owned) await rm(baseline, { recursive: true });
   }
 });

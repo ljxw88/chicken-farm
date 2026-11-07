@@ -1,13 +1,12 @@
-import type { DayNightPhaseName } from '../lighting';
-import type { DayNightHudAdapter, WeatherHudAdapter } from './adapters';
-import { createIconButton, createSelector, createToggle } from './controls';
+import type { DayNightHudAdapter, SkyPhase, SkyWeather, WeatherHudAdapter } from './adapters';
+import { createIconButton, createPanel, createSelector, createToggle } from './controls';
 import { formatFarmDayLength } from './format';
 import {
-  CLOSE_ICON, COLLAPSE_ICON, EXPAND_ICON, MOON_ICON, MORE_ICON, PENDING_WEATHER_ARTWORK,
-  PHASE_ARTWORK, SPEAKER_ICON, SUN_ICON,
+  COLLAPSE_ICON, EXPAND_ICON, MOON_ICON, MORE_ICON, PENDING_WEATHER_ARTWORK,
+  PHASE_ARTWORK, SPEAKER_ICON, SUN_ICON, SUNSET_ICON, WEATHER_ARTWORK,
 } from './icons';
 
-const PHASE_LABELS: Record<DayNightPhaseName, string> = {
+const PHASE_LABELS: Record<SkyPhase, string> = {
   morning: 'Morning',
   daytime: 'Daytime',
   sunset: 'Sunset',
@@ -31,36 +30,22 @@ function createColumn(title: string, id: string) {
   const artwork = document.createElement('div');
   artwork.className = 'hud-column__artwork';
   artwork.setAttribute('aria-hidden', 'true');
-  const hint = document.createElement('p');
-  hint.className = 'hud-column__hint';
-  hint.id = `${id}-hint`;
   element.append(heading, artwork);
-  return { element, artwork, hint };
+  return { element, artwork };
 }
 
 export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   if (dayNight.phases.length === 0) throw new Error('The sky HUD needs at least one day/night phase');
+  root.dataset.inputScope = 'ui';
 
-  const panel = document.createElement('section');
-  panel.id = 'sky-panel';
-  panel.className = 'hud-panel';
-  panel.setAttribute('aria-labelledby', 'sky-title');
-  const header = document.createElement('header');
-  header.className = 'hud-panel__header';
-  const title = document.createElement('h1');
-  title.id = 'sky-title';
-  title.textContent = 'A changing sky';
-  const close = createIconButton('Close sky settings', CLOSE_ICON, 'hud-panel__close');
-  header.append(title, close);
+  const { element: panel, close } = createPanel({ id: 'sky-panel', title: 'A changing sky', closeLabel: 'Close sky settings' });
 
   const columns = document.createElement('div');
   columns.className = 'hud-columns';
   const timeColumn = createColumn('Time of day', 'time');
   const weatherColumn = createColumn('Weather', 'weather');
   weatherColumn.element.classList.toggle('hud-column--pending', weather.status === 'pending');
-  weatherColumn.element.setAttribute('aria-describedby', weatherColumn.hint.id);
   weatherColumn.artwork.innerHTML = PENDING_WEATHER_ARTWORK;
-  timeColumn.hint.textContent = 'Choosing a time pauses the day';
 
   function selectTime(direction: number) {
     const index = dayNight.phases.indexOf(dayNight.getState().phase);
@@ -102,13 +87,13 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
       update();
     },
   });
-  timeColumn.element.append(timeSelector.element, timeColumn.hint, timeToggle.element);
-  weatherColumn.element.append(weatherSelector.element, weatherColumn.hint, weatherToggle.element);
+  timeColumn.element.append(timeSelector.element, timeToggle.element);
+  weatherColumn.element.append(weatherSelector.element, weatherToggle.element);
   columns.append(timeColumn.element, weatherColumn.element);
 
   const footer = document.createElement('footer');
   footer.className = 'hud-panel__footer';
-  panel.append(header, columns, footer);
+  panel.append(columns, footer);
 
   const toolbar = document.createElement('div');
   toolbar.className = 'hud-toolbar';
@@ -116,7 +101,8 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   toolbar.setAttribute('aria-label', 'Farm controls');
   const sound = createIconButton('Sound unavailable', SPEAKER_ICON, 'hud-toolbar__button');
   sound.disabled = true;
-  sound.title = 'Sound is not available yet.';
+  sound.setAttribute('aria-disabled', 'true');
+  sound.title = 'Not available yet';
   const fullscreen = createIconButton('Enter fullscreen', EXPAND_ICON, 'hud-toolbar__button');
   fullscreen.dataset.action = 'fullscreen';
   const sky = createIconButton('Close sky settings', SUN_ICON, 'hud-toolbar__button');
@@ -124,7 +110,8 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   sky.setAttribute('aria-controls', panel.id);
   const more = createIconButton('More options unavailable', MORE_ICON, 'hud-toolbar__button');
   more.disabled = true;
-  more.title = 'More options are not available yet.';
+  more.setAttribute('aria-disabled', 'true');
+  more.title = 'Not available yet';
   toolbar.append(sound, fullscreen, sky, more);
 
   const status = document.createElement('p');
@@ -133,23 +120,25 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   status.hidden = true;
   root.replaceChildren(panel, status, toolbar);
 
-  let panelOpen = true;
-  let lastPhase: DayNightPhaseName | undefined;
+  let panelOpen = false;
+  let lastPhase: SkyPhase | undefined;
+  let lastWeather: SkyWeather | undefined;
   let lastCycleSeconds: number | undefined;
   let fullscreenUnavailable = !document.fullscreenEnabled || typeof document.documentElement.requestFullscreen !== 'function';
 
-  function updateSkyButton(phase: DayNightPhaseName) {
+  function updateSkyButton(phase: SkyPhase) {
     const label = `${panelOpen ? 'Close' : 'Open'} sky settings (${PHASE_LABELS[phase]})`;
     if (sky.getAttribute('aria-label') !== label) sky.setAttribute('aria-label', label);
     if (sky.title !== label) sky.title = label;
     if (sky.getAttribute('aria-expanded') !== String(panelOpen)) sky.setAttribute('aria-expanded', String(panelOpen));
-    if (sky.dataset.phase !== phase) sky.dataset.phase = phase;
+    if (sky.dataset.skyPhase !== phase) sky.dataset.skyPhase = phase;
   }
 
   function setPanelOpen(open: boolean) {
     const returnFocus = !open && panel.contains(document.activeElement);
     panelOpen = open;
     panel.hidden = !open;
+    document.body.classList.toggle('sky-panel-open', open);
     updateSkyButton(dayNight.getState().phase);
     if (returnFocus) sky.focus({ preventScroll: true });
   }
@@ -178,19 +167,21 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
   });
   document.addEventListener('fullscreenchange', syncFullscreen);
 
-  function handleEscape(event: KeyboardEvent) {
+  function handleHudKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape' && panelOpen && root.contains(document.activeElement)) {
       event.preventDefault();
       setPanelOpen(false);
     }
+    // Focused HUD controls own keys; the canvas retains game shortcuts.
+    event.stopPropagation();
   }
-  window.addEventListener('keydown', handleEscape);
+  root.addEventListener('keydown', handleHudKeyDown);
 
   function update() {
     const time = dayNight.getState();
     if (lastPhase !== time.phase) {
       timeColumn.artwork.innerHTML = PHASE_ARTWORK[time.phase];
-      sky.innerHTML = time.phase === 'night' ? MOON_ICON : SUN_ICON;
+      sky.innerHTML = time.phase === 'night' ? MOON_ICON : time.phase === 'sunset' ? SUNSET_ICON : SUN_ICON;
       lastPhase = time.phase;
     }
     updateSkyButton(time.phase);
@@ -206,9 +197,12 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
         value: 'Pending', previousDisabled: true, nextDisabled: true, disabledReason: weather.reason,
       });
       weatherToggle.setState({ checked: false, disabled: true, disabledReason: weather.reason });
-      if (weatherColumn.hint.textContent !== 'Awaiting EBR-35') weatherColumn.hint.textContent = 'Awaiting EBR-35';
     } else {
       const state = weather.getState();
+      if (state.mode !== lastWeather) {
+        weatherColumn.artwork.innerHTML = state.mode ? WEATHER_ARTWORK[state.mode] : PENDING_WEATHER_ARTWORK;
+        lastWeather = state.mode;
+      }
       const unavailable = 'This weather control is not available.';
       weatherSelector.setState({
         value: state.label, previousDisabled: !weather.previous, nextDisabled: !weather.next, disabledReason: unavailable,
@@ -218,18 +212,18 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
         disabled: state.automatic === undefined || !weather.setAutomatic,
         disabledReason: unavailable,
       });
-      const hint = state.automatic === undefined ? 'Automatic change unavailable' : '';
-      if (weatherColumn.hint.textContent !== hint) weatherColumn.hint.textContent = hint;
     }
   }
 
   syncFullscreen();
-  setPanelOpen(true);
+  setPanelOpen(false);
   update();
 
   function dispose() {
     document.removeEventListener('fullscreenchange', syncFullscreen);
-    window.removeEventListener('keydown', handleEscape);
+    root.removeEventListener('keydown', handleHudKeyDown);
+    document.body.classList.remove('sky-panel-open');
+    delete root.dataset.inputScope;
     root.replaceChildren();
   }
 

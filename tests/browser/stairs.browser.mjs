@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { approachStairs } from './bridgeRoute.mjs';
+import { closeSkyForWorldTests } from './skyTestUtils.mjs';
 
 const evidenceDir = process.env.EBR46_EVIDENCE_DIR;
 const slideProofPath = process.env.EBR46_SLIDE_PROOF;
@@ -127,6 +128,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   const overview = await context.newPage();
   collectErrors(overview, errors);
   await overview.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
+  await closeSkyForWorldTests(overview);
   const rendering = await overview.evaluate(() => ({
     pixel: window.getPixelRendering(),
     webgl: document.querySelector('#scene').getContext('webgl2')?.getParameter(7938),
@@ -146,6 +148,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
     await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
   });
   await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
+  await closeSkyForWorldTests(page);
   await page.waitForFunction(() => Boolean(window.__ebr46Test));
   await assertNoSimUi(page);
 
@@ -290,6 +293,7 @@ test('real clicks and WASD traverse the visible stairs and foot pad without clip
   const night = await context.newPage();
   collectErrors(night, errors);
   await night.goto(`${url}/?phase=night`, { waitUntil: 'networkidle' });
+  await closeSkyForWorldTests(night);
   assert.equal(await night.locator('[data-phase]').textContent(), 'Night');
   await assertNoSimUi(night);
   const nightScreenshot = await capture(night, '05-night-overview.png');
@@ -323,6 +327,7 @@ for (const scenario of padSideScenarios) {
       await route.fulfill({ response, body: `${await response.text()}\nwindow.__ebr46Test = { scene, camera, character, stairs };\n` });
     });
     await page.goto(`${url}/?phase=daytime`, { waitUntil: 'networkidle' });
+    await closeSkyForWorldTests(page);
     await page.waitForFunction(() => Boolean(window.__ebr46Test));
     await assertNoSimUi(page);
     const boxes = await page.evaluate(() => {

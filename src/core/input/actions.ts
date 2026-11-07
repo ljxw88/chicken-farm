@@ -57,6 +57,8 @@ export function createInputActions(getPlacement: () => PlacementInputContext = (
 
   function keyDown(event: KeyboardEvent) {
     if (modified(event) || editable(event.target)) return;
+    // Focused sky controls own their input; game keys resume on the canvas.
+    if (element(event.target)?.closest('[data-input-scope="ui"]')) return;
     if (MOVEMENT_KEYS.has(event.code)) {
       if (!held.has(event.code)) pending.push({ type: 'cancel-move-to' });
       held.add(event.code);
