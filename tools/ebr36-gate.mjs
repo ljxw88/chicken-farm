@@ -10,10 +10,11 @@ import { createServer } from 'vite';
 
 // Record from the requested clean commit, never a different worktree. Match
 // tools/parity.mjs: seed rain at construction and step the renderer ourselves.
-const baselineSha = process.env.EBR36_BASELINE_SHA ?? '05d5b4aa566bf3d48cd2d1f5b94224224287c4c2';
+const baselineSha = process.env.EBR36_BASELINE_SHA ?? '4799b8e4fe57dfede5b567a8517be523ff575f4f';
 const seed = Number(process.env.EBR36_SEED ?? 0xeb730001);
 if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('EBR36_SEED must be a 32-bit unsigned integer');
-const output = resolve(process.env.EBR36_GATE_DIR || 'evidence/EBR-36');
+if (!process.env.EBR36_GATE_DIR) throw new Error('Set EBR36_GATE_DIR to an evidence directory outside the worktree');
+const output = resolve(process.env.EBR36_GATE_DIR);
 const phases = ['morning', 'daytime', 'sunset', 'night'];
 const weatherModes = ['clear', 'rain', 'cloudy'];
 const viewports = [
@@ -22,6 +23,10 @@ const viewports = [
   { width: 844, height: 390, touch: true }, { width: 700, height: 844, touch: true },
   { width: 700, height: 390, touch: true },
   { width: 480, height: 320, touch: true }, { width: 568, height: 320, touch: true },
+  { width: 320, height: 320, touch: true }, { width: 340, height: 320, touch: true },
+  { width: 390, height: 320, touch: true }, { width: 700, height: 320, touch: true },
+  { width: 480, height: 390, touch: true }, { width: 568, height: 500, touch: true },
+  { width: 700, height: 460, touch: true },
 ];
 const sha256 = (data) => createHash('sha256').update(data).digest('hex');
 let temp;

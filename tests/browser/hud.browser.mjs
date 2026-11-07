@@ -130,6 +130,19 @@ function overlaps(a, b) {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
+async function assertNoHorizontalOverflow(page) {
+  const widths = await page.evaluate(() => ({
+    viewport: innerWidth,
+    document: document.documentElement.scrollWidth,
+    panel: document.querySelector('#sky-panel')?.scrollWidth,
+    panelClient: document.querySelector('#sky-panel')?.clientWidth,
+    placement: document.querySelector('.placement-controls').scrollWidth,
+    placementClient: document.querySelector('.placement-controls').clientWidth,
+  }));
+  assert.ok(widths.document <= widths.viewport && widths.panel <= widths.panelClient &&
+    widths.placement <= widths.placementClient, `horizontal overflow: ${JSON.stringify(widths)}`);
+}
+
 async function assertSeparated(page, viewport, active = false) {
   const panel = await page.locator('#sky-panel').boundingBox();
   const toolbar = await page.locator('.hud-toolbar').boundingBox();
@@ -140,13 +153,12 @@ async function assertSeparated(page, viewport, active = false) {
     assert.ok(box.x >= -0.5 && box.y >= -0.5 && box.x + box.width <= viewport.width + 0.5 && box.y + box.height <= viewport.height + 0.5,
       `${name} outside viewport: ${JSON.stringify(box)}`);
   }
-  const pairs = [[panel, toolbar], [panel, placement], [panel, biome], [toolbar, placement]];
-  // Main already has a biome/placement overlap at 700px; the sky HUD
-  // must not move either existing control merely to alter that baseline.
-  if (viewport.width !== 700) pairs.push([biome, placement]);
+  const pairs = [[panel, toolbar], [panel, placement], [panel, biome],
+    [toolbar, placement], [toolbar, biome], [biome, placement]];
   for (const [a, b] of pairs) {
     assert.equal(overlaps(a, b), false, `overlap ${viewport.width}x${viewport.height} active=${active}: ${JSON.stringify({ a, b })}`);
   }
+  await assertNoHorizontalOverflow(page);
   return { panel, toolbar, placement, biome };
 }
 
@@ -159,11 +171,11 @@ async function assertClosedSeparated(page, viewport) {
     assert.ok(box.x >= -0.5 && box.y >= -0.5 && box.x + box.width <= viewport.width + 0.5 && box.y + box.height <= viewport.height + 0.5,
       `${name} outside viewport: ${JSON.stringify(box)}`);
   }
-  const pairs = [[toolbar, placement], [toolbar, biome]];
-  if (viewport.width !== 700) pairs.push([biome, placement]);
+  const pairs = [[toolbar, placement], [toolbar, biome], [biome, placement]];
   for (const [a, b] of pairs) {
     assert.equal(overlaps(a, b), false, `closed layout overlap ${viewport.width}x${viewport.height}: ${JSON.stringify({ a, b })}`);
   }
+  await assertNoHorizontalOverflow(page);
   return { toolbar, placement, biome };
 }
 
@@ -358,7 +370,8 @@ test('panel input does not walk or place; walking and placement work with it ope
 
 test('responsive touch layouts keep the phase pill, placement and sky controls separate', { timeout: 120000 }, async (t) => {
   const results = [];
-  for (const [width, height] of [[1260, 1080], [700, 844], [700, 390], [390, 844], [320, 568], [844, 390]]) {
+  for (const [width, height] of [[1260, 1080], [680, 844], [681, 844], [700, 844], [700, 390], [720, 844],
+    [480, 390], [568, 390], [390, 844], [320, 568], [844, 390]]) {
     const viewport = { width, height };
     const touch = width < 1000;
     const context = await browser.newContext({ viewport, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
@@ -367,7 +380,10 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     if (touch) await page.locator('[data-action="sky"]').tap(); else await page.locator('[data-action="sky"]').click();
     const inactive = await assertSeparated(page, viewport);
     assert.ok(inactive.panel.height <= height * 0.62 + 1);
-    if (width >= 480 && width < 720) assert.equal(inactive.panel.width, width - 24);
+    if (width >= 480 && width < 720 && !(width <= 680 && height <= 505)) assert.equal(inactive.panel.width, width - 24);
+    if (height <= 520 && width >= 480) {
+      assert.ok(inactive.panel.height >= 180, `compact idle panel too short: ${JSON.stringify(inactive.panel)}`);
+    }
     if (width === 700) assert.equal(inactive.placement.y, 18);
     const columnLayout = await page.locator('.hud-column').evaluateAll((nodes) => nodes.map((node) => {
       const box = node.getBoundingClientRect();
@@ -395,6 +411,9 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
     await capture(page, `layout-${width}x${height}.png`);
     if (touch) await page.locator('[data-fence]').tap(); else await page.locator('[data-fence]').click();
     const active = await assertSeparated(page, viewport, true);
+    if (height <= 520 && width >= 480) {
+      assert.ok(active.panel.height >= 180, `compact active panel too short: ${JSON.stringify(active.panel)}`);
+    }
     await page.locator('[data-cancel]').click();
     if (touch) await page.getByRole('button', { name: 'Close sky settings', exact: true }).tap();
     else await page.getByRole('button', { name: 'Close sky settings', exact: true }).click();
@@ -411,21 +430,46 @@ test('responsive touch layouts keep the phase pill, placement and sky controls s
   proof.responsive = results;
 });
 
-test('short landscape keeps the toolbar and free placement usable without overlap', { timeout: 60000 }, async (t) => {
+test('short viewports keep a compact panel and placement usable without overlap', { timeout: 180000 }, async (t) => {
   const results = [];
-  for (const [width, height] of [[480, 320], [568, 320]]) {
+  for (const [width, height] of [[320, 320], [340, 320], [360, 320], [390, 320], [479, 320], [480, 320], [568, 320], [700, 320],
+    [320, 390], [340, 390], [390, 390], [479, 390], [390, 500], [480, 461], [568, 500], [700, 460], [844, 390]]) {
     const viewport = { width, height };
     const context = await browser.newContext({ viewport });
     t.after(() => context.close());
     const { page, errors } = await openPage(context, `${devUrl}/?phase=daytime`);
     assert.equal(await page.locator('#sky-panel').isHidden(), true);
-    const idle = await assertClosedSeparated(page, viewport);
+    const closed = await assertClosedSeparated(page, viewport);
+    await page.locator('[data-action="sky"]').click();
+    const idle = await assertSeparated(page, viewport);
+    assert.ok(idle.panel.height >= 180 && idle.panel.height <= height * 0.62 + 1,
+      `compact idle panel: ${JSON.stringify(idle.panel)}`);
+    await page.getByRole('button', { name: 'Next weather' }).click();
+    await page.getByRole('button', { name: 'Next weather' }).click();
+    const labels = await page.locator('.hud-selector__value').evaluateAll((nodes) => nodes.map((node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return { width: node.clientWidth, content: node.scrollWidth, lines: range.getClientRects().length };
+    }));
+    assert.ok(labels.every(({ width: w, content }) => content <= w), `truncated label: ${JSON.stringify(labels)}`);
+    assert.ok(labels[0].lines === 1 && labels[1].lines <= 2, `fragmented label: ${JSON.stringify(labels)}`);
+    for (const name of ['Previous time of day', 'Next time of day', 'Previous weather', 'Next weather']) {
+      const box = await page.getByRole('button', { name }).boundingBox();
+      assert.ok(box.width >= 44 && box.height >= 44, `small hit target: ${name} ${JSON.stringify(box)}`);
+    }
     await page.locator('[data-fence]').click();
-    const active = await assertClosedSeparated(page, viewport);
+    const active = await assertSeparated(page, viewport, true);
+    assert.ok(active.panel.height >= 180 && active.panel.height <= height * 0.62 + 1,
+      `compact active panel: ${JSON.stringify(active.panel)}`);
     await page.locator('[data-rotate]').click();
+    await page.getByRole('switch', { name: 'Let it change' }).click();
+    assert.equal(await page.getByRole('switch', { name: 'Let it change' }).getAttribute('aria-checked'), 'true');
+    await capture(page, `compact-${width}x${height}-active.png`);
     await page.locator('[data-cancel]').click();
+    await page.getByRole('button', { name: 'Close sky settings', exact: true }).click();
+    await assertClosedSeparated(page, viewport);
     assert.deepEqual(errors, []);
-    results.push({ viewport: `${width}x${height}`, idle, active, errors });
+    results.push({ viewport: `${width}x${height}`, closed, idle, active, labels, errors });
     await context.close();
   }
   proof.shortLandscape = results;
@@ -533,6 +577,40 @@ test('production build renders real controls and handles denied fullscreen hones
   assert.equal(await page.getByRole('status').textContent(), 'Fullscreen is unavailable in this browser.');
   assert.deepEqual(errors, []);
   proof.production = { webgl2: true, realWeather: true, fullscreenRefusal: 'reported and disabled', errors };
+});
+
+test('a fullscreen refusal does not push a compact panel into other controls', { timeout: 60000 }, async (t) => {
+  const results = [];
+  for (const [width, height] of [[700, 390], [700, 320], [320, 320]]) {
+    const viewport = { width, height };
+    const context = await browser.newContext({ viewport });
+    t.after(() => context.close());
+    await context.addInitScript(() => {
+      Object.defineProperty(Document.prototype, 'fullscreenEnabled', { configurable: true, get: () => true });
+      Object.defineProperty(Element.prototype, 'requestFullscreen', { configurable: true, value: () => Promise.reject(new Error('Fullscreen denied')) });
+    });
+    const { page, errors } = await openPage(context, `${devUrl}/?phase=morning`);
+    await page.locator('[data-action="sky"]').click();
+    await page.locator('[data-fence]').click();
+    await page.locator('[data-action="fullscreen"]').click();
+    const status = page.getByRole('status');
+    await status.waitFor({ state: 'visible' });
+    assert.equal(await status.textContent(), 'Fullscreen is unavailable in this browser.');
+    assert.equal(await status.evaluate((node) => Boolean(node.closest('#sky-panel'))), true);
+    const active = await assertSeparated(page, viewport, true);
+    assert.ok(active.panel.height >= 180, `compact panel after refusal: ${JSON.stringify(active.panel)}`);
+    await page.getByRole('button', { name: 'Close sky settings', exact: true }).click();
+    assert.equal(await status.isVisible(), true);
+    const closed = await assertClosedSeparated(page, viewport);
+    const statusBox = await status.boundingBox();
+    for (const control of [closed.toolbar, closed.placement, closed.biome]) {
+      assert.equal(overlaps(statusBox, control), false, `status overlaps a control: ${JSON.stringify({ statusBox, control })}`);
+    }
+    assert.deepEqual(errors, []);
+    results.push({ viewport: `${width}x${height}`, active, closed, status: statusBox });
+    await context.close();
+  }
+  proof.fullscreenCompact = results;
 });
 
 test('skyhud=0 removes the entire sky UI without disabling the scene controls', { timeout: 30000 }, async (t) => {

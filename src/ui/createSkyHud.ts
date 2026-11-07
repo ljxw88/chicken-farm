@@ -139,6 +139,10 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
     panelOpen = open;
     panel.hidden = !open;
     document.body.classList.toggle('sky-panel-open', open);
+    // Keep a visible fullscreen error inside the panel's scrollable surface so
+    // it cannot push the panel into other controls on short screens.
+    if (open) panel.append(status);
+    else root.insertBefore(status, toolbar);
     updateSkyButton(dayNight.getState().phase);
     if (returnFocus) sky.focus({ preventScroll: true });
   }
@@ -162,6 +166,7 @@ export function createSkyHud({ root, dayNight, weather }: SkyHudOptions) {
       fullscreenUnavailable = true;
       status.textContent = 'Fullscreen is unavailable in this browser.';
       status.hidden = false;
+      if (panelOpen) status.scrollIntoView({ block: 'nearest' });
     }
     syncFullscreen();
   });

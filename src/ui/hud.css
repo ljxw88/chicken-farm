@@ -315,6 +315,15 @@ body:has(.placement-controls.is-active) .hud-root {
   }
 }
 
+/* Leave the Woodland pill clear when the original centered bar is too wide. */
+@media (min-width: 681px) and (max-width: 800px) {
+  body:has(.hud-root) .placement-controls {
+    right: max(18px, env(safe-area-inset-right));
+    left: auto;
+    transform: none;
+  }
+}
+
 @media (max-width: 479px) {
   .hud-root {
     --hud-artwork-size: 72px;
@@ -359,6 +368,341 @@ body:has(.placement-controls.is-active) .hud-root {
 
   .hud-panel__footer {
     min-height: 40px;
+  }
+}
+
+/* On short landscapes, put expanded placement tools beside the panel rather
+   than reserving a full-width lane above it. The tools remain usable. */
+@media (min-width: 480px) and (max-height: 460px),
+  (min-width: 480px) and (max-width: 680px) and (max-height: 505px) {
+  body.sky-panel-open .placement-controls.is-active {
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    right: auto;
+    bottom: auto;
+    left: max(12px, env(safe-area-inset-left));
+    width: 144px;
+    transform: none;
+  }
+
+  body.sky-panel-open .placement-controls.is-active .placement-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.sky-panel-open .placement-controls.is-active .placement-detail {
+    padding: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  body.sky-panel-open .placement-controls.is-active .placement-detail .placement-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.sky-panel-open .placement-controls.is-active button {
+    min-width: 0;
+    padding-right: 2px;
+    padding-left: 2px;
+  }
+
+  body.sky-panel-open .placement-controls.is-active :is(kbd, .placement-label) {
+    display: none;
+  }
+
+  body.sky-panel-open:has(.placement-controls.is-active) .hud-root {
+    --hud-top-limit: max(78px, calc(env(safe-area-inset-top) + 60px));
+    align-items: flex-end;
+  }
+
+  body.sky-panel-open:has(.placement-controls.is-active) .hud-panel {
+    width: min(var(--hud-panel-width), calc(100vw - max(12px, env(safe-area-inset-left)) - 156px - max(12px, env(safe-area-inset-right))));
+  }
+
+  body.sky-panel-open:has(.placement-controls.is-active) .hud-toolbar {
+    align-self: flex-end;
+  }
+
+  body.sky-panel-open:has(.placement-controls.is-active) .hud-selector__value {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* At these widths the idle bar also needs its own lane to leave roughly
+   200px for the compact panel. */
+@media (min-width: 480px) and (max-width: 680px) and (max-height: 505px) {
+  body.sky-panel-open .placement-controls:not(.is-active) {
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    right: auto;
+    bottom: auto;
+    left: max(12px, env(safe-area-inset-left));
+    width: 144px;
+    transform: none;
+  }
+
+  body.sky-panel-open .placement-controls:not(.is-active) .placement-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.sky-panel-open .placement-controls:not(.is-active) button {
+    min-width: 0;
+    padding-right: 2px;
+    padding-left: 2px;
+  }
+
+  body.sky-panel-open .placement-controls:not(.is-active) :is(kbd, .placement-label) {
+    display: none;
+  }
+
+  body.sky-panel-open:not(:has(.placement-controls.is-active)) .hud-root {
+    --hud-top-limit: max(78px, calc(env(safe-area-inset-top) + 60px));
+    align-items: flex-end;
+  }
+
+  body.sky-panel-open:not(:has(.placement-controls.is-active)) .hud-panel {
+    width: min(var(--hud-panel-width), calc(100vw - max(12px, env(safe-area-inset-left)) - 156px - max(12px, env(safe-area-inset-right))));
+  }
+
+  body.sky-panel-open:not(:has(.placement-controls.is-active)) .hud-toolbar {
+    align-self: flex-end;
+  }
+
+  body.sky-panel-open:not(:has(.placement-controls.is-active)) .hud-selector__value {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* At 320px tall, the bottom toolbar would otherwise leave under 100px for
+   the panel. Give it the top-right lane and keep placement in a left rail. */
+@media (min-width: 480px) and (max-height: 360px) {
+  body:has(.hud-root) .placement-controls,
+  body:has(.hud-root):not(.sky-panel-open) .placement-controls {
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    right: auto;
+    bottom: auto;
+    left: max(12px, env(safe-area-inset-left));
+    width: 144px;
+    transform: none;
+  }
+
+  body:has(.hud-root) .placement-controls .placement-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body:has(.hud-root) .placement-controls .placement-detail {
+    padding: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  body:has(.hud-root) .placement-controls .placement-detail .placement-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:has(.hud-root) .placement-controls button {
+    min-width: 0;
+    padding-right: 2px;
+    padding-left: 2px;
+  }
+
+  body:has(.hud-root) .placement-controls :is(kbd, .placement-label) {
+    display: none;
+  }
+
+  .hud-root {
+    --hud-bottom: max(8px, env(safe-area-inset-bottom));
+    --hud-top-limit: max(78px, calc(env(safe-area-inset-top) + 60px));
+    align-items: flex-end;
+  }
+
+  .hud-panel {
+    width: min(var(--hud-panel-width), calc(100vw - max(12px, env(safe-area-inset-left)) - 156px - max(12px, env(safe-area-inset-right))));
+    max-height: min(62dvh, calc(100dvh - var(--hud-bottom) - var(--hud-top-limit)));
+  }
+
+  .hud-toolbar {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+  }
+
+  .hud-selector__value {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Narrow, short windows use a smaller placement rail and a compact
+   toolbar. The 44px buttons and the stacked layout below 340px remain intact. */
+@media (min-width: 320px) and (max-width: 479px) and (max-height: 520px) {
+  body:has(.hud-root) .placement-controls,
+  body:has(.hud-root):not(.sky-panel-open) .placement-controls {
+    top: max(80px, calc(env(safe-area-inset-top) + 68px));
+    right: auto;
+    bottom: auto;
+    left: max(12px, env(safe-area-inset-left));
+    width: 116px;
+    transform: none;
+  }
+
+  body:has(.hud-root) .placement-controls .placement-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body:has(.hud-root) .placement-controls .placement-detail {
+    padding: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  body:has(.hud-root) .placement-controls .placement-detail .placement-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:has(.hud-root) .placement-controls button {
+    min-width: 0;
+    padding-right: 1px;
+    padding-left: 1px;
+    font-size: 11px;
+  }
+
+  body:has(.hud-root) .placement-controls :is(kbd, .placement-label) {
+    display: none;
+  }
+
+  body:has(.hud-root) .hud-root {
+    align-items: flex-end;
+  }
+
+  body:has(.hud-root) .hud-panel {
+    width: min(var(--hud-panel-width), calc(100vw - max(12px, env(safe-area-inset-left)) - 124px - max(12px, env(safe-area-inset-right))));
+    max-height: min(62dvh, 212px, calc(100dvh - var(--hud-bottom) - var(--hud-toolbar-height) - var(--hud-gap) - max(78px, calc(env(safe-area-inset-top) + 60px))));
+  }
+
+  body:has(.hud-root) .hud-status {
+    max-width: min(var(--hud-panel-width), calc(100vw - max(12px, env(safe-area-inset-left)) - 124px - max(12px, env(safe-area-inset-right))));
+  }
+
+  body:has(.hud-root) .hud-toolbar {
+    align-self: flex-end;
+    gap: 0;
+    padding: 5px 0;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 479px) and (max-height: 360px) {
+  body:has(.hud-root) .hud-root {
+    --hud-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+
+  body:has(.hud-root) .hud-panel {
+    max-height: min(62dvh, 212px, calc(100dvh - var(--hud-bottom) - max(116px, calc(env(safe-area-inset-top) + 104px))));
+  }
+
+  body:has(.hud-root) .hud-toolbar {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    height: 46px;
+    padding: 0;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 389px) and (max-height: 360px) {
+  body:has(.hud-root) .hud-toolbar {
+    top: max(68px, calc(env(safe-area-inset-top) + 56px));
+  }
+}
+
+/* The narrow rail leaves too little room for an inline value between two
+   44px arrows; give the label a full row without reducing either hit target. */
+@media (min-width: 480px) and (max-width: 560px) and (max-height: 505px),
+  (min-width: 320px) and (max-width: 479px) and (max-height: 520px) {
+  .hud-panel {
+    padding-top: 0;
+  }
+
+  .hud-panel__header {
+    margin-bottom: 0;
+  }
+
+  .hud-column {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .hud-selector {
+    grid-template-columns: repeat(2, minmax(44px, 1fr));
+    grid-template-rows: auto 44px;
+  }
+
+  .hud-selector__value {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    overflow-wrap: normal;
+  }
+
+  .hud-selector__arrow:first-child {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: center;
+  }
+
+  .hud-selector__arrow:last-child {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: center;
+  }
+
+  .hud-panel__footer {
+    min-height: 32px;
+  }
+}
+
+@media (min-width: 340px) and (max-width: 479px) and (max-height: 520px) {
+  .hud-column {
+    padding-right: 0;
+    padding-left: 0;
+  }
+}
+
+@media (min-width: 320px) and (max-width: 370px) and (max-height: 520px) {
+  .hud-panel__header {
+    gap: 0;
+  }
+
+  .hud-panel__header h1 {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .hud-toggle {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .hud-toggle__label {
+    min-width: 0;
+    text-align: center;
+  }
+}
+
+/* At the narrow edge of the two-column breakpoint, stack the arrows rather
+   than let their 44px hit targets create a horizontal scrollbar. */
+@media (min-width: 340px) and (max-width: 349px) and (max-height: 520px) {
+  .hud-selector {
+    grid-template-columns: minmax(44px, 1fr);
+    grid-template-rows: auto 44px 44px;
+  }
+
+  .hud-selector__value,
+  .hud-selector__arrow:last-child {
+    grid-column: 1;
+  }
+
+  .hud-selector__arrow:last-child {
+    grid-row: 3;
   }
 }
 
