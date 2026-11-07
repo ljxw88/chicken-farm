@@ -1,0 +1,31 @@
+// EBR-88 Look Dev targets; visual sign-off of the resulting rain is pending.
+// The shared 1.75-second weather transition is LOCKED for EBR-40.
+// Streak length is world-space; the line primitive remains one low-resolution pixel wide.
+export const RAIN_LOOK = {
+  transitionSeconds: 1.75,
+  directionalMultiplier: 0.7,
+  color: 0xd6e8f2,
+  opacity: 0.55,
+  streakCount: 240,
+  streakTiltDegrees: 15,
+  streakDirectionX: 0.94,
+  streakDirectionZ: -0.34,
+  streakLengthMin: 0.4,
+  streakLengthMax: 0.6,
+  fieldWidth: 19,
+  fieldHeight: 8,
+  fallSpeedMin: 4,
+  fallSpeedMax: 5,
+  splashCapacity: 6,
+  splashChancePerImpact: 0.035,
+  splashRadiusMin: 0.08,
+  splashRadiusMax: 0.18,
+  splashInnerRadiusRatio: 0.9,
+  splashSegments: 16,
+  splashLifetimeMin: 0.25,
+  splashLifetimeMax: 0.4,
+  splashOpacity: 0.32,
+  splashHeight: 0.036,
+  splashSafetyMargin: 0.05,
+  maxSplashFrameSeconds: 0.5,
+} as const;
