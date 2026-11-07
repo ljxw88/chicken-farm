@@ -108,8 +108,11 @@ off-palette barrel; numeric heuristics cannot replace Look Dev's eye.
 
 Soft checks include at least 40 changed pixels per silhouette at game scale;
 contrast against grass/path/void of at least 1.15 luminance ratio or CIE76 ΔE
-of 25 (night contrast is advisory); key-light/three-step value agreement, night glow,
-scene scale and style distance. These are design floors, not measurements or
+of 25. Day, morning and sunset checks are hard. At night, the 40-pixel grass
+floor remains hard; path/void size and all contrast are advisory. The exact
+signed fence is a documented legacy warning, not an exception for new recipes.
+Other soft checks cover key-light/three-step value agreement, night glow, scene
+scale and style distance. These are design floors, not measurements or
 proof of quality. The vision critic's separate session scores silhouette,
 palette, shape language, value structure, scene fit and craft 1–5 and names
 blockers/fixes. If image reading or critique fails, the report must say

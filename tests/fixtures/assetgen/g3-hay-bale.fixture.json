@@ -20,7 +20,7 @@
     "origin": "base-center",
     "facing": "+Z",
     "parts": [
-      { "name": "bale", "prim": "box", "size": [0.9, 0.498, 0.7], "at": [0, 0.249, 0], "mat": "dirt.hi", "feature": "body" },
+      { "name": "bale", "prim": "box", "size": [0.98, 0.498, 0.7], "at": [0, 0.249, 0], "mat": "dirt.hi", "feature": "body" },
       { "name": "twine-front", "prim": "box", "size": [0.12, 0.5, 0.72], "at": [-0.2, 0.27, 0], "mat": "wood.dark", "feature": "frame", "exception": "twine" },
       { "name": "twine-back", "prim": "box", "size": [0.12, 0.5, 0.72], "at": [0.2, 0.27, 0], "mat": "wood.dark", "feature": "frame", "exception": "twine" },
       { "name": "top-tuft", "prim": "box", "size": [0.5, 0.2, 0.4], "at": [0, 0.5, 0], "mat": "dirt", "feature": "top" }

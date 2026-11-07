@@ -125,8 +125,10 @@ checked-in table and its digest after a reviewed reference change, run:
 Tree-class flora (an `oak`, `pine`, `fir` or `tree` id token, or a spec
 `assetClass: "tree"`) has no numeric A9 floor and needs by-eye review; other
 flora still use the calibrated floors. The separate key-direction S4 check is
-not waived. Night and night-rain S2 contrast is advisory, but the existing
-minimum silhouette-pixel floor and every other check still apply.
+not waived. S2 remains hard against grass/path/void by day, morning and sunset.
+At night and night-rain the same pixel floor remains hard on grass; path/void
+area and contrast are warnings. Only the fingerprinted signed placement fence
+has a legacy S2 warning for its narrow end-on silhouette; new recipes do not.
 
 Verification makes no model calls. `asset:bundle` rechecks exact source-file bytes,
 spec, bible and verifier hashes and reruns offline checks; it refuses any

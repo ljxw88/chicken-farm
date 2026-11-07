@@ -10,7 +10,7 @@ import { isBetterCandidate } from './scoring.mjs';
 import { isolatedSessionDirectory } from './opencode.mjs';
 import { loadFixtures } from './fixtures.mjs';
 import { auditBundleEntry, verifierSourceHash } from './bundle.mjs';
-import { createSignedFixtures, inspectSignedFixture } from './signed-fixtures.mjs';
+import { createSignedFixtures, inspectSignedFixture, signedS2LegacyReason } from './signed-fixtures.mjs';
 
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
 const hash = (value) => createHash('sha256').update(value).digest('hex');
@@ -42,7 +42,6 @@ async function verifySigned(name, runner, environment, bible, output) {
   } else if (flicker) {
     result.failures.push({ code: 'A7_FLICKER', message: `${flicker} unmatched pixel changes across 24 jittered yaws` });
   }
-  result.status = result.failures.length ? 'FAIL' : 'PASS';
   result.metrics.empiricalJitter = { views: jitter.length, checkedPixels: checked, skippedEdgePixels: skippedEdges, flickerCandidates: flicker,
     differingViews: jitter.filter((item) => item.flickerCandidates) };
   result.metrics.a9Calibration = visual.metrics?.a9Calibration;
@@ -58,8 +57,15 @@ async function verifySigned(name, runner, environment, bible, output) {
   for (const warning of result.warnings) if (warning.code === 'A7_ANALYTIC_WARNING') {
     warning.message += `; 24-yaw interior jitter found ${flicker} candidates, with ${skippedEdges} edge pixels excluded`;
   }
-  result.warnings.push(...visual.failures.filter((failure) => failure.code !== 'BROWSER').map((failure) => ({ ...failure, code: `SIGNED_${failure.code}_WARNING` })));
+  const legacyReason = signedS2LegacyReason(name, result.metrics.hashes[0]);
+  const s2Failures = visual.failures.filter((failure) => failure.code === 'S2');
+  if (legacyReason && s2Failures.length) {
+    result.warnings.push({ code: 'SIGNED_S2_LEGACY', message: legacyReason });
+    result.warnings.push(...s2Failures.map((failure) => ({ ...failure, code: 'SIGNED_S2_WARNING' })));
+  } else result.failures.push(...s2Failures);
+  result.failures.push(...visual.failures.filter((failure) => !['BROWSER', 'PIXEL_RENDER', 'A7_UNMEASURED', 'A7_FLICKER', 'S2'].includes(failure.code)));
   result.warnings.push(...(visual.warnings || []).map((warning) => ({ ...warning, code: `SIGNED_${warning.code}_WARNING` })));
+  result.status = result.failures.length ? 'FAIL' : 'PASS';
   result.notChecked = ['A7 excluded silhouette-edge pixels', 'A11 placement', 'A12 walking shimmer', 'A13 Look Dev'];
   result.evidence = join(output, name);
   return result;

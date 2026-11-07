@@ -8,6 +8,17 @@ const expected = {
   tread: { category: 'terrain', ground: 0, triangles: 44, size: [0.9, 2.4, 1.2] },
 };
 
+// R1: the signed placement fence is intentionally narrow when seen end-on.
+export const SIGNED_S2_LEGACY = Object.freeze({
+  fence: Object.freeze({ hash: '2a6598625d90a1f13afa630181061bfadf923284d4566bc628594b7f05a8efb4',
+    reason: 'Signed placement fence has a narrow end-on silhouette at game scale.' }),
+});
+
+export function signedS2LegacyReason(name, hash) {
+  const entry = SIGNED_S2_LEGACY[name];
+  return entry && entry.hash === hash ? entry.reason : null;
+}
+
 export async function createSignedFixtures(server) {
   const [{ createFarmLayout }, { createPlacementVisual }, { createStoneStairs }] = await Promise.all([
     server.ssrLoadModule('/src/scene/createFarmLayout.ts'), server.ssrLoadModule('/src/placement/createPlacementVisual.ts'),

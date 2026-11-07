@@ -18,7 +18,9 @@ export function validateRecipe(recipe, spec, rules, palette, accentTokens) {
   const fail = (message, code = 'H1') => failures.push({ code, message });
   const keys = (value, allowed, where) => {
     for (const key of Object.keys(value)) if (!allowed.includes(key)) {
-      const code = /vertex.?color|baked/i.test(key) ? 'BAKED_LIGHT' : key === 'visible' && value[key] === false ? 'G_HIDDEN'
+      const vertexColors = /vertex.?colou?r|baked/i.test(key) ||
+        (where.startsWith('part ') && /^colou?rs?$/i.test(key) && Array.isArray(value[key]));
+      const code = vertexColors ? 'BAKED_LIGHT' : key === 'visible' && value[key] === false ? 'G_HIDDEN'
         : /texture|map|opacity|transparent|text|light/i.test(key) ? 'FORBIDDEN_FEATURE' : 'H1';
       fail(`${where}: forbidden or unknown field ${key}`, code);
     }

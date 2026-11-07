@@ -15,9 +15,16 @@ test('S2 night and night-rain contrast failures are warnings only', () => {
   }
 });
 
-test('daytime contrast and the silhouette pixel floor remain strict', () => {
+test('daytime and sunset contrast and silhouette floors remain strict on every surface', () => {
   assert.equal(classifyS2(sample('daytime'), limits).failures[0].code, 'S2');
   assert.equal(classifyS2(sample('sunset'), limits).failures[0].code, 'S2');
+  for (const phase of ['daytime', 'morning', 'sunset']) for (const surface of ['grass', 'path', 'void']) {
+    assert.equal(classifyS2({ ...sample(phase, 39, 1.3, 30), surface }, limits).failures[0].code, 'S2');
+    assert.equal(classifyS2({ ...sample(phase, 40, 1.15, 25), surface }, limits).failures.length, 0);
+  }
+});
+
+test('night keeps the grass pixel floor but warns for path and void', () => {
   const nightSize = classifyS2(sample('night', 39, 1.3, 30), limits);
   assert.equal(nightSize.failures[0].code, 'S2');
   assert.match(nightSize.failures[0].message, /pixels/i);
@@ -25,4 +32,10 @@ test('daytime contrast and the silhouette pixel floor remain strict', () => {
   const both = classifyS2(sample('night', 39), limits);
   assert.equal(both.failures.length, 1);
   assert.equal(both.warnings.length, 1);
+  for (const phase of ['night', 'night-rain']) for (const surface of ['path', 'void']) {
+    const result = classifyS2({ ...sample(phase, 39), surface }, limits);
+    assert.deepEqual(result.failures, []);
+    assert.equal(result.warnings.length, 2);
+    assert.ok(result.warnings.every((warning) => warning.code === 'S2'));
+  }
 });

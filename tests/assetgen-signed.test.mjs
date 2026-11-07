@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { createServer } from 'vite';
 import { readBible, root } from '../tools/assetgen/config.mjs';
 import { geometryHash, inspectSignedGroup } from '../tools/assetgen/geometry.mjs';
-import { createSignedFixtures, inspectSignedFixture } from '../tools/assetgen/signed-fixtures.mjs';
+import { createSignedFixtures, inspectSignedFixture, signedS2LegacyReason } from '../tools/assetgen/signed-fixtures.mjs';
 import { readA9Calibration, resolveA9Calibration } from '../tools/assetgen/a9-calibration.mjs';
 
 const vite = await createServer({ configFile: false, server: { middlewareMode: true, ws: false }, appType: 'custom', logLevel: 'error' });
@@ -68,6 +68,16 @@ test('the signed path does not allow altered geometry to inherit a golden exempt
   const changed = signed.build('fence'); changed.children[0].position.x += 0.02;
   const result = inspectSignedFixture('fence', changed, changed.clone(true), rules, ASSET_PALETTE, baseline);
   assert.ok(result.failures.some((failure) => failure.code === 'SIGNED_CHANGED'));
+});
+
+test('only the exact signed fence fingerprint has the S2 legacy warning', async () => {
+  const signed = await createSignedFixtures(vite);
+  const hash = geometryHash(signed.build('fence'));
+  assert.match(signedS2LegacyReason('fence', hash), /narrow end-on/i);
+  assert.equal(signedS2LegacyReason('fence', '0'.repeat(64)), null);
+  assert.equal(signedS2LegacyReason('tree', hash), null);
+  assert.equal(signedS2LegacyReason('coop', hash), null);
+  assert.equal(signedS2LegacyReason('tread', hash), null);
 });
 
 test('a changed real signed mesh invalidates the A9 table and remeasures every prop', async () => {

@@ -120,6 +120,35 @@ function coplanarOverlaps(triangles, rules) {
   return { count, examples };
 }
 
+// A sub-minimum skin can straddle another part's face even though neither of
+// the skin's two surfaces is itself within the coplanar-plane tolerance.
+function thinSkinCrossings(parts, rules) {
+  const pairs = [];
+  for (const skin of parts) {
+    if (!(skin.thickness < rules.minimumFeature - 1e-6)) continue;
+    const points = skin.triangles.flatMap((triangle) => triangle.points);
+    for (const other of parts) {
+      if (other === skin || !skin.box.intersectsBox(other.box)) continue;
+      let found = false;
+      for (const face of skin.triangles) {
+        const projected = points.map((point) => face.normal.dot(point));
+        const min = Math.min(...projected), max = Math.max(...projected);
+        if (max - min >= rules.minimumFeature - 1e-6) continue;
+        for (const candidate of other.triangles) {
+          if (Math.abs(face.normal.dot(candidate.normal)) < rules.zFightNormalDot) continue;
+          const distances = candidate.points.map((point) => face.normal.dot(point));
+          if (distances.some((distance) => distance <= min + 1e-8 || distance >= max - 1e-8)) continue;
+          if (triangleIntersectionArea(face.points.map((p) => project(face.normal, p)),
+            candidate.points.map((p) => project(face.normal, p))) > rules.zFightOverlapArea) { found = true; break; }
+        }
+        if (found) break;
+      }
+      if (found) pairs.push(`${skin.name}/${other.name}`);
+    }
+  }
+  return pairs;
+}
+
 function pointInside(point, triangles, tolerance) {
   const ray = new THREE.Ray(point, new THREE.Vector3(0.819, 0.337, 0.465).normalize());
   const target = new THREE.Vector3();
@@ -336,7 +365,7 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
       triangles.push(triangle); partTriangles.push(triangle);
     }
     const box = new THREE.Box3().setFromObject(mesh);
-    parts.push({ name: mesh.name, box, triangles: partTriangles });
+    parts.push({ name: mesh.name, box, triangles: partTriangles, thickness: localSize[0] });
   });
   if (nonFinite) fail('G_NON_FINITE', `${nonFinite} non-finite positions, normals or transforms`);
   if (degenerate) fail('G_DEGENERATE', `${degenerate} zero-area triangles`);
@@ -363,6 +392,8 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
   const overBudget = triangleCount > rules.triBudgets[spec.category];
   const overlap = overBudget ? null : coplanarOverlaps(triangles, rules);
   if (overlap?.count) fail('H7', `${overlap.count} near-coplanar overlaps: ${overlap.examples.join(', ')}`);
+  const thinCrossings = overBudget ? null : thinSkinCrossings(parts, rules);
+  if (thinCrossings?.length) fail('H7', `Thin-part face crossings: ${thinCrossings.slice(0, 8).join(', ')}`);
   const floating = overBudget ? null : disconnected(parts, rules);
   if (floating?.length) fail('H8', `Disconnected parts: ${floating.join(', ')}`);
   if (recipe.collision.type === 'box') {
@@ -378,6 +409,7 @@ export function inspectRecipe(recipe, spec, rules, { buildRecipe, palette, accen
   metrics.triangles = triangleCount; metrics.triangleBudget = rules.triBudgets[spec.category]; metrics.partCount = parts.length;
   metrics.bounds = { min: bounds.min.toArray().map(round), max: bounds.max.toArray().map(round), width: round(size.x), depth: round(size.z), height: round(size.y), centerXZ: [round(center.x), round(center.z)] };
   metrics.colorCount = colors.size; metrics.geometryHashes = hashes; metrics.zFightPairs = overlap?.count ?? null;
+  metrics.thinSliverCrossings = thinCrossings;
   metrics.disconnectedParts = floating; metrics.nonFinite = nonFinite; metrics.degenerate = degenerate; metrics.badNormals = badNormals;
   metrics.checks = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`H${i + 1}`, !failures.some((failure) => failure.code === `H${i + 1}`)]));
   if (overBudget) { metrics.checks.H7 = 'not-run'; metrics.checks.H8 = 'not-run'; }

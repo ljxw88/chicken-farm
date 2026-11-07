@@ -9,4 +9,6 @@ test('four signed goldens pass their real-game geometry and 24-yaw interior jitt
   assert.equal((output.match(/"status": "PASS"/g) || []).length, 4, output);
   assert.equal((output.match(/"views": 24/g) || []).length, 4, output);
   assert.equal((output.match(/"flickerCandidates": 0/g) || []).length, 4, output);
+  assert.equal((output.match(/"code": "SIGNED_S2_LEGACY"/g) || []).length, 1, output);
+  assert.match(output, /Signed placement fence has a narrow end-on silhouette/);
 });

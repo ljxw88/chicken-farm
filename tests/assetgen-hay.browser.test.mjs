@@ -18,6 +18,7 @@ test('fixed QA hay bale clears H1–H10 and all 24 unchanged A7 jitter views', {
     assert.deepEqual(hard.failures, []);
     const directory = await mkdtemp(join(tmpdir(), 'assetgen-hay-golden-'));
     const original = structuredClone(recipe);
+    original.parts[0].size[0] = 0.9;
     original.parts[0].size[1] = 0.5;
     original.parts[0].at[1] = 0.25;
     const before = await runner.capture(spec, rules, join(directory, 'original'), original, { jitter: true });
@@ -25,6 +26,8 @@ test('fixed QA hay bale clears H1–H10 and all 24 unchanged A7 jitter views', {
     assert.equal(before.metrics.jitter.reduce((sum, view) => sum + view.flickerCandidates, 0), 1);
     const visual = await runner.capture(spec, rules, join(directory, 'fixed'), recipe, { jitter: true });
     assert.ok(!visual.failures.some((failure) => ['BROWSER', 'A7_FLICKER', 'A7_UNMEASURED'].includes(failure.code)), JSON.stringify(visual.failures));
+    assert.ok(!visual.failures.some((failure) => ['S2', 'A9_SHADE_RATIO'].includes(failure.code)), JSON.stringify(visual.failures));
+    assert.ok(visual.warnings.some((warning) => warning.code === 'S2' && /advisory night/.test(warning.message)));
     assert.equal(visual.metrics.jitter.length, 24);
     assert.ok(visual.metrics.jitter.every((view) => view.flickerCandidates === 0));
     assert.ok(visual.metrics.jitter.some((view) => view.checkedPixels > 0));

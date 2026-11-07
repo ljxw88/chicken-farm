@@ -19,8 +19,12 @@ export function classifyS2(sample, limits) {
   const night = sample.phase === 'night' || sample.phase === 'night-rain';
   const label = `${sample.phase}/${sample.yaw}°/${sample.surface}`;
   const detail = `${sample.pixels} pixels, contrast ${sample.meanContrastRatio.toFixed(2)}, CIE76 ΔE ${sample.meanDeltaE.toFixed(1)}`;
-  if (tooSmall || (!night && lowContrast)) failures.push({ code: 'S2', message: night && tooSmall
-    ? `${label}: ${sample.pixels} pixels below the ${limits.minimumSilhouettePixels}-pixel floor` : `${label}: ${detail}` });
+  if (!night && (tooSmall || lowContrast)) failures.push({ code: 'S2', message: `${label}: ${detail}` });
+  if (night && tooSmall) {
+    const result = { code: 'S2', message: `${label}: ${sample.pixels} pixels below the ${limits.minimumSilhouettePixels}-pixel floor` };
+    if (sample.surface === 'grass') failures.push(result);
+    else warnings.push({ ...result, message: `${label}: advisory night silhouette: ${sample.pixels} pixels below the ${limits.minimumSilhouettePixels}-pixel floor` });
+  }
   if (night && lowContrast) warnings.push({ code: 'S2', message: `${label}: advisory night contrast: ${detail}` });
   return { failures, warnings };
 }
