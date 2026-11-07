@@ -64,11 +64,15 @@ test('automatic weather uses the real setter and never changes before 90 seconds
   weather.setAutomatic(true);
   assert.equal(weather.getState().automatic, true);
   adapter.update(100); // The enabling frame cannot include time before the toggle.
-  adapter.update(89.9);
+  adapter.update(89);
   assert.deepEqual(calls, []);
-  adapter.update(0.1);
+  adapter.update(1);
   assert.deepEqual(calls, [['weather', 'cloudy']]);
   adapter.update(180.5);
+  assert.equal(weather.getState().label, 'Gentle rain');
+  adapter.update(89);
+  assert.equal(weather.getState().label, 'Gentle rain');
+  adapter.update(1);
   assert.equal(weather.getState().label, 'Clear skies');
   weather.next(); // An explicit choice stops automation.
   assert.equal(weather.getState().automatic, false);
@@ -76,6 +80,31 @@ test('automatic weather uses the real setter and never changes before 90 seconds
   assert.equal(weather.getState().label, 'Cloudy');
   assert.throws(() => weather.setAutomatic('yes'), TypeError);
   assert.throws(() => adapter.update(-1), RangeError);
+});
+
+test('automatic weather restarts its dwell after an external weather change', () => {
+  const { api, calls, adapter } = sceneFixture();
+  const weather = adapter.weather;
+  weather.setAutomatic(true);
+  adapter.update(0);
+  adapter.update(80);
+  api.setWeather('rain');
+  adapter.update(30); // This frame may include time before the external setter.
+  adapter.update(89);
+  assert.equal(weather.getState().label, 'Gentle rain');
+  adapter.update(1);
+  assert.deepEqual(calls, [['weather', 'rain'], ['weather', 'clear']]);
+});
+
+test('the default 24-minute farm day gives automatic weather a six-minute dwell', () => {
+  const { state, calls, adapter } = sceneFixture();
+  state.cycleSeconds = 1440;
+  adapter.weather.setAutomatic(true);
+  adapter.update(0);
+  adapter.update(359);
+  assert.deepEqual(calls, []);
+  adapter.update(1);
+  assert.deepEqual(calls, [['weather', 'cloudy']]);
 });
 
 test('missing weather capabilities are not presented as working controls', () => {
