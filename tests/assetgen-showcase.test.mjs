@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { renderShowcasePage } from '../tools/assetgen/showcase-page.mjs';
+import { visualCheckSummary } from '../tools/assetgen/showcase-checks.mjs';
+
+const frames = ['daytime', 'sunset', 'night'].flatMap((phase) => Array.from({ length: 8 }, (_, i) => `${phase}-grass-${String(i * 45).padStart(3, '0')}.png`));
+
+test('P0 showcase marks failures, unmeasured checks and diagnostic renders honestly', () => {
+  const page = renderShowcasePage({ generatedAt: '2026-11-07', overview: { available: true, included: ['rock-a'], missing: ['rock-b'] },
+    assets: [{ id: 'rock-a', brief: 'A chunky rock.', status: 'needs-human', pack: { kind: 'diagnostic', files: [...frames, 'sheet.png'] },
+      checks: { H1: true, H3: false }, triangles: 84, colors: ['stone'], bounds: { height: 0.4 }, rounds: 3,
+      failures: [{ code: 'H3', message: 'Wrong size' }], warnings: [], unmeasured: ['Visual verification not run'], criticScores: null }] });
+  assert.match(page, /P0 · SOLO REVIEW/);
+  assert.match(page, /hard-failed diagnostic only, not a verification pass/);
+  assert.match(page, /<th>H3<\/th><td>FAIL/);
+  assert.match(page, /<th>H2<\/th><td>not measured/);
+  assert.match(page, /Visual critique not run; no scores/);
+  assert.match(page, /Visual verification not run/);
+  assert.match(page, /rock-b/);
+  assert.match(page, /data-turntable/);
+  assert.match(page, /id="island-yaw"/);
+  assert.match(page, /<option>night<\/option>/);
+});
+
+test('visual summaries do not turn missing evidence or partial checks into passes', () => {
+  const unavailable = visualCheckSummary(null);
+  assert.equal(unavailable.S2, 'not run');
+  const partial = visualCheckSummary({ failures: [], metrics: { samples: [{}], pixel: { enabled: true, canvasWidth: 320, canvasHeight: 180, cssPixelSize: 4 } } });
+  assert.equal(partial.S2, 'unmeasured');
+  assert.equal(partial.S3, 'unmeasured');
+  assert.equal(partial.S5, 'unmeasured');
+  assert.equal(partial.PIXEL_RENDER, 'pass');
+  const failing = visualCheckSummary({ failures: [{ code: 'S2' }, { code: 'A7_FLICKER' }], metrics: { samples: Array(120).fill({}) } });
+  assert.equal(failing.S2, 'FAIL');
+  assert.equal(failing.A7, 'FAIL');
+});
+
+test('missing evidence remains unavailable and model-provided text is escaped', () => {
+  const page = renderShowcasePage({ generatedAt: 'now', overview: { available: false },
+    assets: [{ id: 'missing', brief: '<script>alert(1)</script>', status: 'not generated', checks: {}, failures: [], colors: [] }] });
+  assert.match(page, /Island overview unavailable/);
+  assert.match(page, /Full 24-frame turntable unavailable/);
+  assert.match(page, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(page, /<script>alert\(1\)<\/script>/);
+});

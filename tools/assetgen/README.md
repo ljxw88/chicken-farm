@@ -164,10 +164,36 @@ critique. Loop-off
 comparisons use `--loop-off` (one generation only) with a
 separate `ASSETGEN_RUN_DIR`; their outputs cannot be used as approvals.
 
+## P0 review and loop comparison
+
+The P0 review set uses `round-oak-a/b`, `small-bush`, `rock-a/b/c`, `barrel`,
+`crate` and `hay-bale`. Generate and verify each sequentially, then create an
+external review-only static page from the saved verifier packs:
+
+```sh
+ASSETGEN_EVIDENCE_DIR=/absolute/evidence/pr-b /home/michael/OpenBot/Shared/farm-tools/heavy node tools/assetgen/create-showcase.mjs
+python3 -m http.server 5185 --bind 127.0.0.1 --directory /home/michael/OpenBot/Shared/lookdev-assets/showcase
+```
+
+The page uses eight pre-rendered island views per light phase and puts P0
+apart for Look Dev. If a buildable candidate failed a hard gate, the tool may
+make a clearly labelled **diagnostic-only** render pack; it never changes the
+failure, runs a critic, or treats the preview as verification. Missing or
+unsafe candidates remain explicitly unavailable. `ASSETGEN_SHOWCASE_DIR`
+changes the output directory; existing showcases are not overwritten.
+`tools/assetgen/write-p0-report.mjs` writes a separate evidence table with
+rounds, blockers, actual recipe seed use, reported tokens and cost.
+
+For the three P0 loop comparisons, keep OFF runs in the external bake-off
+directory and run `tools/assetgen/write-loop-bakeoff.mjs` with the same
+`ASSETGEN_EVIDENCE_DIR`; `ASSETGEN_BAKEOFF_DIR` selects the comparison folder.
+The resulting table distinguishes selected-stage gate clearance from a full
+automated pass and never treats missing checks as passes.
+
 ## Important limits
 
 * Fresh renders use the merged EBR-80 lighting. No view here is final Look Dev
-  approval; a gallery/showcase and bundle generation are deferred to EBR-86.
+  approval; the P0 showcase is review-only and does not generate a bundle.
 * H8 uses triangle/contact and closed-mesh containment checks, but arbitrary
   malformed custom meshes and near-tangencies still merit human inspection.
 * H4 checks declared facing and centred bounds, not whether a semantic door
