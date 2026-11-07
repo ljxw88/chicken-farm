@@ -65,7 +65,7 @@ export const ART_SLOTS = {
     terrain: { colorBoost: 2, colorMix: 0.35 },
     vertexWhite: 0xffffff,
     contactShadow: 0x0a1409,
-    character: { body: 0xffd477, eye: 0x302820, beak: 0xe99049 },
+    character: { body: 0xffd477, eye: 0x302820, beak: 0xe99049, comb: FARM_PALETTE.flowerRed, wing: 0xbd8b31 },
     lantern: { wing: 0xffd477, metal: 0x554433 },
     chicken: { feathers: 0xfff1d7, wing: 0xe4d1ae, comb: 0xc75b46, beak: 0xe9a048, eye: 0x332820 },
     sheep: { woolTop: 0xfff1d7, woolBase: FARM_PALETTE.wool, woolShade: 0xe4d1ae,
@@ -103,9 +103,9 @@ export const ART_SLOTS = {
       directional: 0xfff2d6, directionalIntensity: 1.8, shadowOpacity: 0.22, nightLights: 0,
     },
     sunset: {
-      sky: 0xf0a878, fog: 0xe89870, fogDensity: 0.015, ambient: 0xeadbc8, ambientIntensity: 0.08,
+      sky: 0xf0a878, fog: 0xe89870, fogDensity: 0.0129, ambient: 0xeadbc8, ambientIntensity: 0.08,
       hemisphereSky: 0xe8dec6, hemisphereGround: 0xb5b99a, hemisphereIntensity: 0.2,
-      directional: 0xffeddb, directionalIntensity: 1.2, shadowOpacity: 0.22, nightLights: 0,
+      directional: 0xffeddb, directionalIntensity: 1.38, shadowOpacity: 0.22, nightLights: 0,
     },
     night: {
       sky: 0x2a2848, fog: 0x1e2430, fogDensity: 0.02, ambient: 0xaeb8c9, ambientIntensity: 0.26,
@@ -128,7 +128,8 @@ export const ART_SLOTS = {
   prop: {
     stair: { stoneMix: 0.18, treadMixes: [0.76, 0.82, 0.78, 0.84, 0.8], padMix: 0.78,
       edgeMix: 0.5, edgeBrightness: 1.1 } satisfies StairSlots,
-    character: { crownStrength: 0.15, dayCrownStrength: 0.28, dayBaseGain: 1.08, bodyRoughness: 0.9, beakRoughness: 0.9 },
+    character: { crownStrength: 0.15, dayCrownStrength: 0.28, dayBaseGain: 1.08, bodyRoughness: 0.9,
+      beakRoughness: 0.9, detailRoughness: 0.9 },
     firefly: { pulseFloor: 0.25, pulseRange: 0.75, rainDimming: 0.4 },
     smoke: { initialOpacity: 0, peakOpacity: 0.75, weatherNightDimming: 0.4, roughness: 1 },
     snow: { opacity: 0.8, nightOpacityMultiplier: 0.7 },

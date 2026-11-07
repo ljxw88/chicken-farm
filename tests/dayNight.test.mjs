@@ -46,7 +46,7 @@ test('all four phases keep the void and use the upper-left key with fill below i
   const expected = {
     morning: [0xe8d4c8, 0xe8d4c8, 0.012, 0xf0e0d0, 0.2, 0xe8d4c8, 0xa8c090, 0.25, 0xffe8c8, 2.35],
     daytime: [0xa8d4f0, 0xc8e0f0, 0.006, 0xe8f0e8, 0.07, 0xa8d4f0, 0x9cb88a, 0.35, 0xfff2d6, 1.8],
-    sunset: [0xf0a878, 0xe89870, 0.015, 0xeadbc8, 0.08, 0xe8dec6, 0xb5b99a, 0.2, 0xffeddb, 1.2],
+    sunset: [0xf0a878, 0xe89870, 0.0129, 0xeadbc8, 0.08, 0xe8dec6, 0xb5b99a, 0.2, 0xffeddb, 1.38],
     night: [0x2a2848, 0x1e2430, 0.02, 0xaeb8c9, 0.26, 0x2a2848, 0x1e2430, 0.11, 0xc8d4f0, 0.52],
   };
 
@@ -165,6 +165,27 @@ test('colors, intensities, fog and practical lights blend smoothly between prese
   near(lanternLight.intensity, 0.12 / 2);
   cycle.update(9);
   near(lanternLight.intensity, 0);
+});
+
+test('the brighter, clearer sunset retains its key hue and smoothly blends with its neighbours', () => {
+  const { scene, cycle, directional } = fixture();
+  cycle.setDayNightPhase('sunset');
+  near(directional.intensity, 1.2 * 1.15);
+  near(scene.fog.density, 0.0129);
+  assert.equal(directional.color.getHex(), 0xffeddb);
+  const sunsetDirection = directional.position.clone();
+  near(sunsetDirection.x, -0.8 * Math.hypot(11, 4));
+  near(sunsetDirection.y, 4);
+  near(sunsetDirection.z, 0.6 * Math.hypot(11, 4));
+
+  cycle.setDayNightPhase('daytime');
+  cycle.update(9);
+  near(directional.intensity, (1.8 + 1.38) / 2);
+  near(scene.fog.density, (0.006 + 0.0129) / 2);
+  cycle.setDayNightPhase('sunset');
+  cycle.update(9);
+  near(directional.intensity, (1.38 + 0.52) / 2);
+  near(scene.fog.density, (0.0129 + 0.02) / 2);
 });
 
 test('the night-to-morning wrap has no lighting or directional-position jump', () => {

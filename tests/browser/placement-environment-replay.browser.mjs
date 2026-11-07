@@ -107,7 +107,7 @@ for (const reference of references) test(`placement and environment replay again
       baselineSha: reference.sha, archivedBaselineSha,
       evidenceDir: evidenceRoot && resolve(evidenceRoot, reference.label) });
     t.diagnostic(`Identical traces: ${Object.entries(report.results).map(([name, result]) => `${name}=${result.samples}`).join(', ')}`);
-    t.diagnostic(`${exactVisual ? 'Unmasked frames' : 'Historical frames with garden/plot and, where absent, fold isolated'}: ${Object.keys(report.visualResults).length}; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
+    t.diagnostic(`${exactVisual ? 'Unmasked frames' : 'Historical frames with garden/plot and, where absent, fold isolated'}: ${Object.keys(report.visualResults).length}; EBR-89 accents and sunset slots normalized; body-only: ${report.intendedBodyChanges.length}; expected EBR-88 rain changes: ${report.expectedRainChanges.length}; unexpected: ${report.unexpectedVisualChanges.length}`);
     t.diagnostic(`Raw frame differences: ${Object.values(report.rawVisualResults).filter((count) => count > 0).length} frames; ${exactVisual ? 'all layers visible' : 'body, rain and effects isolated'}`);
   } finally {
     if (archiveDir) await rm(archiveDir, { recursive: true });
