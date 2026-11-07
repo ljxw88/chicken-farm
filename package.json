@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:export": "tsc && node tools/export-single-html.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "test:browser": "npm run build && node --test --test-concurrency=1 tests/browser/*.browser.mjs",
     "asset:new": "node tools/assetgen/cli.mjs new",
