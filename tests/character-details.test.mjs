@@ -49,7 +49,7 @@ test('the comb has three chunky red bumps, centered across the forward crown', (
 
 test('both gold wing patches are flush with the body, non-emissive and symmetric', () => {
   const { body, wings } = bodyAndDetails();
-  assert.equal(FARM_PALETTE.characterWingGold, 0xd9b45a);
+  assert.equal(FARM_PALETTE.characterWingGold, 0xbd8b31);
   assert.equal(wings.length, 2);
   for (const [index, wing] of wings.entries()) {
     assert.equal(wing.parent, body);

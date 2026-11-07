@@ -11,7 +11,9 @@ const { GROUND_HEIGHT, GROUND_SIZE } = await vite.ssrLoadModule('/src/scene/crea
 after(() => vite.close());
 
 test('the original farm palette stays locked alongside the building palette', () => {
-  assert.deepEqual(FARM_PALETTE, {
+  const { characterWingGold, ...farmPalette } = FARM_PALETTE;
+  assert.equal(characterWingGold, 0xbd8b31);
+  assert.deepEqual(farmPalette, {
     grass: 0x5fa846, dirt: 0xa67c52, dirtEdge: 0x7a5a3a, dirtHighlight: 0xc4a06a,
     soil: 0x5f4630, flowerRed: 0xc75b46, flowerYellow: 0xf2c94c, flowerBlue: 0x6a8fd0, flowerOrange: 0xe08a3c,
     barnWood: 0xd4a574, barnTrim: 0x8b6914, barnRoof: 0xc45a3a, barnDoor: 0x6b4423, barnWindow: 0x8aa0a8,
@@ -20,7 +22,7 @@ test('the original farm palette stays locked alongside the building palette', ()
   });
   const scene = new THREE.Scene();
   createFarmLayout(scene);
-  const allowed = new Set([...Object.values(FARM_PALETTE), ...Object.values(BUILDING_PALETTE)]);
+  const allowed = new Set([...Object.values(farmPalette), ...Object.values(BUILDING_PALETTE)]);
   scene.traverse((object) => {
     if (!object.isMesh) return;
     if (object.name.startsWith('farm-tree-shadow-')) {

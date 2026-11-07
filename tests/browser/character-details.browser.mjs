@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { deltaE76 } from '../../tools/assetgen/color.js';
 
 let server;
 let browser;
@@ -55,7 +56,7 @@ async function openScene() {
   return { context, page, errors };
 }
 
-test('comb and both wings render at game resolution without leaving the original body silhouette', { timeout: 90000 }, async (t) => {
+test('comb and wings remain legible at game resolution inside the original body silhouette', { timeout: 90000 }, async (t) => {
   const { context, page, errors } = await openScene();
   t.after(() => context.close());
   const result = await page.evaluate(async () => {
@@ -84,6 +85,7 @@ test('comb and both wings render at game resolution without leaving the original
     };
     const byPhase = {};
     const visibleCounts = [0, 0, 0];
+    const wingSamples = { daytime: [], sunset: [], night: [] };
     for (const phase of ['morning', 'daytime', 'sunset', 'night']) {
       dayNight.setDayNightPhase(phase);
       byPhase[phase] = [];
@@ -110,16 +112,27 @@ test('comb and both wings render at game resolution without leaving the original
         character.children.forEach((object, i) => { object.visible = characterVisibility[i]; });
 
         byPhase[phase].push(diff(withDetails, withoutDetails, mask));
-        if (phase === 'daytime') {
+        if (phase === 'daytime' || (phase !== 'morning' && [1, 2, 5, 6].includes(angle))) {
           for (const [index, part] of parts.entries()) {
+            if (phase !== 'daytime' && index === 0) continue;
             part.visible = true;
-            visibleCounts[index] += diff(pixels(), withoutDetails, mask).changed;
+            const withPart = pixels();
+            if (phase === 'daytime') visibleCounts[index] += diff(withPart, withoutDetails, mask).changed;
+            if (index > 0 && phase !== 'morning' && [1, 2, 5, 6].includes(angle)) {
+              const samples = [];
+              for (let i = 0; i < withPart.length; i += 4) {
+                if (withPart[i] === withoutDetails[i] && withPart[i + 1] === withoutDetails[i + 1] &&
+                    withPart[i + 2] === withoutDetails[i + 2]) continue;
+                samples.push({ body: [...withoutDetails.slice(i, i + 3)], wing: [...withPart.slice(i, i + 3)] });
+              }
+              if (samples.length) wingSamples[phase].push({ side: part.name, angle, samples });
+            }
             part.visible = false;
           }
         }
       }
     }
-    return { size: [canvas.width, canvas.height], byPhase, visibleCounts };
+    return { size: [canvas.width, canvas.height], byPhase, visibleCounts, wingSamples };
   });
   assert.deepEqual(result.size, [320, 180]);
   for (const [phase, frames] of Object.entries(result.byPhase)) {
@@ -127,6 +140,19 @@ test('comb and both wings render at game resolution without leaving the original
     assert.ok(frames.every(({ outside }) => outside === 0), `${phase}: details left the original body silhouette: ${JSON.stringify(frames)}`);
   }
   assert.ok(result.visibleCounts.every((count) => count > 0), `comb/wing missing from rendered facings: ${result.visibleCounts}`);
+  const luma = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  for (const [phase, views] of Object.entries(result.wingSamples)) {
+    for (const side of ['character-wing-left', 'character-wing-right']) {
+      assert.ok(views.some((view) => view.side === side && view.samples.length >= 2), `${phase}: ${side} is not visible`);
+    }
+    const samples = views.flatMap((view) => view.samples);
+    const meanDeltaE = samples.reduce((sum, sample) => sum + deltaE76(sample.body, sample.wing), 0) / samples.length;
+    const minLumaDelta = Math.min(...views.map(({ samples }) => Math.abs(samples.reduce((sum, sample) =>
+      sum + luma(sample.body) - luma(sample.wing), 0) / samples.length)));
+    assert.ok(meanDeltaE >= 4.8, `${phase}: wing/body ΔE ${meanDeltaE} is too low`);
+    assert.ok(minLumaDelta >= 3.5, `${phase}: a visible wing has only ${minLumaDelta} luminance separation`);
+    t.diagnostic(`${phase} wing/body: mean pixel ΔE ${meanDeltaE.toFixed(2)}, minimum view ΔY ${minLumaDelta.toFixed(2)}`);
+  }
   assert.deepEqual(errors, []);
 });
 
