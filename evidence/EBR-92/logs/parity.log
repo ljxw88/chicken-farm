@@ -1,0 +1,37 @@
+[heavy] slot /tmp/farm-heavy.1.lock acquired (waits for QA gate lock if held): npm run parity -- --url http://100.88.150.21:5211
+
+> chicken-farm@0.0.0 parity
+> node tools/parity.mjs --url http://100.88.150.21:5211
+
+Captured candidate spawn
+Captured candidate stairs-pad
+Captured candidate placement-ghost
+Captured candidate day
+Captured candidate night
+Captured candidate rain
+Captured candidate cottage-coops-day
+Captured candidate cottage-coops-night
+spawn: 1232 changed pixels
+stairs-pad: 1312 changed pixels
+placement-ghost: 1232 changed pixels
+day: 1232 changed pixels
+night: 0 changed pixels
+rain: 1232 changed pixels
+cottage-coops-day: 3424 changed pixels
+cottage-coops-night: 0 changed pixels
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Gate G: pixel differences found
+    at file:///home/michael/Developer/chicken-farm/worktrees/ebr92/tools/parity.mjs:166:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.2
+[heavy] released /tmp/farm-heavy.1.lock rc=1

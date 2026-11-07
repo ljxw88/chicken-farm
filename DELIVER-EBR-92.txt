@@ -1,0 +1,126 @@
+EBR-92 — BLOCKED / NOT READY; Look Dev + QA ruling required
+
+Branch: feat/ebr92-character-contrast
+Clean main: 5d9ba48f6bd9bfbc3974351b50d0ce89934380ff
+Tested source: 6fbfec8a435824cf10635f36698d111796ed461d
+Evidence tip at handoff creation (git rev-parse HEAD):
+  c254cb2e28da1a1a9e73a446f83a01a89ff15f9b
+The subsequent commit adds only this handoff, so it advances HEAD once beyond
+the tested source/evidence. A commit cannot contain its own hash: obtain the
+actual final tip with git rev-parse HEAD; it is also reported to the controller.
+
+BLOCKER
+The specified rule says MEAN body versus MEAN nearby grass/path; QA's current
+analyzer uses per-channel MEDIANS of 12 body and six ground pixels. At the
+same deterministic pose, the mean rule passes, but QA's median day-clear
+contrast is 1.0163 / dE 10.30, below 1.15 or dE 25. The mean/median definitions
+need a ruling before this is READY. The prescribed 8% maximum cannot repair
+the clear median at this pose: the sampled ground starts brighter than the body,
+so the prescribed lift makes the colours converge.
+
+QA day-rain median is 1.1294 / dE 10.94. It meets the written exception's
+numeric 1.08 floor but not 1.15. A test-only 12% linear gain gives 1.1508
+and shade/lit 0.7738: it exceeds the 8% cap without breaking the 0.75 shade
+floor. Thus the exception's stated shade-bound condition is not established;
+do not treat the rain exception as approved without a ruling. The 12% trial is
+NOT in production. Evidence and precise definitions: evidence/EBR-92/README.md.
+
+Open
+- Live dev server: http://100.88.150.21:5211/?phase=daytime&weather=clear
+  and http://100.88.150.21:5211/?phase=daytime&weather=rain
+- Full 1280x720 seeded before/after frames: evidence/EBR-92/before/frames/
+  and evidence/EBR-92/after/frames/. The six day/sunset/night, toward/away,
+  before/after 3.5x nearest-neighbour crops are in evidence/EBR-92/crops/.
+- Raw QA matrix: evidence/EBR-92/matrix-before/RESULT.txt and
+  evidence/EBR-92/matrix-after/RESULT.txt. Matched-pose rain-hidden runs of
+  the same analyzer: evidence/EBR-92/paired-{before,after}/RESULT.txt and
+  STRICT-RESULT.txt. See evidence/EBR-92/README.md before comparing raw poses.
+
+Visible-change ledger
+- Daytime vertex crown lift 0.15 -> 0.28, rotation independent. A uniform
+  linear-RGB base gain of 1.08 is applied in clear/rain and fades to 1.00 in
+  full cloud; it preserves hue and is non-emissive. The signed material stays
+  #ffd477; day clear/rain vertex range is 1.08..1.3824, i.e. the crown is
+  1.28 times the base. Cloud range is 1.00..1.28.
+- The cloudy base fade prevents a K1 regression: initial full 8% cloudy gain
+  measured exact-sRGB dE 24.879 against the 25 floor; final measures 25.078.
+  Day clear/rain retain the full permitted 8%. Weather transitions are smooth.
+- Morning/sunset/night anchor colours and all 18 phase/weather/facing frames
+  match clean main exactly. The gain smoothly blends into/out of the daytime
+  anchor, so intermediate morning-to-day and day-to-sunset values may differ.
+- Existing shade shader, eyes, lantern/wing, contact shadows, light count,
+  signed assets, void, palette material hex, HUD and pixel pass are unchanged.
+
+Intended pixel changes
+The exact per-frame allowed masks are evidence/EBR-92/mask/before-vs-after/;
+white means the visible character body only, black means no allowed change.
+They are obtained independently by hiding only the capsule at the same frozen
+scene state, then unioning the before/after silhouettes. Protected morning,
+sunset and night frames use all-black masks. Gate G 1280x720 rectangles below
+are (x0,y0,x1,y1), with x1/y1 exclusive; only the body pixels within them may
+change. Exact count, bbox and zero-outside-mask proof:
+
+  spawn             (624,336,656,384)  1,232 pixels
+  stairs-pad        (624,336,656,384)  1,312 pixels
+  placement-ghost   (624,336,656,384)  1,232 pixels
+  day               (624,336,656,384)  1,232 pixels
+  rain              (624,336,656,384)  1,232 pixels
+  cottage-coops-day (524,444,576,532)  3,424 pixels
+  night             no pixels                 0
+  cottage-coops-night no pixels               0
+
+The six additional fixed day frames have these changed counts, all inside their
+body masks: clear toward/away 1,232/1,344; cloudy 928/1,120; rain 1,232/1,344.
+All 18 other phase/weather/facing frames changed 0. Every body-hidden full
+frame changed 0; all state mismatches and changes outside masks are 0. The
+route replay's own independent masks are in evidence/EBR-92/route/mask/.
+
+Contrast, before -> after, matched position and rain hidden
+  QA median clear  1.1097 / dE 10.66 -> 1.0163 / dE 10.30  FAIL
+  QA median rain   1.0128 / dE 10.14 -> 1.1294 / dE 10.94  below 1.15
+  Spec mean clear  1.2080 / dE 18.11 -> 1.3366 / dE 19.64  PASS
+  Spec mean rain   1.3044 / dE 18.22 -> 1.4379 / dE 19.98  PASS
+The mean is of body pixels and 450 visible grass/path samples in a uniform
+0.7..1.5-world-unit annulus; the QA median uses its existing 12/6 samples.
+Both use the QA gamma-2.2 luminance ratio and CIE76 conversion. On step 1 alone
+the QA median was clear 1.0424 / dE 10.55, rain 1.0641 / dE 10.65.
+
+Checks and results (all heavy commands serial through the host wrapper)
+- Here "heavy" means /home/michael/OpenBot/Shared/farm-tools/heavy.
+- grep MemAvailable /proc/meminfo before every heavy run: above 4 GB throughout.
+- heavy npm ci: PASS, 73 packages, 0 vulnerabilities.
+- heavy npm run build: PASS; existing >500 kB chunk advisory.
+- heavy npm test: PASS 135/135.
+- Final full browser command (PASS 33/33, including 3/3 pad-side routes,
+  zero clipped/unsupported frames and no console/page errors):
+  EBR46_URL=http://100.88.150.21:5211 EBR46_EVIDENCE_DIR=evidence/EBR-92/stairs EBR46_SLIDE_PROOF=evidence/EBR-92/stairs/pad-sequences.json EBR56_DEV_URL=http://100.88.150.21:5211 LIGHTING_URL=http://100.88.150.21:5211 LIGHTING_EVIDENCE_DIR=evidence/EBR-92/lighting LIGHTING_CAPTURE_LABEL=after EBR74_BASELINE_WORKTREE=/tmp/ebr92-ref-TweAR1 EBR74_ROUTE_EVIDENCE_DIR=evidence/EBR-92/route /home/michael/OpenBot/Shared/farm-tools/heavy npm run test:browser
+  The baseline path is a disposable clone of 9e8c8c6, not another agent's
+  worktree; it avoids the test's automatic forced worktree removal.
+- QA capture: PW_RESOLVE_DIR="$PWD/" heavy node
+  /home/michael/OpenBot/Shared/qa-graphics-gate/gfx-matrix.mjs
+  http://100.88.150.21:5211 evidence/EBR-92/matrix-after: all 12 cases, no
+  console/page errors. ANIM_MASKS='500,540,550,668' heavy python3
+  /home/michael/OpenBot/Shared/qa-graphics-gate/analyze-gate.py
+  evidence/EBR-92/matrix-after: exit 1, visible-rain morning G2 0.74 and old
+  M1 crown <=1.15 check. M1 is superseded by this ticket's 0.28 design.
+- Paired QA analyzer with rain hidden: all five G2 floors PASS; M1 still exits
+  1 as above. C4_STRICT=1 exits 1 with baseline C4 failures morning-clear,
+  day-clear/cloudy/rain, sunset-clear plus the outdated M1 cap. No failures
+  are silently waived. Night/sunset/morning values match main exactly.
+- Rain-hidden shade/lit: morning-clear 0.6901, day-clear 0.6997,
+  sunset-clear 0.7212; cloudy min 0.7428, rain min 0.7624. Floors are
+  0.50/0.55/0.45/0.70/0.75 respectively. Day-rain is 0.7735.
+- PARITY_EVIDENCE_DIR=evidence/EBR-92/gate-g-official heavy npm run parity --
+  --url http://100.88.150.21:5211: raw exit 1 on intended body pixels (counts
+  above), 0 state mismatches. heavy python3 evidence/EBR-92/verify-gate-g.py:
+  PASS, 0 outside body / 0 in body-hidden renders; baseline and candidate
+  hashes match the unmodified official Gate G frames.
+- The weather seed 0xeb730001 is injected before initialization by the
+  evidence capture, as in tools/parity.mjs. No new randomness or ?seed URL
+  parameter was added; normal runtime random behaviour remains unchanged.
+
+Not verified
+- Look Dev visual sign-off, QA acceptance of the conflicting mean/median
+  definitions, or the rain exception's applicability.
+- Physical devices, hardware GPUs, or all possible walking positions and
+  continuous transition frames. Evidence is Chromium/SwiftShader at 1280x720.

@@ -1,0 +1,498 @@
+{
+  "baselineSha": "9e8c8c6c479567fcb4c7796763e86ceb6d6b72a4",
+  "candidateSha": "6fbfec8a435824cf10635f36698d111796ed461d",
+  "sourceStatus": "",
+  "browser": "153.0.8010.12",
+  "renderer": "SwiftShader",
+  "search": "?phase=daytime&weather=clear",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "deviceScaleFactor": 1,
+  "seed": 3950247937,
+  "tracePath": "/tmp/ebr92-ref-TweAR1/.ebr74-reference-tUYKfF/trace.json",
+  "results": {
+    "walking": {
+      "frames": 34,
+      "identical": true
+    },
+    "qa-walk": {
+      "frames": 21,
+      "identical": true
+    },
+    "key-transitions": {
+      "frames": 37,
+      "identical": true
+    },
+    "bridge": {
+      "frames": 44,
+      "identical": true
+    },
+    "stairs": {
+      "frames": 582,
+      "identical": true
+    },
+    "stream": {
+      "frames": 31,
+      "identical": true
+    }
+  },
+  "traceMismatches": [],
+  "frameResults": {
+    "spawn": 1232,
+    "walking": 1232,
+    "bridge-gap": 1264,
+    "bridge-mid": 1264,
+    "stairs-mid": 1328,
+    "stream-block": 1312
+  },
+  "bodyIsolation": {
+    "spawn": {
+      "outsideBodyPixels": 0,
+      "bodylessChangedPixels": 0
+    },
+    "walking": {
+      "outsideBodyPixels": 0,
+      "bodylessChangedPixels": 0
+    },
+    "bridge-gap": {
+      "outsideBodyPixels": 0,
+      "bodylessChangedPixels": 0
+    },
+    "bridge-mid": {
+      "outsideBodyPixels": 0,
+      "bodylessChangedPixels": 0
+    },
+    "stairs-mid": {
+      "outsideBodyPixels": 0,
+      "bodylessChangedPixels": 0
+    },
+    "stream-block": {
+      "outsideBodyPixels": 0,
+      "bodylessChangedPixels": 0
+    }
+  },
+  "marks": {
+    "walking": {
+      "spawn": {
+        "position": [
+          0,
+          2.4,
+          0
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      }
+    },
+    "qa-walk": {
+      "walkD2s": {
+        "position": [
+          2.1655145173838033,
+          2.4,
+          -2.1602179361023257
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      }
+    },
+    "key-transitions": {
+      "before-single-s": {
+        "position": [
+          2.1655145173838033,
+          2.4,
+          -2.1602179361023257
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "after-single-s": {
+        "position": [
+          2.206762412953019,
+          2.4,
+          -2.11897004053311
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      }
+    },
+    "bridge": {
+      "gap": {
+        "position": [
+          3.2999998533860335,
+          2.52,
+          -1.9500000315867145
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "bridge": {
+        "position": [
+          3.899999853386034,
+          2.52,
+          -1.9500000315867145
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "bridge-end": {
+        "position": [
+          7.59999999643721,
+          2.4,
+          -1.9500000315867145
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      }
+    },
+    "stairs": {
+      "pad-arrival": {
+        "position": [
+          12.799991339835804,
+          0.3445849504856975,
+          0.7599999896333623
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "stairs": {
+        "position": [
+          10.699991339835796,
+          1.44,
+          0.7599999896333623
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "climb-end": {
+        "position": [
+          4.207269493136057,
+          2.4,
+          0.7599999896333623
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "descent-end": {
+        "position": [
+          13.15,
+          0.16,
+          0.7599999896333623
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "pad-SA": {
+        "position": [
+          5.109677254408563,
+          2.4,
+          0.9500000000000001
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "pad-WD": {
+        "position": [
+          4.25728417411443,
+          2.4,
+          0.55
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "pad-both": {
+        "position": [
+          4.257284174114428,
+          2.4,
+          0.55
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "before-interleaved-descent": {
+        "position": [
+          4.257284174114428,
+          2.4,
+          0.55
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      },
+      "single-key-descent": {
+        "position": [
+          4.298532069683637,
+          2.4,
+          0.5912478955692093
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      }
+    },
+    "stream": {
+      "stream": {
+        "position": [
+          1.8320626134157143,
+          2.4,
+          3.6000010610663833
+        ],
+        "deck": {
+          "kind": "box",
+          "name": "wooden-bridge",
+          "blocksWalking": false,
+          "minX": 2.9,
+          "maxX": 4.9,
+          "minZ": -2.65,
+          "maxZ": -1.25
+        },
+        "waterCount": 32,
+        "boxesInDeck": 0,
+        "gapWidths": [
+          0.04000002145767212,
+          0.03999999165534973,
+          0.03999999165534973,
+          0.04000002145767212
+        ]
+      }
+    }
+  }
+}

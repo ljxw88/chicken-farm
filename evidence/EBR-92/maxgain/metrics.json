@@ -1,0 +1,1106 @@
+{
+  "morning-clear-toward": {
+    "mean": {
+      "bodyRGB": [
+        154.13547052740435,
+        115.41882109617373,
+        57.0899689762151
+      ],
+      "groundRGB": [
+        83.69146608315098,
+        91.42669584245077,
+        46.10503282275711
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.711374006468459,
+      "deltaE76": 27.9413174308084
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        139,
+        98,
+        44
+      ],
+      "groundRGB": [
+        72,
+        103,
+        46
+      ],
+      "ratio": 1.2006601323966197,
+      "deltaE76": 36.085510891969946
+    },
+    "shadeLit": {
+      "shade": 78.34687692307692,
+      "lit": 117.53823538461538,
+      "ratio": 0.6665650259824453
+    },
+    "qaK1": {
+      "shadeRGB": [
+        103.29230769230769,
+        75.0,
+        38.04615384615385
+      ],
+      "grassRGB": [
+        72,
+        104,
+        46
+      ],
+      "deltaE22": 32.76449370279061,
+      "deltaEExact": 30.964230646880274
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "morning-clear-away": {
+    "mean": {
+      "bodyRGB": [
+        154.4254606365159,
+        115.53768844221105,
+        56.483249581239534
+      ],
+      "groundRGB": [
+        86.38222222222223,
+        89.8,
+        46.36888888888889
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.7335443947071139,
+      "deltaE76": 26.92278369900277
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        141,
+        99,
+        44
+      ],
+      "groundRGB": [
+        112,
+        103,
+        50
+      ],
+      "ratio": 1.0778417828784175,
+      "deltaE76": 17.27445457724248
+    },
+    "shadeLit": {
+      "shade": 101.12733538461538,
+      "lit": 146.5308,
+      "ratio": 0.6901438836382207
+    },
+    "qaK1": {
+      "shadeRGB": [
+        136.3923076923077,
+        96.73846153846154,
+        40.761538461538464
+      ],
+      "grassRGB": [
+        71,
+        103,
+        45
+      ],
+      "deltaE22": 36.01476446190979,
+      "deltaEExact": 34.366000808227376
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "daytime-clear-toward": {
+    "mean": {
+      "bodyRGB": [
+        140.40124095139606,
+        117.45398138572907,
+        58.291623578076525
+      ],
+      "groundRGB": [
+        87.31509846827133,
+        106.29540481400437,
+        51.38074398249453
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.3589796637575124,
+      "deltaE76": 22.023820274432445
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        110,
+        94,
+        46
+      ],
+      "groundRGB": [
+        71,
+        119,
+        50
+      ],
+      "ratio": 1.2051732447005565,
+      "deltaE76": 31.79265851876067
+    },
+    "shadeLit": {
+      "shade": 72.41340923076922,
+      "lit": 108.66152923076923,
+      "ratio": 0.6664125725396493
+    },
+    "qaK1": {
+      "shadeRGB": [
+        85.3076923076923,
+        72.14615384615385,
+        37.09230769230769
+      ],
+      "grassRGB": [
+        71,
+        119,
+        50
+      ],
+      "deltaE22": 36.430466982904406,
+      "deltaEExact": 34.862570118245166
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "daytime-clear-away": {
+    "mean": {
+      "bodyRGB": [
+        137.43551088777218,
+        115.5,
+        56.54857621440536
+      ],
+      "groundRGB": [
+        90.07555555555555,
+        104.3711111111111,
+        51.56444444444445
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.3366119404321923,
+      "deltaE76": 19.64440302235996
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        136,
+        115,
+        55
+      ],
+      "groundRGB": [
+        119,
+        119,
+        57
+      ],
+      "ratio": 1.016281544342186,
+      "deltaE76": 10.300133259357878
+    },
+    "shadeLit": {
+      "shade": 91.53416153846153,
+      "lit": 130.82384000000002,
+      "ratio": 0.699674933394873
+    },
+    "qaK1": {
+      "shadeRGB": [
+        107.73076923076923,
+        92.03846153846153,
+        38.84615384615385
+      ],
+      "grassRGB": [
+        71,
+        119,
+        49
+      ],
+      "deltaE22": 31.456378349138326,
+      "deltaEExact": 30.040043653982853
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "daytime-cloudy-toward": {
+    "mean": {
+      "bodyRGB": [
+        125.8728024819028,
+        108.64219234746639,
+        55.57187176835574
+      ],
+      "groundRGB": [
+        75.78118161925602,
+        94.16849015317287,
+        46.34573304157549
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.4142523076722098,
+      "deltaE76": 20.046411031147965
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        103,
+        93,
+        48
+      ],
+      "groundRGB": [
+        61,
+        105,
+        45
+      ],
+      "ratio": 1.0236953657607284,
+      "deltaE76": 26.47022162719904
+    },
+    "shadeLit": {
+      "shade": 68.15918923076923,
+      "lit": 98.15117076923076,
+      "ratio": 0.6944307306432694
+    },
+    "qaK1": {
+      "shadeRGB": [
+        77.75384615384615,
+        68.5,
+        36.53076923076923
+      ],
+      "grassRGB": [
+        61,
+        106,
+        45
+      ],
+      "deltaE22": 32.06518288751091,
+      "deltaEExact": 30.416682506214688
+    },
+    "weather": {
+      "mode": "cloudy",
+      "rainAmount": 0,
+      "cloudyAmount": 1
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "daytime-cloudy-away": {
+    "mean": {
+      "bodyRGB": [
+        123.53433835845897,
+        107.28391959798995,
+        54.17085427135678
+      ],
+      "groundRGB": [
+        78.00444444444445,
+        92.40444444444445,
+        46.60444444444445
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.4022004057421467,
+      "deltaE76": 18.14855126267205
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        123,
+        107,
+        53
+      ],
+      "groundRGB": [
+        103,
+        105,
+        51
+      ],
+      "ratio": 1.100273467142572,
+      "deltaE76": 9.26583305597242
+    },
+    "shadeLit": {
+      "shade": 88.82566461538461,
+      "lit": 117.91253076923076,
+      "ratio": 0.7533182778446788
+    },
+    "qaK1": {
+      "shadeRGB": [
+        100.46153846153847,
+        90.25384615384615,
+        40.41538461538462
+      ],
+      "grassRGB": [
+        61,
+        105,
+        44
+      ],
+      "deltaE22": 26.33436786774941,
+      "deltaEExact": 24.87947178888975
+    },
+    "weather": {
+      "mode": "cloudy",
+      "rainAmount": 0,
+      "cloudyAmount": 1
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "daytime-rain-toward": {
+    "mean": {
+      "bodyRGB": [
+        129.464322647363,
+        109.24301964839711,
+        54.021716649431234
+      ],
+      "groundRGB": [
+        75.83150984682713,
+        93.8402625820569,
+        45.352297592997814
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.4485866965263012,
+      "deltaE76": 21.659830483535092
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        110,
+        94,
+        46
+      ],
+      "groundRGB": [
+        61,
+        105,
+        44
+      ],
+      "ratio": 1.0154830377250916,
+      "deltaE76": 29.1809929639278
+    },
+    "shadeLit": {
+      "shade": 69.56573692307693,
+      "lit": 98.64692153846154,
+      "ratio": 0.7051992686457416
+    },
+    "qaK1": {
+      "shadeRGB": [
+        81.6076923076923,
+        69.45384615384616,
+        35.215384615384615
+      ],
+      "grassRGB": [
+        61,
+        105,
+        44
+      ],
+      "deltaE22": 32.09707364315746,
+      "deltaEExact": 30.376712461653668
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "daytime-rain-away": {
+    "mean": {
+      "bodyRGB": [
+        127.46817420435511,
+        107.9572864321608,
+        52.63735343383585
+      ],
+      "groundRGB": [
+        78.00444444444445,
+        92.16666666666667,
+        45.62222222222222
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.4379261940909358,
+      "deltaE76": 19.98175199518863
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        127,
+        108,
+        52
+      ],
+      "groundRGB": [
+        103,
+        105,
+        50
+      ],
+      "ratio": 1.1293818489327485,
+      "deltaE76": 10.93853370510028
+    },
+    "shadeLit": {
+      "shade": 91.47157384615385,
+      "lit": 118.2520723076923,
+      "ratio": 0.7735304089060232
+    },
+    "qaK1": {
+      "shadeRGB": [
+        107.65384615384616,
+        91.97692307692307,
+        38.815384615384616
+      ],
+      "grassRGB": [
+        61,
+        105,
+        44
+      ],
+      "deltaE22": 28.86307350860883,
+      "deltaEExact": 27.267667805738814
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "sunset-clear-toward": {
+    "mean": {
+      "bodyRGB": [
+        124.83764219234746,
+        90.3071354705274,
+        43.203722854188214
+      ],
+      "groundRGB": [
+        71.07658643326039,
+        71.78993435448578,
+        35.050328227571114
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.5645569474259864,
+      "deltaE76": 22.77368287973399
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        116,
+        79,
+        33
+      ],
+      "groundRGB": [
+        63,
+        80,
+        35
+      ],
+      "ratio": 1.2242460721499204,
+      "deltaE76": 29.502572462318373
+    },
+    "shadeLit": {
+      "shade": 63.28226461538462,
+      "lit": 91.86550307692308,
+      "ratio": 0.6888577593963162
+    },
+    "qaK1": {
+      "shadeRGB": [
+        87.13076923076923,
+        59.73076923076923,
+        28.23846153846154
+      ],
+      "grassRGB": [
+        63,
+        81,
+        35
+      ],
+      "deltaE22": 26.434135545260435,
+      "deltaEExact": 24.401000262195346
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "sunset-clear-away": {
+    "mean": {
+      "bodyRGB": [
+        125.21775544388609,
+        90.42964824120602,
+        42.67001675041876
+      ],
+      "groundRGB": [
+        72.96222222222222,
+        70.49333333333334,
+        35.275555555555556
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.5830401794925528,
+      "deltaE76": 22.102603974605934
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        116,
+        80,
+        33
+      ],
+      "groundRGB": [
+        92,
+        81,
+        38
+      ],
+      "ratio": 1.1005389795781764,
+      "deltaE76": 14.30452332341409
+    },
+    "shadeLit": {
+      "shade": 81.6604876923077,
+      "lit": 113.22278923076922,
+      "ratio": 0.7212372018663871
+    },
+    "qaK1": {
+      "shadeRGB": [
+        113.95384615384616,
+        77.27692307692308,
+        29.99230769230769
+      ],
+      "grassRGB": [
+        62,
+        81,
+        34
+      ],
+      "deltaE22": 30.340470645716675,
+      "deltaEExact": 28.41142744094424
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "night-clear-toward": {
+    "mean": {
+      "bodyRGB": [
+        79.26266804550156,
+        57.916235780765255,
+        33.72802481902792
+      ],
+      "groundRGB": [
+        40.838074398249454,
+        51.42013129102845,
+        30.61925601750547
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.2508507342932291,
+      "deltaE76": 19.76618976379513
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        88,
+        61,
+        29
+      ],
+      "groundRGB": [
+        39,
+        57,
+        31
+      ],
+      "ratio": 1.2632315726980943,
+      "deltaE76": 26.87632689595246
+    },
+    "shadeLit": {
+      "shade": 44.64055692307692,
+      "lit": 59.64399538461539,
+      "ratio": 0.7484501438109818
+    },
+    "qaK1": {
+      "shadeRGB": [
+        64.05384615384615,
+        41.07692307692308,
+        22.776923076923076
+      ],
+      "grassRGB": [
+        33,
+        57,
+        30
+      ],
+      "deltaE22": 27.624558555440366,
+      "deltaEExact": 24.51479358939783
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "night-clear-away": {
+    "mean": {
+      "bodyRGB": [
+        69.1574539363484,
+        51.913735343383586,
+        32.00083752093802
+      ],
+      "groundRGB": [
+        45.053333333333335,
+        52.717777777777776,
+        31.36888888888889
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.0854938061770076,
+      "deltaE76": 14.754070021574872
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        68,
+        46,
+        28
+      ],
+      "groundRGB": [
+        56,
+        63,
+        34
+      ],
+      "ratio": 1.161971757733075,
+      "deltaE76": 18.64284348675211
+    },
+    "shadeLit": {
+      "shade": 41.62536,
+      "lit": 62.41893846153846,
+      "ratio": 0.6668706810137259
+    },
+    "qaK1": {
+      "shadeRGB": [
+        63.292307692307695,
+        37.36153846153846,
+        20.06153846153846
+      ],
+      "grassRGB": [
+        34,
+        59,
+        30
+      ],
+      "deltaE22": 30.670371129882152,
+      "deltaEExact": 27.24447886299251
+    },
+    "weather": {
+      "mode": "clear",
+      "rainAmount": 0,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "sunset-rain-toward": {
+    "mean": {
+      "bodyRGB": [
+        118.07135470527405,
+        84.32471561530507,
+        39.822130299896585
+      ],
+      "groundRGB": [
+        66.80306345733041,
+        67.054704595186,
+        31.921225382932167
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.533255029268353,
+      "deltaE76": 22.133048438812814
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        111,
+        76,
+        33
+      ],
+      "groundRGB": [
+        59,
+        74,
+        32
+      ],
+      "ratio": 1.268293599804597,
+      "deltaE76": 27.889621969958643
+    },
+    "shadeLit": {
+      "shade": 60.47229846153846,
+      "lit": 84.43934615384615,
+      "ratio": 0.7161625618388803
+    },
+    "qaK1": {
+      "shadeRGB": [
+        84.71538461538462,
+        56.7,
+        26.453846153846154
+      ],
+      "grassRGB": [
+        58,
+        75,
+        32
+      ],
+      "deltaE22": 26.234570483600535,
+      "deltaEExact": 24.049193576802182
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "sunset-rain-away": {
+    "mean": {
+      "bodyRGB": [
+        118.68676716917923,
+        84.52763819095478,
+        39.3785594639866
+      ],
+      "groundRGB": [
+        68.19111111111111,
+        65.97111111111111,
+        32.05111111111111
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.5534013011202032,
+      "deltaE76": 21.736100450764614
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        115,
+        77,
+        33
+      ],
+      "groundRGB": [
+        85,
+        74,
+        34
+      ],
+      "ratio": 1.189586208480573,
+      "deltaE76": 15.688027174688434
+    },
+    "shadeLit": {
+      "shade": 79.35999692307692,
+      "lit": 102.75008153846153,
+      "ratio": 0.7723594544630196
+    },
+    "qaK1": {
+      "shadeRGB": [
+        112.56923076923077,
+        74.5923076923077,
+        28.8
+      ],
+      "grassRGB": [
+        57,
+        74,
+        31
+      ],
+      "deltaE22": 30.81706684557425,
+      "deltaEExact": 28.77140430159652
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  },
+  "night-rain-toward": {
+    "mean": {
+      "bodyRGB": [
+        72.64012409513961,
+        52.32574974146846,
+        29.813857290589453
+      ],
+      "groundRGB": [
+        36.59956236323851,
+        45.520787746170676,
+        26.75054704595186
+      ],
+      "bodyPixels": 967,
+      "groundSamples": 457,
+      "surfaces": {
+        "farm-path-surface": 145,
+        "farm-path-edge": 23,
+        "island-top": 286,
+        "farm-path-highlight": 3
+      },
+      "ratio": 1.2352311560628657,
+      "deltaE76": 18.905992668596806
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        82,
+        56,
+        27
+      ],
+      "groundRGB": [
+        36,
+        51,
+        28
+      ],
+      "ratio": 1.2609366303113687,
+      "deltaE76": 25.418256695919784
+    },
+    "shadeLit": {
+      "shade": 41.58390461538461,
+      "lit": 54.028058461538464,
+      "ratio": 0.7696723850439192
+    },
+    "qaK1": {
+      "shadeRGB": [
+        60.40769230769231,
+        38.13076923076923,
+        20.361538461538462
+      ],
+      "grassRGB": [
+        30,
+        51,
+        27
+      ],
+      "deltaE22": 25.943625884174086,
+      "deltaEExact": 22.81860597631109
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      0,
+      2.4,
+      0
+    ],
+    "yaw": 0
+  },
+  "night-rain-away": {
+    "mean": {
+      "bodyRGB": [
+        61.675879396984925,
+        45.938860971524285,
+        28.151591289782246
+      ],
+      "groundRGB": [
+        40.973333333333336,
+        47.19777777777778,
+        27.5
+      ],
+      "bodyPixels": 1194,
+      "groundSamples": 450,
+      "surfaces": {
+        "farm-path-surface": 169,
+        "farm-path-edge": 25,
+        "island-top": 255,
+        "farm-path-highlight": 1
+      },
+      "ratio": 1.06368094618772,
+      "deltaE76": 13.42194562049031
+    },
+    "qaMedian": {
+      "bodyRGB": [
+        60,
+        41,
+        25
+      ],
+      "groundRGB": [
+        51,
+        57,
+        29
+      ],
+      "ratio": 1.1550276485702347,
+      "deltaE76": 17.274403993671214
+    },
+    "shadeLit": {
+      "shade": 37.318069230769225,
+      "lit": 54.58727538461539,
+      "ratio": 0.6836404449174389
+    },
+    "qaK1": {
+      "shadeRGB": [
+        57.04615384615385,
+        33.4,
+        18.03846153846154
+      ],
+      "grassRGB": [
+        31,
+        52,
+        26
+      ],
+      "deltaE22": 27.87205227531364,
+      "deltaEExact": 24.432303431609053
+    },
+    "weather": {
+      "mode": "rain",
+      "rainAmount": 1,
+      "cloudyAmount": 0
+    },
+    "bodyHex": "ffd477",
+    "position": [
+      -0.5776355295512907,
+      2.4,
+      -0.5776355295512913
+    ],
+    "yaw": -2.3561944901923457
+  }
+}
