@@ -5,12 +5,13 @@ import { homedir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import * as THREE from 'three';
 import { verifierSourceHash } from './bundle.mjs';
-import { readBible, readSpec, root, runDirectory } from './config.mjs';
+import { readBible, readSpec, readVisionProbe, root, runDirectory } from './config.mjs';
 import { diagnosticEligibility } from './diagnostic-preview.mjs';
 import { inspectRecipe } from './geometry.mjs';
 import { validateRecipe } from './schema.mjs';
 import { renderShowcasePage } from './showcase-page.mjs';
 import { visualCheckSummary } from './showcase-checks.mjs';
+import { assessReviewReadiness } from './review-readiness.mjs';
 import { createVisualRunner } from './visual.mjs';
 
 const ids = ['round-oak-a', 'round-oak-b', 'small-bush', 'rock-a', 'rock-b', 'rock-c', 'barrel', 'crate', 'hay-bale'];
@@ -20,23 +21,27 @@ const outside = relative(root, finalOutput);
 if (!(outside === '..' || outside.startsWith(`..${sep}`)) || isAbsolute(outside)) throw new Error('Showcase output must be outside the repository');
 const exists = async (path) => { try { await access(path); return true; } catch (error) { if (error.code === 'ENOENT') return false; throw error; } };
 const readJson = async (path) => { try { return JSON.parse(await readFile(path, 'utf8')); } catch (error) { if (error.code === 'ENOENT') return null; throw error; } };
+const readText = async (path) => { try { return await readFile(path, 'utf8'); } catch (error) { if (error.code === 'ENOENT') return null; throw error; } };
 if (await exists(finalOutput)) throw new Error(`Refusing to overwrite existing showcase directory: ${finalOutput}`);
 await mkdir(dirname(finalOutput), { recursive: true });
 const output = await mkdtemp(join(dirname(finalOutput), '.asset-showcase-build-'));
 
 const bible = await readBible();
 const sourceHash = await verifierSourceHash();
+const probe = await readVisionProbe();
 const entries = [];
 for (const id of ids) {
-  const { spec } = await readSpec(id);
+  const { spec, path: specPath } = await readSpec(id);
   const directory = join(runDirectory, id);
-  const [final, recipe, verification] = await Promise.all([
-    readJson(join(directory, 'final.json')), readJson(join(directory, 'candidate.json')), readJson(join(directory, 'verify/report.json')),
+  const [final, recipeBytes, specBytes, verification] = await Promise.all([
+    readJson(join(directory, 'final.json')), readText(join(directory, 'candidate.json')), readFile(specPath, 'utf8'), readJson(join(directory, 'verify/report.json')),
   ]);
+  const recipe = recipeBytes === null ? null : JSON.parse(recipeBytes);
   const stage = final?.best && Number.isInteger(final.best.round) && final.best.round >= 1 && final.best.round <= bible.rules.loop.maxRounds &&
     bible.rules.loop.stages.includes(final.best.stage) ? join(directory, `round-${final.best.round}`, `stage-${final.best.stage}`) : null;
   const stageReport = stage ? await readJson(join(stage, 'report.json')) : null;
-  entries.push({ id, spec, directory, final, recipe, verification, stage, stageReport });
+  const receipts = stage ? { generator: await readText(join(stage, 'generator.jsonl')), critic: await readText(join(stage, 'critic.jsonl')) } : null;
+  entries.push({ id, spec, specBytes, directory, final, recipe, recipeBytes, verification, stage, stageReport, receipts });
 }
 
 const runner = await createVisualRunner();
@@ -99,8 +104,10 @@ try {
       return [code, check === true || check === false ? check : hard?.failures?.some((failure) => failure.code === code) ? false : null];
     }));
     const visual = typeof verification?.visual === 'object' ? verification.visual : stageReport?.visual;
+    const reviewReadiness = assessReviewReadiness({ spec, specBytes: entry.specBytes, recipeBytes: entry.recipeBytes, bible, sourceHash,
+      final, stage: stageReport, verification, receipts: entry.receipts, probe, environment });
     const unique = new Map();
-    for (const failure of [...(hard?.failures || []), ...(visual?.failures || []), ...(stageReport?.blockers || [])]) unique.set(`${failure.code}\0${failure.message}`, failure);
+    for (const failure of [...(hard?.failures || []), ...(visual?.failures || []), ...(stageReport?.blockers || []), ...reviewReadiness.reasons]) unique.set(`${failure.code}\0${failure.message}`, failure);
     if (!final) unique.set('NO_FINAL', { code: 'NO_FINAL', message: 'The generator did not complete a final report.' });
     if (!recipe) unique.set('NO_CANDIDATE', { code: 'NO_CANDIDATE', message: final?.stopReason || 'No generated candidate is available.' });
     const target = join(output, 'images', id);
@@ -131,7 +138,7 @@ try {
       colorCount: hard?.metrics?.colorCount ?? measured?.colorCount ?? null,
       colors: Array.isArray(recipe?.parts) ? [...new Set(recipe.parts.filter((part) => typeof part?.mat === 'string')
         .map((part) => recipe.slots?.[part.mat] ?? part.mat))].sort() : [], checks,
-      visualChecks: visualCheckSummary(visual),
+      visualChecks: visualCheckSummary(visual), reviewReadiness,
       failures: [...unique.values()], warnings: verification?.warnings ?? stageReport?.warnings ?? [],
       unmeasured: visual?.metrics?.unmeasured ?? ['Visual verification not run'],
       critiqueStatus: stageReport?.critiqueStatus ?? final?.visualCritiqueStatus ?? 'visual critique not run',

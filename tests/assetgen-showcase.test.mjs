@@ -14,6 +14,7 @@ test('P0 showcase marks failures, unmeasured checks and diagnostic renders hones
   assert.match(page, /P0 · SOLO REVIEW/);
   assert.match(page, /diagnostic only, not a verification pass/);
   assert.match(page, /<th>H3<\/th><td>FAIL/);
+  assert.match(page, /Blocking reason:<\/strong> H3: Wrong size/);
   assert.match(page, /<th>H2<\/th><td>not measured/);
   assert.match(page, /Visual critique not run; no scores/);
   assert.match(page, /Visual verification not run/);
@@ -21,6 +22,14 @@ test('P0 showcase marks failures, unmeasured checks and diagnostic renders hones
   assert.match(page, /data-turntable/);
   assert.match(page, /id="island-yaw"/);
   assert.match(page, /<option>night<\/option>/);
+});
+
+test('a cleared P0 candidate is labeled for Look Dev review without implying signoff', () => {
+  const page = renderShowcasePage({ generatedAt: 'now', overview: { available: false }, assets: [{ id: 'barrel', status: 'needs-human',
+    brief: 'A barrel.', reviewReadiness: { ready: true, reasons: [] }, checks: {}, colors: [] }] });
+  assert.match(page, /ready for Look Dev P0 review/);
+  assert.match(page, /Pipeline status: needs-human · not signed or bundled/);
+  assert.match(page, /unmeasured checks are not passes/);
 });
 
 test('schema-invalid previews are narrow, unchanged and disclose ignored jitter', () => {
