@@ -18,7 +18,7 @@ function assetCard(asset) {
   const scores = asset.criticScores ? Object.entries(asset.criticScores).map(([key, value]) => `<tr><th>${escape(key)}</th><td>${fmt(value)} / 5</td></tr>`).join('') : '<tr><td>Visual critique not run; no scores.</td></tr>';
   const visualChecks = asset.visualChecks ? Object.entries(asset.visualChecks).map(([key, value]) => `<tr><th>${escape(key)}</th><td>${escape(value)}</td></tr>`).join('') : '<tr><td>Not run.</td></tr>';
   return `<article class="asset" id="${escape(asset.id)}"><header><div><span class="tag">P0 · SOLO REVIEW</span><h2>${escape(asset.id)}</h2></div><strong class="status">${escape(asset.status || 'not generated')}</strong></header>
-    <p>${escape(asset.brief)}</p><p><strong>Render:</strong> ${escape(asset.pack?.kind || 'unavailable')} ${asset.pack?.kind === 'diagnostic' ? '— hard-failed diagnostic only, not a verification pass.' : ''}</p>
+    <p>${escape(asset.brief)}</p><p><strong>Render:</strong> ${escape(asset.pack?.kind || 'unavailable')} ${asset.pack?.kind === 'diagnostic' ? '— diagnostic only, not a verification pass; see the gate results.' : ''}</p>
     <p><strong>Triangles:</strong> ${fmt(asset.triangles)} · <strong>Measured colour count:</strong> ${fmt(asset.colorCount)} · <strong>Palette tokens:</strong> ${asset.colors?.length ? escape(asset.colors.join(', ')) : 'Not measured'} · <strong>Bounds:</strong> ${fmt(asset.bounds)} · <strong>Metrics source:</strong> ${escape(asset.metricSource || 'not measured')}</p>
     <p><strong>Rounds:</strong> ${fmt(asset.rounds)} · <strong>Critique:</strong> ${escape(asset.critiqueStatus || 'visual critique not run')}</p>
     ${turntable}

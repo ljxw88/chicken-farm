@@ -176,8 +176,8 @@ python3 -m http.server 5185 --bind 127.0.0.1 --directory /home/michael/OpenBot/S
 ```
 
 The page uses eight pre-rendered island views per light phase and puts P0
-apart for Look Dev. If a buildable candidate failed a hard gate, the tool may
-make a clearly labelled **diagnostic-only** render pack; it never changes the
+apart for Look Dev. If a buildable candidate failed a hard gate or lacks a
+completed verification, the tool may make a **diagnostic-only** render pack; it never changes the
 failure, runs a critic, or treats the preview as verification. Missing or
 unsafe candidates remain explicitly unavailable. `ASSETGEN_SHOWCASE_DIR`
 changes the output directory; existing showcases are not overwritten.

@@ -11,7 +11,7 @@ test('P0 showcase marks failures, unmeasured checks and diagnostic renders hones
       checks: { H1: true, H3: false }, triangles: 84, colors: ['stone'], bounds: { height: 0.4 }, rounds: 3,
       failures: [{ code: 'H3', message: 'Wrong size' }], warnings: [], unmeasured: ['Visual verification not run'], criticScores: null }] });
   assert.match(page, /P0 · SOLO REVIEW/);
-  assert.match(page, /hard-failed diagnostic only, not a verification pass/);
+  assert.match(page, /diagnostic only, not a verification pass/);
   assert.match(page, /<th>H3<\/th><td>FAIL/);
   assert.match(page, /<th>H2<\/th><td>not measured/);
   assert.match(page, /Visual critique not run; no scores/);
