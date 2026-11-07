@@ -41,3 +41,12 @@ test('three consecutive full iterations without a new best stop; improvement res
   assert.equal(trackP0Progress(baseline, [{ ...baseline, attempted: 4, ready: 3 }]).stop, 'three-ready');
   assert.equal(trackP0Progress(baseline, [{ ...baseline, attempted: 4, ready: 0 }]).stop, 'incomplete');
 });
+
+test('a quota stop is explicit and never counted as a pass', () => {
+  const rows = [{ id: 'oak', spec: {}, final: { status: 'needs-human', roundsUsed: 1, stopReason: 'Free model quota exhausted; work order emitted' },
+    assessment: { ready: false, reasons: [{ code: 'NO_CANDIDATE', message: 'Free model quota exhausted' }] } }];
+  const report = renderP0Iteration({ rows, iteration: 1, generatedAt: 'now', runDirectory: '/evidence', stopReason: 'provider quota exhausted' });
+  assert.match(report, /0 P0 candidate\(s\) clear/);
+  assert.match(report, /GENERATOR_QUOTA_429/);
+  assert.match(report, /Stop: provider quota exhausted/);
+});
